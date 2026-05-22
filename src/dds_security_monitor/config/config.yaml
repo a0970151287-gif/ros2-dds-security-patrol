@@ -1,0 +1,56 @@
+dds_security_monitor:
+  ros__parameters:
+    poll_interval_sec: 5.0
+    # 憑證優先使用環境變數 LINE_CHANNEL_TOKEN / LINE_USER_ID
+    # 不要把 token 寫在這裡並提交到 git！
+    line_token: ""
+    line_user_id: ""
+    # 是否在節點離線時也發送警報
+    alert_on_node_exit: false
+    # 偵測到入侵時是否自動停止機器人
+    emergency_stop_enabled: true
+    # 持續發送停止指令的秒數
+    emergency_stop_duration_sec: 3.0
+    # 白名單：已知的合法節點，不需要警報
+    whitelist:
+      - bt_navigator
+      - planner_server
+      - controller_server
+      - map_server
+      - amcl
+      - behavior_server
+      - waypoint_follower
+      - velocity_smoother
+      - lifecycle_manager_navigation
+      - lifecycle_manager_localization
+      - robot_state_publisher
+      - joint_state_publisher
+      - rviz2
+      - rviz
+      - cartographer_node
+      - cartographer_occupancy_grid_node
+      - turtlebot3_node
+      - turtlebot3_fake_node
+      - diff_drive_controller
+      - teleop_keyboard
+      - turtlebot3_patrol_server
+      - my_nav_client
+      - dds_security_monitor
+      - patrol_node
+      - ros_gz_bridge
+      - ros_gz_image
+      - ros_gz_point_cloud
+      - ros_gz_sim
+      - gazebo
+      - gzserver
+      - gzclient
+      - route_server
+      - smoother_server
+      - collision_monitor
+      - docking_server
+      - nav2_container
+      - nav_to_pose_client
+      - sensor_hub_node
+      - mission_manager_node
+      - system_status_node
+      - dqn_environment

@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""感測器集線器節點。
+
+訂閱 /scan 和 /imu，彙整感測器狀態後發布到 /sensor/status。
+這展示了 DDS 在機器人內部模組間的訊息傳遞。
+"""
+import math
+
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
+from sensor_msgs.msg import Imu, LaserScan
+from std_msgs.msg import String
+
+
+class SensorHubNode(Node):
+
+    def __init__(self) -> None:
+        super().__init__('sensor_hub_node')
+
+        sensor_qos = QoSProfile(
+            depth=10,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+        )
+
+        self.create_subscription(LaserScan, '/scan', self._on_scan, sensor_qos)
+        self.create_subscription(Imu, '/imu', self._on_imu, sensor_qos)
+        self._status_pub = self.create_publisher(String, '/sensor/status', 10)
+
+        self._min_range: float | None = None
+        self._linear_acc: float = 0.0
+        self._imu_ready: bool = False
+
+        self.create_timer(1.0, self._publish_status)
+        self.get_logger().info('📡 感測器集線器啟動 — 訂閱 /scan + /imu')
+
+    def _on_scan(self, msg: LaserScan) -> None:
+        valid = [r for r in msg.ranges
+                 if not math.isinf(r) and not math.isnan(r) and r > 0.01]
+        self._min_range = min(valid) if valid else None
+
+    def _on_imu(self, msg: Imu) -> None:
+        ax = msg.linear_acceleration.x
+        ay = msg.linear_acceleration.y
+        self._linear_acc = math.sqrt(ax**2 + ay**2)
+        self._imu_ready = True
+
+    def _publish_status(self) -> None:
+        if self._min_range is None:
+            status = '[感測器狀態] 等待 LiDAR 資料...'
+            msg = String()
+            msg.data = status
+            self._status_pub.publish(msg)
+            return
+        obstacle = self._min_range < 0.35
+        status = (
+            f'[感測器狀態] '
+            f'最近障礙物: {self._min_range:.2f}m | '
+            f'{"⚠️ 危險" if obstacle else "✅ 安全"} | '
+            f'水平加速度: {self._linear_acc:.2f}m/s²'
+        )
+        msg = String()
+        msg.data = status
+        self._status_pub.publish(msg)
+        self.get_logger().info(status)
+
+
+def main(args=None) -> None:
+    rclpy.init(args=args)
+    node = SensorHubNode()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

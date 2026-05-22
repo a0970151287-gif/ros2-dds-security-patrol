@@ -1,0 +1,24 @@
+# ROS2 build artifacts
+build/
+install/
+log/
+
+# Large training files (>100MB, exceed GitHub limit)
+src/turtlebot3_dqn/turtlebot3_dqn/models_sac/
+src/turtlebot3_dqn/turtlebot3_dqn/logs_sac/
+src/turtlebot3_dqn/turtlebot3_dqn/logs/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Embedded repos
+src/turtlebot3/
+src/turtlebot3_simulations/
+
+# Website has its own repo
+website/
+
+# Claude memory (private)
+.claude/
