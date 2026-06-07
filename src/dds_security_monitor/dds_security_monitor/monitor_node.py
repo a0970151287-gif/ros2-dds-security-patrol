@@ -354,6 +354,23 @@ def verify_file(file_path, secret: bytes) -> bool:
 
 
 class DDSSecurityMonitor(Node):
+    """應用層資安監控節點（系統的第一道防線）。
+
+    職責：
+      1. 定期 poll ROS graph 比對白名單，發現未授權節點 → 簽章發 /security/alerts
+      2. 發布 /security/heartbeat 作為偵測層 liveness probe
+         （供 intelligent_defense_node 的 D5 watchdog 用）
+      3. LINE 通知聚合（30s batch，防 alert flood 洗版 — 對應 ROSEC-2026-018）
+
+    所有對外簽章皆透過 sign_alert() 帶 channel binding，接收端用
+    verify_alert(expected_channel=...) 驗章，防 cross-channel confusion
+    （ROSEC-2026-001 N4 攻擊已修補）。
+
+    敏感參數（whitelist / poll_interval / emergency_stop_* / line_*）
+    以 ParameterDescriptor(read_only=True) 宣告，擋 ROSEC-2026-004 N14
+    /set_parameters whitelist hijack。
+    """
+
     def __init__(self):
         super().__init__('dds_security_monitor')
 

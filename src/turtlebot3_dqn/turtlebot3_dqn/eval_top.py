@@ -42,6 +42,14 @@ except Exception:
 
 
 def bootstrap_ci(arr, B: int = 1000, lo: float = 2.5, hi: float = 97.5, seed: int = 0):
+    """Bootstrap 95% 信賴區間（Efron 1979 重抽樣法）。
+
+    從 arr 有放回隨機抽 B 組（each size = len(arr)）算 mean，取兩端 percentile
+    當區間。不依賴常態分佈假設 — 適合 RL eval 50 個 episode 樣本量。
+
+    用途：論文等級 eval 報告 e.g. `SPL = 0.873 [95% CI 0.821, 0.918]`，
+    取代上一代 rolling mean（含探索 noise + 無不確定性量化）。
+    """
     arr = np.asarray(arr, dtype=np.float64)
     if len(arr) == 0:
         return 0.0, 0.0

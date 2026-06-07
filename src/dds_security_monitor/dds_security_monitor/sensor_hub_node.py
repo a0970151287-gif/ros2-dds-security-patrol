@@ -23,6 +23,13 @@ from dds_security_monitor.monitor_node import (
 
 
 class SensorHubNode(Node):
+    """感測資料融合節點 — 將 /scan + /imu 聚合成 /sensor/status 給下游用。
+
+    所有對外訊息以 sign_alert(channel=CH_SENSOR) 簽章發送；
+    下游模組（mission_manager / system_status）用 verify_alert(
+    expected_channel=CH_SENSOR) 驗章，擋 ROSEC-2026-013 N6 模組冒名攻擊
+    （未授權程式以 __node:=sensor_hub_node 偽冒 + 高頻發未簽章狀態）。
+    """
 
     def __init__(self) -> None:
         super().__init__('sensor_hub_node')

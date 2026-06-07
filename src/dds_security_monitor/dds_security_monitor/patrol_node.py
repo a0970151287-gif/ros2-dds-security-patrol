@@ -76,6 +76,7 @@ if _VENV.exists() and str(_VENV) not in sys.path:
 
 @dataclass
 class Waypoint:
+    """巡邏路徑點（YAML 讀入後的 in-memory 形式）。"""
     name: str
     x:    float
     y:    float
@@ -91,6 +92,20 @@ def _load_yaml(path: Path) -> list[Waypoint]:
 
 
 class SmartPatrolNode(Node):
+    """幾何控制器版的巡邏節點（部署模式 — 與 burger_sac_env 訓練模式擇一）。
+
+    控制流程：
+      讀 /scan + /odom → 算與當前 waypoint 的方位差 → 發 /cmd_vel
+      到達 waypoint → 切下一個（FIFO queue 循環）
+      卡住偵測（3 秒未移動）→ 倒退 + 交替轉向
+
+    安全行為：
+      • 訂閱 /security/alerts，驗章通過 → emergency stop（_cmd_pub 送 0）
+      • resume timer 首次 30s 固定，不 reset on alert（防 ROSEC-2026-011 cascade DoS）
+      • 90s 內 ≥2 次 pause → 進入 120s quiet window 等外部介入
+      • /patrol/goto 帶 HMAC envelope + 座標 ±2.5m 範圍檢查（ROSEC-2026-010 修補）
+      • /patrol/reload service 預設停用 + 5s rate-limit（ROSEC-2026-015 修補）
+    """
 
     def __init__(self) -> None:
         super().__init__('patrol_node')

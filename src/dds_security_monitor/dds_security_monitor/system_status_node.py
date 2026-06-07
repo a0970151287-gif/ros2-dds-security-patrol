@@ -30,6 +30,15 @@ _REAL_IMPOSTOR_COOLDOWN_SEC: float = 60.0   # 真 impostor (持 secret 第二者
 
 
 class SystemStatusNode(Node):
+    """整體健康聚合 — 把所有子系統狀態聚合成 /system/health。
+
+    輸入：/sensor/status + /mission/cmd + /security/alerts（全部驗章）
+    輸出：/system/health (CH_HEALTH 簽章)
+
+    Self-watch（防 N8 冒名）：訂自己發的 /system/health，看到他人 nonce
+    → 透過 log 記錄（**絕不**反射成 CH_ALERTS — 此為 N13 confused-deputy
+    教訓，ROSEC-2026-003）。Rate-limit cooldown 防短時間連續觸發。
+    """
 
     def __init__(self) -> None:
         super().__init__('system_status_node')

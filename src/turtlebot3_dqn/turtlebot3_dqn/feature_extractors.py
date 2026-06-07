@@ -26,6 +26,20 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 
 class LiDARConvExtractor(BaseFeaturesExtractor):
+    """1D-Conv LiDAR encoder（Tier-1 設計：取代上一代 20-bin pooling）。
+
+    輸入 obs (744D) 拆成兩部分：
+      • LiDAR 矩陣：[batch, K=4, 180 beams] → 1D-Conv（捕捉 spatial pattern）
+      • State 向量：[batch, K=4 × 6 state]   → MLP
+
+    兩支分別 encode 後 concat → features_dim=256 餵 TQC actor / critic。
+    LayerNorm 穩定訓練；MaxPool 減 spatial 維度。
+
+    為什麼用 1D-Conv 而非 flatten MLP：
+      LiDAR 180 個方向有 spatial 局部相關性（相鄰 beam 通常落在同一物體），
+      Conv 能學「邊緣」「門框」這類局部 pattern。MLP flatten 後丟掉這資訊。
+    """
+
     def __init__(
         self,
         observation_space: spaces.Box,

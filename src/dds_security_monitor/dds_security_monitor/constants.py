@@ -50,6 +50,7 @@ MAX_EPISODE_STEPS   = 500
 # ── D. 巡邏路徑點 ───────────────────────────────────────────────────────────
 @dataclass(frozen=True)
 class Waypoint:
+    """巡邏路徑點 — frozen dataclass，避免 runtime 被改寫造成位置漂移。"""
     name: str
     x:    float
     y:    float

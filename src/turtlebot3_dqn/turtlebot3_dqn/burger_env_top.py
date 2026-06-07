@@ -125,7 +125,28 @@ def _random_safe_pos(rng) -> tuple[float, float]:
 
 
 class BurgerEnvTop(gym.Env, Node):
-    """Tier-1 SAC/TQC navigation env. Single Gazebo Burger instance."""
+    """TQC 訓練環境（論文等級設計，取代舊版 25D BurgerEnv）。
+
+    觀測（744D）= frame stack K=4 of:
+      • 180 LiDAR beams（raw，非池化；給 1D-Conv encoder 抓 spatial pattern）
+      • 6 state = [dist_to_goal, cos(θ), sin(θ), prev_lin_vel,
+                   prev_ang_vel, curriculum_stage]
+
+    Reward（Ng-Harada-Russell 1999 potential-based shaping）：
+      r = γ·Φ(s') − Φ(s) + smooth_penalty + sparse_waypoint_bonus
+      → 理論保證最佳策略不變，論文可直接引用（取代上一代 ×10 hack）
+
+    Robustness：
+      • Curriculum 1→5 waypoints（stage success ≥ 0.7 → 自動升級）
+      • Domain Randomization：LiDAR noise / random dropout / max-vel jitter
+      • Adversarial training：5% episode 注入 lidar bias / noise burst / action jam
+        → 對應 ROSEC-2026-009 K 攻擊的端到端 robust policy
+
+    安全行為（部署時繼承）：
+      • 訂閱 /security/alerts，驗章通過 → episode 終止 + reward 重置
+      • 啟動掃描 /cmd_vel + /scan publisher，發現未授權即標 alert
+      • scan 異常三重檢查：std<0.01 + frame-repeat + 95% near-max
+    """
 
     metadata = {"render_modes": []}
 

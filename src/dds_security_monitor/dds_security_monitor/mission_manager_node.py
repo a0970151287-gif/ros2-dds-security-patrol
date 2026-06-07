@@ -25,6 +25,14 @@ EMERGENCY_RECOVERY_SEC = 30.0
 
 
 class MissionManagerNode(Node):
+    """任務狀態機 — 依 /sensor/status 與 /security/alerts 切換任務模式。
+
+    輸入：/sensor/status (CH_SENSOR 驗章) + /security/alerts (CH_ALERTS 驗章)
+    輸出：/mission/cmd (CH_MISSION 簽章) 供 system_status_node 聚合健康狀態
+
+    Channel binding 防 ROSEC-2026-014 N7：未授權程式偽冒
+    mission_manager_node 名字發未簽章 /mission/cmd → 下游因驗章失敗拒絕。
+    """
 
     def __init__(self) -> None:
         super().__init__('mission_manager_node')

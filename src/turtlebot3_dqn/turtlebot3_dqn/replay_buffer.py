@@ -1,3 +1,8 @@
+"""舊版 Dueling-DQN 訓練用的 replay buffer（保留作為早期版本歷史）。
+
+TQC 訓練改用 stable-baselines3 內建 ReplayBuffer
+（含 HER 支援與更高效的 numpy backend），本檔目前僅 dqn_agent.py 引用。
+"""
 import random
 import threading
 from collections import deque
@@ -5,6 +10,8 @@ import numpy as np
 
 
 class ReplayBuffer:
+    """Thread-safe FIFO replay buffer（同時用於 train.py 的多 worker 採樣）。"""
+
     def __init__(self, capacity=100000):
         self.buffer = deque(maxlen=capacity)
         self._lock  = threading.Lock()
