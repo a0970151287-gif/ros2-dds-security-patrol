@@ -7,6 +7,23 @@ log/
 src/turtlebot3_dqn/turtlebot3_dqn/models_sac/
 src/turtlebot3_dqn/turtlebot3_dqn/logs_sac/
 src/turtlebot3_dqn/turtlebot3_dqn/logs/
+src/turtlebot3_dqn/turtlebot3_dqn/runs_top/
+src/turtlebot3_dqn/turtlebot3_dqn/runs_sac/
+*.zip
+*.pkl
+*.sha256.hmac
+
+# Python virtualenvs
+.venv/
+dqn_env/
+venv/
+
+# Pytest
+.pytest_cache/
+
+# Test report folder (Chinese name — exclude if present)
+紅隊測試/results/
+紅隊測試/*.log
 
 # Python
 __pycache__/

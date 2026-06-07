@@ -96,15 +96,20 @@ def main():
                 agent.epsilon = max(agent.epsilon, 0.25)
                 print(f'  [探索重置] ep={ep}，ε={agent.epsilon:.2f}')
 
-            # reset 直到起點安全
+            # reset 直到起點安全（5 次都失敗就跳過該 episode）
+            obs = None
             for _ in range(5):
                 try:
                     obs, _ = env.reset(episode=ep)
                 except Exception as e:
                     print(f'  [WARN] reset: {e}')
+                    obs = None
                     continue
                 if float(obs.min()) * 3.5 > 0.30:
                     break
+            if obs is None:
+                print(f'  [ERROR] Ep {ep+1} reset 5 次都失敗，跳過')
+                continue
 
             total_reward = 0.0
             ep_steps     = 0

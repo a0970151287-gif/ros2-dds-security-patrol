@@ -71,8 +71,10 @@ class TurtleBot3Env(gym.Env, Node):
         self._scan:          np.ndarray | None = None
         self._robot_x        = 0.0
         self._robot_y        = 0.0
+        self._odom_received  = False
         self._steps          = 0
         self._security_stop  = False
+        self._scan_failed    = False
         self._pos_history:   list = []
         self._stuck_steps    = 0
         self._visit_count: dict = {}   # 格子 (i,j) → 累計訪問次數（跨集不清）
@@ -91,22 +93,34 @@ class TurtleBot3Env(gym.Env, Node):
     def _odom_cb(self, msg: Odometry):
         self._robot_x = msg.pose.pose.position.x
         self._robot_y = msg.pose.pose.position.y
+        self._odom_received = True
 
     def _alert_cb(self, msg: String):
         if not self._security_stop:
             self._security_stop = True
             self._publish_cmd(0.0, 0.0)
 
-    def _wait_scan(self, timeout=5.0):
+    def _wait_scan(self, timeout=5.0) -> bool:
+        """等到收到新 scan 或 timeout。回傳 True 表示成功收到。"""
         t0 = time.time()
         while self._scan is None and time.time() - t0 < timeout:
             rclpy.spin_once(self, timeout_sec=0.1)
+        return self._scan is not None
+
+    def _wait_odom(self, timeout=2.0) -> bool:
+        """等到收到新 odom（teleport 後的位置）。"""
+        t0 = time.time()
+        while not self._odom_received and time.time() - t0 < timeout:
+            rclpy.spin_once(self, timeout_sec=0.1)
+        return self._odom_received
 
     def reset(self, *, seed=None, options=None, episode=0):
         super().reset(seed=seed)
         self._steps         = 0
         self._security_stop = False
+        self._scan_failed   = False
         self._scan          = None
+        self._odom_received = False
         self._pos_history   = []
         self._stuck_steps   = 0
         # _visit_count 跨集保留，不清除
@@ -136,8 +150,9 @@ class TurtleBot3Env(gym.Env, Node):
                 time.sleep(0.2)
             return False
 
+        # 用 gymnasium 提供的 self.np_random，seed=X 才會 deterministic
         positions = START_POSITIONS.copy()
-        random.shuffle(positions)
+        self.np_random.shuffle(positions)
         for sx, sy in positions:
             _teleport(sx, sy)
             time.sleep(0.5)
@@ -151,6 +166,8 @@ class TurtleBot3Env(gym.Env, Node):
             self._publish_cmd(0.0, 0.0)
             _scan_safe()
 
+        # 確保 odom 已更新（避免用上個 episode 的位置算 reward）
+        self._wait_odom(timeout=2.0)
         self._publish_cmd(0.0, 0.0)
         time.sleep(0.4)
         return self._get_obs(), {}
@@ -166,7 +183,14 @@ class TurtleBot3Env(gym.Env, Node):
         self._publish_cmd(lin, ang)
 
         self._scan = None
-        self._wait_scan()
+        scan_ok = self._wait_scan(timeout=2.0)
+
+        # scan 卡住 → 提早結束 episode，避免 DQN 學到「看不到障礙的世界」
+        if not scan_ok:
+            self.get_logger().error("⚠️ /scan 2s 沒更新，終止 episode")
+            self._publish_cmd(0.0, 0.0)
+            self._scan_failed = True
+            return self._get_obs(), -50.0, True, False, {}
 
         obs    = self._get_obs()
         reward, terminated = self._compute_reward(action)

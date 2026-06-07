@@ -53,4 +53,6 @@ dds_security_monitor:
       - sensor_hub_node
       - mission_manager_node
       - system_status_node
+      # SAC 訓練相關（避免訓練節點被誤判為入侵 → emergency stop → 干擾訓練）
       - dqn_environment
+      - burger_sac_env

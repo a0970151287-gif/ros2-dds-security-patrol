@@ -1,3 +1,5 @@
 {
-    "cmake.sourceDirectory": "/home/jesse/ros2_ws/src/my_nav_dss"
+    "cmake.sourceDirectory": "/home/jesse/ros2_ws/src/my_nav_dss",
+    "python.defaultInterpreterPath": "/home/jesse/dqn_env/bin/python3",
+    "python.terminal.activateEnvironment": true
 }

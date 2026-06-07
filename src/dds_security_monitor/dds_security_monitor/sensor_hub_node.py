@@ -12,6 +12,15 @@ from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import Imu, LaserScan
 from std_msgs.msg import String
 
+# N6 修補：sensor/status 簽章後才發 — receiver 端不認簽章的訊息就拒絕，
+# 攻擊者偽裝 sensor_hub_node 直接 publish raw 字串無法通過驗證。
+from dds_security_monitor.monitor_node import (
+    CH_SENSOR,
+    _load_alert_secret,
+    secret_fingerprint,
+    sign_alert,
+)
+
 
 class SensorHubNode(Node):
 
@@ -31,9 +40,13 @@ class SensorHubNode(Node):
         self._min_range: float | None = None
         self._linear_acc: float = 0.0
         self._imu_ready: bool = False
+        self._secret = _load_alert_secret()
 
         self.create_timer(1.0, self._publish_status)
-        self.get_logger().info('📡 感測器集線器啟動 — 訂閱 /scan + /imu')
+        self.get_logger().info(
+            f'📡 感測器集線器啟動 — 訂閱 /scan + /imu  '
+            f'secret fingerprint={secret_fingerprint(self._secret)}'
+        )
 
     def _on_scan(self, msg: LaserScan) -> None:
         valid = [r for r in msg.ranges
@@ -49,21 +62,20 @@ class SensorHubNode(Node):
     def _publish_status(self) -> None:
         if self._min_range is None:
             status = '[感測器狀態] 等待 LiDAR 資料...'
-            msg = String()
-            msg.data = status
-            self._status_pub.publish(msg)
-            return
-        obstacle = self._min_range < 0.35
-        status = (
-            f'[感測器狀態] '
-            f'最近障礙物: {self._min_range:.2f}m | '
-            f'{"⚠️ 危險" if obstacle else "✅ 安全"} | '
-            f'水平加速度: {self._linear_acc:.2f}m/s²'
-        )
+        else:
+            obstacle = self._min_range < 0.35
+            status = (
+                f'[感測器狀態] '
+                f'最近障礙物: {self._min_range:.2f}m | '
+                f'{"⚠️ 危險" if obstacle else "✅ 安全"} | '
+                f'水平加速度: {self._linear_acc:.2f}m/s²'
+            )
         msg = String()
-        msg.data = status
+        # N6 修補：簽章 + channel=sensor/status，攻擊者 spoof 字串無 secret 不能簽
+        msg.data = sign_alert(status, self._secret, channel=CH_SENSOR)
         self._status_pub.publish(msg)
-        self.get_logger().info(status)
+        if self._min_range is not None:
+            self.get_logger().info(status)
 
 
 def main(args=None) -> None:

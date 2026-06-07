@@ -15,9 +15,17 @@ source ~/dqn_env/bin/activate
 # GPU 版（RTX 5070 / CUDA）
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 pip install gymnasium matplotlib
+# RL 訓練套件（SAC + TQC + 自訂 feature extractor）
+pip install "stable-baselines3>=2.8.0" "sb3-contrib>=2.8.0" tensorboard tqdm
 
-# 確認 GPU
-python3 -c "import torch; print('CUDA:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0))"
+# 確認 GPU + RL 套件
+python3 -c "
+import torch, stable_baselines3, sb3_contrib
+print('CUDA   :', torch.cuda.is_available())
+print('GPU    :', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')
+print('SB3    :', stable_baselines3.__version__)
+print('sb3_ctr:', sb3_contrib.__version__, '(TQC available)')
+"
 
 # ── Build ROS2 套件 ──────────────────────────────────────────
 cd ~/ros2_ws

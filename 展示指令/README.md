@@ -48,37 +48,49 @@ source ~/.config/dds-monitor/credentials && source ~/dqn_env/bin/activate && sou
 | 項目 | 路徑 |
 |------|------|
 | DDS 安全節點 | `~/ros2_ws/src/dds_security_monitor/` |
-| DQN 訓練程式 | `~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/` |
-| DQN 訓練曲線 | `~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/logs/training_curve.png` |
-| DQN 模型權重 | `~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/models/` |
+| RL 訓練程式 | `~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/` |
+| TQC 訓練腳本 | `~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/train_top.sh` |
+| TQC 評估腳本 | `~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/eval_top.py` |
+| TQC 模型 / log | `~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/runs_top/` |
 | SROS2 Keystore | `~/ros2_security_keystore/` |
 | Governance 設定 | `~/ros2_security_keystore/enclaves/governance.xml` |
 | 系統設定檔 | `~/ros2_ws/src/dds_security_monitor/config/config.yaml` |
 | 憑證設定 | `~/.config/dds-monitor/credentials` |
 | 靜態架構圖 | `~/ros2_ws/工具腳本/topic_architecture.png` |
 
-## SAC 訓練架構（最新）
+## TQC 訓練架構（Tier-1 頂尖版）
 
-**演算法：** Soft Actor-Critic (SAC) — Stable Baselines3 v2.8
+**演算法：** Truncated Quantile Critics — sb3-contrib v2.8（SAC 後繼者）
+- `top_quantiles_to_drop_per_net=2` 抑制 Q over-estimation
 
-**優勢：** 連續動作空間、最大熵探索（自動平衡探索/利用，天生防轉圈）
+**Observation（744 維 = 4 幀 × 186）：**
+180-beam raw LiDAR + 6 state（dist_norm / cos / sin / prev_lin / prev_ang / time_norm）
 
-**Observation（376 維，4 幀疊加）：**
-90 點 LiDAR（正規化）+ goal_dist + goal_angle + lin_vel + ang_vel = 94 × 4
+**Policy / Critic 網路：**
+LiDARConvExtractor（Conv1D(32,k=5) → Conv1D(64,k=3) → AdaptiveAvgPool(8)
+→ LayerNorm → Linear(192)）+ state MLP(64) + fusion(256) + MLP[256, 256]
 
-**Action（連續）：** [linear_vel, angular_vel] 映射到 [0, 0.25] m/s 和 [-1.5, 1.5] rad/s
+**Action（連續）：** [-1, 1]² → lin ∈ [0, 0.22] m/s，ang ∈ [-1.5, 1.5] rad/s
 
-**Reward（7 個組件）：**
-progress + yaw + safety_penalty + smooth_penalty + spin_penalty + slow_penalty + collision/goal
+**Reward（potential-based shaping，理論最優保證）：**
+γ·Φ(s') − Φ(s) − λ‖Δa‖² − 0.005   ＋   {碰撞 -100 / 到達 +100}
 
-**Domain Randomization：** 每集隨機起點 + 隨機目標（自動避開 9 個柱子）
+**Domain Randomization（每集隨機）：**
+lidar 雜訊 σ ∈ [0, 0.02] / dropout ∈ [0, 5%] / max_lin ∈ [0.18, 0.22] / max_ang ∈ [1.2, 1.8]
 
-**目標：3,000,000 timesteps，每 50,000 steps 自動存 checkpoint**
+**對抗訓練（5% episode 機率）：**
+subtle lidar bias / noise burst / prev_action jam — 對應 DDS 攻擊 K 的端到端 robust policy
+
+**Curriculum：** 1 → 5 waypoints 自適應升級（stage success ≥ 0.7 才升）
+
+**目標：** 2,000,000 timesteps（預期 1.0–1.5M 收，SPL plateau 即可停）
+
+**Best 模型：** 以 SPL（Habitat 標準）而非 reward 為判準，存檔即 HMAC 簽章
 
 **TensorBoard：**
 ```bash
 source ~/dqn_env/bin/activate
-tensorboard --logdir ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/logs_sac/tensorboard
+tensorboard --logdir ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/runs_top/logs/tensorboard
 ```
 
 ## SROS2 防護三層架構

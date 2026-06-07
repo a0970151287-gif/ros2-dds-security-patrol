@@ -23,11 +23,12 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'monitor_node       = dds_security_monitor.monitor_node:main',
-            'patrol_node        = dds_security_monitor.patrol_node:main',
-            'sensor_hub_node    = dds_security_monitor.sensor_hub_node:main',
-            'mission_manager    = dds_security_monitor.mission_manager_node:main',
-            'system_status_node = dds_security_monitor.system_status_node:main',
+            'monitor_node              = dds_security_monitor.monitor_node:main',
+            'patrol_node               = dds_security_monitor.patrol_node:main',
+            'sensor_hub_node           = dds_security_monitor.sensor_hub_node:main',
+            'mission_manager           = dds_security_monitor.mission_manager_node:main',
+            'system_status_node        = dds_security_monitor.system_status_node:main',
+            'intelligent_defense_node  = dds_security_monitor.intelligent_defense_node:main',
         ],
     },
 )
