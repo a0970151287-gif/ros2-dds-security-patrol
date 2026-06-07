@@ -18,6 +18,16 @@ src/turtlebot3_dqn/turtlebot3_dqn/runs_sac/
 dqn_env/
 venv/
 
+# Secrets (defense-in-depth: actual secrets live in ~/.config/dds-monitor/,
+# which is outside the repo tree anyway, but block by name pattern just in case)
+*alert_secret*
+*line_token*
+*.pem
+*.key
+credentials.save
+.env
+.env.*
+
 # Pytest
 .pytest_cache/
 
