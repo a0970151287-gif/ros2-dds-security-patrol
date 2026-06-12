@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 
 import hashlib
+import os
 import rclpy
 from sb3_contrib import TQC
 from stable_baselines3.common.callbacks import CallbackList, CheckpointCallback
@@ -217,15 +218,26 @@ def main() -> None:
     except KeyboardInterrupt:
         print("\n⏸ Interrupted — saving snapshot…")
     finally:
-        def _save_model() -> None:
-            model.save(str(LATEST))
+        # Atomic save: write to .tmp → sign → rename both files together.
+        # Prevents the prior "content updated but sig stale" failure mode
+        # when Ctrl+C / OOM kills the process between save and sign.
+        def _atomic_save(write_fn, final_path) -> None:
+            from pathlib import Path
+            final = Path(final_path)
+            tmp = final.with_suffix(final.suffix + ".tmp")
+            tmp_sig = tmp.with_suffix(tmp.suffix + ".sha256.hmac")
+            final_sig = final.with_suffix(final.suffix + ".sha256.hmac")
+            write_fn(str(tmp))
             if _SEC_AVAILABLE and secret:
-                sign_file(LATEST.with_suffix(".zip"), secret)
+                sign_file(tmp, secret)
+                os.replace(tmp_sig, final_sig)   # atomic
+            os.replace(tmp, final)               # atomic
+
+        def _save_model() -> None:
+            _atomic_save(model.save, LATEST.with_suffix(".zip"))
 
         def _save_buffer() -> None:
-            model.save_replay_buffer(str(BUFFER))
-            if _SEC_AVAILABLE and secret:
-                sign_file(BUFFER, secret)
+            _atomic_save(model.save_replay_buffer, BUFFER)
 
         for label, action in [
             ("model",  _save_model),

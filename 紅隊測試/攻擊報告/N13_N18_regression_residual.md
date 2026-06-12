@@ -10,7 +10,7 @@
 
 ### N13（self-watch 反射放大 + latch 致盲）— 已修補
 
-拿原版 [N13_health_reflection.py](N13_health_reflection.py) 打補丁後 stack（system_status + patrol）：
+拿原版 [N13_health_reflection.py](../PoC腳本/N13_health_reflection.py) 打補丁後 stack（system_status + patrol）：
 
 | 指標 | 修補前 | 修補後 | 結論 |
 |---|---|---|---|
@@ -40,7 +40,7 @@
 
 ### N18 — `_alerted_nodes` 無上限成長 → 記憶體耗盡 DoS（中）
 
-[monitor_node.py:502-514](../src/dds_security_monitor/dds_security_monitor/monitor_node.py#L502-L514)：
+[monitor_node.py:502-514](../../src/dds_security_monitor/dds_security_monitor/monitor_node.py#L502-L514)：
 
 ```python
 with self._lock:
@@ -66,7 +66,7 @@ if self._alert_on_exit:                        # ← 預設 False (config: alert
 poll_interval（預設 5s）+ 節點啟動成本限制，是「慢性」DoS，非瞬殺。且 monitor 死後
 IDS D5 心跳 watchdog 會 fire（這部分防禦仍在）。
 
-**量化驗證**（[N18_memory_exhaustion.py](N18_memory_exhaustion.py) — 直接驅動真實 `_check_graph()`）：
+**量化驗證**（[N18_memory_exhaustion.py](../PoC腳本/N18_memory_exhaustion.py) — 直接驅動真實 `_check_graph()`）：
 
 | poll | `_alerted_nodes` | 記憶體成長 |
 |---|---|---|
@@ -86,7 +86,7 @@ LRU evict；或對「短時間大量唯一名字」本身視為攻擊訊號（ra
 
 ### N17 — alert dilution（needle-in-haystack）（低）
 
-[monitor_node.py:563-572](../src/dds_security_monitor/dds_security_monitor/monitor_node.py#L563-L572)：
+[monitor_node.py:563-572](../../src/dds_security_monitor/dds_security_monitor/monitor_node.py#L563-L572)：
 
 ```python
 names = [p[1] for p in pending]

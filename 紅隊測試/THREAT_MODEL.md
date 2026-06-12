@@ -137,13 +137,13 @@ ROS2 graph           DDS discovery       →   監控偵測
 
 | 驗證手段 | 涵蓋範圍 | 位置 |
 |---|---|---|
-| 紅隊攻擊腳本 (原 10) | A/B/C/D/H/I/J/K/L/M | [12_紅隊攻擊測試.sh](12_紅隊攻擊測試.sh) |
+| 紅隊攻擊腳本 (原 10) | A/B/C/D/H/I/J/K/L/M | [12_紅隊攻擊測試.sh](PoC腳本/12_紅隊攻擊測試.sh) |
 | 紅隊報告 (原 10) | 攻擊原理 + 漏洞 + 修補 | [12_紅隊攻擊報告.md](12_紅隊攻擊報告.md) |
-| 紅隊第二輪攻擊 (新 3) | N1 heartbeat replay / N2 regex 後門 / N3 alert replay DoS | [run_N_attacks.sh](run_N_attacks.sh) |
-| 紅隊第二輪報告 | 攻擊原理 + 共同根因 + 修補建議 | [N_新攻擊報告.md](N_新攻擊報告.md) |
-| 紅隊第三輪攻擊 (新 4) | N4 cross-channel confusion / N5 baseline poison / N6 sensor spoof / N7 mission spoof | [run_N4_attack.sh](run_N4_attack.sh) + N5-N7 PoC |
-| 紅隊第三輪報告 | channel binding 缺失 + 內部 topic 全無簽章 | [N4_新攻擊報告.md](N4_新攻擊報告.md), [N5_新攻擊報告.md](N5_新攻擊報告.md), [N6_N7_新攻擊報告.md](N6_N7_新攻擊報告.md) |
-| 藍方主動 PoC (N8/N9) | /system/health spoof + cmd_vel race during emergency | [N8_system_health_spoof.py](N8_system_health_spoof.py), [N9_cmd_vel_race.py](N9_cmd_vel_race.py) |
+| 紅隊第二輪攻擊 (新 3) | N1 heartbeat replay / N2 regex 後門 / N3 alert replay DoS | [run_N_attacks.sh](PoC腳本/run_N_attacks.sh) |
+| 紅隊第二輪報告 | 攻擊原理 + 共同根因 + 修補建議 | [N_新攻擊報告.md](攻擊報告/N_新攻擊報告.md) |
+| 紅隊第三輪攻擊 (新 4) | N4 cross-channel confusion / N5 baseline poison / N6 sensor spoof / N7 mission spoof | [run_N4_attack.sh](PoC腳本/run_N4_attack.sh) + N5-N7 PoC |
+| 紅隊第三輪報告 | channel binding 缺失 + 內部 topic 全無簽章 | [N4_新攻擊報告.md](攻擊報告/N4_新攻擊報告.md), [N5_新攻擊報告.md](攻擊報告/N5_新攻擊報告.md), [N6_N7_新攻擊報告.md](攻擊報告/N6_N7_新攻擊報告.md) |
+| 藍方主動 PoC (N8/N9) | /system/health spoof + cmd_vel race during emergency | [N8_system_health_spoof.py](PoC腳本/N8_system_health_spoof.py), [N9_cmd_vel_race.py](PoC腳本/N9_cmd_vel_race.py) |
 | Unit test (pytest) | HMAC 驗章 / 座標檢查 / scan std | `tests/` |
 | Regression | 修補後重跑紅隊腳本 | 同上 |
 

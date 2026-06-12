@@ -5,7 +5,7 @@
 set +u
 DOMAIN_ID=99
 ROS2_WS=$HOME/ros2_ws
-RT=$ROS2_WS/紅隊測試
+RT=$ROS2_WS/紅隊測試/PoC腳本   # PoC .py 已歸入 PoC腳本/ 子資料夾
 LOG=/tmp/N_attacks
 mkdir -p $LOG
 

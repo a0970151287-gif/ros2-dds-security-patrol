@@ -35,13 +35,15 @@ tests/
   conftest.py
 pytest.ini
 
-紅隊測試/
+紅隊測試/                               （核心文件留根目錄，腳本/報告各自歸資料夾）
   漏洞分析報告.md                       ★ 主報告：18 漏洞 CVSS + BIA + 合規對應
   系統威脅分析.md                       威脅分析（軟體模組角度）
   ARCHITECTURE.md                      系統架構 + 介面清單
+  N1-N20_完整目錄.md                   全攻擊目錄
   THREAT_MODEL.md                      早期版（已被前兩份取代，僅供 CIA 表參考）
-  N1~N24*.py                           紅隊 PoC 程式
-  N*_新攻擊報告.md                     單次紅隊輪次報告
+  攻擊總表_成功與失敗.md / 白話講解_講給外行聽.md
+  PoC腳本/                             紅隊 PoC 程式（N1~N24*.py + run_*.sh）
+  攻擊報告/                            單次紅隊輪次報告（N*_新攻擊報告.md）
 
 展示指令/
   *.sh                                 操作示範指令筆記
@@ -132,7 +134,7 @@ ros2 run dds_security_monitor monitor_node &
 ros2 run dds_security_monitor intelligent_defense_node &
 
 # Terminal C: 跑紅隊 PoC
-cd 紅隊測試
+cd 紅隊測試/PoC腳本
 python3 N1_heartbeat_replay.py
 python3 N3_alert_replay_dos.py
 python3 N13_health_reflection.py

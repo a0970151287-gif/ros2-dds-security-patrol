@@ -5,15 +5,17 @@
 | 檔案 | 內容 | 用途 |
 |------|------|------|
 | `00_重置模擬器.sh` | 清除 log / 傳送機器人 / 完整重開 | 機器人卡住或黑屏 |
-| `01_啟動系統.sh` | Gazebo + 6 個安全節點（帶憑證啟動）| 開場 |
+| `01_啟動系統.sh` | Gazebo + 安全節點（monitor + 行為 IDS 等）| 開場 |
 | `02_系統驗證截圖.sh` | node list / rqt_graph / topic info | 正常運作截圖 |
-| `03_加密證明.sh` | tshark 封包 / governance.xml / 簽名驗證 | DDS 加密展示 |
-| `04_攻擊展示.sh` | 身份驗證 / intruder_node / 越權注入 | 三層攻擊手法 |
-| `05_防禦回應截圖.sh` | monitor_node / patrol_node 30 秒恢復 / LINE 警報 | 防禦回應截圖 |
-| `06_SROS2設定查看.sh` | 三層防護設定查看（憑證/加密/存取控制）| 安全設定展示 |
+| `03_加密證明.sh` | tshark 封包 / governance.xml / HMAC 簽章驗證 | DDS + 應用層簽章展示 |
+| `04_攻擊展示.sh` | 紅隊 N1–N24（replay / spoof / channel / hijack）| 攻擊手法 |
+| `05_防禦回應截圖.sh` | monitor / IDS / patrol 30 秒恢復 / LINE 警報 | 防禦回應截圖 |
+| `06_SROS2設定查看.sh` | 三層防護設定查看（Permissive 模式）| 安全設定展示 |
 | `07_最小權限驗證.sh` | permissions.xml 各節點 Topic 權限對比 | 最小權限原則 |
-| `08_DQN訓練.sh` | 訓練 / 曲線 / 重置 / GPU 確認 | DQN 強化學習 |
+| `08_SAC訓練.sh` | TQC 訓練 / SPL 曲線 / eval / GPU 確認 | **TQC** 強化學習訓練 |
 | `09_環境設定.sh` | dqn_env / PyTorch GPU / colcon build | 環境安裝 |
+| `10_LLM模糊測試.sh` | （早期 LLM Fuzzer；現主力為紅隊 N1–N24）| 歷史工具，見 `紅隊測試/` |
+| `11_更新巡邏點.sh` | /patrol/goto（簽章）更新巡邏目標 | 動態巡邏點 |
 
 ## 快速重開系統
 
@@ -93,10 +95,12 @@ source ~/dqn_env/bin/activate
 tensorboard --logdir ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/runs_top/logs/tensorboard
 ```
 
-## SROS2 防護三層架構
+## 防護三層架構（實際運作）
 
-| 層 | 技術 | 效果 |
-|----|------|------|
-| 身份驗證 | X.509 憑證（9 個節點各自簽發）| 沒有憑證的節點無法加入 |
-| 加密傳輸 | AES-256 (data_protection_kind: ENCRYPT) | 竊聽封包看不到內容 |
-| 存取控制 | permissions.xml（最小權限原則）| 有憑證但無權限也無法 pub/sub |
+| 層 | 技術 | 效果 | 狀態 |
+|----|------|------|------|
+| **L1 DDS（SROS2）** | X.509 憑證 + governance.xml + permissions.xml | 憑證/加密/最小權限 keystore 已建 | ⚠️ **Permissive 模式 — DDS 層目前不強制擋**；Enforce 列入未來工作 |
+| **L2 應用層（主防線）** | HMAC envelope v3（channel+ts+nonce）+ ReplayCache + 檔案簽章 | 防偽造 / 重放 / 跨頻道 / pickle RCE | ✅ 主要防禦 |
+| **L3 行為 IDS** | intelligent_defense_node D1–D6 + cascade 斷路器 | 攔 cmd_vel/scan/odom 注入 + 看門狗 | ✅ 最後防線 |
+
+> ⚠️ **介紹重點**：因 SROS2 是 Permissive 模式，**真正擋住攻擊的是 L2 應用層簽章 + L3 行為 IDS**，不是 DDS 層。紅隊 N1–N24 驗證 18 漏洞全擋下 / 緩解。不要說「沒有憑證就無法加入」——那是 Enforce 模式才成立。

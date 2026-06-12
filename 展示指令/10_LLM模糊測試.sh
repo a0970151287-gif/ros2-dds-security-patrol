@@ -1,6 +1,12 @@
 #!/bin/bash
 # ============================================================
-# 10  LLM 智慧模糊測試系統
+# 10  LLM 智慧模糊測試系統（早期工具，輔助）
+#
+#  ⚠️ 定位說明：本系統資安驗證的「主力」是紅隊 N1–N24 PoC
+#     （見 ~/ros2_ws/紅隊測試/，18 漏洞 CVSS + pytest 24 全綠）。
+#     這支 LLM Fuzzer 是早期做的「通用 C 程式模糊測試」展示工具，
+#     對的是獨立靶機（~/llm_fuzzer），不是直接打 ROS2 系統。
+#     介紹時：主講紅隊 N1–N24 + 行為 IDS，LLM Fuzzer 當輔助佐證即可。
 #
 #  架構：MutationAgent(GPT-4o-mini) → asyncio.Queue → 4×Consumer
 #        → Docker 沙箱(ASan) → TriageAgent(GPT-4o) → SQLite

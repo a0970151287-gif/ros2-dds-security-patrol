@@ -85,7 +85,7 @@ executor 每個 spin 只處理 ~10 筆 verify 後就輪到 timer。verify 負載
 N14 主動把 monitor 所有安全參數設 `read_only=True`（防 `/set_parameters` 劫持
 whitelist）。但**只鎖了 monitor**：
 
-[patrol_node.py:98,118](../src/dds_security_monitor/dds_security_monitor/patrol_node.py#L98)：
+[patrol_node.py:98,118](../../src/dds_security_monitor/dds_security_monitor/patrol_node.py#L98)：
 ```python
 self.declare_parameter('waypoints_file', ...)        # ← 無 read_only
 self.declare_parameter('enable_reload_service', False) # ← 無 read_only

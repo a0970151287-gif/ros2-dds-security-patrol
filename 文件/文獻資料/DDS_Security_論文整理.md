@@ -109,11 +109,15 @@
 
 ## 本專題目前對應的位置
 
-- ✅ **存取控制**（CCS 2022）：permissions.xml 最小權限原則
-- ✅ **加密傳輸**（Trend Micro 2022）：governance.xml AES-256
-- ✅ **節點圖偵測**（ROSPaCe 2024）：monitor_node 白名單
+- ✅ **存取控制**（CCS 2022）：SROS2 permissions.xml（Permissive 模式；Enforce 列入未來工作）
+- ✅ **加密傳輸**（Trend Micro 2022）：governance.xml
+- ✅ **節點圖偵測**（ROSPaCe 2024）：monitor_node 白名單 + baseline+grace
 - ✅ **網路層監控**（IROS 2022）：Zeek 監控 UDP 7400-7500
+- ✅ **應用層訊息完整性**（本專題主要貢獻）：HMAC envelope v3（channel + ts + nonce）+ ReplayCache，防偽造/重放/跨頻道
+- ✅ **行為層異常偵測**（對應 ROSPaCe 的 ROS2 服務層特徵）：intelligent_defense_node D1–D6 + cascade 斷路器
 - ❓ **封包層偵測**（HCRL 2023）：RTPS 封包分析 — **尚未實作，可作為深化方向**
+
+> 說明：因 SROS2 採 Permissive 模式（DDS 層不強制擋），本專題的**主要防線是應用層 HMAC 簽章 + 行為 IDS**，而非 DDS 層存取控制。這也是與上述論文最大的差異點：在不依賴 DDS Enforce 的前提下，用應用層補回身份驗證與 anti-replay。
 
 ---
 
