@@ -397,8 +397,8 @@ class DDSSecurityMonitor(Node):
             'ros_gz_bridge', 'ros_gz_image', 'ros_gz_point_cloud', 'ros_gz_sim',
             'gazebo', 'gzserver', 'gzclient',
             'sensor_hub_node', 'mission_manager_node', 'system_status_node',
-            # SAC 訓練相關（避免訓練節點被誤判為入侵 → 觸發 emergency stop → 干擾訓練）
-            'burger_sac_env', 'dqn_environment',
+            # TQC 訓練相關（避免訓練節點被誤判為入侵 → 觸發 emergency stop → 干擾訓練）
+            'burger_env_top',
             'intelligent_defense_node',
         ], ro)
 

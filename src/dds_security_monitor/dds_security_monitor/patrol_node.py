@@ -92,7 +92,7 @@ def _load_yaml(path: Path) -> list[Waypoint]:
 
 
 class SmartPatrolNode(Node):
-    """幾何控制器版的巡邏節點（部署模式 — 與 burger_sac_env 訓練模式擇一）。
+    """幾何控制器版的巡邏節點（部署模式 — 與 burger_env_top 訓練模式擇一）。
 
     控制流程：
       讀 /scan + /odom → 算與當前 waypoint 的方位差 → 發 /cmd_vel

@@ -6,16 +6,16 @@
 # ── 每個終端都要先執行的 source ─────────────────────────────
 source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
 
-# ── DQN 訓練終端 ────────────────────────────────────────────
+# ── TQC 訓練終端 ────────────────────────────────────────────
 source ~/.config/dds-monitor/credentials && source ~/dqn_env/bin/activate && source ~/ros2_ws/install/setup.bash
 
-# ── Python 虛擬環境（DQN 訓練專用，只需建一次）────────────
+# ── Python 虛擬環境（TQC 訓練專用，只需建一次）────────────
 python3 -m venv ~/dqn_env --system-site-packages
 source ~/dqn_env/bin/activate
 # GPU 版（RTX 5070 / CUDA）
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
 pip install gymnasium matplotlib
-# RL 訓練套件（SAC + TQC + 自訂 feature extractor）
+# RL 訓練套件（TQC / sb3-contrib + 自訂 feature extractor）
 pip install "stable-baselines3>=2.8.0" "sb3-contrib>=2.8.0" tensorboard tqdm
 
 # 確認 GPU + RL 套件

@@ -27,7 +27,7 @@
 │  ┌───────────────────────────┐     ┌────────────────────────────────────┐ │
 │  │  模組 A：TQC 智慧巡航      │     │  模組 B：DDS 資安監控              │ │
 │  │  patrol_node /            │◀───▶│  monitor_node                     │ │
-│  │  burger_sac_env           │     │                                    │ │
+│  │  burger_env_top           │     │                                    │ │
 │  │  · 巡邏點管理（5 點循環）  │     │  · 未知節點偵測（baseline+grace）    │ │
 │  │  · TQC 推論 deterministic │     │  · 白名單 11 節點 + read_only param │ │
 │  │  · obs[744] 4 幀疊加      │     │  · HMAC envelope v3 簽章 / 緊急停止  │ │
@@ -267,7 +267,7 @@ WhitelistManager ──> NodeScanner ──> AnomalyDetector
 | **外部** | Gazebo Garden | /scan /imu /odom，非本專題開發 |
 | **外部** | 紅隊測試 Lab | N1–N24 PoC / pytest / CVSS，離線驗證 |
 | **外部** | SROS2（Permissive） | DDS 層；Enforce migration 列入 90 天計畫 |
-| **內部** | patrol_node / burger_sac_env | TQC 推論 + 巡邏點管理 |
+| **內部** | patrol_node / burger_env_top | TQC 推論 + 巡邏點管理 |
 | **內部** | monitor_node | 白名單偵測 + HMAC 簽章警報 + 緊急停止 |
 | **內部** | MissionManager / SystemStatus / SensorHub | 任務整合層（channel binding 驗章） |
 | **內部** | intelligent_defense_node | 行為 IDS（D1–D6）+ cascade 斷路器 |

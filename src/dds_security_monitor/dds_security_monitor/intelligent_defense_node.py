@@ -220,11 +220,11 @@ class IntelligentDefenseNode(Node):
         `patrol_node` 或 `teleop_keyboard` 即可通過。改為「同時 publisher 數量」檢測：
             - /cmd_vel 同時 ≥ 2 個（扣掉 dds_security_monitor emergency stop 用的）→ hijack
             - /scan 同時 ≥ 2 個 → spoof
-        合法狀況下 robot 只能有 1 個 cmd 來源（patrol_node OR burger_sac_env OR teleop，三選一）
+        合法狀況下 robot 只能有 1 個 cmd 來源（patrol_node OR burger_env_top OR teleop，三選一）
         2 個同時存在 = 雙重控制 = 攻擊。
         Name 白名單仍保留為次要檢查（catch 攻擊者用了未列名的 process）。
         """
-        CMD_ALLOWED  = {"burger_sac_env", "teleop_keyboard", "patrol_node",
+        CMD_ALLOWED  = {"burger_env_top", "teleop_keyboard", "patrol_node",
                         "dds_security_monitor", "intelligent_defense_node"}
         SCAN_ALLOWED = {"ros_gz_bridge", "parameter_bridge",
                         "hokuyo_driver", "rplidar_node", "ldlidar_node", "urg_node"}

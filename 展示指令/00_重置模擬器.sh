@@ -24,7 +24,7 @@ GZ_IP=127.0.0.1 gz service -s /world/default/set_pose \
   --timeout 3000 \
   --req 'name: "burger", position: {x: 0.0, y: 0.0, z: 0.01}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}'
 
-# DQN 訓練用：回 (-2, -0.5)（空曠安全位置）
+# TQC 訓練用：回 (-2, -0.5)（空曠安全位置）
 GZ_IP=127.0.0.1 gz service -s /world/default/set_pose \
   --reqtype gz.msgs.Pose \
   --reptype gz.msgs.Boolean \
@@ -33,7 +33,7 @@ GZ_IP=127.0.0.1 gz service -s /world/default/set_pose \
 
 # ── 方法 2：完整重開（關掉所有節點 + Gazebo）────────────────
 pkill -f "ros2 run dds_security_monitor"
-pkill -f "train.py"
+pkill -f "train_top.py"
 pkill -9 -f "gz sim"
 pkill -f "parameter_bridge"
 pkill -f "robot_state_publisher"

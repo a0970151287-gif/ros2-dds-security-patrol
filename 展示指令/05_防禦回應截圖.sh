@@ -23,8 +23,12 @@ ros2 topic echo /system/health --once
 
 # 截圖 F：LINE 手機警報通知（手動截手機畫面）
 
-# 截圖 G：越權注入被擋（存取控制）
-# 執行後應看到 rt/sensor/status topic not found in allow rule
+# 截圖 G：Permissive 模式真相 —— DDS 層「不擋」越權發布
+# ⚠️ 本系統 SROS2 為 Permissive：下面這筆偽造 /sensor/status 會「發布成功」，
+#    不會出現 Enforce 模式才有的 "topic not found in allow rule"。
+#    這正是主防線在應用層的原因：偽造的明文 /sensor/status 由 mission_manager 行為反應，
+#    而簽章頻道 /security/alerts 的偽造則被 HMAC envelope v3 驗章擋下。
+#    要 DDS 層直接擋發布，需切 SROS2 Enforce 模式（未來工作）。
 source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
 export ROS_SECURITY_ENCLAVE_OVERRIDE=/patrol_node
 ros2 topic pub /sensor/status std_msgs/msg/String "data: '危險'" --rate 5

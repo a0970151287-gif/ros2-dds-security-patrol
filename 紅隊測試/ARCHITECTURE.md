@@ -20,7 +20,7 @@
 │                          ║   訓練/部署分支              ║                   │
 │                          ╚════════════════════════════╝                   │
 │  ┌────────────────────┐                  ┌────────────────────┐           │
-│  │  burger_sac_env    │  訓練時          │  patrol_node       │  部署時   │
+│  │  burger_env_top    │  訓練時          │  patrol_node       │  部署時   │
 │  │  (SAC trainer)     │                  │  (幾何控制器)       │           │
 │  │                    │                  │                    │           │
 │  │  sub: /scan /odom  │                  │  sub: /scan /odom  │           │
@@ -194,9 +194,9 @@ $ export TURTLEBOT3_MODEL=burger
 
 | 介面 | 訊息/服務型別 | 合法發布模組 | 訂閱/呼叫模組 | 簽章 | 威脅 |
 |---|---|---|---|---|---|
-| `/cmd_vel` | `Twist` | `patrol_node` / `burger_sac_env` / `ros_gz_bridge` | `ros_gz_bridge` | ❌ | T-01 |
-| `/scan` | `LaserScan` | `ros_gz_bridge` | `patrol_node` / `burger_sac_env` / `sensor_hub_node` / `intelligent_defense_node` | ❌ | T-02 |
-| `/odom` | `Odometry` | `ros_gz_bridge` | `patrol_node` / `burger_sac_env` / `intelligent_defense_node` | ❌ | T-03 |
+| `/cmd_vel` | `Twist` | `patrol_node` / `burger_env_top` / `ros_gz_bridge` | `ros_gz_bridge` | ❌ | T-01 |
+| `/scan` | `LaserScan` | `ros_gz_bridge` | `patrol_node` / `burger_env_top` / `sensor_hub_node` / `intelligent_defense_node` | ❌ | T-02 |
+| `/odom` | `Odometry` | `ros_gz_bridge` | `patrol_node` / `burger_env_top` / `intelligent_defense_node` | ❌ | T-03 |
 | `/imu` | `Imu` | `ros_gz_bridge` | `sensor_hub_node` | ❌ | T-02 |
 | `/security/alerts` | `String` (envelope v3) | `monitor_node` / `intelligent_defense_node` / `system_status_node` | 全部下游 | ✅ HMAC+ts+nonce+channel | T-04 |
 | `/security/heartbeat` | `String` (envelope v3) | `monitor_node` | `intelligent_defense_node` | ✅ HMAC+ts+nonce+channel | T-05 |
@@ -209,11 +209,11 @@ $ export TURTLEBOT3_MODEL=burger
 | ROS graph | DDS discovery | 任意註冊的 node | `monitor_node` poll | baseline+grace 機制 | T-12 |
 | `~/.config/dds-monitor/alert_secret` | 檔案 (HMAC 密鑰) | （安裝時寫入） | 全部簽章模組 read | chmod 600 (out-of-scope) | T-13 |
 | `~/.config/dds-monitor/line_token` | 檔案 (LINE token) | （安裝時寫入） | `monitor_node` read | chmod 600 (out-of-scope) | T-13 |
-| `runs_top/models/*.zip` | 檔案 (模型權重) | `burger_sac_env` train | `burger_sac_env` load | ✅ `.sha256.hmac` | T-15 |
-| `runs_top/models/*.pkl` | 檔案 (replay buffer) | `burger_sac_env` train | `burger_sac_env` load | ✅ `.sha256.hmac` | T-14 |
+| `runs_top/models/*.zip` | 檔案 (模型權重) | `burger_env_top` train | `burger_env_top` load | ✅ `.sha256.hmac` | T-15 |
+| `runs_top/models/*.pkl` | 檔案 (replay buffer) | `burger_env_top` train | `burger_env_top` load | ✅ `.sha256.hmac` | T-14 |
 | `/proc/<pid>/environ` | Linux /proc | （行程啟動時） | （任何 same-user read） | 移除 export | T-16 |
 | LINE 推播管線 | HTTPS POST | `monitor_node` | LINE Notify endpoint | 30s batch + leading-edge | T-17 |
-| IDS → alert → pause 結構 | （非單一介面） | `intelligent_defense_node` | `patrol_node` / `burger_sac_env` | resume timer 不 reset + cascade quiet window | T-18 |
+| IDS → alert → pause 結構 | （非單一介面） | `intelligent_defense_node` | `patrol_node` / `burger_env_top` | resume timer 不 reset + cascade quiet window | T-18 |
 
 ### 6.3 攻擊敘事公式
 

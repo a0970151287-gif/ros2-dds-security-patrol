@@ -38,7 +38,7 @@ ros2 launch dds_security_monitor gazebo.launch.py
 # DDS 安全監控節點（所有終端）
 source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
 
-# DQN 訓練（額外多加 dqn_env）
+# TQC 訓練（額外多加 dqn_env）
 source ~/.config/dds-monitor/credentials && source ~/dqn_env/bin/activate && source ~/ros2_ws/install/setup.bash
 ```
 

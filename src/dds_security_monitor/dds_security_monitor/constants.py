@@ -71,9 +71,9 @@ DEFAULT_WAYPOINTS: tuple[Waypoint, ...] = (
 # 系統合法 publisher / subscriber 的 node 名清單
 # Reviewer 指出原本散布在 4 處，現在集中在這裡
 
-# 合法 /cmd_vel publisher（不含 ROS internal 跟 SAC 訓練專用）
+# 合法 /cmd_vel publisher（不含 ROS internal 跟 TQC 訓練專用）
 CMD_VEL_ALLOWED_PUBS = frozenset({
-    "burger_sac_env",          # SAC 訓練環境
+    "burger_env_top",          # TQC 訓練環境（節點名 burger_env_top）
     "teleop_keyboard",         # 手動 teleop
     "patrol_node",             # 自動巡邏（部署）
     "dds_security_monitor",    # emergency stop
@@ -110,8 +110,8 @@ ROS_GRAPH_ALLOWED_NODES = frozenset({
     # Gazebo / Bridge
     "ros_gz_bridge", "ros_gz_image", "ros_gz_point_cloud", "ros_gz_sim",
     "gazebo", "gzserver", "gzclient",
-    # 訓練
-    "burger_sac_env", "dqn_environment",
+    # 訓練（現役 TQC 環境的節點名 burger_env_top）
+    "burger_env_top",
 })
 
 # 已知 ROS2 內部 node 前綴（非攻擊，不警告）
