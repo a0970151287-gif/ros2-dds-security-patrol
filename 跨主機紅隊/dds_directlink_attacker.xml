@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- 攻擊機用 — 把 Fast-DDS 鎖在直連線 10.10.10.1 -->
 <!-- 用法: export FASTRTPS_DEFAULT_PROFILES_FILE=~/ros2_ws/跨主機紅隊/dds_directlink_attacker.xml -->
+<!-- 繞過多播：用單播 initialPeers 指向目標機 10.10.10.2，well-known port=7400+250*30+10=14910 -->
 <dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
   <profiles>
     <transport_descriptors>
@@ -18,6 +19,16 @@
           <transport_id>direct_link_udp</transport_id>
         </userTransports>
         <useBuiltinTransports>false</useBuiltinTransports>
+        <builtin>
+          <initialPeersList>
+            <locator>
+              <udpv4>
+                <address>10.10.10.2</address>
+                <port>14910</port>
+              </udpv4>
+            </locator>
+          </initialPeersList>
+        </builtin>
       </rtps>
     </participant>
   </profiles>
