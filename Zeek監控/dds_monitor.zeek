@@ -28,8 +28,11 @@ const SEND_LINE_SCRIPT = "/home/jesse/ros2_ws/zeek/send_line.py" &redef;
 const HONEYPOT_PORT: port = 8888/tcp &redef;
 
 ## DDS/ROS2 使用的 UDP port 範圍
+## RTPS 埠公式: 7400 + 250*domainId + offset。
+## domain 0 → 7400-7649；domain 30 → 14900-15149（本實驗用 domain 30）。
+## 範圍涵蓋 domain 0~30，確保跨主機 domain-30 流量也會觸發。
 const DDS_PORT_LOW:  count = 7400 &redef;
-const DDS_PORT_HIGH: count = 7500 &redef;
+const DDS_PORT_HIGH: count = 15200 &redef;
 
 ## 同一觸發條件的最短重複警報間隔
 const ALERT_COOLDOWN: interval = 60sec &redef;
