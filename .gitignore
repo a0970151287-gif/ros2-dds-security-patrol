@@ -49,3 +49,6 @@ website/
 
 # Claude memory (private)
 .claude/
+
+# SROS2 keystore — 含 CA 私鑰，嚴禁進版控（N26 教訓）
+sros2_keystore/
