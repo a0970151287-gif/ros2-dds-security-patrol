@@ -44,9 +44,9 @@ def udp(sport, dport, payload):
 def mac(s):
     return bytes(int(x, 16) for x in s.split(":"))
 
-MAC_A = mac("02:00:00:00:00:01")   # 攻擊機 10.10.10.1
-MAC_T = mac("02:00:00:00:00:02")   # 目標機 10.10.10.2
-MAC_MC = mac("01:00:5e:7f:00:01")  # 239.255.0.1 多播
+MAC_A = mac("02:00:00:00:00:01")        # 攻擊機 10.10.10.1（任意 MAC）
+MAC_T = mac("34:5a:60:96:c3:ca")        # 目標機 10.10.10.2 真實 eth0 MAC（白名單綁定）
+MAC_MC = mac("01:00:5e:7f:00:01")       # 239.255.0.1 多播
 
 def frame(src_mac, dst_mac, src_ip, dst_ip, sport, dport, payload):
     u = udp(sport, dport, payload)
@@ -67,6 +67,11 @@ pkts.append((2.0, frame(MAC_A, MAC_T, "10.10.10.1", "10.10.10.2", 14913, 14913, 
 for i in range(30):
     pkts.append((3.0 + i * 0.1, frame(MAC_A, MAC_MC, "10.10.10.1", "239.255.0.1",
                                       40000 + i, 14900, RTPS)))
+# 5) F1 參數竄改：攻擊機呼叫 set_parameters 服務
+param = b"RTPS\x02\x03" + b"\x00" * 8 + b"rq/listener/set_parametersRequest use_sim_time"
+pkts.append((7.0, frame(MAC_A, MAC_T, "10.10.10.1", "10.10.10.2", 14913, 14913, param)))
+# 6) F7 來源 IP 偽造：宣稱 IP=10.10.10.2(信任) 但用攻擊者 MAC → 應抓到
+pkts.append((8.0, frame(MAC_A, MAC_MC, "10.10.10.2", "239.255.0.1", 14910, 14900, RTPS)))
 
 out = sys.argv[1] if len(sys.argv) > 1 else "/home/jesse/ros2_ws/Zeek監控/test/dds_attack_test.pcap"
 with open(out, "wb") as f:

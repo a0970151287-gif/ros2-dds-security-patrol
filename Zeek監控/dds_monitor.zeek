@@ -41,6 +41,17 @@ const ALERT_COOLDOWN: interval = 60sec &redef;
 ## 目標機自身 10.10.10.2：Gazebo+patrol 啟動會噴大量 SPDP，必須白名單否則自我誤報。
 const TRUSTED_DDS_HOSTS: set[addr] = { 10.10.10.2 } &redef;
 
+## 【F7 修補】信任 IP 的合法 MAC（IP↔MAC 綁定）。
+## 攻擊者在直連 L2 可偽造來源 IP=10.10.10.2 繞過 IP 白名單；但若未同時偽造 MAC，
+## 此處即抓到「信任 IP 配到非預期 MAC」= 偽造嫌疑。殘留風險(IP+MAC 全偽造)→ 需 SROS2。
+const TRUSTED_DDS_MACS: table[addr] of string = {
+    [10.10.10.2] = "34:5a:60:96:c3:ca",
+} &redef;
+
+## 【F1 修補】參數竄改服務簽章：未授權 set_parameters 服務呼叫
+## （可遠端改速度上限/感測校正/PID/安全旗標），原三類規則的偵測盲區。
+const PARAM_TAMPER_SIGNATURE: string = "set_parameters" &redef;
+
 ## SPDP 多播探索位址 / 埠（domain 30）
 const SPDP_MCAST: addr = 239.255.0.1 &redef;
 const SPDP_PORT:  count = 14900 &redef;
@@ -70,9 +81,14 @@ global cooldown_table: table[string] of time;
 global spdp_burst_times: vector of time;
 
 ## 已對其發過注入告警的來源（每來源 60s 一次，靠 rate_limited）
-## 統計用：注入/DoS 累計次數
+## 統計用：注入/DoS/參數竄改/IP偽造 累計次數
 global inject_alert_count: count = 0;
 global dos_alert_count:    count = 0;
+global param_alert_count:  count = 0;
+global spoof_alert_count:  count = 0;
+
+## 已告警過的 (信任IP|實際MAC) 偽造組合，避免洗版
+global spoof_seen: set[string];
 
 # ── 工具函式 ──────────────────────────────────────────────────────────────────
 
@@ -145,6 +161,30 @@ function check_spdp_dos(orig: addr)
     }
 }
 
+## 【F7】IP↔MAC 綁定偵測：信任 IP 若配到非預期 MAC = 來源 IP 偽造嫌疑。
+## raw_packet 每封包觸發，能拿到 L2 來源 MAC（new_connection/udp_contents 拿不到）。
+event raw_packet(p: raw_pkt_hdr)
+{
+    if ( ! p?$ip || ! p$l2?$src )
+        return;
+
+    local sip = p$ip$src;
+    if ( sip !in TRUSTED_DDS_MACS )
+        return;                      # 只檢查「信任 IP」是否被冒用
+
+    local actual_mac = p$l2$src;
+    if ( actual_mac == TRUSTED_DDS_MACS[sip] )
+        return;                      # MAC 相符 = 真的是自己/合法節點
+
+    local key = fmt("%s|%s", sip, actual_mac);
+    if ( key in spoof_seen )
+        return;
+    add spoof_seen[key];
+    ++spoof_alert_count;
+    do_alert(fmt(" [偵測器告警 — 來源 IP 偽造嫌疑 / F7]\n時間: %s\n信任 IP 出現非預期 MAC，研判攻擊者偽造白名單 IP 試圖繞過偵測！\n> 宣稱來源 IP: %s\n> 合法 MAC:    %s\n> 實際 MAC:    %s\n> 殘留風險: IP+MAC 全偽造需靠 SROS2 身分驗證根治",
+        now_str(), sip, TRUSTED_DDS_MACS[sip], actual_mac));
+}
+
 event new_connection(c: connection)
 {
     local orig   = c$id$orig_h;
@@ -205,6 +245,15 @@ event udp_contents(u: connection, is_orig: bool, contents: string)
         do_alert(fmt(" [注入攻擊 — 偽造 DATA 警報]\n時間: %s\n偵測到白名單外來源送出帶注入簽章的 DATA！\n> 來源 IP:   %s\n> 目標 Port: %s\n> 簽章:      %s",
             now_str(), orig, u$id$resp_p, INJECT_SIGNATURE));
     }
+
+    # 【F1】未授權參數竄改：白名單外來源呼叫 set_parameters 服務
+    if ( PARAM_TAMPER_SIGNATURE in contents &&
+         !rate_limited(fmt("param_%s", orig)) )
+    {
+        ++param_alert_count;
+        do_alert(fmt(" [參數竄改攻擊 — set_parameters / F1]\n時間: %s\n偵測到白名單外來源呼叫參數服務（可遠端改速度上限/感測校正/安全旗標）！\n> 來源 IP:   %s\n> 目標 Port: %s\n> 服務簽章:  %s",
+            now_str(), orig, u$id$resp_p, PARAM_TAMPER_SIGNATURE));
+    }
 }
 
 # ── 結束報告 ──────────────────────────────────────────────────────────────────
@@ -214,6 +263,7 @@ event zeek_init()
     print " Zeek DDS 安全監控腳本已載入，開始監聽...";
     print fmt("  ✦ DDS 埠範圍: %d-%d ｜ 信任來源: %s", DDS_PORT_LOW, DDS_PORT_HIGH, TRUSTED_DDS_HOSTS);
     print fmt("  ✦ 三類偵測: 偵察(白名單外新節點) / 注入(簽章 '%s') / DoS(%s 內 SPDP>%d)", INJECT_SIGNATURE, DOS_WINDOW, DOS_THRESHOLD);
+    print fmt("  ✦ 強化: F1 參數竄改(簽章 '%s') / F7 IP↔MAC 綁定抓來源 IP 偽造", PARAM_TAMPER_SIGNATURE);
 }
 
 event zeek_done()
@@ -223,6 +273,8 @@ event zeek_done()
     print fmt("  ✦ 偵察 — 白名單外 DDS 節點 IP 數: %d", |seen_dds_nodes|);
     print fmt("  ✦ 注入 — 簽章告警次數: %d", inject_alert_count);
     print fmt("  ✦ DoS  — SPDP 風暴告警次數: %d", dos_alert_count);
+    print fmt("  ✦ F1 參數竄改 — 告警次數: %d", param_alert_count);
+    print fmt("  ✦ F7 來源 IP 偽造 — 告警次數: %d", spoof_alert_count);
     print fmt("  ✦ 唯一 IMDS 探測來源: %d", |imds_seen|);
 
     if ( |seen_dds_nodes| > 0 )
