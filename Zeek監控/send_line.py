@@ -2,20 +2,46 @@
 """LINE Messaging API helper for Zeek dds_monitor.zeek.
 
 Reads the alert message from stdin and pushes it to LINE.
-Required env vars:
-  LINE_CHANNEL_TOKEN  — Channel access token
-  LINE_USER_ID        — Recipient user/group ID
+Credential resolution order (each independently):
+  1. Env var (LINE_CHANNEL_TOKEN / LINE_USER_ID)
+  2. Config file ~/.config/dds-monitor/{line_token,line_user_id}
+When run under sudo (zeek -i needs root), '~' resolves to the invoking
+user via SUDO_USER so jesse's config is found instead of /root.
 """
 import json
 import os
+import pwd
 import sys
 import urllib.error
 import urllib.request
 
 
+def _config_home() -> str:
+    """Home dir of the real user, even when running under sudo (root)."""
+    sudo_user = os.environ.get('SUDO_USER')
+    if sudo_user:
+        try:
+            return pwd.getpwnam(sudo_user).pw_dir
+        except KeyError:
+            pass
+    return os.path.expanduser('~')
+
+
+def load_cred(env_name: str, file_name: str) -> str:
+    val = os.environ.get(env_name, '').strip()
+    if val:
+        return val
+    path = os.path.join(_config_home(), '.config', 'dds-monitor', file_name)
+    try:
+        with open(path, encoding='utf-8') as f:
+            return f.read().strip()
+    except OSError:
+        return ''
+
+
 def main() -> int:
-    token = os.environ.get('LINE_CHANNEL_TOKEN', '').strip()
-    user_id = os.environ.get('LINE_USER_ID', '').strip()
+    token = load_cred('LINE_CHANNEL_TOKEN', 'line_token')
+    user_id = load_cred('LINE_USER_ID', 'line_user_id')
     message = sys.stdin.read().strip()
 
     if not token or not user_id:

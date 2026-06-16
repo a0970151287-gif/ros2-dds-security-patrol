@@ -22,7 +22,7 @@
 # ── 可調整設定 ────────────────────────────────────────────────────────────────
 
 ## 發送 LINE 通知的 Python 輔助腳本路徑
-const SEND_LINE_SCRIPT = "/home/jesse/ros2_ws/zeek/send_line.py" &redef;
+const SEND_LINE_SCRIPT = "/home/jesse/ros2_ws/Zeek監控/send_line.py" &redef;
 
 ## 蜜罐監聽的 TCP port
 const HONEYPOT_PORT: port = 8888/tcp &redef;
