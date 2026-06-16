@@ -35,8 +35,7 @@ ros2 run dds_security_monitor system_status_node
 # ── 終端 6：monitor_node（最後開）───────────────────────────
 source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
 unset ROS_SECURITY_ENCLAVE_OVERRIDE
-ros2 run dds_security_monitor monitor_node 
-  --params-file ~/ros2_ws/src/dds_security_monitor/config/config.yaml
+ros2 run dds_security_monitor monitor_node --params-file ~/ros2_ws/src/dds_security_monitor/config/config.yaml
 
 # ── 全部啟動後確認 ───────────────────────────────────────────
 # ros2 node list
