@@ -37,6 +37,24 @@ const DDS_PORT_HIGH: count = 15200 &redef;
 ## 同一觸發條件的最短重複警報間隔
 const ALERT_COOLDOWN: interval = 60sec &redef;
 
+## 信任的 DDS 來源 IP（自己/合法節點）——其探索多播不視為攻擊，是 FPR 的關鍵。
+## 目標機自身 10.10.10.2：Gazebo+patrol 啟動會噴大量 SPDP，必須白名單否則自我誤報。
+const TRUSTED_DDS_HOSTS: set[addr] = { 10.10.10.2 } &redef;
+
+## SPDP 多播探索位址 / 埠（domain 30）
+const SPDP_MCAST: addr = 239.255.0.1 &redef;
+const SPDP_PORT:  count = 14900 &redef;
+
+## 注入攻擊的 payload 簽章（受控實驗中攻擊機在 DATA 開頭標記）
+const INJECT_SIGNATURE: string = "INJECTED" &redef;
+
+## DoS（SPDP 風暴）判定：WINDOW 內非白名單來源的 SPDP 流量數超過 THRESHOLD 即告警
+const DOS_WINDOW:    interval = 8sec &redef;
+const DOS_THRESHOLD: count    = 25 &redef;   # 正常 Gazebo 啟動 ~15；攻擊 ~40
+
+# 讓 Zeek 把所有 UDP payload 交給 udp_contents 事件（注入內容比對用）
+redef udp_content_deliver_all_orig = T;
+
 # ── 狀態全域變數 ─────────────────────────────────────────────────────────────
 
 ## 已見過的 DDS 節點 IP（每個 IP 只警報一次）
@@ -47,6 +65,14 @@ global imds_seen: set[addr];
 
 ## 蜜罐觸發速率限制表（key = "honeypot_<ip>"）
 global cooldown_table: table[string] of time;
+
+## DoS 偵測：近期非白名單 SPDP 流量的時間戳（滑動視窗）
+global spdp_burst_times: vector of time;
+
+## 已對其發過注入告警的來源（每來源 60s 一次，靠 rate_limited）
+## 統計用：注入/DoS 累計次數
+global inject_alert_count: count = 0;
+global dos_alert_count:    count = 0;
 
 # ── 工具函式 ──────────────────────────────────────────────────────────────────
 
@@ -96,6 +122,29 @@ function do_alert(text: string)
 
 # ── 主要偵測邏輯 ──────────────────────────────────────────────────────────────
 
+## DoS 偵測：在滑動視窗 DOS_WINDOW 內累計非白名單 SPDP 流量，
+## 超過 DOS_THRESHOLD 即判定為 SPDP 探索風暴（DoS）。
+function check_spdp_dos(orig: addr)
+{
+    local now = network_time();
+    spdp_burst_times += now;
+
+    # 修剪掉視窗外的舊時間戳
+    local fresh: vector of time;
+    for ( i in spdp_burst_times )
+        if ( now - spdp_burst_times[i] <= DOS_WINDOW )
+            fresh += spdp_burst_times[i];
+    spdp_burst_times = fresh;
+
+    if ( |spdp_burst_times| >= DOS_THRESHOLD &&
+         !rate_limited("dos_spdp_storm") )
+    {
+        ++dos_alert_count;
+        do_alert(fmt(" [DoS 攻擊 — SPDP 探索風暴]\n時間: %s\n滑動視窗內偵測到 %d 筆 SPDP 探索流量（門檻 %d）！\n> 最新來源: %s\n> 研判: 大量偽造 participant 灌爆探索通道",
+            now_str(), |spdp_burst_times|, DOS_THRESHOLD, orig));
+    }
+}
+
 event new_connection(c: connection)
 {
     local orig   = c$id$orig_h;
@@ -118,15 +167,43 @@ event new_connection(c: connection)
             now_str(), orig, resp_p));
     }
 
-    # 規則三：DDS/ROS2 節點連線監控 (UDP 7400-7500)，每個 IP 只警報一次
+    # 規則三：DDS/ROS2 流量（UDP 7400-15200，涵蓋 domain 0~30）
     else if ( is_udp_port(resp_p) &&
               port_to_count(resp_p) >= DDS_PORT_LOW &&
-              port_to_count(resp_p) <= DDS_PORT_HIGH &&
-              orig !in seen_dds_nodes )
+              port_to_count(resp_p) <= DDS_PORT_HIGH )
     {
-        add seen_dds_nodes[orig];
-        do_alert(fmt(" [DDS 節點警報]\n時間: %s\n發現新的 DDS 節點加入網路！\n> 節點 IP:    %s\n> 目標 Port:  %s\n> 已知節點數: %d",
-            now_str(), orig, resp_p, |seen_dds_nodes|));
+        # 白名單來源（自己/合法節點）的探索流量不視為攻擊 → 壓 FPR
+        if ( orig in TRUSTED_DDS_HOSTS )
+            return;
+
+        # ── 3a 偵察：非白名單來源首次出現在 DDS 網路（每 IP 一次）──
+        if ( orig !in seen_dds_nodes )
+        {
+            add seen_dds_nodes[orig];
+            do_alert(fmt(" [偵察攻擊 — DDS 節點警報]\n時間: %s\n偵測到白名單外的新 DDS participant 加入網路！\n> 節點 IP:    %s\n> 目標 Port:  %s\n> 已知未授權節點數: %d",
+                now_str(), orig, resp_p, |seen_dds_nodes|));
+        }
+
+        # ── 3b DoS：非白名單來源的 SPDP 多播風暴 ──
+        if ( (resp == SPDP_MCAST || port_to_count(resp_p) == SPDP_PORT) )
+            check_spdp_dos(orig);
+    }
+}
+
+## 注入偵測：檢查 UDP payload 是否含注入簽章（受控實驗中攻擊機標記 DATA）。
+## 純 DDS 網路層無 RTPS 解析時，以內容簽章作為注入的可靠訊號（FPR 最低）。
+event udp_contents(u: connection, is_orig: bool, contents: string)
+{
+    local orig = u$id$orig_h;
+    if ( orig in TRUSTED_DDS_HOSTS )
+        return;
+
+    if ( INJECT_SIGNATURE in contents &&
+         !rate_limited(fmt("inject_%s", orig)) )
+    {
+        ++inject_alert_count;
+        do_alert(fmt(" [注入攻擊 — 偽造 DATA 警報]\n時間: %s\n偵測到白名單外來源送出帶注入簽章的 DATA！\n> 來源 IP:   %s\n> 目標 Port: %s\n> 簽章:      %s",
+            now_str(), orig, u$id$resp_p, INJECT_SIGNATURE));
     }
 }
 
@@ -135,13 +212,17 @@ event new_connection(c: connection)
 event zeek_init()
 {
     print " Zeek DDS 安全監控腳本已載入，開始監聽...";
+    print fmt("  ✦ DDS 埠範圍: %d-%d ｜ 信任來源: %s", DDS_PORT_LOW, DDS_PORT_HIGH, TRUSTED_DDS_HOSTS);
+    print fmt("  ✦ 三類偵測: 偵察(白名單外新節點) / 注入(簽章 '%s') / DoS(%s 內 SPDP>%d)", INJECT_SIGNATURE, DOS_WINDOW, DOS_THRESHOLD);
 }
 
 event zeek_done()
 {
     print "\n========================================";
     print fmt(" [Zeek 會話結束報告] — %s", now_str());
-    print fmt("  ✦ 唯一 DDS 節點 IP 數: %d", |seen_dds_nodes|);
+    print fmt("  ✦ 偵察 — 白名單外 DDS 節點 IP 數: %d", |seen_dds_nodes|);
+    print fmt("  ✦ 注入 — 簽章告警次數: %d", inject_alert_count);
+    print fmt("  ✦ DoS  — SPDP 風暴告警次數: %d", dos_alert_count);
     print fmt("  ✦ 唯一 IMDS 探測來源: %d", |imds_seen|);
 
     if ( |seen_dds_nodes| > 0 )
