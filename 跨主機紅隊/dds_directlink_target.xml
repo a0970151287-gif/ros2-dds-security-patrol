@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- 目標機(機器人/防守機)用 — 把 Fast-DDS 鎖在直連線 10.10.10.2 -->
+<!-- 目標機(機器人/防守機)用 — 同機走 SHM(穩)、跨主機走直連 UDP 10.10.10.2 -->
 <!-- 用法: export FASTRTPS_DEFAULT_PROFILES_FILE=~/ros2_ws/跨主機紅隊/dds_directlink_target.xml -->
-<!-- 繞過多播：用單播 initialPeers 指向攻擊機 10.10.10.1，well-known port=7400+250*30+10=14910 -->
+<!-- 設計關鍵：保留共享記憶體 SHM 給同機多節點(Gazebo 系統)；額外加 UDP(只綁 -->
+<!-- 10.10.10.2，不綁 Wi-Fi) 讓攻擊機(10.10.10.1)看得到、Zeek 在 eth0 抓得到。 -->
 <dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
   <profiles>
     <transport_descriptors>
       <transport_descriptor>
-        <transport_id>direct_link_udp</transport_id>
+        <transport_id>shm_local</transport_id>
+        <type>SHM</type>
+      </transport_descriptor>
+      <transport_descriptor>
+        <transport_id>dl_udp</transport_id>
         <type>UDPv4</type>
         <interfaceWhiteList>
           <address>10.10.10.2</address>
@@ -16,7 +21,8 @@
     <participant profile_name="direct_link" is_default_profile="true">
       <rtps>
         <userTransports>
-          <transport_id>direct_link_udp</transport_id>
+          <transport_id>shm_local</transport_id>
+          <transport_id>dl_udp</transport_id>
         </userTransports>
         <useBuiltinTransports>false</useBuiltinTransports>
         <builtin>

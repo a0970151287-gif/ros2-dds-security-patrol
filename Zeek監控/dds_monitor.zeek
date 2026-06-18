@@ -39,7 +39,7 @@ const ALERT_COOLDOWN: interval = 60sec &redef;
 
 ## 信任的 DDS 來源 IP（自己/合法節點）——其探索多播不視為攻擊，是 FPR 的關鍵。
 ## 目標機自身 10.10.10.2：Gazebo+patrol 啟動會噴大量 SPDP，必須白名單否則自我誤報。
-const TRUSTED_DDS_HOSTS: set[addr] = { 10.10.10.2 } &redef;
+const TRUSTED_DDS_HOSTS: set[addr] = { 10.10.10.2, 127.0.0.1 } &redef;
 
 ## 【F7 修補】信任 IP 的合法 MAC（IP↔MAC 綁定）。
 ## 攻擊者在直連 L2 可偽造來源 IP=10.10.10.2 繞過 IP 白名單；但若未同時偽造 MAC，
