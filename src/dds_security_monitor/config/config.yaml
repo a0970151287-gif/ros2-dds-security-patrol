@@ -53,5 +53,8 @@ dds_security_monitor:
       - sensor_hub_node
       - mission_manager_node
       - system_status_node
+      - intelligent_defense_node   # 行為 IDS（自家節點，勿誤殺 → 否則 patrol 被自己停掉）
+      - mission_manager            # executable 名（節點名萬一不帶 _node 也涵蓋）
+      - monitor_node
       # TQC 訓練相關（避免訓練節點被誤判為入侵 → emergency stop → 干擾訓練）
       - burger_env_top
