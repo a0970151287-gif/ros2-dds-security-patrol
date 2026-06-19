@@ -46,5 +46,65 @@
         </profile>
       </profiles>
     </enclave>
+    <enclave path="/sensor_hub_node">
+      <profiles>
+        <profile ns="/" node="sensor_hub_node">
+          <topics publish="ALLOW"><topic>*</topic></topics>
+          <topics subscribe="ALLOW"><topic>*</topic></topics>
+          <services reply="ALLOW"><service>*</service></services>
+          <services request="ALLOW"><service>*</service></services>
+        </profile>
+      </profiles>
+    </enclave>
+    <enclave path="/patrol_node">
+      <profiles>
+        <profile ns="/" node="patrol_node">
+          <topics publish="ALLOW"><topic>*</topic></topics>
+          <topics subscribe="ALLOW"><topic>*</topic></topics>
+          <services reply="ALLOW"><service>*</service></services>
+          <services request="ALLOW"><service>*</service></services>
+        </profile>
+      </profiles>
+    </enclave>
+    <enclave path="/mission_manager">
+      <profiles>
+        <profile ns="/" node="mission_manager">
+          <topics publish="ALLOW"><topic>*</topic></topics>
+          <topics subscribe="ALLOW"><topic>*</topic></topics>
+          <services reply="ALLOW"><service>*</service></services>
+          <services request="ALLOW"><service>*</service></services>
+        </profile>
+      </profiles>
+    </enclave>
+    <enclave path="/system_status_node">
+      <profiles>
+        <profile ns="/" node="system_status_node">
+          <topics publish="ALLOW"><topic>*</topic></topics>
+          <topics subscribe="ALLOW"><topic>*</topic></topics>
+          <services reply="ALLOW"><service>*</service></services>
+          <services request="ALLOW"><service>*</service></services>
+        </profile>
+      </profiles>
+    </enclave>
+    <enclave path="/intelligent_defense_node">
+      <profiles>
+        <profile ns="/" node="intelligent_defense_node">
+          <topics publish="ALLOW"><topic>*</topic></topics>
+          <topics subscribe="ALLOW"><topic>*</topic></topics>
+          <services reply="ALLOW"><service>*</service></services>
+          <services request="ALLOW"><service>*</service></services>
+        </profile>
+      </profiles>
+    </enclave>
+    <enclave path="/gazebo">
+      <profiles>
+        <profile ns="/" node="gazebo">
+          <topics publish="ALLOW"><topic>*</topic></topics>
+          <topics subscribe="ALLOW"><topic>*</topic></topics>
+          <services reply="ALLOW"><service>*</service></services>
+          <services request="ALLOW"><service>*</service></services>
+        </profile>
+      </profiles>
+    </enclave>
   </enclaves>
 </policy>

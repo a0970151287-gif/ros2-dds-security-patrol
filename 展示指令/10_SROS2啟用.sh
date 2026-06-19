@@ -23,6 +23,13 @@ ENCLAVES=(
   "/listener"
   "/burger_env_top"
   "/dds_security_monitor"
+  # ── 實際系統的 6 個節點 + Gazebo stack（全系統 Enforce 用）──
+  "/sensor_hub_node"
+  "/patrol_node"
+  "/mission_manager"
+  "/system_status_node"
+  "/intelligent_defense_node"
+  "/gazebo"            # gazebo.launch.py 整包(bridge+robot_state_publisher+gz) 共用此 enclave
 )
 
 enable_enforce_env() {
