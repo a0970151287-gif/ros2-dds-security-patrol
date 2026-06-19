@@ -47,6 +47,7 @@ PHYSICS_LIN_MAX        = 0.23    # m/s, 超過視為非物理可行
 PHYSICS_ANG_MAX        = 3.00    # rad/s, burger 規格 2.84 + 5% buffer
 CMD_OSCILLATION_RATIO  = 0.7     # 最近 20 幀中 70%+ 方向翻轉 → 攻擊 J 徵兆
 SCAN_REPEAT_MAX_DIFF   = 0.005   # 連續幀最大 |Δ| < 此值 → 攻擊 K 重複送
+SCAN_MAX_POINTS        = 4096    # N24 修補：burger lidar=360；超過此數截斷，防超大 scan 記憶體/CPU 爆
 HISTORY_LEN            = 20      # 滑動窗口長度
 EVAL_PERIOD_SEC        = 0.5     # 評估頻率
 ALERT_COOLDOWN_SEC     = 10.0    # 兩次 alert 之間最少間隔（防止洗版）
@@ -130,6 +131,13 @@ class IntelligentDefenseNode(Node):
 
     def _scan_cb(self, msg: LaserScan):
         ranges = list(msg.ranges)
+        # N24 修補：超大 scan（攻擊者灌數十萬點）截斷到 SCAN_MAX_POINTS，
+        # 防 deque 累積巨量 list + D3/D6 numpy 在百萬點上爆記憶體/CPU。
+        if len(ranges) > SCAN_MAX_POINTS:
+            self.get_logger().warn(
+                f'⚠️ /scan 點數異常 {len(ranges)}（>{SCAN_MAX_POINTS}）→ 截斷（疑似 N24 超大 scan 攻擊）',
+                throttle_duration_sec=5.0)
+            ranges = ranges[:SCAN_MAX_POINTS]
         if len(ranges) > 50:
             self._scan_history.append(ranges)
 
@@ -193,6 +201,21 @@ class IntelligentDefenseNode(Node):
             return True, f"fwd={fwd}/{n} + bwd={bwd}/{n}（方向衝突）"
         return False, ""
 
+    @staticmethod
+    def _safe_frame_diff(prev, cur) -> float:
+        """兩幀 scan 的平均 |Δ|。N24b 修補：相鄰幀長度不同時取最短長度比較，
+        避免 (len_a,) & (len_b,) 的 numpy broadcast ValueError 打掛 executor。"""
+        a = np.asarray(cur,  dtype=np.float32)
+        b = np.asarray(prev, dtype=np.float32)
+        n = min(a.shape[0], b.shape[0])
+        if n == 0:
+            return 0.0
+        a, b = a[:n], b[:n]
+        mask = np.isfinite(a) & np.isfinite(b)
+        if not mask.any():
+            return 0.0
+        return float(np.mean(np.abs(a[mask] - b[mask])))
+
     def _detect_d3_scan_repeat(self) -> tuple[bool, str]:
         """D3: scan 連續幀差異趨近 0 → 攻擊 K 偽造（重複 pattern）"""
         if len(self._scan_history) < 5:
@@ -200,14 +223,9 @@ class IntelligentDefenseNode(Node):
         hist = list(self._scan_history)[-5:]
         max_diff = 0.0
         for i in range(1, len(hist)):
-            a = np.asarray(hist[i],   dtype=np.float32)
-            b = np.asarray(hist[i-1], dtype=np.float32)
-            # 過濾 inf/nan
-            mask = np.isfinite(a) & np.isfinite(b)
-            if mask.sum() > 0:
-                d = float(np.mean(np.abs(a[mask] - b[mask])))
-                if d > max_diff:
-                    max_diff = d
+            d = self._safe_frame_diff(hist[i-1], hist[i])
+            if d > max_diff:
+                max_diff = d
         # 真實 lidar 即使靜止也有 0.005~0.05 的雜訊
         if max_diff < SCAN_REPEAT_MAX_DIFF:
             return True, f"max_diff={max_diff:.4f}<{SCAN_REPEAT_MAX_DIFF}"
@@ -305,11 +323,7 @@ class IntelligentDefenseNode(Node):
             hist = list(self._scan_history)[-3:]
             max_diff = 0.0
             for i in range(1, len(hist)):
-                a = np.asarray(hist[i],   dtype=np.float32)
-                b = np.asarray(hist[i-1], dtype=np.float32)
-                mask = np.isfinite(a) & np.isfinite(b)
-                if mask.sum() > 0:
-                    max_diff = max(max_diff, float(np.mean(np.abs(a[mask] - b[mask]))))
+                max_diff = max(max_diff, self._safe_frame_diff(hist[i-1], hist[i]))
             if max_diff < 0.002:    # scan 比 D3 更嚴格的「靜止度」
                 return True, f"odom v={avg_lin:.2f}m/s 移動中但 scan 完全靜止 ({max_diff:.4f})"
         # (b) cmd 持續正向但 odom 沒動
