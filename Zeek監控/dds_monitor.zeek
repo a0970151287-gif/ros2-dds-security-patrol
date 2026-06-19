@@ -63,6 +63,12 @@ const INJECT_SIGNATURE: string = "INJECTED" &redef;
 const DOS_WINDOW:    interval = 8sec &redef;
 const DOS_THRESHOLD: count    = 25 &redef;   # 正常 Gazebo 啟動 ~15；攻擊 ~40
 
+## DoS 主動阻斷：偵測到風暴 → 呼叫 iptables 封鎖來源（升級「偵測→阻斷」）
+## 預設關閉，避免展示時誤封；要做 DoS 防禦 demo 時 redef 成 T（需 root 跑 Zeek）。
+const DOS_BLOCK_ENABLED: bool = F &redef;
+const DOS_BLOCK_SECS:    count = 300 &redef;
+const BLOCK_SCRIPT: string = "/home/jesse/ros2_ws/Zeek監控/block_source.sh" &redef;
+
 # 讓 Zeek 把所有 UDP payload 交給 udp_contents 事件（注入內容比對用）
 redef udp_content_deliver_all_orig = T;
 
@@ -158,6 +164,16 @@ function check_spdp_dos(orig: addr)
         ++dos_alert_count;
         do_alert(fmt(" [DoS 攻擊 — SPDP 探索風暴]\n時間: %s\n滑動視窗內偵測到 %d 筆 SPDP 探索流量（門檻 %d）！\n> 最新來源: %s\n> 研判: 大量偽造 participant 灌爆探索通道",
             now_str(), |spdp_burst_times|, DOS_THRESHOLD, orig));
+
+        # 升級：偵測 → 主動阻斷（封鎖洪水來源 IP，DOS_BLOCK_SECS 秒後自動解封）
+        if ( DOS_BLOCK_ENABLED )
+        {
+            local bmsg = fmt("  🛡️ DoS 主動阻斷: 已封鎖 %s (%d 秒)", orig, DOS_BLOCK_SECS);
+            local bcmd = Exec::Command($cmd = fmt("bash %s %s %d", BLOCK_SCRIPT, orig, DOS_BLOCK_SECS));
+            when [bcmd, bmsg] ( local br = Exec::run(bcmd) )
+            { print bmsg; }
+            timeout 10sec { print "  ⚠️ 阻斷腳本逾時"; }
+        }
     }
 }
 
