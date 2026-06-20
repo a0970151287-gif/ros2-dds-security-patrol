@@ -16,6 +16,8 @@ from dds_security_monitor.monitor_node import (
     CH_SENSOR,
     ReplayCache,
     _load_alert_secret,
+    hms,
+    lock_sensitive_params,
     secret_fingerprint,
     sign_alert,
     verify_alert,
@@ -57,6 +59,8 @@ class MissionManagerNode(Node):
         self._alert_replay_cache = ReplayCache()
         # N6 修補：sensor/status nonce LRU
         self._sensor_replay_cache = ReplayCache()
+        # F1-b 修補：鎖 use_sim_time 等敏感參數，runtime 拒絕未授權竄改
+        lock_sensitive_params(self)
         self.create_timer(1.0, self._check_recovery)
         self.get_logger().info(
             f'🎯 任務管理節點啟動 — alert secret fingerprint={secret_fingerprint(self._alert_secret)}'
@@ -102,7 +106,7 @@ class MissionManagerNode(Node):
         # 首次 alert 才設定 _alert_time，後續只計數。同時偵測 cascade DoS。
         if self._mission != 'EMERGENCY_STOP':
             self._alert_time = now    # 首次 pause 設 recovery 起點
-            self.get_logger().error('🚨 安全警報（已驗章）！任務強制切換為緊急停止')
+            self.get_logger().error(f'[{hms()}] 🚨 攻擊觸發！安全警報（已驗章）→ 任務強制切換為緊急停止')
             self._set_mission('EMERGENCY_STOP')
             self._pause_history.append(now)
             self._pause_history = [t for t in self._pause_history if now - t < 60.0]
@@ -119,14 +123,14 @@ class MissionManagerNode(Node):
         if self._mission == 'EMERGENCY_STOP' and self._alert_time > 0:
             elapsed = time.monotonic() - self._alert_time
             if elapsed >= EMERGENCY_RECOVERY_SEC:
-                self.get_logger().info(f'✅ 警報解除 {EMERGENCY_RECOVERY_SEC:.0f} 秒，恢復巡邏')
+                self.get_logger().info(f'[{hms()}] ✅ 攻擊解除滿 {EMERGENCY_RECOVERY_SEC:.0f} 秒 → 恢復巡邏')
                 self._alert_time = 0.0
                 self._set_mission('PATROL')
 
     def _set_mission(self, new_mission: str) -> None:
         if new_mission != self._mission:
             self._mission = new_mission
-            self.get_logger().info(f'📋 任務切換 → {self._mission}')
+            self.get_logger().info(f'[{hms()}] 📋 任務切換 → {self._mission}')
 
         # N7 修補：/mission/cmd 也簽章 + channel binding，
         # 攻擊者偽裝 mission_manager_node 直接 publish /mission/cmd 沒 secret → 簽不出

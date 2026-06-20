@@ -62,6 +62,9 @@ const INJECT_SIGNATURE: string = "INJECTED" &redef;
 ## DoS（SPDP 風暴）判定：WINDOW 內非白名單來源的 SPDP 流量數超過 THRESHOLD 即告警
 const DOS_WINDOW:    interval = 8sec &redef;
 const DOS_THRESHOLD: count    = 25 &redef;   # 正常 Gazebo 啟動 ~15；攻擊 ~40
+## 隱形 DoS（補 F7-D 盲區）：信任來源正常 DDS 流量 ~15/8s；飆到此值 = 異常
+## （疑似來源 IP+MAC 全偽造成白名單配對後灌洪水，或該信任節點已被控）。
+const TRUSTED_DOS_THRESHOLD: count = 60 &redef;
 
 ## DoS 主動阻斷：偵測到風暴 → 呼叫 iptables 封鎖來源（升級「偵測→阻斷」）
 ## 預設關閉，避免展示時誤封；要做 DoS 防禦 demo 時 redef 成 T（需 root 跑 Zeek）。
@@ -85,6 +88,10 @@ global cooldown_table: table[string] of time;
 
 ## DoS 偵測：近期非白名單 SPDP 流量的時間戳（滑動視窗）
 global spdp_burst_times: vector of time;
+
+## 隱形 DoS 偵測：信任來源近期 DDS 流量時間戳（per-source 滑動視窗）
+global trusted_dds_times: table[addr] of vector of time;
+global stealth_dos_alert_count: count = 0;
 
 ## 已對其發過注入告警的來源（每來源 60s 一次，靠 rate_limited）
 ## 統計用：注入/DoS/參數竄改/IP偽造 累計次數
@@ -177,6 +184,35 @@ function check_spdp_dos(orig: addr)
     }
 }
 
+## 隱形 DoS 偵測（補 F7-D 全偽造盲區）：
+## 攻擊者把來源 IP+MAC 全偽造成信任配對後灌 SPDP/DDS 風暴 → 同時繞過
+## raw_packet（IP↔MAC 都對）與一般 DoS（來源在白名單被早退 return）。
+## 對策：即使是信任來源，也監看其 DDS 流量「速率」。信任節點正常基線 ~15/8s，
+## 飆到 TRUSTED_DOS_THRESHOLD 不是正常行為 → 偽造或該節點已被控。
+## 注意：這是網路層的「速率異常」啟發式，根治仍須 SROS2 Enforce 身分驗證。
+function check_trusted_dos(orig: addr)
+{
+    local now = network_time();
+    if ( orig !in trusted_dds_times )
+        trusted_dds_times[orig] = vector();
+    trusted_dds_times[orig] += now;
+
+    # 修剪視窗外舊時間戳
+    local fresh: vector of time;
+    for ( i in trusted_dds_times[orig] )
+        if ( now - trusted_dds_times[orig][i] <= DOS_WINDOW )
+            fresh += trusted_dds_times[orig][i];
+    trusted_dds_times[orig] = fresh;
+
+    if ( |trusted_dds_times[orig]| >= TRUSTED_DOS_THRESHOLD &&
+         !rate_limited(fmt("stealth_dos_%s", orig)) )
+    {
+        ++stealth_dos_alert_count;
+        do_alert(fmt(" [隱形 DoS — 信任來源流量異常 / F7-D+DoS]\n時間: %s\n信任來源在 %s 內送出 %d 筆 DDS 流量（門檻 %d，正常基線僅 ~15）！\n> 宣稱來源: %s\n> 研判: 來源 IP+MAC 全偽造成白名單配對後灌洪水（繞過 IP↔MAC 綁定與一般 DoS），或該信任節點已被控\n> 根治: SROS2 Enforce 身分驗證（無 CA 憑證者配不上加密握手，封包被丟）",
+            now_str(), DOS_WINDOW, |trusted_dds_times[orig]|, TRUSTED_DOS_THRESHOLD, orig));
+    }
+}
+
 ## 【F7】IP↔MAC 綁定偵測：信任 IP 若配到非預期 MAC = 來源 IP 偽造嫌疑。
 ## raw_packet 每封包觸發，能拿到 L2 來源 MAC（new_connection/udp_contents 拿不到）。
 event raw_packet(p: raw_pkt_hdr)
@@ -230,7 +266,12 @@ event new_connection(c: connection)
     {
         # 白名單來源（自己/合法節點）的探索流量不視為攻擊 → 壓 FPR
         if ( orig in TRUSTED_DDS_HOSTS )
+        {
+            # 但仍監看「速率」：F7-D 把來源 IP+MAC 全偽造成信任配對 + 灌洪水
+            # = 隱形 DoS，會同時繞過 IP↔MAC 綁定與一般 DoS。補此盲區。
+            check_trusted_dos(orig);
             return;
+        }
 
         # ── 3a 偵察：非白名單來源首次出現在 DDS 網路（每 IP 一次）──
         if ( orig !in seen_dds_nodes )
@@ -289,6 +330,7 @@ event zeek_done()
     print fmt("  ✦ 偵察 — 白名單外 DDS 節點 IP 數: %d", |seen_dds_nodes|);
     print fmt("  ✦ 注入 — 簽章告警次數: %d", inject_alert_count);
     print fmt("  ✦ DoS  — SPDP 風暴告警次數: %d", dos_alert_count);
+    print fmt("  ✦ 隱形 DoS — 信任來源流量異常告警次數: %d", stealth_dos_alert_count);
     print fmt("  ✦ F1 參數竄改 — 告警次數: %d", param_alert_count);
     print fmt("  ✦ F7 來源 IP 偽造 — 告警次數: %d", spoof_alert_count);
     print fmt("  ✦ 唯一 IMDS 探測來源: %d", |imds_seen|);

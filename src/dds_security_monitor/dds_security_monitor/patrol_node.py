@@ -35,6 +35,8 @@ from dds_security_monitor.monitor_node import (
     CH_GOTO,
     ReplayCache,
     _load_alert_secret,
+    hms,
+    lock_sensitive_params,
     secret_fingerprint,
     verify_alert,
 )
@@ -193,6 +195,9 @@ class SmartPatrolNode(Node):
         # 每 5 秒最多 1 次 reload，超出就拒絕，避免 single-threaded executor 被洗
         self._reload_min_interval = 5.0
         self._last_reload_time    = 0.0
+
+        # F1-b 修補：鎖 use_sim_time 等敏感參數，runtime 拒絕未授權竄改
+        lock_sensitive_params(self)
 
         self.create_timer(1.0 / CONTROL_HZ, self._step)
         self.get_logger().info(
@@ -354,7 +359,7 @@ class SmartPatrolNode(Node):
             self._paused = True
             self._alerts_during_pause = 0
             self._pub(0, 0)
-            self.get_logger().error(f'🚨 安全警報（已驗章）！巡航停止: {payload[:60]}')
+            self.get_logger().error(f'[{hms()}] 🚨 攻擊觸發！安全警報（已驗章）→ 巡航停止: {payload[:60]}')
             # N9 修補：pause 期間用 100Hz 高頻送 0 cmd_vel 跟可能的 attacker 競爭
             if self._race_timer is None:
                 self._race_timer = self.create_timer(0.01, self._race_pub_zero)
@@ -413,7 +418,7 @@ class SmartPatrolNode(Node):
             self._race_timer = None
         if self._paused:
             self._paused = False
-            self.get_logger().warn('安全暫停解除，恢復巡航')
+            self.get_logger().warn(f'[{hms()}] ✅ 攻擊解除，安全暫停結束 → 恢復巡航')
             self._stuck_since = time.monotonic()
             self._last_pos_x, self._last_pos_y = self._pos_x, self._pos_y
 
@@ -492,14 +497,16 @@ class SmartPatrolNode(Node):
         if dist < WAYPOINT_R:
             self._pub(0, 0)
             self.get_logger().info(
-                f'✅ {self._current_waypoint.name} | ({self._pos_x:.2f},{self._pos_y:.2f}) 誤差 {dist:.2f}m')
+                f'[{hms()}] ✅ 抵達 {self._current_waypoint.name} | ({self._pos_x:.2f},{self._pos_y:.2f}) 誤差 {dist:.2f}m')
             if self._waypoint_queue:
                 self._current_waypoint = self._waypoint_queue.pop(0)
             else:
                 # 從 yaml 重載，開始下一輪
                 self._reload_waypoints()
-                self.get_logger().info('🔄 完成一輪，重新開始')
-            self.get_logger().info(f'➡️  {self._current_waypoint.name} ({self._current_waypoint.x},{self._current_waypoint.y})')
+                self.get_logger().info(f'[{hms()}] 🔄 完成一輪，重新開始')
+            self.get_logger().info(
+                f'[{hms()}] ➡️  切換任務 → {self._current_waypoint.name} '
+                f'({self._current_waypoint.x},{self._current_waypoint.y})')
             self._stuck_since = now
             self._last_pos_x, self._last_pos_y = self._pos_x, self._pos_y
             self._stuck_count = 0

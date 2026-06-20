@@ -17,6 +17,7 @@ from std_msgs.msg import String
 from dds_security_monitor.monitor_node import (
     CH_SENSOR,
     _load_alert_secret,
+    lock_sensitive_params,
     secret_fingerprint,
     sign_alert,
 )
@@ -48,6 +49,9 @@ class SensorHubNode(Node):
         self._linear_acc: float = 0.0
         self._imu_ready: bool = False
         self._secret = _load_alert_secret()
+
+        # F1-b 修補：鎖 use_sim_time 等敏感參數，runtime 拒絕未授權竄改
+        lock_sensitive_params(self)
 
         self.create_timer(1.0, self._publish_status)
         self.get_logger().info(

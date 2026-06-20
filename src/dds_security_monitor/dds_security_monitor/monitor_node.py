@@ -22,7 +22,7 @@ import rclpy
 from action_msgs.msg import GoalInfo
 from action_msgs.srv import CancelGoal
 from geometry_msgs.msg import TwistStamped
-from rcl_interfaces.msg import ParameterDescriptor
+from rcl_interfaces.msg import ParameterDescriptor, SetParametersResult
 from rcl_interfaces.srv import SetParameters
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
@@ -165,6 +165,47 @@ def secret_fingerprint(secret: bytes) -> str:
     使用者一眼就能確認所有節點拿到同一個 secret。
     """
     return hashlib.sha256(secret).hexdigest()[:16]
+
+
+def hms() -> str:
+    """本地牆鐘時間字串 HH:MM:SS — 嵌進 log/告警讓使用者一眼看到事件發生時間。
+
+    用於：任務切換、攻擊觸發急停、攻擊解除恢復巡邏等關鍵事件，
+    使用者看 console/LINE 時能直接對到「幾點幾分發生」，方便對驗紅隊時間軸。
+    """
+    return time.strftime("%H:%M:%S")
+
+
+# F1-b 修補：runtime 一律拒絕竄改的安全敏感/系統參數。
+# use_sim_time 是 rclpy 內建參數（Node.__init__ 自動 declare），無法用
+# declare_parameter(read_only=True) 鎖；紅隊 F1-b 實測在 Permissive 下把
+# monitor 的 use_sim_time False→True 竄改成功（翻 true 又無 /clock → 節點所有
+# wall-clock timer 凍結 = 對該節點 DoS：心跳停、巡邏停）。
+SECURITY_LOCKED_PARAMS: frozenset = frozenset({"use_sim_time"})
+
+
+def lock_sensitive_params(node, extra=frozenset()):
+    """掛 on_set_parameters callback，runtime 拒絕竄改 SECURITY_LOCKED_PARAMS。
+
+    - Permissive：擋住 use_sim_time（及 extra 指定的敏感參數）被未授權翻改。
+    - Enforce：攻擊者根本呼叫不到 set_parameters 服務（無 CA 憑證）→ 根治；
+      本 callback 是 app 層縱深，與 SROS2 存取控制互補。
+    必須在所有 declare_parameter 之後呼叫（read_only 參數由 rcl 在 callback 前先擋，
+    declare 本身不觸發 callback，故不影響初始化）。
+    """
+    locked = SECURITY_LOCKED_PARAMS | set(extra)
+
+    def _veto(params):
+        for p in params:
+            if p.name in locked:
+                node.get_logger().warn(
+                    f"[{hms()}] ⛔ 拒絕竄改安全敏感參數 {p.name}={p.value}（F1-b 防護）")
+                return SetParametersResult(
+                    successful=False,
+                    reason=f"{p.name} is security-locked (F1-b)")
+        return SetParametersResult(successful=True)
+
+    node.add_on_set_parameters_callback(_veto)
 
 
 ## ── Anti-replay + channel-binding 簽章 (修補紅隊 N1 + N3 + N4) ─────────
@@ -401,6 +442,9 @@ class DDSSecurityMonitor(Node):
             'burger_env_top',
             'intelligent_defense_node',
         ], ro)
+
+        # F1-b 修補：鎖 use_sim_time 等內建敏感參數，runtime 拒絕未授權竄改
+        lock_sensitive_params(self)
 
         self._poll_interval = self.get_parameter('poll_interval_sec').value
         # 修補紅隊攻擊 H：LINE token 不再從環境變數讀（避免 /proc/<pid>/environ 洩漏）

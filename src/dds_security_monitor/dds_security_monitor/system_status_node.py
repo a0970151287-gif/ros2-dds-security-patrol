@@ -17,6 +17,7 @@ from dds_security_monitor.monitor_node import (
     CH_SENSOR,
     ReplayCache,
     _load_alert_secret,
+    lock_sensitive_params,
     secret_fingerprint,
     sign_alert,
     verify_alert,
@@ -76,6 +77,9 @@ class SystemStatusNode(Node):
         self._sensor_replay_cache = ReplayCache()
         # N8 修補：health 自我監控也用 cache（impostor 重放也擋）
         self._health_replay_cache = ReplayCache()
+
+        # F1-b 修補：鎖 use_sim_time 等敏感參數，runtime 拒絕未授權竄改
+        lock_sensitive_params(self)
 
         self.create_timer(2.0, self._publish_health)
         self.get_logger().info(

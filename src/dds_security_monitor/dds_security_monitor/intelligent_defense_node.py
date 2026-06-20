@@ -31,6 +31,8 @@ from dds_security_monitor.monitor_node import (
     CH_HEARTBEAT,
     ReplayCache,
     _load_alert_secret,
+    hms,
+    lock_sensitive_params,
     secret_fingerprint,
     sign_alert,
     verify_alert,
@@ -114,6 +116,9 @@ class IntelligentDefenseNode(Node):
         self._secret = _load_alert_secret()
         # N1 修補：心跳專用 ReplayCache，攻擊者錄一筆 replay 會在 nonce LRU 命中
         self._hb_replay_cache = ReplayCache()
+
+        # F1-b 修補：鎖 use_sim_time 等敏感參數，runtime 拒絕未授權竄改
+        lock_sensitive_params(self)
 
         # 定時評估
         self.create_timer(EVAL_PERIOD_SEC, self._evaluate)
@@ -395,7 +400,7 @@ class IntelligentDefenseNode(Node):
         header = (f"vote={len(votes)}/6 >= {VOTE_THRESHOLD}" if reason == "vote"
                   else "strong signal (D4 publisher hijack / D5 monitor 心跳失效)")
         text = (
-            f"🛡️ [智能防禦警報]\n"
+            f"🛡️ [智能防禦警報] [{hms()}]\n"
             f"行為層異常偵測 ({header}):\n"
             + "\n".join(f"  • {d}" for d in details)
         )
