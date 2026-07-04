@@ -78,17 +78,26 @@ for d in (MODEL_DIR, LOG_DIR, TB_DIR, CKPT_DIR):
 TOTAL_STEPS     = 2_000_000   # safety upper bound; expect plateau ~1.0-1.5M
 CHECKPOINT_FREQ = 25_000      # Ctrl+C anytime — best.zip is preserved
 
+# Hyperparameters aligned to SB3-Zoo BipedalWalker-v3 TQC baseline
+# (rl-baselines3-zoo/hyperparams/tqc.yml) — the canonical proven
+# continuous-control config. Diverges from defaults specifically:
+#   train_freq=64 + gradient_steps=64 : batched updates, big wall-time win
+#   use_sde=True                      : gSDE exploration for cont. actions
+#   lr 3e-4 → 7.3e-4, tau 0.005 → 0.02 : faster off-policy convergence
+#   gamma 0.99 → 0.98                 : more sensible for 500-step horizon
 TQC_CFG = dict(
     policy            = "MlpPolicy",
     device            = "auto",
-    learning_rate     = 3e-4,
+    learning_rate     = 7.3e-4,
     buffer_size       = 500_000,
     batch_size        = 256,
-    tau               = 0.005,
-    gamma             = 0.99,
-    learning_starts   = 5_000,
-    train_freq        = 1,
-    gradient_steps    = 1,
+    tau               = 0.02,
+    gamma             = 0.98,
+    learning_starts   = 10_000,
+    train_freq        = 64,
+    gradient_steps    = 64,
+    use_sde           = True,
+    sde_sample_freq   = 4,
     ent_coef          = "auto",
     target_entropy    = "auto",
     top_quantiles_to_drop_per_net = 2,
@@ -99,6 +108,7 @@ TQC_CFG = dict(
             frame_stack=4, lidar_beams=180, state_dim=6, features_dim=256
         ),
         share_features_extractor = False,
+        log_std_init = -3,  # SB3-Zoo BipedalWalker setting
     ),
     tensorboard_log   = str(TB_DIR),
     verbose           = 1,

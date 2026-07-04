@@ -5,8 +5,8 @@ Upgrades over burger_env.py (v1):
     1. Raw 180-beam lidar instead of 20 min-pooled bins
        — spatial structure preserved for 1D-Conv encoder
     2. Frame stack K=4 — temporal velocity/accel inferable from obs alone
-    3. Potential-based reward shaping (Ng-Harada-Russell 1999)
-       — preserves optimal policy under shaping (theoretically grounded)
+    3. Progress-based dense reward (Δdist) — staying still = 0,
+       no NHR baseline bias that traps the policy at "spin in place"
     4. Domain randomization (lidar noise / dropout / max-vel jitter)
        — sim2real ready
     5. Curriculum-aware waypoint queue (1..stage samples per episode)
@@ -24,11 +24,12 @@ Obs (per frame, then K-stacked, then flattened):
 Action: Box[-1,1]^2 → (lin ∈ [0, max_lin_eff], ang ∈ [-max_ang_eff, +max_ang_eff])
 
 Reward (per step):
-    r_collide = -100               (terminal)
-    r_reach   = +100               (per waypoint)
-    r_shape   = γ·Φ(s') - Φ(s)     Φ = -dist_to_goal  (optimality-preserving)
-    r_smooth  = -0.05·‖a_t - a_{t-1}‖²
-    r_time    = -0.005
+    r_collide  = -100              (terminal)
+    r_reach    = +100              (per waypoint)
+    r_progress = Δdist             (prev_dist - dist; 0 when still)
+    r_smooth   = -0.05·‖a_t - a_{t-1}‖²
+    r_time     = -0.05
+    r_forward  = +0.04·action[0]   (Reinis Cimurs forward-bonus pattern)
 """
 from __future__ import annotations
 
@@ -66,12 +67,20 @@ WAYPOINT_REACH  = 0.30
 
 MAX_STEPS       = 500
 SCAN_TIMEOUT_S  = 2.0
-GAMMA_SHAPING   = 0.99
 
 W_COLLIDE       = -100.0
 W_REACH         =  100.0
 W_SMOOTH        =  0.05
-W_TIME          =  0.005
+W_TIME          =  0.05    # 10× upgraded from 0.005 — must be visible
+                            # against per-step Δdist signal (~±0.1) or
+                            # the agent literally cannot perceive time
+                            # pressure. SB3-Zoo proven scale.
+W_FORWARD       =  0.04    # Direct bonus for forward velocity action.
+                            # Inspired by reiniscimurs/DRL-Robot-Navigation
+                            # (96%+ success). Closes the "stand still"
+                            # escape hatch entirely: every stationary step
+                            # carries −0.04 reward, immediately punishing
+                            # the exploration-collapse pattern.
 
 DR_LIDAR_NOISE_STD = (0.0, 0.02)
 DR_LIDAR_DROPOUT_P = (0.0, 0.05)
@@ -132,9 +141,11 @@ class BurgerEnvTop(gym.Env, Node):
       • 6 state = [dist_to_goal, cos(θ), sin(θ), prev_lin_vel,
                    prev_ang_vel, curriculum_stage]
 
-    Reward（Ng-Harada-Russell 1999 potential-based shaping）：
-      r = γ·Φ(s') − Φ(s) + smooth_penalty + sparse_waypoint_bonus
-      → 理論保證最佳策略不變，論文可直接引用（取代上一代 ×10 hack）
+    Reward（progress-based: Δdist）：
+      r = (prev_dist − dist) + smooth_penalty + sparse_waypoint_bonus + time_penalty
+      原本用 NHR γ·Φ(s')−Φ(s)（Φ=−dist）— 理論最佳策略不變，但 (1−γ)·dist
+      每步基線讓「原地不動」每集穩拿 +5..+9 → 121 集 0 成功，policy 收斂
+      到原地轉圈的 local optimum。改純 Δdist：原地 = 0，移動才有訊號。
 
     Robustness：
       • Curriculum 1→5 waypoints（stage success ≥ 0.7 → 自動升級）
@@ -355,9 +366,11 @@ class BurgerEnvTop(gym.Env, Node):
                 return W_REACH, False, "waypoint"
             return W_REACH, True, "all_done"
 
-        phi_now  = -dist
-        phi_prev = -self._prev_dist
-        r_shape  = GAMMA_SHAPING * phi_now - phi_prev
+        # Δdist progress: 0 when still, + when closer, − when farther.
+        # NHR γ·Φ(s')−Φ(s) with Φ=−dist was tried first — its (1−γ)·dist
+        # per-step baseline rewarded staying put (+5..+9/episode) and the
+        # policy collapsed to spinning. See: project_state memory + git log.
+        r_progress = self._prev_dist - dist
         self._prev_dist = dist
 
         a_diff = action - self._prev_action
@@ -365,7 +378,14 @@ class BurgerEnvTop(gym.Env, Node):
 
         r_time = -W_TIME
 
-        return float(r_shape + r_smooth + r_time), False, "running"
+        # Direct forward-velocity bonus (Reinis Cimurs design pattern):
+        # action[0] ∈ [-1, +1] maps to [0, max_lin] commanded velocity.
+        # Per-step reward of W_FORWARD·action[0] pushes the policy out
+        # of any "stand still" local minimum even before Δdist signal
+        # accumulates. action[0]=+1 → +W_FORWARD; action[0]=-1 → −W_FORWARD.
+        r_forward = W_FORWARD * float(action[0])
+
+        return float(r_progress + r_smooth + r_time + r_forward), False, "running"
 
     # ── obs builders ────────────────────────────────────────────────────
     def _safe_scan_array(self) -> np.ndarray:
