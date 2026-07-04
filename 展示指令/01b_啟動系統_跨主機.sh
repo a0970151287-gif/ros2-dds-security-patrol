@@ -67,5 +67,5 @@ ros2 run dds_security_monitor monitor_node --params-file ~/ros2_ws/src/dds_secur
 # ── 全部啟動後確認 ───────────────────────────────────────────
 # 本機： ros2 node list   應出現 6 個系統節點 + /robot_state_publisher /ros_gz_bridge
 # 攻擊機(10.10.10.1，同 domain 30 + 攻擊機 profile)： ros2 topic list 應看得到 /cmd_vel /scan ...
-# Zeek(目標機 eth0)： sudo /opt/zeek/bin/zeek -i eth0 ~/ros2_ws/Zeek監控/dds_monitor.zeek
+# Zeek(目標機 eth0)： cd ~/ros2_ws/網路記錄 && sudo /opt/zeek/bin/zeek -i eth0 ../Zeek監控/dds_monitor.zeek
 #   → 攻擊機一上線/注入，應跳五類告警

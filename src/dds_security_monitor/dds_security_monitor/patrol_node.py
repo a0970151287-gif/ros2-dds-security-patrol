@@ -303,13 +303,21 @@ class SmartPatrolNode(Node):
         self._scan = raw
         self._scan_num_points = len(raw)
         if not self._scan_ready and n > 1:
-            self._scan_angle_min = msg.angle_min
-            self._scan_angle_increment = (msg.angle_max - msg.angle_min) / (n - 1) * step
-            self._scan_ready = True
-            fi = self._fwd()
-            self.get_logger().info(
-                f'LiDAR: amin={math.degrees(self._scan_angle_min):.0f}° '
-                f'ainc={math.degrees(self._scan_angle_increment):.1f}°/pt fwd={fi}')
+            angle_span = msg.angle_max - msg.angle_min
+            if abs(angle_span) < 1e-6:
+                # N25 防護：畸形 /scan（angle_max==angle_min）算出的 increment 會是 0，
+                # 若在此鎖定會讓後續所有除法變成 ZeroDivisionError 崩潰。忽略此幀，
+                # 等下一幀正常掃描再鎖定，_scan_ready 保持 False 不會卡死。
+                self.get_logger().warn(
+                    '⚠️ 畸形 /scan（angle_max==angle_min），忽略此幀，等待正常掃描')
+            else:
+                self._scan_angle_min = msg.angle_min
+                self._scan_angle_increment = angle_span / (n - 1) * step
+                self._scan_ready = True
+                fi = self._fwd()
+                self.get_logger().info(
+                    f'LiDAR: amin={math.degrees(self._scan_angle_min):.0f}° '
+                    f'ainc={math.degrees(self._scan_angle_increment):.1f}°/pt fwd={fi}')
         self._scan_stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         self._scan_recv_wall_time = time.monotonic()
 

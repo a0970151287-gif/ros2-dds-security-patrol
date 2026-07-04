@@ -3,7 +3,7 @@
 import subprocess
 from pathlib import Path
 
-KEYSTORE = Path.home() / 'ros2_security_keystore'
+KEYSTORE = Path.home() / 'ros2_ws' / 'sros2_keystore'
 CA_CERT  = KEYSTORE / 'public' / 'permissions_ca.cert.pem'
 CA_KEY   = KEYSTORE / 'private' / 'permissions_ca.key.pem'
 NOT_BEFORE = '2026-04-27T04:19:50'

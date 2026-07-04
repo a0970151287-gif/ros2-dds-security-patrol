@@ -109,7 +109,7 @@
 
 ## 本專題目前對應的位置
 
-- ✅ **存取控制**（CCS 2022）：SROS2 permissions.xml（Permissive 模式；Enforce 列入未來工作）
+- ✅ **存取控制**（CCS 2022）：SROS2 permissions.xml（日常 demo 為 Permissive；`01c` 已完成 Enforce 全系統加固，雙CA分離+逐節點最小權限）
 - ✅ **加密傳輸**（Trend Micro 2022）：governance.xml
 - ✅ **節點圖偵測**（ROSPaCe 2024）：monitor_node 白名單 + baseline+grace
 - ✅ **網路層監控**（IROS 2022）：Zeek 監控 UDP 7400-7500

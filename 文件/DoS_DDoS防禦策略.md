@@ -47,8 +47,8 @@
 # L1 事前限流（目標機 sudo）
 sudo bash 跨主機紅隊/dos_firewall.sh on        # demo 後: ... off
 
-# L2 偵測→自動阻斷（目標機 sudo Zeek，開啟 BLOCK）
-sudo /opt/zeek/bin/zeek -i eth0 Zeek監控/dds_monitor.zeek DOS_BLOCK_ENABLED=T
+# L2 偵測→自動阻斷（目標機 sudo Zeek，開啟 BLOCK；先 cd 網路記錄 讓輸出落在官方位置）
+cd ~/ros2_ws/網路記錄 && sudo /opt/zeek/bin/zeek -i eth0 ../Zeek監控/dds_monitor.zeek DOS_BLOCK_ENABLED=T
 
 # 攻擊機發 N-DoS 風暴 → 預期：Zeek 告警 + 「🛡️ 已封鎖 10.10.10.1」+ 後續封包被 DROP
 ```

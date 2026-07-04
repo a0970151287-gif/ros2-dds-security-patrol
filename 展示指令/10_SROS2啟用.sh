@@ -14,7 +14,8 @@ set -euo pipefail
 
 WS="$HOME/ros2_ws"
 KEYSTORE="$WS/sros2_keystore"
-POLICY="$WS/展示指令/sros2_policy.xml"   # 存取控制政策（放行合法節點的 topic）
+POLICY="$WS/展示指令/sros2_policy_least_privilege.xml"   # G2 加固：最小權限 ACL
+# 舊的全 wildcard 政策保留為 fallback：$WS/展示指令/sros2_policy.xml
 DOMAIN="${ROS_DOMAIN_ID:-30}"            # 實驗室 domain（governance + permissions 必須一致！）
 
 # legit 節點（要跑安全的）——依實際 demo 節點調整
@@ -68,6 +69,28 @@ if [[ ! -d "$KEYSTORE" ]]; then
 else
   echo "→ keystore 已存在，沿用：$KEYSTORE"
 fi
+
+# ── 1b) G1 加固：分離 permissions CA（與 identity CA 不同把）────────────
+# 教訓（紅隊 N26）：identity 與 permissions 共用一把 CA → 一把淪陷可同時偽造
+# 身分「和」權限。分離後：identity 由 sros2CA 簽、permissions 由 sros2permissionsCA 簽，
+# 攻陷其一不足以同時偽造兩者。idempotent：已分離則跳過。
+split_permissions_ca() {
+  local pub="$KEYSTORE/public" priv="$KEYSTORE/private"
+  if [[ -f "$priv/permissions_ca.key.pem" && ! -L "$priv/permissions_ca.key.pem" ]]; then
+    echo "→ permissions CA 已與 identity CA 分離，跳過"
+    return 0
+  fi
+  echo "→ G1：分離 permissions CA（新生一把 sros2permissionsCA）"
+  rm -f "$pub/permissions_ca.cert.pem" "$priv/permissions_ca.key.pem"
+  openssl ecparam -name prime256v1 -genkey -noout -out "$priv/permissions_ca.key.pem" 2>/dev/null
+  openssl req -new -x509 -key "$priv/permissions_ca.key.pem" \
+    -out "$pub/permissions_ca.cert.pem" -days 3650 \
+    -subj "/CN=sros2permissionsCA" \
+    -addext "basicConstraints=critical,CA:TRUE" \
+    -addext "keyUsage=critical,keyCertSign,cRLSign,digitalSignature" 2>/dev/null
+  chmod 600 "$priv/permissions_ca.key.pem"
+}
+split_permissions_ca
 
 # ── 2) 為每個 legit 節點建 enclave（身分憑證 + 預設權限）────────────────
 for e in "${ENCLAVES[@]}"; do

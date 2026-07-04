@@ -1,0 +1,20 @@
+#separator \x09
+#set_separator	,
+#empty_field	(empty)
+#unset_field	-
+#path	reporter
+#open	2026-04-25-03-23-46
+#fields	ts	level	message	location
+#types	time	enum	string	string
+1777058626.573709	Reporter::ERROR	python3 /home/jesse/ros2_ws/zeek/send_line.py |/Input::READER_RAW: Child process exited with non-zero return code 1	(empty)
+1777058937.647059	Reporter::ERROR	python3 /home/jesse/ros2_ws/zeek/send_line.py |/Input::READER_RAW: Child process exited with non-zero return code 1	(empty)
+1777058959.679262	Reporter::ERROR	python3 /home/jesse/ros2_ws/zeek/send_line.py |/Input::READER_RAW: Child process exited with non-zero return code 1	(empty)
+1777060872.273678	Reporter::ERROR	python3 /home/jesse/ros2_ws/zeek/send_line.py |/Input::READER_RAW: Child process exited with non-zero return code 1	(empty)
+1777069298.916145	Reporter::ERROR	python3 /home/jesse/ros2_ws/zeek/send_line.py |/Input::READER_RAW: Child process exited with non-zero return code 1	(empty)
+1777069300.9999451777069301.000042	Reporter::INFO	received termination signal	(empty)
+1777069301.000042	Reporter::INFO	35474 packets received on interface eth0, 0 (0.00%) dropped, 16 (0.05%) not processed	(empty)
+(empty)
+mpty)
+1777069300.999520	Reporter::INFO	73637 packets received on interface lo, 0 (0.00%) dropped, 7 (0.01%) not processed	(empty)
+ceived termination signal	(empty)
+1777069301.000015	Reporter::INFO	76667 packets received on interface lo, 0 (0.00%) dropped, 7 (0.01%) not processed	(empty)
