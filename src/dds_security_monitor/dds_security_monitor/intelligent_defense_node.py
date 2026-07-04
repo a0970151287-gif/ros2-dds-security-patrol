@@ -363,7 +363,13 @@ class IntelligentDefenseNode(Node):
             ("D5", self._check_heartbeat),
             ("D6", self._detect_d6_scan_odom_consistency),
         ]:
-            triggered, info = fn()
+            try:
+                triggered, info = fn()
+            except Exception as e:
+                # N24b 防禦：單一 detector 的例外不能打死整條行為層防線——
+                # 隔離後本輪跳過該 detector，其餘 detector 照常投票。
+                self.get_logger().error(f"⚠️ {did} detector 例外，本輪跳過（未影響其他偵測器）: {e!r}")
+                continue
             if triggered:
                 votes.append(did)
                 details.append(f"{did}[{info}]")
