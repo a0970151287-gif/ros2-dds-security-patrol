@@ -266,7 +266,7 @@ WhitelistManager ──> NodeScanner ──> AnomalyDetector
 |------|------|------|
 | **外部** | Gazebo Garden | /scan /imu /odom，非本專題開發 |
 | **外部** | 紅隊測試 Lab | N1–N24 PoC / pytest / CVSS，離線驗證 |
-| **外部** | SROS2（Permissive） | DDS 層；Enforce migration 列入 90 天計畫 |
+| **外部** | SROS2（日常demo為Permissive；`01c`為Enforce）| DDS 層；Enforce已完成（雙CA分離+最小權限ACL，稽核28✅），非未來計畫 |
 | **內部** | patrol_node / burger_env_top | TQC 推論 + 巡邏點管理 |
 | **內部** | monitor_node | 白名單偵測 + HMAC 簽章警報 + 緊急停止 |
 | **內部** | MissionManager / SystemStatus / SensorHub | 任務整合層（channel binding 驗章） |

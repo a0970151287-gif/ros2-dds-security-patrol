@@ -167,7 +167,7 @@
 | 緊急停止 | 0.0 | 0.0 |
 | RL（TQC）輸出 | [0, +0.22] | [−1.5, +1.5] |
 
-> ⚠️ 多節點可發布，最後到達者生效（Last-Write-Win）。`/cmd_vel` 非 String 無法簽章，改由 `intelligent_defense_node` 行為偵測（D1/D4/D6）緩解；根治需 SROS2 Enforce。
+> ⚠️ 多節點可發布，最後到達者生效（Last-Write-Win）。`/cmd_vel` 非 String 無法簽章，改由 `intelligent_defense_node` 行為偵測（D1/D4/D6）緩解；根治需 SROS2 Enforce——**已完成**（`01c_啟動系統_enforce.sh`，雙CA+最小權限ACL，稽核28✅）。
 
 ---
 
@@ -249,7 +249,7 @@ RELIABLE 確保警報不因網路擁堵被丟棄；改用 VOLATILE 是為了**�
 
 ### 缺陷 2：`/cmd_vel` 無優先權仲裁
 `/cmd_vel` 訊息型別非 String，無法包 HMAC envelope；多 publisher 競爭（Last-Write-Win），緊急停止可能被高頻注入覆蓋（紅隊 N9）。  
-**現狀**：由 `intelligent_defense_node` 行為偵測緩解 —— D1 物理門檻（>0.23 m/s）、D4 unauthorized publisher、D6 cmd-vs-odom 一致性；patrol pause 期間高頻送 0 速度競爭（N9 約 62% 緩解）。**根治需 SROS2 Enforce**（列入 90 天計畫）。
+**現狀**：由 `intelligent_defense_node` 行為偵測緩解 —— D1 物理門檻（>0.23 m/s）、D4 unauthorized publisher、D6 cmd-vs-odom 一致性；patrol pause 期間高頻送 0 速度競爭（N9 約 62% 緩解）。**根治需 SROS2 Enforce**——**已完成**（`01c_啟動系統_enforce.sh`），但尚未針對N9實際重測驗證after效果。
 
 ### 缺陷 3：`/security/alerts` 無身份驗證 / 可重放 ✅ 已修補
 原設定為**純文字、無簽章**，任何同 domain 節點可偽造警報強制停車（紅隊 B），且可錄製合法警報無限重放造成永久停車（紅隊 N3）。  
