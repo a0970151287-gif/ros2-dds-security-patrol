@@ -496,7 +496,11 @@
   }
   if (reduce) { draw(); } else { requestAnimationFrame(draw); }
 
-  // ---- cursor water ripples: trail on move, burst on click ----
+  // ---- cursor water ripples: a drop on a calm lake ----
+  // Feathered light-rings that spread slowly, decelerate and fade — rendered
+  // with additive blending so they read as soft caustics on dark water, not
+  // hard sonar lines. A pointer glide leaves the faintest wake; a click sends
+  // out two or three concentric waves plus a soft central bloom.
   (function ripples() {
     if (reduce) return;
     const rc = document.getElementById('ripples');
@@ -510,57 +514,90 @@
     }
     rsize(); addEventListener('resize', rsize);
 
-    const drops = [];
-    const GOLD = '200,162,91', TEAL = '63,185,166';
-    function add(x, y, opt) {
-      drops.push({
-        x, y, r: opt.r0 || 0,
-        max: opt.max, life: 1, decay: opt.decay,
-        rings: opt.rings || 1, lw: opt.lw || 1.4, tint: opt.tint
-      });
-      // cap for performance
-      if (drops.length > 60) drops.splice(0, drops.length - 60);
+    // pale moonlight-on-water, with a whisper of the deck's teal
+    const TINT = '176, 214, 214';
+    const waves = [];
+    const now = () => performance.now();
+
+    function ring(x, y, o) {
+      waves.push({ kind: 'ring', x, y, birth: now() + (o.delay || 0),
+                   dur: o.dur, max: o.max, peak: o.peak });
+      if (waves.length > 80) waves.splice(0, waves.length - 80);
+    }
+    function bloom(x, y, o) {
+      waves.push({ kind: 'bloom', x, y, birth: now(), dur: o.dur, max: o.max, peak: o.peak });
     }
 
-    // move trail — throttled, gentle gold ripples
-    let lastT = 0, lastX = 0, lastY = 0;
-    addEventListener('pointermove', (e) => {
-      if (e.pointerType === 'touch') return; // don't fight scroll on touch
-      const now = performance.now();
-      if (now - lastT < 55) return;
-      const dx = e.clientX - lastX, dy = e.clientY - lastY;
-      if (Math.hypot(dx, dy) < 6) return;
-      lastT = now; lastX = e.clientX; lastY = e.clientY;
-      add(e.clientX, e.clientY, { max: 34, decay: 0.045, rings: 1, lw: 1.2, tint: GOLD });
-    }, { passive: true });
-
-    // click / tap burst — stronger teal double-ring
-    addEventListener('pointerdown', (e) => {
-      add(e.clientX, e.clientY, { max: 120, decay: 0.020, rings: 2, lw: 2.2, tint: TEAL });
-      add(e.clientX, e.clientY, { max: 70, decay: 0.028, rings: 1, lw: 1.4, tint: TEAL, r0: 4 });
-    }, { passive: true });
-
-    function rdraw() {
-      g.clearRect(0, 0, rw, rh);
-      for (let i = drops.length - 1; i >= 0; i--) {
-        const d = drops[i];
-        const ease = 1 - Math.pow(1 - (1 - d.life), 2); // ease-out expansion
-        d.r = d.max * ease;
-        d.life -= d.decay;
-        if (d.life <= 0) { drops.splice(i, 1); continue; }
-        for (let k = 0; k < d.rings; k++) {
-          const rr = d.r - k * 9;
-          if (rr <= 0) continue;
-          g.beginPath();
-          g.arc(d.x, d.y, rr, 0, Math.PI * 2);
-          g.strokeStyle = 'rgba(' + d.tint + ',' + (d.life * 0.5 * (1 - k * 0.4)).toFixed(3) + ')';
-          g.lineWidth = d.lw;
-          g.stroke();
-        }
+    // a drop: concentric waves spread from one point, each spawned a beat later
+    function drop(x, y, scale) {
+      const s = scale || 1;
+      bloom(x, y, { dur: 900, max: 46 * s, peak: 0.20 });
+      for (let i = 0; i < 3; i++) {
+        ring(x, y, {
+          delay: i * 170,
+          dur: 2400 + i * 260,
+          max: (150 + i * 95) * s,
+          peak: 0.17 - i * 0.045
+        });
       }
-      requestAnimationFrame(rdraw);
     }
-    requestAnimationFrame(rdraw);
+
+    // pointer glide — the faintest wake, spaced out so it stays calm
+    let lastT = 0, lx = 0, ly = 0;
+    addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch') return;
+      const t = now();
+      if (t - lastT < 110) return;
+      if (Math.hypot(e.clientX - lx, e.clientY - ly) < 14) return;
+      lastT = t; lx = e.clientX; ly = e.clientY;
+      ring(e.clientX, e.clientY, { dur: 1700, max: 62, peak: 0.05 });
+    }, { passive: true });
+
+    // click / tap — a full drop
+    addEventListener('pointerdown', (e) => {
+      drop(e.clientX, e.clientY, e.pointerType === 'touch' ? 1.15 : 1);
+    }, { passive: true });
+
+    function frame() {
+      g.clearRect(0, 0, rw, rh);
+      g.globalCompositeOperation = 'lighter';
+      const t = now();
+      for (let i = waves.length - 1; i >= 0; i--) {
+        const w = waves[i];
+        const age = t - w.birth;
+        if (age < 0) continue;
+        const p = age / w.dur;
+        if (p >= 1) { waves.splice(i, 1); continue; }
+
+        if (w.kind === 'bloom') {
+          // soft splash of light where the drop lands, fading fast
+          const a = w.peak * (1 - p) * (1 - p);
+          const r = w.max * (0.4 + 0.6 * p);
+          const grd = g.createRadialGradient(w.x, w.y, 0, w.x, w.y, r);
+          grd.addColorStop(0, 'rgba(' + TINT + ',' + a.toFixed(3) + ')');
+          grd.addColorStop(1, 'rgba(' + TINT + ',0)');
+          g.fillStyle = grd;
+          g.beginPath(); g.arc(w.x, w.y, r, 0, Math.PI * 2); g.fill();
+          continue;
+        }
+
+        // ring: ease-out so it decelerates like a real ripple losing energy
+        const ease = 1 - Math.pow(1 - p, 2.4);
+        const r = w.max * ease;
+        const band = 5 + 26 * p;                 // crest softens as it travels
+        const a = w.peak * (1 - p) * (1 - p);     // gentle fade
+        const inner = Math.max(r - band, 0), outer = r + band;
+        const grd = g.createRadialGradient(w.x, w.y, inner, w.x, w.y, outer);
+        grd.addColorStop(0,   'rgba(' + TINT + ',0)');
+        grd.addColorStop(0.5, 'rgba(' + TINT + ',' + a.toFixed(3) + ')');
+        grd.addColorStop(1,   'rgba(' + TINT + ',0)');
+        g.fillStyle = grd;
+        g.beginPath(); g.arc(w.x, w.y, outer, 0, Math.PI * 2); g.fill();
+      }
+      g.globalCompositeOperation = 'source-over';
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
   })();
 </script>
 </body>
