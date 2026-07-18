@@ -45,6 +45,12 @@
   }
   ::selection { background: var(--gold); color: var(--ink); }
 
+  /* ================= ripple layer (cursor water feedback) ================= */
+  #ripples {
+    position: fixed; inset: 0; z-index: 80; pointer-events: none;
+    width: 100%; height: 100%;
+  }
+
   /* ================= progress rail ================= */
   .rail {
     position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 90;
@@ -240,6 +246,7 @@
 </head>
 <body>
 
+<canvas id="ripples"></canvas>
 <div class="rail" id="rail"></div>
 <div class="brandmark">ROS2 · DDS · SECURITY PATROL</div>
 <div class="actno" id="actno">00 / 06</div>
@@ -488,6 +495,73 @@
     if (!reduce) requestAnimationFrame(draw);
   }
   if (reduce) { draw(); } else { requestAnimationFrame(draw); }
+
+  // ---- cursor water ripples: trail on move, burst on click ----
+  (function ripples() {
+    if (reduce) return;
+    const rc = document.getElementById('ripples');
+    const g = rc.getContext('2d');
+    let rw, rh, dpr;
+    function rsize() {
+      dpr = Math.min(devicePixelRatio || 1, 2);
+      rw = rc.clientWidth; rh = rc.clientHeight;
+      rc.width = rw * dpr; rc.height = rh * dpr;
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    rsize(); addEventListener('resize', rsize);
+
+    const drops = [];
+    const GOLD = '200,162,91', TEAL = '63,185,166';
+    function add(x, y, opt) {
+      drops.push({
+        x, y, r: opt.r0 || 0,
+        max: opt.max, life: 1, decay: opt.decay,
+        rings: opt.rings || 1, lw: opt.lw || 1.4, tint: opt.tint
+      });
+      // cap for performance
+      if (drops.length > 60) drops.splice(0, drops.length - 60);
+    }
+
+    // move trail — throttled, gentle gold ripples
+    let lastT = 0, lastX = 0, lastY = 0;
+    addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch') return; // don't fight scroll on touch
+      const now = performance.now();
+      if (now - lastT < 55) return;
+      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      if (Math.hypot(dx, dy) < 6) return;
+      lastT = now; lastX = e.clientX; lastY = e.clientY;
+      add(e.clientX, e.clientY, { max: 34, decay: 0.045, rings: 1, lw: 1.2, tint: GOLD });
+    }, { passive: true });
+
+    // click / tap burst — stronger teal double-ring
+    addEventListener('pointerdown', (e) => {
+      add(e.clientX, e.clientY, { max: 120, decay: 0.020, rings: 2, lw: 2.2, tint: TEAL });
+      add(e.clientX, e.clientY, { max: 70, decay: 0.028, rings: 1, lw: 1.4, tint: TEAL, r0: 4 });
+    }, { passive: true });
+
+    function rdraw() {
+      g.clearRect(0, 0, rw, rh);
+      for (let i = drops.length - 1; i >= 0; i--) {
+        const d = drops[i];
+        const ease = 1 - Math.pow(1 - (1 - d.life), 2); // ease-out expansion
+        d.r = d.max * ease;
+        d.life -= d.decay;
+        if (d.life <= 0) { drops.splice(i, 1); continue; }
+        for (let k = 0; k < d.rings; k++) {
+          const rr = d.r - k * 9;
+          if (rr <= 0) continue;
+          g.beginPath();
+          g.arc(d.x, d.y, rr, 0, Math.PI * 2);
+          g.strokeStyle = 'rgba(' + d.tint + ',' + (d.life * 0.5 * (1 - k * 0.4)).toFixed(3) + ')';
+          g.lineWidth = d.lw;
+          g.stroke();
+        }
+      }
+      requestAnimationFrame(rdraw);
+    }
+    requestAnimationFrame(rdraw);
+  })();
 </script>
 </body>
 </html>
