@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SENTINEL — ROS2 巡邏系統攻防戰報（旗艦版）</title>
+<style>
+  :root {
+    --ink:   #08080b;
+    --ink-2: #0d0e13;
+    --bone:  #f2efe6;
+    --dim:   #8f8d86;
+    --amber: #ffab4d;
+    --amber-hi: #ffd9a0;
+    --amber-lo: #c8631f;
+    --teal:  #46c9b4;
+    --hair:  rgba(242,239,230,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; background: var(--ink); }
+  body { background: var(--ink); color: var(--bone);
+    font: 400 16px/1.7 "Helvetica Neue", Helvetica, Arial, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  ::selection { background: var(--amber); color: var(--ink); }
+  .disp { font-weight: 800; letter-spacing: -0.03em; line-height: 0.9; text-transform: uppercase; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+  /* nav */
+  nav { position: fixed; inset: 0 0 auto 0; z-index: 100; display: flex; align-items: center;
+    justify-content: space-between; padding: 1.2rem clamp(1.2rem,4vw,3rem);
+    mix-blend-mode: difference; color: #fff; }
+  nav .brand { font-weight: 800; letter-spacing: .18em; font-size: 1.05rem; }
+  nav .links { display: flex; gap: 1.8rem; }
+  nav .links a { color: inherit; text-decoration: none; font-size: .62rem; letter-spacing: .22em;
+    text-transform: uppercase; opacity: .85; }
+  @media (max-width: 700px){ nav .links{ display:none } }
+
+  /* scroll-scrub scaffolding */
+  .pin { position: relative; }
+  .stage { position: sticky; top: 0; height: 100vh; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; }
+  .edge { position: fixed; left: clamp(1.2rem,4vw,3rem); bottom: 1.3rem; z-index: 90;
+    font-family: ui-monospace, monospace; font-size: .58rem; letter-spacing: .28em;
+    color: var(--dim); text-transform: uppercase; mix-blend-mode: difference; }
+  #rail { position: fixed; top: 0; left: 0; height: 2px; z-index: 95;
+    width: var(--w,0%); background: linear-gradient(90deg, var(--amber), var(--teal)); }
+
+  /* ===== HERO ===== */
+  #hero { height: 320vh; }
+  #core { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+  .hero-copy { position: relative; z-index: 2; width: 100%;
+    display: grid; grid-template-columns: 1fr 1fr; align-items: center;
+    padding: 0 clamp(1.5rem,6vw,7rem); pointer-events: none; }
+  .hero-state { grid-column: 1; }
+  .hero-state h1 { font-size: clamp(2.6rem, 8vw, 8rem); }
+  .hero-state.b { grid-column: 2; text-align: right; justify-self: end; }
+  .hero-p { grid-column: 2; max-width: 34ch; justify-self: end; color: var(--dim);
+    font-size: clamp(.9rem,1.3vw,1.08rem); }
+  .hero-state, .hero-p { transition: opacity .1s linear; }
+  .eyebrow { font-family: ui-monospace, monospace; font-size: .64rem; letter-spacing: .32em;
+    text-transform: uppercase; color: var(--amber); display: inline-flex; gap: .7rem; align-items: center; margin-bottom: 1.2rem; }
+  .eyebrow::before { content:""; width: 30px; height: 1px; background: var(--amber); }
+  .hero-hint { position: absolute; bottom: 2.2rem; left: 50%; transform: translateX(-50%); z-index: 3;
+    font-family: ui-monospace, monospace; font-size: .56rem; letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
+
+  /* ===== HOLOGRAPHIC ===== */
+  #holo { height: 220vh; }
+  #holo .stage { background: #050506; }
+  .holo-wash { position: absolute; inset: -20% -10%; z-index: 0; filter: blur(30px) saturate(1.35);
+    background: conic-gradient(from var(--a,0deg) at 50% 50%,
+      #ff5a3c, #ffca3a, #37d67a, #3ac6ff, #8b5cf6, #ff4fa3, #ff5a3c);
+    opacity: .0; }
+  .holo-inner { position: relative; z-index: 2; text-align: center; padding: 0 1.5rem; }
+  .holo-orb { width: clamp(120px, 16vw, 220px); aspect-ratio: 1; margin: 0 auto 2.4rem;
+    border-radius: 50%; position: relative;
+    background: radial-gradient(circle at 38% 32%, #fff2, #0000 60%),
+      radial-gradient(circle at 50% 55%, var(--amber-hi), var(--amber-lo) 62%, #2a1206 100%);
+    box-shadow: 0 0 90px 10px rgba(255,171,77,.45), inset 0 -14px 40px rgba(0,0,0,.6);
+    transition: transform .18s ease-out; }
+  .holo-orb::after { content:""; position:absolute; inset: 14%; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.22); }
+  #holo h2 { font-size: clamp(2.4rem, 8vw, 7rem); color: #fff; }
+  #holo h2 sup { font-size: .28em; color: var(--amber); vertical-align: super; }
+  .holo-foot { margin-top: 1.4rem; color: rgba(255,255,255,.7); font-size: .95rem; }
+  .holo-tag { position: absolute; z-index: 3; font-family: ui-monospace, monospace; font-size: .56rem;
+    letter-spacing: .26em; text-transform: uppercase; color: rgba(255,255,255,.75); }
+
+  /* ===== EXPANDING FRAME ===== */
+  #frame { height: 320vh; }
+  #frame .stage { background: var(--ink-2); }
+  .frame-copy { position: absolute; z-index: 3; left: clamp(1.5rem,6vw,7rem); top: 50%;
+    transform: translateY(-50%); pointer-events: none; }
+  .frame-copy h2 { font-size: clamp(2rem, 5.5vw, 4.6rem); }
+  .frame-copy h2 .thin { display:block; font-weight: 300; text-transform: none; letter-spacing: -0.01em; color: var(--dim); }
+  .revealbox { position: relative; z-index: 2; overflow: hidden;
+    border: 1px dashed rgba(242,239,230,.5); border-radius: 3px;
+    width: 42vw; height: 54vh; }
+  .revealbox .fill { position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1rem; text-align: center;
+    background: radial-gradient(120% 120% at 30% 20%, #12312c, #071613 70%); }
+  .revealbox .big { font-weight: 800; font-size: clamp(3rem, 10vw, 9rem); color: var(--teal);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.03em; text-shadow: 0 0 50px rgba(70,201,180,.4); }
+  .revealbox .cap { font-family: ui-monospace, monospace; font-size: .72rem; letter-spacing: .12em; color: rgba(242,239,230,.7); }
+  .frame-note { position: absolute; z-index: 3; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    font-family: ui-monospace, monospace; font-size: .56rem; letter-spacing: .3em; color: var(--dim); text-transform: uppercase; }
+
+  /* ===== MONTAGE (horizontal scrub) ===== */
+  #montage { height: 340vh; }
+  #montage .stage { justify-content: flex-start; }
+  .track { display: flex; gap: clamp(1rem,2.5vw,2.4rem); padding: 0 12vw;
+    will-change: transform; align-items: center; }
+  .card { flex: 0 0 auto; width: clamp(240px, 26vw, 380px); height: 60vh;
+    border: 1px solid var(--hair); background: linear-gradient(180deg, var(--ink-2), #0a0b0f);
+    padding: 2rem; display: flex; flex-direction: column; justify-content: space-between; }
+  .card .no { font-family: ui-monospace, monospace; color: var(--amber); font-size: .8rem; letter-spacing: .1em; }
+  .card h3 { font-weight: 800; font-size: clamp(1.3rem, 2.4vw, 1.9rem); line-height: 1.05; }
+  .card p { color: var(--dim); font-size: .82rem; line-height: 1.55; }
+  .card .verdict { font-family: ui-monospace, monospace; font-size: .58rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--teal); border: 1px solid rgba(70,201,180,.4);
+    padding: .3rem .6rem; align-self: flex-start; }
+  .track .lead { flex: 0 0 auto; width: 40vw; padding-right: 4vw; }
+  .track .lead .eyebrow { color: var(--teal); } .track .lead .eyebrow::before { background: var(--teal); }
+  .track .lead h2 { font-weight: 800; font-size: clamp(2rem,4.5vw,3.6rem); text-transform: uppercase; letter-spacing: -0.02em; }
+
+  /* ===== WORDMARK ===== */
+  #mark { height: 200vh; }
+  #mark .stage { background: radial-gradient(120% 100% at 50% 46%, #16130c, var(--ink) 72%); flex-direction: column; }
+  .rings { position: absolute; z-index: 1; width: 1px; height: 1px; }
+  .rings i { position: absolute; border: 1px dotted rgba(255,171,77,.4); border-radius: 50%;
+    left: 50%; top: 50%; transform: translate(-50%,-50%) scale(var(--s,0)); }
+  #mark .word { position: relative; z-index: 2; font-weight: 800; letter-spacing: .01em;
+    font-size: clamp(3.4rem, 22vw, 20rem); line-height: .82; text-transform: uppercase; }
+  #mark .word span { display: inline-block; will-change: transform, opacity;
+    background: linear-gradient(180deg, var(--amber-hi), var(--amber) 42%, var(--amber-lo));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #mark .sub { position: relative; z-index: 2; margin-top: 1.6rem; color: var(--dim); max-width: 40ch; text-align: center; }
+
+  /* ===== CLOSE ===== */
+  #close { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center; padding: 8vh 1.5rem; gap: 2rem; }
+  #close .badges { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
+  #close .badge { font-family: ui-monospace, monospace; font-size: .62rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--dim); border: 1px solid var(--hair); padding: .55rem 1rem; }
+  #close .badge b { color: var(--amber); }
+  #close .credit { font-family: ui-monospace, monospace; font-size: .58rem; letter-spacing: .24em;
+    color: var(--dim); text-transform: uppercase; }
+  #close h2 { font-weight: 300; font-size: clamp(1.6rem,4vw,3rem); max-width: 20ch; }
+  #close h2 b { font-weight: 800; }
+
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto } }
+</style>
+</head>
+<body>
+
+<div id="rail"></div>
+<nav>
+  <div class="brand">SENTINEL</div>
+  <div class="links"><a href="#hero">Intro</a><a href="#holo">Threat</a><a href="#frame">Defense</a><a href="#mark">Verdict</a></div>
+</nav>
+<div class="edge mono" id="edge">00 · INTRO</div>
+
+<!-- ============ HERO ============ -->
+<section class="pin" id="hero" data-edge="00 · INTRO">
+  <div class="stage">
+    <canvas id="core"></canvas>
+    <div class="hero-copy">
+      <div class="hero-state a">
+        <div class="eyebrow">Intro</div>
+        <h1 class="disp">Isn't just<br>a monitor.</h1>
+      </div>
+      <p class="hero-p a">這不只是一個監控節點。它是一套會反擊的巡邏系統——
+        在一個手上沒有密鑰的攻擊者面前，學會分辨誰是自己人、什麼訊息才算數。</p>
+      <div class="hero-state b">
+        <h1 class="disp">It fights<br>back.</h1>
+      </div>
+    </div>
+    <div class="hero-hint mono">向下捲動</div>
+  </div>
+</section>
+
+<!-- ============ HOLOGRAPHIC ============ -->
+<section class="pin" id="holo" data-edge="01 · THREAT">
+  <div class="stage">
+    <div class="holo-wash"></div>
+    <div class="holo-tag" style="left:14%; top:30%">L1 · 同網段</div>
+    <div class="holo-tag" style="right:14%; top:34%; text-align:right">零密鑰</div>
+    <div class="holo-tag" style="left:20%; bottom:26%">18 漏洞編目</div>
+    <div class="holo-inner">
+      <div class="holo-orb" id="orb"></div>
+      <h2 class="disp">Forged under<br>fire<sup>*</sup></h2>
+      <p class="holo-foot">* 八種攻擊、零密鑰、全部打穿——然後八次修補。這份戰報是在真實紅隊火力下淬出來的。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EXPANDING FRAME ============ -->
+<section class="pin" id="frame" data-edge="02 · DEFENSE">
+  <div class="stage">
+    <div class="frame-copy">
+      <h2 class="disp">So resilient,<span class="thin">它打不垮。</span></h2>
+    </div>
+    <div class="revealbox" id="revealbox">
+      <div class="fill">
+        <div class="big"><span id="floodn">0</span></div>
+        <div class="cap">368,859 msg/s 驗章洪水 · IDS 計時器紋風不動</div>
+      </div>
+    </div>
+    <div class="frame-note mono">SCROLL TO CONTINUE</div>
+  </div>
+</section>
+
+<!-- ============ MONTAGE (horizontal) ============ -->
+<section class="pin" id="montage" data-edge="03 · BREACHES">
+  <div class="stage">
+    <div class="track" id="track">
+      <div class="lead">
+        <div class="eyebrow">Breaches</div>
+        <h2 class="disp">八次零密鑰突破</h2>
+      </div>
+      <div class="card"><div><div class="no">N1</div><h3>心跳重放</h3></div><p>蓋章沒寫時間、沒流水號。重播舊心跳，IDS 以為 monitor 還活著。</p><div class="verdict">已修補</div></div>
+      <div class="card"><div><div class="no">N2</div><h3>Regex 後門偽裝</h3></div><p>白名單靠名字格式放行。取一個合法名字，就被當成自己人。</p><div class="verdict">已修補</div></div>
+      <div class="card"><div><div class="no">N3</div><h3>警報重放 → 永久停擺</h3></div><p>每 5 秒重播真警報，倒數永遠歸零，機器人 35 秒零恢復。</p><div class="verdict">已修補</div></div>
+      <div class="card"><div><div class="no">N4</div><h3>跨頻道蓋章混淆</h3></div><p>蓋章沒綁頻道。把心跳轉貼到警報頻道，驗章照過。regression 已擋下。</p><div class="verdict">已修補</div></div>
+      <div class="card"><div><div class="no">N5</div><h3>開機前卡位汙染基準</h3></div><p>趕在 monitor 開機前潛伏，被拍進基準快照，從此永不報警。</p><div class="verdict">已修補</div></div>
+      <div class="card"><div><div class="no">N6·N7</div><h3>內部頻道偽造</h3></div><p>感測器與任務頻道當初沒蓋章。偽裝名字狂灌假資料，儀表板任你寫。</p><div class="verdict">已修補</div></div>
+      <div class="card"><div><div class="no">N13</div><h3>反射放大 → 永久致盲</h3></div><p>一包未簽章垃圾，借 system_status 的鑰匙簽出真警報，一槍關掉整條防線。regression 已擋下。</p><div class="verdict">已修補</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WORDMARK ============ -->
+<section class="pin" id="mark" data-edge="04 · VERDICT">
+  <div class="stage">
+    <div class="rings" id="rings"><i style="width:38vmax;height:38vmax"></i><i style="width:26vmax;height:26vmax"></i><i style="width:15vmax;height:15vmax"></i></div>
+    <div class="word disp" id="word"><span>S</span><span>E</span><span>C</span><span>U</span><span>R</span><span>E</span><span>D</span></div>
+    <p class="sub">八次突破，八次修補，兩次紅隊 regression 實測確認擋下。一份誠實到把殘餘風險都寫進去的戰報。</p>
+  </div>
+</section>
+
+<!-- ============ CLOSE ============ -->
+<section id="close" data-edge="05 · SUMMARY">
+  <h2>從 <b>八次零密鑰突破</b>，<br>到一套會反擊的巡邏系統。</h2>
+  <div class="badges">
+    <div class="badge"><b>18</b> 漏洞 · CVSS + BIA</div>
+    <div class="badge"><b>24</b> 自動化測試 · 全綠</div>
+    <div class="badge">IEC <b>62443</b> / NIST <b>CSF</b></div>
+    <div class="badge">修補時程 <b>30 / 60 / 90</b> 天</div>
+  </div>
+  <div class="credit">ROS2 DDS Security Patrol · Sentinel 攻防戰報</div>
+</section>
+
+<script>
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (v,a,b) => Math.min(Math.max(v,a),b);
+  const lerp = (a,b,t) => a + (b-a)*t;
+  // progress of a tall .pin element through its sticky range: 0 at entry, 1 at exit
+  function prog(el){
+    const r = el.getBoundingClientRect();
+    const total = el.offsetHeight - innerHeight;
+    return clamp(-r.top / total, 0, 1);
+  }
+
+  const hero = document.getElementById('hero');
+  const holo = document.getElementById('holo');
+  const wash = document.querySelector('.holo-wash');
+  const frame = document.getElementById('frame');
+  const frameCopy = document.querySelector('#frame .frame-copy');
+  const box = document.getElementById('revealbox');
+  const montage = document.getElementById('montage');
+  const track = document.getElementById('track');
+  const mark = document.getElementById('mark');
+  const rings = document.getElementById('rings');
+  const word = document.getElementById('word');
+  const rail = document.getElementById('rail');
+  const edge = document.getElementById('edge');
+  const heroA = document.querySelectorAll('.hero-state.a, .hero-p.a');
+  const heroB = document.querySelector('.hero-state.b');
+
+  // ---- flood count-up (fires once, tied to frame reveal) ----
+  const floodn = document.getElementById('floodn');
+  let floodDone = false;
+  function floodTo(p){
+    if (floodDone) return;
+    if (p > 0.35){
+      floodDone = true;
+      const t0 = performance.now(), tgt = 368859;
+      (function tick(t){
+        const k = clamp((t-t0)/1500,0,1), e = 1-Math.pow(1-k,3);
+        floodn.textContent = Math.round(tgt*e).toLocaleString('en-US');
+        if (k<1) requestAnimationFrame(tick);
+      })(performance.now());
+    }
+  }
+
+  let hp = 0; // live hero progress for the canvas loop
+  function onScroll(){
+    // rail + edge label
+    const max = document.documentElement.scrollHeight - innerHeight;
+    rail.style.setProperty('--w', (max>0?scrollY/max*100:0)+'%');
+    let cur = document.querySelector('[data-edge]');
+    document.querySelectorAll('[data-edge]').forEach(s=>{
+      if (s.getBoundingClientRect().top <= innerHeight*0.5) cur = s;
+    });
+    edge.textContent = cur.dataset.edge;
+
+    // HERO — crossfade the two headline states across the pin
+    hp = prog(hero);
+    const aOut = clamp((hp-0.32)/0.16, 0, 1);      // A fades out 0.32→0.48
+    const bIn  = clamp((hp-0.5)/0.18, 0, 1);        // B fades in 0.50→0.68
+    heroA.forEach(el=> el.style.opacity = (1-aOut).toFixed(3));
+    heroB.style.opacity = bIn.toFixed(3);
+
+    // HOLO — spin the conic wash and fade it in around the pin's middle
+    const gp = prog(holo);
+    wash.style.setProperty('--a', (gp*220)+'deg');
+    wash.style.opacity = (Math.sin(clamp(gp,0,1)*Math.PI) * 0.55).toFixed(3);
+
+    // FRAME — grow the dashed box to full-bleed, then reveal the stat
+    const fp = prog(frame);
+    const g = clamp((fp-0.1)/0.6, 0, 1);            // growth window
+    const w = lerp(42, 100, g), h = lerp(54, 100, g);
+    box.style.width = w+'vw'; box.style.height = h+'vh';
+    box.style.borderColor = 'rgba(242,239,230,'+lerp(0.5,0.06,g).toFixed(3)+')';
+    // once the frame is full-bleed the headline has done its job — clear it so
+    // it never collides with the centred stat
+    frameCopy.style.opacity = (1 - clamp((g-0.55)/0.35, 0, 1)).toFixed(3);
+    floodTo(fp);
+
+    // MONTAGE — horizontal scrub of the card track
+    const mp = prog(montage);
+    const dist = Math.max(track.scrollWidth - innerWidth, 0);
+    track.style.transform = 'translateX(' + (-dist*mp) + 'px)';
+
+    // WORDMARK — dotted rings scale up, letters rise in sequence
+    const wp = prog(mark);
+    [...rings.children].forEach((r,i)=>{
+      const s = clamp((wp-0.05-i*0.06)/0.4, 0, 1);
+      r.style.setProperty('--s', (s).toFixed(3));
+      r.style.opacity = s.toFixed(3);
+    });
+    [...word.children].forEach((s,i)=>{
+      const k = clamp((wp-0.12 - i*0.05)/0.3, 0, 1);
+      s.style.transform = 'translateY(' + lerp(40,0,k) + 'px)';
+      s.style.opacity = k.toFixed(3);
+      s.style.filter = 'blur(' + lerp(12,0,k) + 'px)';
+    });
+  }
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
+  // init word hidden
+  [...word.children].forEach(s=>{ s.style.opacity=0; });
+
+  // ---- holo orb parallax on pointer ----
+  const orb = document.getElementById('orb');
+  addEventListener('pointermove', (e)=>{
+    if (e.pointerType==='touch') return;
+    const dx = (e.clientX/innerWidth - .5), dy = (e.clientY/innerHeight - .5);
+    orb.style.transform = 'translate('+(dx*30)+'px,'+(dy*30)+'px) scale('+(1+Math.abs(dx)*0.06)+')';
+  }, { passive: true });
+
+  // ================= HERO CORE — spinning glowing disc =================
+  const cv = document.getElementById('core');
+  const ctx = cv.getContext('2d');
+  let W,H,dpr;
+  function csize(){
+    dpr = Math.min(devicePixelRatio||1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W*dpr; cv.height = H*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  csize(); addEventListener('resize', csize);
+
+  let spin = 0;
+  function drawCore(){
+    ctx.clearRect(0,0,W,H);
+    const cx = W*0.5, cy = H*0.5;
+    const R = Math.min(W,H) * lerp(0.16, 0.29, hp);   // grows as you scroll
+    spin += 0.006 + hp*0.006;                          // scroll adds momentum
+    const a = spin;
+    const rx = Math.max(Math.abs(Math.cos(a)), 0.07) * R; // spinning-coin squash
+    const ry = R;
+    const tilt = -0.32;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(tilt);
+
+    // glow halo (additive)
+    ctx.globalCompositeOperation = 'lighter';
+    const halo = ctx.createRadialGradient(0,0,0, 0,0, R*2.1);
+    halo.addColorStop(0, 'rgba(255,171,77,0.42)');
+    halo.addColorStop(0.4,'rgba(255,120,40,0.16)');
+    halo.addColorStop(1, 'rgba(255,120,40,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0,0,R*2.1,0,Math.PI*2); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+
+    // disc face
+    const face = ctx.createLinearGradient(-rx, -ry, rx, ry);
+    face.addColorStop(0, '#3a1c0b');
+    face.addColorStop(0.5, '#ffb24d');
+    face.addColorStop(1, '#7c3a12');
+    ctx.fillStyle = face;
+    ctx.beginPath(); ctx.ellipse(0,0, rx, ry, 0, 0, Math.PI*2); ctx.fill();
+
+    // bright leading edge
+    ctx.lineWidth = Math.max(2, R*0.03);
+    ctx.strokeStyle = 'rgba(255,217,160,0.9)';
+    ctx.beginPath(); ctx.ellipse(0,0, rx, ry, 0, 0, Math.PI*2); ctx.stroke();
+
+    // inner rim detail
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = Math.max(1, R*0.015);
+    ctx.beginPath(); ctx.ellipse(0,0, rx*0.72, ry*0.72, 0, 0, Math.PI*2); ctx.stroke();
+
+    // specular sweep on the face, strongest when face-on
+    const faceOn = Math.abs(Math.cos(a));
+    ctx.globalCompositeOperation = 'lighter';
+    const spec = ctx.createRadialGradient(-rx*0.3,-ry*0.3,0, -rx*0.3,-ry*0.3, R*0.9);
+    spec.addColorStop(0, 'rgba(255,240,210,'+(0.5*faceOn).toFixed(3)+')');
+    spec.addColorStop(1, 'rgba(255,240,210,0)');
+    ctx.fillStyle = spec;
+    ctx.beginPath(); ctx.ellipse(0,0, rx, ry, 0, 0, Math.PI*2); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+
+    ctx.restore();
+    requestAnimationFrame(drawCore);
+  }
+  requestAnimationFrame(drawCore);
+
+  onScroll();
+</script>
+</body>
+</html>
