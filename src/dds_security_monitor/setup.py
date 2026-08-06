@@ -29,6 +29,9 @@ setup(
             'mission_manager           = dds_security_monitor.mission_manager_node:main',
             'system_status_node        = dds_security_monitor.system_status_node:main',
             'intelligent_defense_node  = dds_security_monitor.intelligent_defense_node:main',
+            'velocity_guard_node       = dds_security_monitor.velocity_guard_node:main',
+            'security_readiness_probe  = dds_security_monitor.readiness_probe_node:main',
+            'local_outcome_observer    = dds_security_monitor.local_outcome_observer_node:main',
         ],
     },
 )

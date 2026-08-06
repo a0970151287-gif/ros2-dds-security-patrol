@@ -28,12 +28,12 @@
 # ============================================================
 
 # ── 終端 1：啟動 Gazebo 模擬器 ──────────────────────────────
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 export TURTLEBOT3_MODEL=burger
 ros2 launch dds_security_monitor gazebo.launch.py
 
 # ── 確認 /scan 跟 /odom 都活著（再開訓練！）────────────────
-source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 ros2 topic hz /scan -w 1     # 約 5 Hz
 ros2 topic hz /odom -w 1     # 約 50 Hz
 
@@ -92,7 +92,8 @@ tensorboard --logdir ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/runs_top/logs/t
 #   ╚══════════════════════════════════════════════════════════════════════════════╝
 
 # ── 評估訓練成果（簡報數字必從這跑，不用 rolling mean）──────
-source ~/dqn_env/bin/activate && source ~/ros2_ws/install/setup.bash
+source ~/dqn_env/bin/activate || exit 1
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 python3 ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/eval_top.py --episodes 50 --max-wp 5
 # 預設載 runs_top/models/tqc_best.zip，啟動會先驗 HMAC，篡改則 sys.exit(2)
 # 輸出範例：

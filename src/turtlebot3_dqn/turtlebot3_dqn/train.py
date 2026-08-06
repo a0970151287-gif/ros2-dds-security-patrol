@@ -2,10 +2,12 @@
 """DQN 訓練主程式 — 純避障版（規則固定）
 
 Usage:
-    source ~/.config/dds-monitor/credentials
+    source ~/ros2_ws/工具腳本/load_ros_environment.sh
     source ~/dqn_env/bin/activate
-    source ~/ros2_ws/install/setup.bash
     python3 train.py
+
+The loader imports only allow-listed, non-secret ROS/DDS settings. HMAC and
+LINE secrets stay in their chmod-600 files and are not exported to Python.
 """
 import sys
 import threading

@@ -12,7 +12,7 @@ sleep 2
 rm -rf ~/.gz/sim/8/log/*
 rm -rf ~/.ros/log/*
 echo "模擬器紀錄已清除，重開 Gazebo："
-echo "  source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash"
+echo "  source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1"
 echo "  export TURTLEBOT3_MODEL=burger"
 echo "  ros2 launch dds_security_monitor gazebo.launch.py"
 
@@ -40,10 +40,10 @@ pkill -f "robot_state_publisher"
 sleep 3
 
 # 確認清空
-source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 ros2 node list
 
 # 重開 Gazebo
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 export TURTLEBOT3_MODEL=burger
 ros2 launch dds_security_monitor gazebo.launch.py

@@ -1,0 +1,117 @@
+{
+  "schema_version": "sros2-firewall-synthetic-scenarios/v1",
+  "scenarios": [
+    {
+      "id": "discovery_recon",
+      "attack_class": "discovery_recon",
+      "description": "高比例 SPDP multicast 探測與 participant 枚舉",
+      "reference": "Zeek reconnaissance scenario",
+      "expected_action": "alert",
+      "modalities": ["network", "sros2"]
+    },
+    {
+      "id": "spdp_flood",
+      "attack_class": "spdp_flood",
+      "description": "大量 SPDP discovery 訊息造成 participant discovery 壓力",
+      "reference": "Zeek SPDP DoS scenario",
+      "expected_action": "temporary_block",
+      "modalities": ["network", "sros2"]
+    },
+    {
+      "id": "node_name_evasion",
+      "attack_class": "node_name_evasion",
+      "description": "利用看似內部節點的名稱規則繞過監控白名單",
+      "reference": "N2 regex allowlist bypass",
+      "expected_action": "deny_participant",
+      "modalities": ["sros2", "ros_graph"]
+    },
+    {
+      "id": "baseline_poisoning",
+      "attack_class": "baseline_poisoning",
+      "description": "在監控啟動前加入 ROS graph 汙染合法節點基準",
+      "reference": "N5 pre-startup baseline poison",
+      "expected_action": "quarantine",
+      "modalities": ["sros2", "ros_graph"]
+    },
+    {
+      "id": "mission_spoof",
+      "attack_class": "mission_spoof",
+      "description": "偽造 mission/cmd 影響下游健康狀態與操作畫面",
+      "reference": "N7 mission command spoof",
+      "expected_action": "drop_message",
+      "modalities": ["application_hmac", "ros_behavior"]
+    },
+    {
+      "id": "health_spoof",
+      "attack_class": "health_spoof",
+      "description": "偽造 system/health 欺騙監控與操作介面",
+      "reference": "N8 health dashboard spoof",
+      "expected_action": "drop_message",
+      "modalities": ["application_hmac", "ros_behavior"]
+    },
+    {
+      "id": "cmd_vel_race",
+      "attack_class": "cmd_vel_race",
+      "description": "高頻控制訊息與緊急停止競爭 final cmd_vel",
+      "reference": "N9 cmd_vel publisher race",
+      "expected_action": "lock_velocity",
+      "modalities": ["network", "sros2", "ros_behavior"]
+    },
+    {
+      "id": "scan_drift",
+      "attack_class": "scan_drift",
+      "description": "以緩慢漂移的 LaserScan 偽造繞過完全重複幀檢查",
+      "reference": "N10 scan drift poison",
+      "expected_action": "lock_velocity",
+      "modalities": ["sros2", "ros_behavior"]
+    },
+    {
+      "id": "odom_spoof",
+      "attack_class": "odom_spoof",
+      "description": "偽造 odometry 位置或速度造成控制感測不一致",
+      "reference": "N11 odometry poison",
+      "expected_action": "lock_velocity",
+      "modalities": ["sros2", "ros_behavior"]
+    },
+    {
+      "id": "node_churn",
+      "attack_class": "node_churn",
+      "description": "大量唯一節點名稱反覆加入離開造成監控狀態成長",
+      "reference": "N18 unbounded alerted-node churn",
+      "expected_action": "temporary_block",
+      "modalities": ["network", "ros_graph"]
+    },
+    {
+      "id": "verify_flood",
+      "attack_class": "verify_flood",
+      "description": "高頻無效 envelope 迫使接收端反覆 JSON 與 HMAC 驗證",
+      "reference": "N20 HMAC verify flood",
+      "expected_action": "temporary_block",
+      "modalities": ["network", "application_hmac"]
+    },
+    {
+      "id": "cross_channel_relay",
+      "attack_class": "cross_channel_relay",
+      "description": "把合法 envelope 轉貼到不同 channel 嘗試混淆用途",
+      "reference": "N4 cross-channel confusion",
+      "expected_action": "drop_message",
+      "modalities": ["application_hmac"]
+    },
+    {
+      "id": "hmac_forgery",
+      "attack_class": "hmac_forgery",
+      "description": "無密鑰偽造或竄改受 HMAC 保護的應用層訊息",
+      "reference": "HMAC envelope authenticity boundary",
+      "expected_action": "drop_message",
+      "modalities": ["application_hmac"]
+    },
+    {
+      "id": "confused_deputy",
+      "attack_class": "confused_deputy",
+      "description": "誘使監控節點把未驗證輸入反射成已簽章安全警報",
+      "reference": "N13 self-monitor confused deputy",
+      "expected_action": "alert",
+      "modalities": ["application_hmac", "ros_behavior"]
+    }
+  ]
+}

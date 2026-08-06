@@ -1,0 +1,12 @@
+{
+  "schema_version": "sros2-firewall-nft-backend-enablement/v1",
+  "enabled": false,
+  "backend_id": "sros2-nftables-timeout-set-v1",
+  "authorized_sources": [],
+  "protected_sources": [],
+  "max_active_sources": 1024,
+  "max_consumed_tickets": 100000,
+  "max_audit_events": 200000,
+  "live_acceptance_sha256": "",
+  "scope_ack": ""
+}

@@ -30,8 +30,8 @@ POLICY: dict[str, Defense] = {
         "告警 + 持續追蹤（不封鎖，避免打斷攻防回合）",
         "Zeek dds_monitor.zeek 偵察規則 + LINE", auto=False),
     "dos": Defense(
-        "限流 →（demo 時）封鎖來源 IP N 秒後自動解封",
-        "跨主機紅隊/dos_firewall.sh + Zeek block_source.sh（預設關）", auto=False),
+        "告警／限流建議 → 雙訊號授權；backend 准入前不封鎖",
+        "Zeek sensor + firewall_lab response authorizer（live backend blocked）", auto=False),
     "stealth_dos": Defense(
         "信任來源速率異常告警 → SROS2 身分驗證根治",
         "Zeek check_trusted_dos() + SROS2 Enforce", auto=False),

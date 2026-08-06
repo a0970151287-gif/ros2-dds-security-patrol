@@ -2,7 +2,7 @@
 
 **目標**（使用者構想）：訓練一個防禦系統，**辨識面對的是哪種攻擊 → 做出相應防禦**。
 
-**狀態**：Phase 1 PoC 完成（網路層，現有 conn.log）。Phase 2 工具已就緒（`資料收集/`），待實際攻防 session 收集乾淨標註資料。
+**狀態**：Phase 1 PoC 完成（網路層，現有真實受控攻防流量但主要為弱標籤）。Phase 2 工具已就緒（`資料收集/`），仍待新的隔離攻防 session 收集足量乾淨標註資料。回應引擎驗證預設採 dry-run；除非明確開 live，不能寫成已實際封鎖或急停。
 
 ---
 
@@ -15,13 +15,13 @@
   ROS2 訊號  ──►  │  行為層特徵(D1-D6, phase2)  ┘  (recon/dos/inject/  │     (class→action,規則)
                   └──────────────────────────────  spoof/behavioral)  ─┘            │
                                                                                      ▼
-   縱深第一道（預防，最重要）：SROS2 Enforce — 外部攻擊在認證層就死，根本進不來    出手：告警/限流/
+   縱深第一道（預防）：SROS2 Enforce — 正確啟用時拒絕無憑證 participant                 出手：告警/限流/
                                                                                 封鎖/驗章/急停
 ```
 
 **設計原則**：
 1. **ML 看懂、規則出手**：分類用 ML；防禦動作用 `防禦策略.py` 的 class→action 規則表（可審計、可解釋、安全；不用學出來的策略亂下急停）。
-2. **補強 ≠ 取代**：SROS2 Enforce 是預防根治；ML 補「內鬼異常」+「規則沒寫死的變種」+「自動量 FPR/混淆矩陣」。
+2. **補強 ≠ 取代**：SROS2 Enforce 是來源預防機制；ML 補「內鬼異常」+「規則沒寫死的變種」+「自動量 FPR/混淆矩陣」。目前雙 CA/ACL/稽核與隔離 live 對照已有證據，但修補後全 Gazebo 長時間回歸仍待補。
 3. **資料用自家 testbed**：通用 IDS 資料集（CIC-IDS2017 等）是一般 TCP/IP，與 DDS/RTPS 分布不符，不採用。
 
 ---
@@ -33,27 +33,42 @@
 | `訓練.py` | 監督式 RandomForest（normal/attack）+ 非監督 IsolationForest，出混淆矩陣/特徵重要度 |
 | `防禦策略.py` | class→action 防禦策略表（相應防禦，串接 repo 既有防禦） |
 | `回應引擎.py` | **偵測→出手**：吃偵測結果→查策略→經安全閘→執行對應防禦 |
-| `端到端_demo.py` | 閉環：RTPS 模型偵測真封包 → 回應引擎出對應防禦 |
+| `端到端_demo.py` | 閉環：RTPS 模型偵測封包 → 回應引擎產生對應動作（預設 dry-run） |
 | `RTPS資料集_訓練.py` | 用外部乾淨資料集(HCRL)訓練注入偵測（PR-AUC 0.95） |
-| `輸出/` | features.csv、model.joblib、rtps_inject_model.joblib |
+| `輸出/` | features.csv、model.joblib、rtps_inject_model.joblib（新模型須有 `.sha256.hmac` sidecar） |
 | `requirements.txt` | 隔離環境相依（venv: /home/jesse/ml_ids_env） |
 
+### 模型載入安全
+
+`joblib` 底層使用 pickle，遭替換的模型可能在載入時執行任意程式。現在兩支訓練器會以
+`~/.config/dds-monitor/alert_secret` 產生 HMAC sidecar，`端到端_demo.py` 會在
+`joblib.load` **之前**驗章；缺章或錯章一律拒絕。倉庫內既有的歷史 `.joblib` 沒有
+sidecar，不能直接視為可信模型；請從可信資料重新訓練產生新模型，不要為來源不明的
+pickle 補簽後直接使用。
+
 ### 偵測→對應防禦（回應引擎）
-ML/規則偵測出類別後，`回應引擎.py` 自動出對應防禦，並經 4 道安全閘：
+ML/規則偵測出類別後，`回應引擎.py` 自動出對應防禦，並經安全閘：
 1. **confidence 門檻**（預設 0.70）：信心不足只觀察，不出手（防 FP 誤封）。
 2. **紅隊白名單**：攻防遊戲中不硬封 PEER(10.10.10.1)，除非開 demo。
 3. **per-(source,action) cooldown**：同招短時間不重複出手。
 4. **預設 dry-run**：只印「會下什麼指令」，live 才真執行。
+5. **簽章證據與授權票**：只有來源、介面、DDS 身份、特徵、時間窗、
+   模型／政策版本及雙訊號都被同一份簽章證據綁定，才可取得 5 秒、一次性
+   authorization ticket；來源 A 的證據不能拿去處置來源 B。
+6. **全域容量限制**：每分鐘最多 10 次防火牆動作、最多 64 個 active block，
+   避免大量不同來源繞過 per-source cooldown。
+7. **提權端 fail-closed**：舊版裸 IP／TTL helper 永遠拒絕，安裝器不建立
+   `NOPASSWD`；新的跨程序驗票／kernel timeout backend 未完成前只做 dry-run。
 
 | 類別 | 對應防禦 | 真實性 |
 |---|---|---|
 | inject / param | app 層 HMAC 驗章 / F1-b veto **早就在擋** | 已生效，引擎只記錄 |
-| dos | `block_source.sh` 封來源自動解封 | 可執行（opt-in、遊戲安全） |
-| behavioral | `/cmd_vel` 歸零急停 | 可執行（live 需 ROS 環境） |
+| dos | 雙訊號授權 → 短效 ticket → kernel timeout 封鎖 | 授權鏈已實作；root backend 尚未准入，現在只 dry-run |
+| behavioral | IDS 簽章告警 → `velocity_guard_node` 鎖住 final `/cmd_vel` 為 0 | 已接上單一仲裁路徑 |
 | spoof / stealth_dos | 告警 → 指向 SROS2 身分根治 | 網路層擋不死身分偽造 |
 | recon | 告警追蹤（不封，免打斷遊戲） | 告警 |
 
-⚠️ **誠實定位**：回應引擎是「反應式」的手——偵測後才出手，有 FP 風險、二進位 topic 只能事後急停。**真正「擋下」（預防）的是 SROS2 Enforce**（攻擊者沒憑證進不來）。ML+回應引擎補的是「進得來的內鬼/變種」這層，不取代牆。
+⚠️ **誠實定位**：回應引擎是「反應式」的手——偵測後才出手，有 FP 風險、二進位 topic 只能事後急停。來源預防依賴正確啟用的 SROS2 Enforce；ML+回應引擎補的是「進得來的內鬼/變種」這層，不取代牆。離線稽核或 dry-run 成功都不等於全場景 live 阻斷已驗證。
 
 執行：
 ```bash
@@ -62,18 +77,37 @@ ML/規則偵測出類別後，`回應引擎.py` 自動出對應防禦，並經 4
 /home/jesse/ml_ids_env/bin/python 防禦策略.py
 ```
 
+訓練前須先建立專案共用的 0600 HMAC key（見根目錄 README）。重新訓練後才執行：
+
+```bash
+/home/jesse/ml_ids_env/bin/python 端到端_demo.py
+```
+
+目前不能啟用 live 防火牆動作。管理者可安裝低權限 LINE helper，但這不會
+安裝 block helper 或建立 sudoers 權限：
+
+```bash
+sudo bash 工具腳本/install_zeek_helpers.sh
+```
+
+真正 live blocking 必須先讓 `cross_host_admission` 的
+`response_backend_recovery` 通過：包括跨程序驗票、原子 nonce claim、來源綁定、
+重放／過期拒絕、kernel timeout、自動解封、重啟復原與稽核。一般模型驗證與
+dry-run 不需要 sudo。
+
 ---
 
-## Phase 1 PoC 結果（誠實，現有 conn.log）
+## Phase 1 PoC 結果（歷史基線，現有 conn.log）
 
 - **資料**：56,617 筆連線 → 18,868 視窗（8s）。正常 18,642 / 攻擊 226（**僅 1.2%，高度不平衡**）。
-- **監督式 RandomForest**：ROC-AUC **0.917**、攻擊 recall **0.926**，但 precision **0.063**（933 正常被誤判）。
+- **監督式 RandomForest（舊版逐列隨機切分）**：ROC-AUC **0.917**、攻擊 recall **0.926**，但 precision **0.063**（933 正常被誤判）。
 - **非監督 IsolationForest**（只學正常）：攻擊偵出 13.7%、FPR 1.99%。
 - **特徵重要度**：`spdp_ratio`(0.51) ≫ `conn_rate`(0.11)、`conn_count`(0.11)、`userdata_ratio`(0.08)。
 
 **解讀（不灌水）**：
-- ✅ **可行性成立**：AUC 0.92 代表流量特徵**確實能分**攻擊/正常，pipeline 端到端跑通。
+- ✅ **可行性訊號**：歷史 AUC 0.92 顯示流量特徵有區分訊號，pipeline 端到端曾跑通；但這不是目前分組切分程式的重跑結果。
 - ⚠️ **precision 差 / 非監督偵出低**：因為 (a) 攻擊樣本只佔 1.2% 極不平衡、(b) 用現有 conn.log 的 **bootstrap 弱標籤**（來源身分推得，非乾淨 ground truth）、(c) 此 log 攻擊流量多為低速 recon，特徵空間與稀疏正常流量重疊。
+- ⚠️ **評估方法已修正**：目前 `訓練.py` 會以 capture/source/相鄰時間區塊分組，避免相鄰視窗同時落入 train/test；在重新執行並保存新輸出前，不把上列歷史數字當成修正版成績。
 - ➡️ **這恰好量化證明 Phase 2 的必要**：要 precision 上得來、要做多類(recon/dos/inject/spoof/behavioral)，**必須有平衡的、乾淨標註的資料**。
 
 ---
@@ -131,5 +165,5 @@ bash label.sh end   recon
 
 ## 與既有防禦的關係
 - ML-IDS 是 [防禦對照_預防優於反應.md](../文件/防禦對照_預防優於反應.md) 裡「反應式縱深」的**智慧化**版本。
-- 偵測出類別後，由 `防禦策略.py` 對應到既有實作：Zeek 告警/封鎖、app 層驗章、`lock_sensitive_params`、SROS2 Enforce、`intelligent_defense_node` 急停。
+- 偵測出類別後，由 policy 對應到既有實作：Zeek 告警／提出處置請求、app 層驗章、`lock_sensitive_params`、SROS2 Enforce、`intelligent_defense_node` 急停；IP 封鎖仍受 fail-closed 准入器控制。
 - **預防仍是第一道**：能上 SROS2 Enforce 就讓攻擊進不來；ML 是「萬一進來了/內鬼」的偵測腦。

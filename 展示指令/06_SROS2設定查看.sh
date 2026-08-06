@@ -4,7 +4,7 @@
 # 對應報告：身份驗證 / 加密傳輸 / 存取控制
 # ============================================================
 
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 
 echo "======================================================"
 echo " 第一層：身份驗證（X.509 憑證）"

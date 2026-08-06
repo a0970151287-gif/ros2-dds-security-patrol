@@ -10,13 +10,16 @@
 #   —— 實測 Enforce 與 SHM profile 不相容(合法節點互相發現失敗)。
 #   預設 UDP 同機可通(安全模式)、eth0 也對外可見 → 攻擊機打得到但被拒。
 #
-# 前提：先跑 10_SROS2啟用.sh 建好 10 個 enclave(含系統節點)+ governance domain 30
-# 每個區塊開一個新終端執行，順序很重要。
+# 前提：先跑 10_SROS2啟用.sh 建好 enclave + governance domain 30。
+# 本腳本是單一 supervisor：任一必要程序退出就清理整組，Ctrl+C 也會收乾淨。
 # ============================================================
+set -euo pipefail
 
 KEYSTORE="$HOME/ros2_ws/sros2_keystore"
-ENFORCE() {            # 每個終端共用的 Enforce 環境
-  source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+PIDS=()
+
+ENFORCE() {
+  source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
   export ROS_SECURITY_KEYSTORE="$KEYSTORE"
   export ROS_SECURITY_ENABLE=true
   export ROS_SECURITY_STRATEGY=Enforce
@@ -27,36 +30,87 @@ ENFORCE() {            # 每個終端共用的 Enforce 環境
   export TURTLEBOT3_MODEL=burger
 }
 
-# ── 終端 1：Gazebo（整包 bridge+robot_state_publisher+gz 共用 /gazebo enclave）──
-ENFORCE
-export ROS_SECURITY_ENCLAVE_OVERRIDE=/gazebo   # launch 內多節點共用一個 enclave
-ros2 launch dds_security_monitor gazebo.launch.py
+cleanup() {
+  trap - EXIT INT TERM
+  # ros2 run/launch can leave their executable children behind when only the
+  # CLI parent is signalled. live_stack.sh starts this supervisor as a session
+  # leader, so terminate every other member of this verified process group.
+  local pgid
+  pgid="$(ps -o pgid= -p "$$" | tr -d ' ')"
+  if [[ "$pgid" == "$$" ]]; then
+    mapfile -t group_pids < <(
+      ps -eo pid=,pgid= |
+        awk -v target="$pgid" -v self="$$" \
+          '$2 == target && $1 != self { print $1 }'
+    )
+    if ((${#group_pids[@]})); then
+      kill -TERM "${group_pids[@]}" 2>/dev/null || true
+    fi
+  fi
+  if ((${#PIDS[@]})); then
+    kill -TERM "${PIDS[@]}" 2>/dev/null || true
+    wait "${PIDS[@]}" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT INT TERM
 
-# ── 終端 2：sensor_hub_node ──────────────────────────────────
-ENFORCE
-ros2 run dds_security_monitor sensor_hub_node --ros-args --enclave /sensor_hub_node
+start_gazebo() {
+  (
+    ENFORCE
+    export ROS_SECURITY_ENCLAVE_OVERRIDE=/gazebo
+    exec ros2 launch dds_security_monitor gazebo.launch.py
+  ) &
+  PIDS+=("$!")
+}
 
-# ── 終端 3：patrol_node ──────────────────────────────────────
-ENFORCE
-export PYTHONPATH="$HOME/dqn_env/lib/python3.12/site-packages:$PYTHONPATH"
-ros2 run dds_security_monitor patrol_node --ros-args --enclave /patrol_node
+start_node() {
+  local enclave="$1"
+  local executable="$2"
+  shift 2
+  (
+    ENFORCE
+    exec ros2 run dds_security_monitor "$executable" \
+      --ros-args --enclave "$enclave" "$@"
+  ) &
+  PIDS+=("$!")
+}
 
-# ── 終端 4：mission_manager ──────────────────────────────────
-ENFORCE
-ros2 run dds_security_monitor mission_manager --ros-args --enclave /mission_manager
+start_gazebo
+start_node /sensor_hub_node sensor_hub_node
+start_node /velocity_guard_node velocity_guard_node -p active_source:=patrol
+start_node /patrol_node patrol_node \
+  --params-file "$HOME/ros2_ws/src/dds_security_monitor/config/config.yaml"
+start_node /mission_manager mission_manager
+start_node /system_status_node system_status_node
+start_node /dds_security_monitor monitor_node \
+  --params-file "$HOME/ros2_ws/src/dds_security_monitor/config/config.yaml"
+start_node /intelligent_defense_node intelligent_defense_node
 
-# ── 終端 5：system_status_node ───────────────────────────────
-ENFORCE
-ros2 run dds_security_monitor system_status_node --ros-args --enclave /system_status_node
+echo "→ 等待 Gazebo/bridge/RSP 五條必要資料流..."
+(
+  ENFORCE
+  timeout --signal=TERM 130 ros2 run dds_security_monitor \
+    security_readiness_probe --ros-args \
+    --enclave /security_readiness_probe -p timeout_sec:=120.0
+) || {
+  echo "⛔ Enforce readiness 失敗；不宣告系統可用，正在停止整組" >&2
+  exit 1
+}
+for pid in "${PIDS[@]}"; do
+  if ! kill -0 "$pid" 2>/dev/null; then
+    echo "⛔ 必要程序在 readiness 期間退出；不宣告系統可用" >&2
+    exit 1
+  fi
+done
 
-# ── 終端 6：monitor_node（enclave=/dds_security_monitor）─────
-ENFORCE
-ros2 run dds_security_monitor monitor_node --ros-args --enclave /dds_security_monitor \
-  --params-file ~/ros2_ws/src/dds_security_monitor/config/config.yaml
+echo "✅ SROS2 Enforce readiness 通過（${#PIDS[@]} 個 supervised process）"
+echo "   final /cmd_vel 唯一 publisher：/velocity_guard_node"
+echo "   Ctrl+C 會停止整組程序"
 
-# ── 終端 7（選配）：intelligent_defense_node（行為 IDS D1-D6）──
-ENFORCE
-ros2 run dds_security_monitor intelligent_defense_node --ros-args --enclave /intelligent_defense_node
+# 任一必要程序退出即視為整組失效；EXIT trap 會終止其餘程序。
+wait -n "${PIDS[@]}"
+echo "⛔ 必要程序已退出，正在停止整組 Enforce 系統" >&2
+exit 1
 
 # ── 驗證「擋下」───────────────────────────────────────────────
 # 本機： ros2 node list --ros-args --enclave /dds_security_monitor  應看到系統節點

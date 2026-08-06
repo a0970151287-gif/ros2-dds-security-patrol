@@ -1,0 +1,48 @@
+{
+  "schema_version": "sros2-firewall-live-multimodal-contract/v1",
+  "status": "blocked",
+  "network_feature_count": 14,
+  "telemetry_features": [
+    "sros_auth_fail_rate",
+    "sros_permission_deny_rate",
+    "participant_churn_rate",
+    "unknown_node_rate",
+    "hmac_failure_rate",
+    "nonce_reuse_ratio",
+    "channel_mismatch_ratio",
+    "timestamp_violation_ratio",
+    "publisher_violation_ratio",
+    "parameter_call_rate",
+    "oversized_message_ratio",
+    "qos_drop_ratio",
+    "heartbeat_gap_sec",
+    "control_conflict_ratio",
+    "scan_static_ratio",
+    "odom_cmd_mismatch_ratio",
+    "alert_reflection_ratio",
+    "log_reject_rate"
+  ],
+  "alignment_keys": [
+    "session_id",
+    "window"
+  ],
+  "required_outputs": [
+    "network_features.csv",
+    "telemetry_features.csv",
+    "fusion_features.csv"
+  ],
+  "implementation_artifacts": [
+    "firewall_lab/live_telemetry_collector.py",
+    "firewall_lab/sros2_deny_adapter.py",
+    "firewall_lab/features.py",
+    "firewall_lab/orchestrator.py",
+    "src/dds_security_monitor/dds_security_monitor/runtime_telemetry.py",
+    "tests/test_live_multimodal.py"
+  ],
+  "blockers": [
+    "the statically wired ROS producer and session collector have not passed a loopback live pilot",
+    "SROS2 deny patterns have not been calibrated against the exact installed RMW vendor logs",
+    "same-UID runtime telemetry source attribution has not been isolated or live-validated",
+    "no loopback live pilot has demonstrated collector ticks, runtime events, and complete session-window coverage"
+  ]
+}

@@ -1,71 +1,75 @@
-#!/bin/bash
-# ============================================================
-# 01b 啟動系統（跨主機版）— domain 30 + 直連線 profile
+#!/usr/bin/env bash
+# ============================================================================
+# 01b 跨主機 Permissive 完整系統 supervisor
 #
-# 與 01 差別：每個終端多設三個環境變數，讓系統的 DDS 走「直連介面
-# 10.10.10.2」並在 domain 30 上線 → 攻擊機(10.10.10.1)打得到、Zeek
-# 在 eth0 看得到。用於 live 跨主機攻防 / 五類偵測驗收 / SROS2 對照。
-#
-# 前提：
-#   - 直連線已通（10.10.10.2 ↔ 10.10.10.1，見 跨主機紅隊/環境建置指南.md）
-#   - 直連 profile：跨主機紅隊/dds_directlink_target.xml
-#
-# 每個區塊開一個新終端執行，順序很重要。
-# （本版維持 Permissive；要測 SROS2 控制鏈對照另見 12_cmd_vel_enforce對照.sh）
-# ============================================================
+# domain 30 + 直連 Fast DDS profile，讓 10.10.10.1 紅隊能在受控網段看到
+# 10.10.10.2 目標。這版故意不開 SROS2，供 before/after 對照；Enforce 用 01c。
+# 任一必要程序退出就停止整組，Ctrl+C 也會清理。
+# ============================================================================
+set -euo pipefail
 
-# ── 跨主機共用環境（每個終端都要，已嵌入各區塊）──────────────
-#   export ROS_DOMAIN_ID=30
-#   export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-#   export FASTRTPS_DEFAULT_PROFILES_FILE=~/ros2_ws/跨主機紅隊/dds_directlink_target.xml
+WS="${ROS2_WS:-$HOME/ros2_ws}"
+DIRECT_PROFILE="$WS/跨主機紅隊/dds_directlink_target.xml"
+PIDS=()
 
-# ── 終端 1：Gazebo 模擬器（先開，等機器人出現再開其他）────────
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
-unset ROS_SECURITY_ENCLAVE_OVERRIDE
-export ROS_DOMAIN_ID=30 RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export FASTRTPS_DEFAULT_PROFILES_FILE=~/ros2_ws/跨主機紅隊/dds_directlink_target.xml
-export TURTLEBOT3_MODEL=burger
-ros2 launch dds_security_monitor gazebo.launch.py
+[[ -f "$DIRECT_PROFILE" ]] || {
+  echo "找不到直連 DDS profile：$DIRECT_PROFILE" >&2
+  exit 1
+}
 
-# ── 終端 2：sensor_hub_node ──────────────────────────────────
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
-unset ROS_SECURITY_ENCLAVE_OVERRIDE
-export ROS_DOMAIN_ID=30 RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export FASTRTPS_DEFAULT_PROFILES_FILE=~/ros2_ws/跨主機紅隊/dds_directlink_target.xml
-ros2 run dds_security_monitor sensor_hub_node
+CROSS_HOST_ENV() {
+  source "$WS/工具腳本/load_ros_environment.sh" || exit 1
+  unset ROS_SECURITY_KEYSTORE ROS_SECURITY_ENABLE ROS_SECURITY_STRATEGY
+  unset ROS_SECURITY_ENCLAVE_OVERRIDE
+  export ROS_DOMAIN_ID=30
+  export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+  export FASTRTPS_DEFAULT_PROFILES_FILE="$DIRECT_PROFILE"
+  export TURTLEBOT3_MODEL=burger
+}
 
-# ── 終端 3：patrol_node（幾何智慧巡航，部署模式）────────────
-# 機器人依序導航：電源控制室 → 冷卻水塔 → 生產線A → 生產線B → 出入口 → 循環
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
-unset ROS_SECURITY_ENCLAVE_OVERRIDE
-export ROS_DOMAIN_ID=30 RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export FASTRTPS_DEFAULT_PROFILES_FILE=~/ros2_ws/跨主機紅隊/dds_directlink_target.xml
-export PYTHONPATH="$HOME/dqn_env/lib/python3.12/site-packages:$PYTHONPATH"
-ros2 run dds_security_monitor patrol_node
+cleanup() {
+  trap - EXIT INT TERM
+  if ((${#PIDS[@]})); then
+    kill -TERM "${PIDS[@]}" 2>/dev/null || true
+    wait "${PIDS[@]}" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT INT TERM
 
-# ── 終端 4：mission_manager ──────────────────────────────────
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
-unset ROS_SECURITY_ENCLAVE_OVERRIDE
-export ROS_DOMAIN_ID=30 RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export FASTRTPS_DEFAULT_PROFILES_FILE=~/ros2_ws/跨主機紅隊/dds_directlink_target.xml
-ros2 run dds_security_monitor mission_manager
+start_gazebo() {
+  (
+    CROSS_HOST_ENV
+    exec ros2 launch dds_security_monitor gazebo.launch.py
+  ) &
+  PIDS+=("$!")
+}
 
-# ── 終端 5：system_status_node ───────────────────────────────
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
-unset ROS_SECURITY_ENCLAVE_OVERRIDE
-export ROS_DOMAIN_ID=30 RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export FASTRTPS_DEFAULT_PROFILES_FILE=~/ros2_ws/跨主機紅隊/dds_directlink_target.xml
-ros2 run dds_security_monitor system_status_node
+start_node() {
+  local executable="$1"
+  shift
+  (
+    CROSS_HOST_ENV
+    exec ros2 run dds_security_monitor "$executable" --ros-args "$@"
+  ) &
+  PIDS+=("$!")
+}
 
-# ── 終端 6：monitor_node（最後開）───────────────────────────
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
-unset ROS_SECURITY_ENCLAVE_OVERRIDE
-export ROS_DOMAIN_ID=30 RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-export FASTRTPS_DEFAULT_PROFILES_FILE=~/ros2_ws/跨主機紅隊/dds_directlink_target.xml
-ros2 run dds_security_monitor monitor_node --params-file ~/ros2_ws/src/dds_security_monitor/config/config.yaml
+start_gazebo
+start_node sensor_hub_node
+start_node velocity_guard_node -p active_source:=patrol
+start_node patrol_node \
+  --params-file "$WS/src/dds_security_monitor/config/config.yaml"
+start_node mission_manager
+start_node system_status_node
+start_node monitor_node \
+  --params-file "$WS/src/dds_security_monitor/config/config.yaml"
+start_node intelligent_defense_node
 
-# ── 全部啟動後確認 ───────────────────────────────────────────
-# 本機： ros2 node list   應出現 6 個系統節點 + /robot_state_publisher /ros_gz_bridge
-# 攻擊機(10.10.10.1，同 domain 30 + 攻擊機 profile)： ros2 topic list 應看得到 /cmd_vel /scan ...
-# Zeek(目標機 eth0)： cd ~/ros2_ws/網路記錄 && sudo /opt/zeek/bin/zeek -i eth0 ../Zeek監控/dds_monitor.zeek
-#   → 攻擊機一上線/注入，應跳五類告警
+echo "✅ 跨主機 Permissive 程序已派發（${#PIDS[@]} 個 supervised process）"
+echo "   domain=30；patrol → velocity_guard → final /cmd_vel"
+echo "   此模式允許受控紅隊流量進入，不能當成 Enforce 阻擋證據。"
+echo "   Ctrl+C 會停止整組程序。"
+
+wait -n "${PIDS[@]}"
+echo "⛔ 必要程序已退出，正在停止整組跨主機系統" >&2
+exit 1

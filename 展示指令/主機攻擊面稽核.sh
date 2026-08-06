@@ -6,7 +6,7 @@
 # 用法： bash 展示指令/主機攻擊面稽核.sh
 # ============================================================================
 set -uo pipefail
-LAB_IF="eth0"; LAB_NET="10.10.10."
+LAB_IF="${LAB_IF:-eth0}"
 RISK=0
 
 echo "════════ 主機攻擊面稽核 $(date '+%F %T') ════════"
@@ -14,9 +14,16 @@ echo "════════ 主機攻擊面稽核 $(date '+%F %T') ═══�
 echo "── 網路介面（非 lab 介面 = 額外暴露路徑）──"
 ip -br addr 2>/dev/null | grep -vE "^(lo|docker)" | while read -r ifc st addrs; do
   tag=""
-  echo "$addrs" | grep -qE "2[0-9a-f]{3}:" && tag=" ⚠️公網IPv6"
-  [[ "$ifc" != "$LAB_IF" ]] && echo "$addrs" | grep -q "$LAB_NET" || \
-    { [[ "$ifc" != "$LAB_IF" ]] && tag="$tag ⚠️非lab介面"; }
+  # 只把 scope global 的 IPv6 視為對外路徑。舊版用任意 2xxx:
+  # 片段判斷，會把 fe80::...:2abc:... 的 link-local 位址誤報成公網。
+  if ip -6 addr show dev "$ifc" scope global 2>/dev/null |
+      grep -qE '^[[:space:]]*inet6 '; then
+    tag=" ⚠️全域IPv6"
+  fi
+  # lab 介面以名稱明確指定；只有其他 UP 且真的有位址的介面才告警。
+  if [[ "$ifc" != "$LAB_IF" && "$st" == "UP" && -n "$addrs" ]]; then
+    tag="$tag ⚠️非lab介面"
+  fi
   echo "  $ifc ($st): $addrs$tag"
 done
 

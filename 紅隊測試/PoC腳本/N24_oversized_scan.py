@@ -14,9 +14,15 @@ import sys
 import math
 import time
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import LaserScan
+
+try:  # rclpy exposes RCLError under different paths across distros
+    from rclpy._rclpy_pybind11 import RCLError
+except ImportError:  # pragma: no cover - fallback for older rclpy
+    RCLError = RuntimeError
 
 
 def main():
@@ -36,28 +42,41 @@ def main():
     next_t = time.monotonic()
     # 預先建好 ranges（每筆都加一點點抖動避免被「連續幀相同」偵測直接擋）
     base = [1.0] * n_points
-    while time.monotonic() < deadline:
-        now = time.monotonic()
-        if now >= next_t:
-            m = LaserScan()
-            m.header.stamp = node.get_clock().now().to_msg()
-            m.header.frame_id = 'base_link'
-            m.angle_min = 0.0
-            m.angle_max = 2 * math.pi
-            m.angle_increment = (2 * math.pi) / n_points
-            m.range_min = 0.1
-            m.range_max = 3.5
-            # 每筆改一個值，避免「與上一幀完全相同」
-            base[sent % n_points] = 1.0 + (sent % 7) * 0.01
-            m.ranges = base
-            pub.publish(m)
-            sent += 1
-            print(f'  已發 #{sent}（{n_points:,} 點）', flush=True)
-            next_t = now + period
-        rclpy.spin_once(node, timeout_sec=0.05)
-    print(f'⏹ 結束：共發 {sent} 個超大 scan', flush=True)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        while time.monotonic() < deadline:
+            now = time.monotonic()
+            if now >= next_t:
+                m = LaserScan()
+                m.header.stamp = node.get_clock().now().to_msg()
+                m.header.frame_id = 'base_link'
+                m.angle_min = 0.0
+                m.angle_max = 2 * math.pi
+                m.angle_increment = (2 * math.pi) / n_points
+                m.range_min = 0.1
+                m.range_max = 3.5
+                # 每筆改一個值，避免「與上一幀完全相同」
+                base[sent % n_points] = 1.0 + (sent % 7) * 0.01
+                m.ranges = base
+                pub.publish(m)
+                sent += 1
+                print(f'  已發 #{sent}（{n_points:,} 點）', flush=True)
+                next_t = now + period
+            rclpy.spin_once(node, timeout_sec=0.05)
+    except (KeyboardInterrupt, ExternalShutdownException, RCLError):
+        # The dataset orchestrator ends the bounded attack interval with
+        # SIGTERM.  rclpy usually surfaces that as ExternalShutdownException,
+        # but when the context is torn down between the publish and the next
+        # spin it raises RCLError ("the given context is not valid") instead.
+        # Both are the expected end of a completed attack; letting either
+        # escape produces a traceback and a non-zero exit, which the dataset
+        # verifier treats as a failed attacker and marks the whole session
+        # non-trainable even though the attack itself ran to completion.
+        pass
+    finally:
+        print(f'⏹ 結束：共發 {sent} 個超大 scan', flush=True)
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

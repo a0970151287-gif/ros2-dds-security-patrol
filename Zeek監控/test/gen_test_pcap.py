@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""產生合成 pcap 驗證 dds_monitor.zeek 三類規則 + 白名單(FPR)。
-純標準函式庫，無 scapy 依賴。模擬 domain-30 RTPS UDP 流量。
+"""Generate deterministic offline pcaps for ``dds_monitor.zeek``.
 
-封包設計：
-  1) 正常(白名單)  10.10.10.2 -> 239.255.0.1:14900   應「不」告警(FPR=0)
-  2) 偵察          10.10.10.1 -> 239.255.0.1:14900   觸發 [偵察攻擊]
-  3) 注入          10.10.10.1 -> 10.10.10.2:14913    payload 含 INJECTED → [注入攻擊]
-  4) DoS           10.10.10.1:(多來源埠) -> 239.255.0.1:14900 x30 → [DoS 攻擊]
+The fixtures use only the Python standard library and never send network
+traffic.  They model domain-30 RTPS-looking UDP flows closely enough for Zeek
+connection and payload events.
 """
-import struct, socket, sys
+from __future__ import annotations
+
+import argparse
+import socket
+import struct
+from pathlib import Path
 
 def ipv4_checksum(hdr: bytes) -> int:
     s = 0
@@ -44,42 +46,224 @@ def udp(sport, dport, payload):
 def mac(s):
     return bytes(int(x, 16) for x in s.split(":"))
 
-MAC_A = mac("02:00:00:00:00:01")        # 攻擊機 10.10.10.1（任意 MAC）
-MAC_T = mac("34:5a:60:96:c3:ca")        # 目標機 10.10.10.2 真實 eth0 MAC（白名單綁定）
-MAC_MC = mac("01:00:5e:7f:00:01")       # 239.255.0.1 多播
+MAC_A = mac("02:00:00:00:00:01")
+MAC_T = mac("34:5a:60:96:c3:ca")
+MAC_MC = mac("01:00:5e:7f:00:01")
+RTPS = b"RTPS\x02\x03" + b"\x00" * 20
 
 def frame(src_mac, dst_mac, src_ip, dst_ip, sport, dport, payload):
     u = udp(sport, dport, payload)
     ip = ipv4(src_ip, dst_ip, len(u))
     return eth(dst_mac, src_mac) + ip + u
 
-pkts = []  # (ts_float, bytes)
-RTPS = b"RTPS\x02\x03" + b"\x00" * 20   # 假 RTPS 標頭
 
-# 1) 正常白名單探索（FPR 測試，不應告警）
-pkts.append((0.0, frame(MAC_T, MAC_MC, "10.10.10.2", "239.255.0.1", 14900, 14900, RTPS)))
-# 2) 偵察：攻擊機新 participant 上線
-pkts.append((1.0, frame(MAC_A, MAC_MC, "10.10.10.1", "239.255.0.1", 14910, 14900, RTPS)))
-# 3) 注入：攻擊機送帶簽章的 DATA 到資料埠
-inj = b"RTPS\x02\x03" + b"\x00" * 8 + b"[INJECTED] forged cmd_vel"
-pkts.append((2.0, frame(MAC_A, MAC_T, "10.10.10.1", "10.10.10.2", 14913, 14913, inj)))
-# 4) DoS：8 秒內 30 個偽造 participant 灌 SPDP
-for i in range(30):
-    pkts.append((3.0 + i * 0.1, frame(MAC_A, MAC_MC, "10.10.10.1", "239.255.0.1",
-                                      40000 + i, 14900, RTPS)))
-# 5) F1 參數竄改：攻擊機呼叫 set_parameters 服務
-param = b"RTPS\x02\x03" + b"\x00" * 8 + b"rq/listener/set_parametersRequest use_sim_time"
-pkts.append((7.0, frame(MAC_A, MAC_T, "10.10.10.1", "10.10.10.2", 14913, 14913, param)))
-# 6) F7 來源 IP 偽造：宣稱 IP=10.10.10.2(信任) 但用攻擊者 MAC → 應抓到
-pkts.append((8.0, frame(MAC_A, MAC_MC, "10.10.10.2", "239.255.0.1", 14910, 14900, RTPS)))
+def spdp_packets(
+    source: str,
+    count: int,
+    *,
+    start: float,
+    step: float = 0.1,
+    first_port: int = 40000,
+):
+    """Return unique SPDP flows so Zeek emits one new_connection per packet."""
+    return [
+        (
+            start + index * step,
+            frame(
+                MAC_A,
+                MAC_MC,
+                source,
+                "239.255.0.1",
+                first_port + index,
+                14900,
+                RTPS,
+            ),
+        )
+        for index in range(count)
+    ]
 
-out = sys.argv[1] if len(sys.argv) > 1 else "/home/jesse/ros2_ws/Zeek監控/test/dds_attack_test.pcap"
-with open(out, "wb") as f:
-    # pcap global header: magic, ver 2.4, zone, sig, snaplen, linktype=1(Eth)
-    f.write(struct.pack("!IHHIIII", 0xa1b2c3d4, 2, 4, 0, 0, 65535, 1))
-    for ts, data in pkts:
-        sec = int(ts)
-        usec = int((ts - sec) * 1_000_000)
-        f.write(struct.pack("!IIII", sec, usec, len(data), len(data)))
-        f.write(data)
-print(f"寫出 {out}：{len(pkts)} 個封包")
+
+def baseline_packets():
+    """Existing five-rule regression plus one trusted-source FPR check."""
+    packets = [
+        (
+            0.0,
+            frame(
+                MAC_T,
+                MAC_MC,
+                "10.10.10.2",
+                "239.255.0.1",
+                14900,
+                14900,
+                RTPS,
+            ),
+        ),
+        (
+            1.0,
+            frame(
+                MAC_A,
+                MAC_MC,
+                "10.10.10.1",
+                "239.255.0.1",
+                14910,
+                14900,
+                RTPS,
+            ),
+        ),
+    ]
+    injected = (
+        b"RTPS\x02\x03" + b"\x00" * 8 + b"[INJECTED] forged cmd_vel"
+    )
+    packets.append(
+        (
+            2.0,
+            frame(
+                MAC_A,
+                MAC_T,
+                "10.10.10.1",
+                "10.10.10.2",
+                14913,
+                14913,
+                injected,
+            ),
+        )
+    )
+    packets.extend(
+        spdp_packets("10.10.10.1", 30, start=3.0, first_port=40000)
+    )
+    parameter = (
+        b"RTPS\x02\x03"
+        + b"\x00" * 8
+        + b"rq/listener/set_parametersRequest use_sim_time"
+    )
+    packets.append(
+        (
+            7.0,
+            frame(
+                MAC_A,
+                MAC_T,
+                "10.10.10.1",
+                "10.10.10.2",
+                14914,
+                14913,
+                parameter,
+            ),
+        )
+    )
+    packets.append(
+        (
+            8.0,
+            frame(
+                MAC_A,
+                MAC_MC,
+                "10.10.10.2",
+                "239.255.0.1",
+                14910,
+                14900,
+                RTPS,
+            ),
+        )
+    )
+    return packets
+
+
+def build_case(case: str):
+    if case == "baseline":
+        return baseline_packets()
+    if case == "single-source-threshold":
+        return spdp_packets("10.10.10.1", 25, start=1.0)
+    if case == "mixed-sources":
+        packets = spdp_packets("10.10.10.1", 24, start=1.0)
+        packets.extend(
+            spdp_packets(
+                "10.10.10.3",
+                1,
+                start=3.4,
+                first_port=50000,
+            )
+        )
+        return packets
+    if case == "cross-window":
+        packets = spdp_packets("10.10.10.1", 24, start=1.0)
+        packets.extend(
+            spdp_packets(
+                "10.10.10.1",
+                1,
+                start=12.0,
+                first_port=50000,
+            )
+        )
+        return packets
+    if case == "capacity":
+        packets = []
+        for index, source in enumerate(
+            ("10.20.0.1", "10.20.0.2", "10.20.0.3")
+        ):
+            packets.extend(
+                spdp_packets(
+                    source,
+                    1,
+                    start=1.0 + index * 0.1,
+                    first_port=50000 + index,
+                )
+            )
+        return packets
+    raise ValueError(f"unknown fixture case: {case}")
+
+
+def write_pcap(path: Path, packets) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("wb") as handle:
+        # pcap global header: magic, v2.4, UTC, snaplen, Ethernet.
+        handle.write(
+            struct.pack("!IHHIIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+        )
+        for timestamp, data in sorted(packets, key=lambda item: item[0]):
+            seconds = int(timestamp)
+            microseconds = int((timestamp - seconds) * 1_000_000)
+            handle.write(
+                struct.pack(
+                    "!IIII",
+                    seconds,
+                    microseconds,
+                    len(data),
+                    len(data),
+                )
+            )
+            handle.write(data)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "output",
+        nargs="?",
+        type=Path,
+        default=Path(
+            "/home/jesse/ros2_ws/Zeek監控/test/dds_attack_test.pcap"
+        ),
+    )
+    parser.add_argument(
+        "--case",
+        choices=(
+            "baseline",
+            "single-source-threshold",
+            "mixed-sources",
+            "cross-window",
+            "capacity",
+        ),
+        default="baseline",
+    )
+    return parser
+
+
+def main() -> int:
+    args = build_parser().parse_args()
+    packets = build_case(args.case)
+    write_pcap(args.output, packets)
+    print(f"寫出 {args.output}：{len(packets)} 個封包（{args.case}）")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

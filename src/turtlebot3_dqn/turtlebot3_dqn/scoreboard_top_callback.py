@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
+from turtlebot3_dqn.atomic_io import atomic_save
 
 try:
     from tqdm import tqdm as _tqdm
@@ -174,16 +175,18 @@ class ScoreboardTopCallback(BaseCallback):
             spl_now = float(np.mean(self.ep_spl))
             if spl_now > self.best_spl:
                 old = self.best_spl
-                self.best_spl = spl_now
                 try:
-                    self.model.save(str(self.best_save_path))
-                    # Sign immediately so any tampering between training and
-                    # eval/deploy gets detected (attack M: model swap).
-                    if _BEST_SECRET:
-                        try:
-                            sign_file(self.best_save_path.with_suffix(".zip"), _BEST_SECRET)
-                        except Exception as e:
-                            _w(f"⚠️ best HMAC sign failed: {e}")
+                    if not _BEST_SECRET:
+                        raise RuntimeError(
+                            "找不到 HMAC key，拒絕寫出未簽章 best.zip"
+                        )
+                    atomic_save(
+                        self.model.save,
+                        self.best_save_path.with_suffix(".zip"),
+                        sign_fn=sign_file,
+                        secret=_BEST_SECRET,
+                    )
+                    self.best_spl = spl_now
                     _w(f"💎 New best SPL = {spl_now:.3f} (was {old:.3f}) → {self.best_save_path.name}.zip")
                 except Exception as e:
                     _w(f"⚠️ best save failed: {e}")

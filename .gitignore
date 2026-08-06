@@ -56,5 +56,25 @@ website/
 # Claude memory (private)
 .claude/
 
+# Codex local validation/render scratch space
+.codex_tmp/
+
 # SROS2 keystore — 含 CA 私鑰，嚴禁進版控（N26 教訓）
-sros2_keystore/
+# 無尾斜線可同時忽略本機目錄與指向 WSL 安全儲存區的符號連結。
+sros2_keystore
+
+# Generated firewall evidence and models stay local; campaign plans and code
+# remain versionable. PCAP may also contain lab-network metadata.
+firewall_lab/dataset/
+firewall_lab/dataset_live/
+firewall_lab/demo_dataset/
+firewall_lab/demo_features/
+firewall_lab/features/
+firewall_lab/model/
+firewall_lab/pretrain_dataset/
+firewall_lab/live_runtime/
+firewall_lab/dataset_pilot/
+firewall_lab/features_pilot/
+firewall_lab/readiness_evidence/
+紅隊測試/Claude回傳證據/
+紅隊測試/external_redteam_evidence/

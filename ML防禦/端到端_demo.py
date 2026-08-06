@@ -6,18 +6,22 @@
 """
 from __future__ import annotations
 
-import joblib
+from pathlib import Path
+
 import pandas as pd
 
+from ml_utils import verified_joblib_load
 from RTPS資料集_訓練 import FEATURES, parse_csv
 from 回應引擎 import Detection, ResponseEngine
 
+BASE = Path(__file__).resolve().parent
 CSV = ("/home/jesse/datasets/rtps/extracted/Dataset/CSV/"
        "Command Injection_180_labled.csv")
 
 
 def main():
-    bundle = joblib.load("輸出/rtps_inject_model.joblib")
+    # joblib/pickle 可能執行任意程式；一定先用本機 0600 金鑰驗 HMAC。
+    bundle = verified_joblib_load(BASE / "輸出" / "rtps_inject_model.joblib")
     clf = bundle["rf"]
 
     df = parse_csv(CSV)

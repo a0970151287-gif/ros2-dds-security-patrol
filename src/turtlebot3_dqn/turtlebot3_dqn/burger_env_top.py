@@ -15,6 +15,11 @@ Upgrades over burger_env.py (v1):
     7. Event-driven reset (no wall-clock sleep) — deterministic timing
     8. SPL (Anderson 2018) metric in info dict — Habitat-grade eval
 
+Security boundary:
+    This class is a training/evaluation environment.  It does not subscribe to
+    /security/alerts, authenticate publishers, or replace the external
+    dds_security_monitor / SROS2 enforcement layer.
+
 Obs (per frame, then K-stacked, then flattened):
     lidar (180)    : ranges normalized to [0,1] via /LIDAR_MAX_M
     state (6)      : [dist_norm, cos(angle), sin(angle),
@@ -139,7 +144,7 @@ class BurgerEnvTop(gym.Env, Node):
     觀測（744D）= frame stack K=4 of:
       • 180 LiDAR beams（raw，非池化；給 1D-Conv encoder 抓 spatial pattern）
       • 6 state = [dist_to_goal, cos(θ), sin(θ), prev_lin_vel,
-                   prev_ang_vel, curriculum_stage]
+                   prev_ang_vel, time_norm]
 
     Reward（progress-based: Δdist）：
       r = (prev_dist − dist) + smooth_penalty + sparse_waypoint_bonus + time_penalty
@@ -150,13 +155,12 @@ class BurgerEnvTop(gym.Env, Node):
     Robustness：
       • Curriculum 1→5 waypoints（stage success ≥ 0.7 → 自動升級）
       • Domain Randomization：LiDAR noise / random dropout / max-vel jitter
-      • Adversarial training：5% episode 注入 lidar bias / noise burst / action jam
+      • Adversarial training：三種擾動各自以 5% episode 機率注入
         → 對應 ROSEC-2026-009 K 攻擊的端到端 robust policy
 
-    安全行為（部署時繼承）：
-      • 訂閱 /security/alerts，驗章通過 → episode 終止 + reward 重置
-      • 啟動掃描 /cmd_vel + /scan publisher，發現未授權即標 alert
-      • scan 異常三重檢查：std<0.01 + frame-repeat + 95% near-max
+    安全邊界：
+      • 本類別只負責 TQC 的訓練／評估，不實作 security alert 驗章或 publisher
+        身分驗證；部署安全由 dds_security_monitor 與 SROS2 Enforce 提供。
     """
 
     metadata = {"render_modes": []}
@@ -183,7 +187,9 @@ class BurgerEnvTop(gym.Env, Node):
         qos = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
         self._scan_sub = self.create_subscription(LaserScan, "/scan", self._scan_cb, qos)
         self._odom_sub = self.create_subscription(Odometry,  "/odom", self._odom_cb, qos)
-        self._cmd_pub  = self.create_publisher(TwistStamped, "/cmd_vel", 10)
+        # Final /cmd_vel is owned by velocity_guard_node.
+        self._cmd_pub  = self.create_publisher(
+            TwistStamped, "/cmd_vel/tqc", 10)
 
         self._raw_scan: np.ndarray | None = None
         self._x = self._y = self._yaw = 0.0
@@ -271,9 +277,13 @@ class BurgerEnvTop(gym.Env, Node):
         syaw   = float(rng.uniform(-math.pi, math.pi))
         self._odom_ok = False
         self._teleport(sx, sy, syaw)
-        self._wait_odom(2.0)
+        if not self._wait_odom(2.0):
+            self._publish_cmd(0.0, 0.0)
+            raise RuntimeError("teleport 後未收到新的 /odom，拒絕用陳舊狀態訓練")
         self._raw_scan = None
-        self._wait_scan(SCAN_TIMEOUT_S)
+        if not self._wait_scan(SCAN_TIMEOUT_S):
+            self._publish_cmd(0.0, 0.0)
+            raise RuntimeError("reset 後未收到新的 /scan，拒絕用合成空曠資料訓練")
 
         wps = list(WAYPOINTS_ALL)
         rng.shuffle(wps)
@@ -307,8 +317,12 @@ class BurgerEnvTop(gym.Env, Node):
     def step(self, action):
         self._steps += 1
         action = np.asarray(action, dtype=np.float32)
-        if not np.all(np.isfinite(action)):
-            return self._stacked_obs(), W_COLLIDE, True, False, self._build_info("collision")
+        if action.shape != (2,) or not np.all(np.isfinite(action)):
+            self._publish_cmd(0.0, 0.0)
+            return (
+                self._stacked_obs(), W_COLLIDE, True, False,
+                self._build_info("invalid_action"),
+            )
         action = np.clip(action, -1.0, 1.0)
 
         lin_cmd = float((action[0] + 1.0) / 2.0 * self._dr_max_lin)
@@ -321,6 +335,7 @@ class BurgerEnvTop(gym.Env, Node):
 
         if not scan_ok:
             # environment failure: truncate without polluting reward signal
+            self._publish_cmd(0.0, 0.0)
             return self._stacked_obs(), 0.0, False, True, self._build_info("scan_timeout")
 
         dx_walk = self._x - self._prev_pos[0]
@@ -332,7 +347,7 @@ class BurgerEnvTop(gym.Env, Node):
         truncated = (self._steps >= MAX_STEPS) and not terminated
         if truncated and event == "running":
             event = "timeout"
-        if terminated:
+        if terminated or truncated:
             self._publish_cmd(0.0, 0.0)
 
         self._prev_action = action.copy()
@@ -480,7 +495,7 @@ class BurgerEnvTop(gym.Env, Node):
         qw = math.cos(yaw / 2.0)
         env = os.environ.copy()
         env["GZ_IP"] = "127.0.0.1"
-        subprocess.run(
+        result = subprocess.run(
             [
                 "gz", "service", "-s", "/world/default/set_pose",
                 "--reqtype", "gz.msgs.Pose",
@@ -493,6 +508,9 @@ class BurgerEnvTop(gym.Env, Node):
             capture_output=True,
             env=env,
         )
+        if result.returncode != 0:
+            detail = result.stderr.decode(errors="replace").strip()
+            raise RuntimeError(f"Gazebo teleport 失敗 (rc={result.returncode}): {detail}")
 
     def _wait_sim_ready(self, timeout: float) -> None:
         self.get_logger().info(f"等待 Gazebo /scan + /odom 就緒 (max {timeout:.0f}s)…")
@@ -505,7 +523,9 @@ class BurgerEnvTop(gym.Env, Node):
                 self._raw_scan = None
                 self._odom_ok = False
                 return
-        self.get_logger().error(f"Gazebo not ready after {timeout:.0f}s")
+        message = f"Gazebo not ready after {timeout:.0f}s"
+        self.get_logger().error(message)
+        raise RuntimeError(message)
 
     def _wait_scan(self, timeout: float) -> bool:
         t0 = time.time()

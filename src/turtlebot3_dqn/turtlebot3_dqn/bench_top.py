@@ -36,15 +36,18 @@ from sb3_contrib import TQC
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from turtlebot3_dqn.burger_env_top import BurgerEnvTop, N_WP_TOTAL
+from turtlebot3_dqn.atomic_io import (
+    ArtifactIntegrityError,
+    open_verified_snapshot,
+)
 from turtlebot3_dqn.eval_top import bootstrap_ci
 from turtlebot3_dqn.feature_extractors import LiDARConvExtractor  # noqa: F401
 
 try:
-    from dds_security_monitor.monitor_node import verify_file, _load_alert_secret
+    from dds_security_monitor.monitor_node import _load_alert_secret
     _SEC_AVAILABLE = True
 except Exception:
     _SEC_AVAILABLE = False
-    def verify_file(_p, _s): return False
     def _load_alert_secret(): return b""
 
 
@@ -62,22 +65,20 @@ TIERS = {
 }
 
 
-def _verify_model(model_zip: Path, strict: bool) -> None:
+def _open_model_snapshot(model_zip: Path):
     if not _SEC_AVAILABLE:
-        return
-    secret = _load_alert_secret()
-    sig = model_zip.with_suffix(".zip.sha256.hmac")
-    if not (sig.exists() and secret):
-        print(f"  ⚠️  no HMAC signature on {model_zip.name} — proceeding")
-        return
-    if verify_file(model_zip, secret):
-        print(f"  ✓ HMAC verified: {model_zip.name}")
-        return
-    msg = f"✗ HMAC FAILED for {model_zip.name}"
-    if strict:
-        print(msg + " — refusing (strict mode)")
-        sys.exit(2)
-    print(msg + " — continuing (non-strict)")
+        raise ArtifactIntegrityError(
+            "dds_security_monitor 不可匯入，沒有模型驗章能力"
+        )
+    try:
+        secret = _load_alert_secret()
+    except Exception as exc:
+        raise ArtifactIntegrityError(f"無法載入 HMAC key：{exc}") from exc
+    return open_verified_snapshot(
+        model_zip,
+        secret=secret,
+        label="TQC model",
+    )
 
 
 def run_tier(env: BurgerEnvTop, model: TQC, tier: Tier, n_episodes: int,
@@ -221,8 +222,6 @@ def main() -> None:
     p.add_argument("--out-dir",
                    default=str(Path(__file__).parent / "runs_top/bench"))
     p.add_argument("--no-viz", action="store_true")
-    p.add_argument("--strict-hmac", action="store_true",
-                   help="Refuse to run on models with bad/missing HMAC")
     args = p.parse_args()
 
     tier_names = [t.strip() for t in args.tiers.split(",") if t.strip()]
@@ -247,8 +246,13 @@ def main() -> None:
                 continue
 
             print(f"\n{'='*72}\n▶ Benchmarking {model_zip.name}\n{'='*72}")
-            _verify_model(model_zip, args.strict_hmac)
-            model = TQC.load(str(model_zip.with_suffix("")), env=None)
+            try:
+                with _open_model_snapshot(model_zip) as model_snapshot:
+                    model = TQC.load(model_snapshot, env=None)
+            except (ArtifactIntegrityError, OSError, RuntimeError) as exc:
+                print(f"✗ 模型完整性檢查失敗：{exc}")
+                continue
+            print(f"  ✓ HMAC verified and loaded from snapshot: {model_zip.name}")
 
             all_rows: list[dict] = []
             tier_summaries: dict[str, dict] = {}

@@ -23,6 +23,12 @@
 import sys
 import time
 import rclpy
+from rclpy.executors import ExternalShutdownException
+
+try:  # rclpy exposes RCLError under different paths across distros
+    from rclpy._rclpy_pybind11 import RCLError
+except ImportError:  # pragma: no cover - fallback for older rclpy
+    RCLError = RuntimeError
 from rclpy.node import Node
 from std_msgs.msg import String
 
@@ -69,10 +75,16 @@ def main():
     try:
         while rclpy.ok() and time.monotonic() < deadline:
             rclpy.spin_once(node, timeout_sec=0.5)
+    except (KeyboardInterrupt, ExternalShutdownException, RCLError):
+        pass
     finally:
-        node.get_logger().error('⏹ 結束（mission_manager 視為合法 sensor_hub）')
+        if rclpy.ok():
+            node.get_logger().error(
+                '⏹ 結束（mission_manager 視為合法 sensor_hub）'
+            )
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

@@ -1,0 +1,3 @@
+# Required only by the asymmetric response-ticket/backend boundary.
+# If unavailable, live response fails closed; observe and dry-run remain usable.
+cryptography>=41,<47
