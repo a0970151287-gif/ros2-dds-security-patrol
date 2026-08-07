@@ -16,6 +16,7 @@ import json
 import math
 import os
 import secrets
+import signal
 import subprocess
 import threading
 import time
@@ -153,6 +154,33 @@ class ManagedProcess:
                 handle.flush()
                 handle.close()
 
+    def _signal_group(self, sig: int) -> None:
+        """Signal the whole process group, not just the direct child.
+
+        ``start()`` uses ``start_new_session=True``, so the child is its own
+        process-group leader and its descendants share that group.  Signalling
+        only the child leaves those descendants running: the
+        ``unauthorized_participant`` runner is ``ros2 run demo_nodes_cpp
+        talker``, where ``ros2 run`` is a CLI wrapper that execs the real
+        talker, and the 2026-08-07 ten-session batch left one talker alive
+        afterwards.  Across the 50 such sessions in a 550-session arm those
+        survivors would accumulate on domain 30 and publish into every later
+        session, contaminating the network features of runs that were supposed
+        to be attack-free.
+
+        Falls back to signalling the child alone if the group is already gone,
+        so a race during teardown cannot raise here.
+        """
+        if self._process is None:
+            return
+        try:
+            os.killpg(os.getpgid(self._process.pid), sig)
+        except (ProcessLookupError, PermissionError, OSError):
+            try:
+                self._process.send_signal(sig)
+            except (ProcessLookupError, OSError):
+                pass
+
     def stop(self, *, grace_sec: float = 3.0) -> ProcessResult:
         if self._result is not None:
             return self._result
@@ -168,12 +196,12 @@ class ManagedProcess:
         terminated = self._process.poll() is None
         timed_out = False
         if terminated:
-            self._process.terminate()
+            self._signal_group(signal.SIGTERM)
             try:
                 self._process.wait(timeout=float(grace_sec))
             except subprocess.TimeoutExpired:
                 timed_out = True
-                self._process.kill()
+                self._signal_group(signal.SIGKILL)
                 self._process.wait(timeout=3.0)
         return_code = self._process.returncode
         self._close_handles()

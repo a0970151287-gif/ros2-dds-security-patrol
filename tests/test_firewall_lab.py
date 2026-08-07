@@ -740,3 +740,62 @@ def test_synthetic_attack_catalog_matches_multimodal_profiles():
         "verify_flood",
         "confused_deputy",
     }
+
+
+def test_managed_process_stop_kills_descendants_not_just_the_child(tmp_path):
+    """A wrapper's grandchildren must die with it.
+
+    The unauthorized_participant runner is `ros2 run demo_nodes_cpp talker`,
+    where `ros2 run` is a CLI wrapper that spawns the real talker.  stop() used
+    to signal only the direct child, so the 2026-08-07 ten-session batch left a
+    talker alive.  Across the 50 such sessions in one 550-session arm those
+    survivors would keep publishing on domain 30 and contaminate the network
+    features of later, supposedly attack-free sessions.
+    """
+    import os
+    import subprocess
+    import time
+
+    from firewall_lab.evidence import ManagedProcess
+
+    marker = tmp_path / "grandchild.pid"
+    # A shell parent with a backgrounded child: the same shape as `ros2 run`
+    # exec'ing the real node, without nesting Python quoting three deep.
+    process = ManagedProcess(
+        argv=["/bin/sh", "-c", f"sleep 300 & echo $! > {marker}; wait"],
+        cwd=tmp_path,
+        env=dict(os.environ),
+        stdout_path=tmp_path / "out.log",
+        stderr_path=tmp_path / "err.log",
+    )
+    process.start()
+    for _ in range(100):
+        if marker.is_file() and marker.read_text().strip():
+            break
+        time.sleep(0.1)
+    assert marker.is_file() and marker.read_text().strip(), (
+        "test setup failed; stderr: "
+        + (tmp_path / "err.log").read_text(encoding="utf-8")[:400]
+    )
+    grandchild = int(marker.read_text().strip())
+
+    def alive(pid: int) -> bool:
+        try:
+            state = subprocess.run(
+                ["ps", "-o", "stat=", "-p", str(pid)],
+                capture_output=True, text=True, timeout=5,
+            ).stdout.strip()
+        except Exception:
+            return False
+        # A zombie has exited; only a real running state counts as alive.
+        return bool(state) and not state.startswith("Z")
+
+    assert alive(grandchild), "test setup failed: grandchild never ran"
+    process.stop()
+    for _ in range(60):
+        if not alive(grandchild):
+            break
+        time.sleep(0.1)
+    assert not alive(grandchild), (
+        "grandchild survived stop(); the process group was not signalled"
+    )
