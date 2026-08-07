@@ -36,13 +36,20 @@
     "firewall_lab/sros2_deny_adapter.py",
     "firewall_lab/features.py",
     "firewall_lab/orchestrator.py",
+    "firewall_lab/mode_leakage.py",
     "src/dds_security_monitor/dds_security_monitor/runtime_telemetry.py",
-    "tests/test_live_multimodal.py"
+    "tests/test_live_multimodal.py",
+    "tests/test_mode_leakage.py"
+  ],
+  "resolved_2026_08_06": [
+    "loopback live pilot passed: 9/9 Permissive scenarios and Enforce both produce complete, trainable sessions",
+    "SROS2 deny patterns calibrated against the installed Fast DDS 2.14.5: 28/28 vendor strings and 2/2 real runtime denials, up from 5/28",
+    "same-UID source attribution validated live across six distinct emitting nodes",
+    "collector ticks, runtime events and full session-window coverage demonstrated; Zeek udp_inactivity_timeout pinned to 5s so long-lived DDS flows no longer collapse every session into window 0",
+    "all 18 telemetry features now have a live producer; the last five were emitting nothing and could never leave zero"
   ],
   "blockers": [
-    "the statically wired ROS producer and session collector have not passed a loopback live pilot",
-    "SROS2 deny patterns have not been calibrated against the exact installed RMW vendor logs",
-    "same-UID runtime telemetry source attribution has not been isolated or live-validated",
-    "no loopback live pilot has demonstrated collector ticks, runtime events, and complete session-window coverage"
+    "the security mode must be shown to be unrecoverable from the network features alone (firewall_lab.mode_leakage). The pilot cannot answer this: Enforce covers two scenarios and Permissive nine, so the gate correctly refuses to score rather than measure scenario differences and report them as a pass. It needs paired sessions from the formal campaign, which is what this blocker is waiting for.",
+    "two lab defects of exactly this kind have already been found by hand -- Permissive on shared memory while Enforce was forced onto UDP, and an Enforce-only source address -- so an RQ3 claim must not rest on the absence of a third being assumed"
   ]
 }
