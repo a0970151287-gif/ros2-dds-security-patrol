@@ -435,8 +435,23 @@ def build_network_rows(
         destinations = [item[2] for item in group]
         timestamps = [item[0] for item in group]
         count = len(group)
-        midpoint_seconds = statistics.fmean(item[0] for item in group)
-        midpoint_ns = int(midpoint_seconds * 1_000_000_000)
+        # Label the time window, not this source's traffic within it.
+        #
+        # Rows are grouped by (source, window), so a window that straddles the
+        # start or end of the attack interval used to get one label per source:
+        # each group was labelled from the mean timestamp of its own conns, and
+        # those means differ. In session
+        # 20260807T082401902811Z_parameter_tamper_cedeb73f the attack began
+        # 3.6s into window 0 and the three sources' means landed 1 ms apart on
+        # opposite sides of it, so the window was simultaneously normal and
+        # parameter_tamper. build_telemetry_rows requires one label per window
+        # and refused the whole session, which would have blocked the feature
+        # build for the entire campaign.
+        #
+        # The window's own centre is deterministic and identical for every
+        # source, so the disagreement cannot recur by construction.
+        window_midpoint_seconds = t0 + window * window_sec + window_sec / 2.0
+        midpoint_ns = int(window_midpoint_seconds * 1_000_000_000)
         label, label_scope = _label_at(midpoint_ns, labels)
         port_counts = Counter(ports)
         host_counts = Counter(destinations)

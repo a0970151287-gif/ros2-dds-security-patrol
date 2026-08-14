@@ -647,3 +647,105 @@ def test_every_bounded_attack_runner_tolerates_orchestrator_shutdown():
         if "RCLError" not in source:
             missing.append(name)
     assert not missing, f"runners that would die on a clean stop: {missing}"
+
+
+def test_window_straddling_the_attack_boundary_gets_one_label_per_window(tmp_path):
+    """Two sources in one window must never disagree about its label.
+
+    Network rows are grouped by (source, window) and were labelled from the
+    mean timestamp of each group's own conns. When a window straddles the start
+    or end of the attack interval those means fall on opposite sides of it: in
+    session 20260807T082401902811Z_parameter_tamper_cedeb73f the attack began
+    3.6s into window 0 and three sources' means landed 1 ms apart across the
+    boundary, so the window was both normal and parameter_tamper at once.
+    build_telemetry_rows requires a single label per window and rejected the
+    session, which blocked the feature build for all 550 sessions.
+    """
+    from firewall_lab.features import build_features
+
+    session_id = new_session_id("parameter_tamper")
+    session = tmp_path / session_id
+    (session / "zeek").mkdir(parents=True)
+    base = 1_800_000_000.0
+    base_ns = int(base * 1_000_000_000)
+
+    manifest = SessionManifest(
+        session_id=session_id,
+        scenario_id="parameter_tamper",
+        attack_class="parameter_tamper",
+        binary_label="attack",
+        security_mode="enforce",
+        ros_domain_id=30,
+        seed=1,
+        origin="live_lab",
+        training_eligible=True,
+        expected_action="deny_participant",
+        policy_sha256="a" * 64,
+        code_revision="b" * 40,
+        status="complete",
+    )
+    manifest.write(session / "manifest.json")
+
+    # Attack starts 3.6s into window 0, exactly the shape that broke.
+    (session / "labels.jsonl").write_text(
+        json.dumps(
+            make_label(
+                session_id=session_id,
+                attack_class="parameter_tamper",
+                start_unix_ns=base_ns + 3_600_000_000,
+                end_unix_ns=base_ns + 30_000_000_000,
+                source="allowlisted_runner",
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (session / "events.jsonl").write_text("", encoding="utf-8")
+    (session / "resources.jsonl").write_text("", encoding="utf-8")
+
+    # Two sources whose window-0 conn means straddle that 3.6s boundary.
+    tab = "\t"
+    lines = [
+        "#separator \\x09",
+        tab.join(["#fields", "ts", "id.orig_h", "id.resp_h", "id.resp_p", "proto"]),
+    ]
+
+    def conn(offset: float, source: str) -> str:
+        return tab.join(
+            [f"{base + offset:.6f}", source, "127.0.0.1", "14913", "udp"]
+        )
+
+    for offset in (0.2, 0.4, 1.0):          # mean 0.53 -> before the boundary
+        lines.append(conn(offset, "127.0.0.1"))
+    for offset in (6.0, 7.0, 7.5):          # mean 6.83 -> after the boundary
+        lines.append(conn(offset, "10.255.255.254"))
+    for offset in (9.0, 12.0, 14.0):        # window 1, both sources
+        lines.append(conn(offset, "127.0.0.1"))
+        lines.append(conn(offset, "10.255.255.254"))
+    (session / "zeek" / "conn.log").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8"
+    )
+
+    collector = TelemetryCollector(
+        session / "telemetry_events.jsonl",
+        session_id=session_id,
+        source="telemetry_collector",
+    )
+    for window_offset in (1_000_000_000, 9_000_000_000):
+        collector.emit("collector_tick", {}, ts_unix_ns=base_ns + window_offset)
+
+    output = tmp_path / "features"
+    # Before the fix this raised SchemaError("network label disagreement").
+    result = build_features(dataset_root=tmp_path, output_dir=output)
+    assert result["telemetry_rows"] > 0
+
+    with (output / "network_features.csv").open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    per_window = {}
+    for row in rows:
+        per_window.setdefault(int(row["window"]), set()).add(row["label"])
+    for window, labels in per_window.items():
+        assert len(labels) == 1, (
+            f"window {window} carries multiple labels {labels}; the label must "
+            "be a property of the time window, not of which source sent traffic"
+        )
