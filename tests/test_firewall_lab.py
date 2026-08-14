@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import csv
 import json
 import math
@@ -799,3 +801,62 @@ def test_managed_process_stop_kills_descendants_not_just_the_child(tmp_path):
     assert not alive(grandchild), (
         "grandchild survived stop(); the process group was not signalled"
     )
+
+
+def test_collector_startup_deadline_has_real_margin():
+    """A slow start must not be mistaken for a failure.
+
+    The collector spawns an interpreter and imports this package, which costs
+    ~0.8s from the WSL 9p mount. Measured socket-bind time is 0.9-1.1s idle and
+    1.9s under campaign load. The original 2.0s deadline left 50-120ms of
+    margin, so the Permissive arm completed 856 sessions and then lost the
+    whole batch when session 857 landed on the wrong side of it.
+
+    Waiting longer is free: the loop returns as soon as the socket appears.
+    """
+    import inspect
+
+    from firewall_lab import orchestrator
+
+    source = inspect.getsource(orchestrator._start_runtime_telemetry)
+    deadlines = re.findall(r"time\.monotonic\(\) \+ ([0-9.]+)", source)
+    assert deadlines, "no startup deadline found"
+    assert min(float(v) for v in deadlines) >= 15.0, (
+        "startup deadline is too tight against a measured 1.9s worst case"
+    )
+
+
+def test_collector_wait_stops_early_when_the_process_dies():
+    """Tolerating a slow start must not make real failures slow to report."""
+    import inspect
+
+    from firewall_lab import orchestrator
+
+    source = inspect.getsource(orchestrator._start_runtime_telemetry)
+    assert "process.poll()" in source, (
+        "the wait loop must notice a dead collector instead of sitting out the "
+        "deadline"
+    )
+    assert "stderr" in source, "the failure must surface the collector's stderr"
+
+
+def test_managed_process_poll_reports_exit_without_reaping(tmp_path):
+    import os
+    import time
+
+    from firewall_lab.evidence import ManagedProcess
+
+    process = ManagedProcess(
+        argv=["/bin/sh", "-c", "exit 7"],
+        cwd=tmp_path,
+        env=dict(os.environ),
+        stdout_path=tmp_path / "o.log",
+        stderr_path=tmp_path / "e.log",
+    )
+    process.start()
+    for _ in range(100):
+        if process.poll() is not None:
+            break
+        time.sleep(0.05)
+    assert process.poll() == 7
+    assert process.stop().return_code == 7

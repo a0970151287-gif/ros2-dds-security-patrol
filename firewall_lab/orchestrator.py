@@ -230,13 +230,38 @@ def _start_runtime_telemetry(
         stderr_path=session_dir / "telemetry_collector.stderr.log",
     )
     process.start()
-    deadline = time.monotonic() + 2.0
+    # A slow start is not a failure.  The collector has to spawn an interpreter
+    # and import this package, which costs ~0.8s when the workspace sits on the
+    # WSL 9p mount; measured socket-bind time is 0.9-1.1s idle and 1.9s under
+    # the load a campaign generates.  Against the original 2.0s deadline that
+    # left 50-120ms of margin, so the Permissive arm ran 856 sessions and then
+    # lost the whole batch to a coin flip at session 857.
+    #
+    # Waiting longer costs nothing when the collector is healthy: the loop
+    # returns the moment the socket appears.  To keep genuine failures fast,
+    # stop as soon as the process exits rather than sitting out the deadline,
+    # and report its stderr instead of a bare timeout.
+    deadline = time.monotonic() + 30.0
     while time.monotonic() < deadline:
         if socket_path.is_socket() and not socket_path.is_symlink():
             return process, socket_path
+        if process.poll() is not None:
+            break
         time.sleep(0.02)
-    process.stop(grace_sec=1.0)
-    raise RuntimeError("runtime telemetry collector did not create its local socket")
+    result = process.stop(grace_sec=1.0)
+    detail = ""
+    try:
+        stderr = (session_dir / "telemetry_collector.stderr.log").read_text(
+            encoding="utf-8", errors="replace"
+        ).strip()
+        if stderr:
+            detail = f"; collector stderr: {stderr.splitlines()[-1][:200]}"
+    except OSError:
+        pass
+    raise RuntimeError(
+        "runtime telemetry collector did not create its local socket "
+        f"(exit={result.return_code}){detail}"
+    )
 
 
 def _start_sros2_log_adapter(

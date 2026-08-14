@@ -154,6 +154,17 @@ class ManagedProcess:
                 handle.flush()
                 handle.close()
 
+    def poll(self) -> int | None:
+        """Exit code if the process has finished, else None.
+
+        Lets a caller waiting on a startup side effect (a socket appearing,
+        a file being written) notice that the process died instead of sitting
+        out its whole timeout.
+        """
+        if self._process is None:
+            return None
+        return self._process.poll()
+
     def _signal_group(self, sig: int) -> None:
         """Signal the whole process group, not just the direct child.
 
