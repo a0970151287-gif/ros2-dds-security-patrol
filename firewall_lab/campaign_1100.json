@@ -10279,13 +10279,13 @@
       "attack_class": "message_dos",
       "domain_id": 30,
       "entry_id": "run_00857",
-      "error": "RuntimeError: runtime telemetry collector did not create its local socket",
+      "error": null,
       "expected_action": "drop_message",
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1168375512,
-      "session_id": null,
-      "status": "failed"
+      "session_id": "20260814T173817559999Z_oversized_scan_49d20c42",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -10296,8 +10296,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 450000599,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T173909564372Z_heartbeat_replay_b1b14094",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -10320,8 +10320,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 855330490,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T173958354886Z_normal_patrol_5fa37b8a",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -10428,8 +10428,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "permissive",
       "seed": 1425725648,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174041983770Z_parameter_flood_1f6b1f1b",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -10440,8 +10440,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 2011590166,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174133304015Z_unauthorized_participant_f0f4f505",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -10452,8 +10452,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 437592179,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174219720461Z_heartbeat_replay_4c170028",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -10464,8 +10464,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 192516365,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174311015157Z_cmd_vel_injection_f5bb017e",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -10512,8 +10512,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 444808460,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174402878082Z_heartbeat_replay_0c0d2402",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -10536,8 +10536,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 499193437,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174451443135Z_heartbeat_replay_3b632b27",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -10632,8 +10632,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 853942849,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174539742578Z_normal_patrol_5f1721d3",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -10656,8 +10656,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 837318605,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174624998799Z_normal_patrol_ff2016ad",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -10704,8 +10704,8 @@
       "scenario_id": "alert_replay",
       "security_mode": "permissive",
       "seed": 64917273,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174710634746Z_alert_replay_d8e18eaf",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -10752,8 +10752,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1907738090,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174759170564Z_unauthorized_participant_3a29bac7",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -10764,8 +10764,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1935727776,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174845153860Z_unauthorized_participant_8982f35c",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -10776,8 +10776,8 @@
       "scenario_id": "alert_replay",
       "security_mode": "permissive",
       "seed": 59364644,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T174933970250Z_alert_replay_26b846c5",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -10800,8 +10800,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1786361738,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175022236749Z_sensor_status_spoof_af52f04a",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -10884,8 +10884,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 423709161,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175110592098Z_heartbeat_replay_e36c3e87",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -10920,8 +10920,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 207460248,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175201561236Z_cmd_vel_injection_2774e791",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -10932,8 +10932,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 266320281,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175253048813Z_cmd_vel_injection_ae3a2408",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -10944,8 +10944,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1988706388,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175344569610Z_unauthorized_participant_e2d721f2",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -10968,8 +10968,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 634126934,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175433686550Z_normal_patrol_5582eaf7",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -10992,8 +10992,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "permissive",
       "seed": 1631230445,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175517002818Z_parameter_tamper_56dd1530",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -11004,8 +11004,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1929988205,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175607377721Z_unauthorized_participant_a9b311fe",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -11028,8 +11028,8 @@
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1208245100,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175653791558Z_oversized_scan_f95e115c",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11052,8 +11052,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 439300291,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175742440649Z_heartbeat_replay_856dc0a4",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -11076,8 +11076,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1951065154,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175833703758Z_unauthorized_participant_4363637b",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -11088,8 +11088,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 273806252,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T175919851303Z_cmd_vel_injection_b6c5e7f1",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -11124,8 +11124,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 716290799,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180011282514Z_normal_patrol_d1a5e9ea",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11148,8 +11148,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 641065408,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180057483640Z_normal_patrol_7158870c",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -11172,8 +11172,8 @@
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1195476073,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180141383855Z_oversized_scan_db967616",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11220,8 +11220,8 @@
       "scenario_id": "alert_replay",
       "security_mode": "permissive",
       "seed": 48597881,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180232868218Z_alert_replay_48c99a06",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -11232,8 +11232,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "permissive",
       "seed": 1419521084,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180321593012Z_parameter_flood_5322c305",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11244,8 +11244,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1772995657,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180410185498Z_sensor_status_spoof_48a24d39",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -11256,8 +11256,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 760335045,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180501274420Z_normal_patrol_817e73cf",
+      "status": "complete"
     },
     {
       "attack_class": "message_dos",
@@ -11268,8 +11268,8 @@
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1214690453,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180544600999Z_oversized_scan_3c9eedbe",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -11292,8 +11292,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "permissive",
       "seed": 1433483685,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180635711559Z_parameter_flood_a7c167a0",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11304,8 +11304,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1823222987,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180724465572Z_sensor_status_spoof_fe735ee5",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -11316,8 +11316,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 716982564,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180812851920Z_normal_patrol_a4479105",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -11340,8 +11340,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 639768987,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180858419682Z_normal_patrol_9f7912de",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -11388,8 +11388,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 258793987,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T180941435864Z_cmd_vel_injection_081b3233",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11400,8 +11400,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1757350402,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181035817039Z_sensor_status_spoof_a988979c",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -11412,8 +11412,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "permissive",
       "seed": 1416805467,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181124432951Z_parameter_flood_2e599b2e",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -11424,8 +11424,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1942277087,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181212903445Z_unauthorized_participant_a396abd7",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -11448,8 +11448,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "permissive",
       "seed": 1438122354,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181301680300Z_parameter_flood_ce09ed89",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -11460,8 +11460,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 656653437,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181350530972Z_normal_patrol_054e28f5",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -11508,8 +11508,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "permissive",
       "seed": 1392614376,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181436466214Z_parameter_flood_bdba3ed4",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -11520,8 +11520,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1965076373,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181527292334Z_unauthorized_participant_dec3740c",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -11544,8 +11544,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1766507201,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181614142829Z_sensor_status_spoof_28171893",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -11556,8 +11556,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 863993557,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181707550992Z_normal_patrol_2d1cc4f4",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -11568,8 +11568,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "permissive",
       "seed": 1615007439,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181755805395Z_parameter_tamper_e8ff498d",
+      "status": "complete"
     },
     {
       "attack_class": "message_dos",
@@ -11580,8 +11580,8 @@
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1184737300,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181844199279Z_oversized_scan_2c80eec7",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11592,8 +11592,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1813987286,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T181937890011Z_sensor_status_spoof_cbdcaa36",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -11604,8 +11604,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 472683976,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182027587934Z_heartbeat_replay_59124846",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11616,8 +11616,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1745855556,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182117762677Z_sensor_status_spoof_5f991d8e",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11628,8 +11628,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1792184661,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182208724686Z_sensor_status_spoof_a430f0f9",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -11640,8 +11640,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 711875362,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182257217593Z_normal_patrol_86e10488",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -11676,8 +11676,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 476156464,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182340298941Z_heartbeat_replay_4dc496b2",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -11688,8 +11688,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 460195180,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182431152512Z_heartbeat_replay_63dfe099",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11700,8 +11700,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1822528268,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182519904424Z_sensor_status_spoof_7a9551a5",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -11712,8 +11712,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 2014256413,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182608610468Z_unauthorized_participant_7aa6b3bf",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -11736,8 +11736,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "permissive",
       "seed": 1434773370,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182657419898Z_parameter_flood_2af3aeab",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -11748,8 +11748,8 @@
       "scenario_id": "alert_replay",
       "security_mode": "permissive",
       "seed": 44555934,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182746101164Z_alert_replay_85e1becf",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -11772,8 +11772,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "permissive",
       "seed": 1414893688,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182837490396Z_parameter_flood_78ce9a1a",
+      "status": "complete"
     },
     {
       "attack_class": "message_dos",
@@ -11796,8 +11796,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 209871970,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T182926167537Z_cmd_vel_injection_65321db1",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -11820,8 +11820,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 216490688,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183017483258Z_cmd_vel_injection_cdad99c9",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -11832,8 +11832,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 193181794,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183109101059Z_cmd_vel_injection_70996744",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -11844,8 +11844,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 425570979,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183203043605Z_heartbeat_replay_ea112b1a",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -11868,8 +11868,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "permissive",
       "seed": 1633618799,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183251489858Z_parameter_tamper_b0f0b450",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -11916,8 +11916,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "permissive",
       "seed": 1440623783,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183339272680Z_parameter_flood_2b19f41b",
+      "status": "complete"
     },
     {
       "attack_class": "message_dos",
@@ -11928,8 +11928,8 @@
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1167918714,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183429992579Z_oversized_scan_d2b9833d",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -11940,8 +11940,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 630835562,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183518400198Z_normal_patrol_3689df67",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -11952,8 +11952,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "permissive",
       "seed": 1639351993,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183604373745Z_parameter_tamper_6d1264ad",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -12012,8 +12012,8 @@
       "scenario_id": "alert_replay",
       "security_mode": "permissive",
       "seed": 79108077,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183651840479Z_alert_replay_1f13afbe",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -12036,8 +12036,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 846637016,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183740422720Z_normal_patrol_60fb701d",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -12072,8 +12072,8 @@
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1180128560,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183826421000Z_oversized_scan_70ea58b1",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -12084,8 +12084,8 @@
       "scenario_id": "alert_replay",
       "security_mode": "permissive",
       "seed": 60152765,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T183914694867Z_alert_replay_57cb2275",
+      "status": "complete"
     },
     {
       "attack_class": "message_dos",
@@ -12096,8 +12096,8 @@
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1266834879,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184005903098Z_oversized_scan_75a7df9f",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -12108,8 +12108,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 648536156,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184055251814Z_normal_patrol_a291c843",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -12120,8 +12120,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1942698468,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184139106947Z_unauthorized_participant_ba157cf6",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -12132,8 +12132,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 221748108,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184227832115Z_cmd_vel_injection_4a50caa6",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -12156,8 +12156,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 227902629,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184319196217Z_cmd_vel_injection_f252c371",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -12168,8 +12168,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 652771977,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184411163822Z_normal_patrol_0e70d10c",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -12180,8 +12180,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 192010330,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184456952834Z_cmd_vel_injection_9e94cba7",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -12216,8 +12216,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 708171000,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184548822048Z_normal_patrol_8120478b",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -12228,8 +12228,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1800272641,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184634666099Z_sensor_status_spoof_810674c8",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -12288,8 +12288,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "permissive",
       "seed": 1419079701,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184723044911Z_parameter_flood_96467976",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -12300,8 +12300,8 @@
       "scenario_id": "alert_replay",
       "security_mode": "permissive",
       "seed": 53892937,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184811620130Z_alert_replay_751a39f6",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -12312,8 +12312,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "permissive",
       "seed": 1549065294,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184902837297Z_parameter_tamper_ac3122ee",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -12336,8 +12336,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1752388171,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T184950206357Z_sensor_status_spoof_780f9d82",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -12396,8 +12396,8 @@
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1163563846,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185039749930Z_oversized_scan_514a047b",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -12408,8 +12408,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 834785615,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185131285790Z_normal_patrol_1878af0e",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -12480,8 +12480,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 725117481,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185215075774Z_normal_patrol_7d77522d",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -12528,8 +12528,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 749734132,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185301674281Z_normal_patrol_6d85ebd9",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -12540,8 +12540,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 847135349,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185345556077Z_normal_patrol_07b2e13f",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -12576,8 +12576,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 250137981,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185431681398Z_cmd_vel_injection_15ee8001",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -12612,8 +12612,8 @@
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1179949737,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185524023159Z_oversized_scan_eee6f062",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -12624,8 +12624,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1997069737,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185613252698Z_unauthorized_participant_c37df19b",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -12636,8 +12636,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1981497446,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185703049526Z_unauthorized_participant_f3315baa",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -12648,8 +12648,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1911499455,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185750103834Z_unauthorized_participant_c9af0cad",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -12660,8 +12660,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "permissive",
       "seed": 1564215078,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185837332894Z_parameter_tamper_04110073",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -12672,8 +12672,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 470327108,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T185928260002Z_heartbeat_replay_f3d260f3",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -12684,8 +12684,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 892120274,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190017643382Z_normal_patrol_86a09e95",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
@@ -12708,8 +12708,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1742840538,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190103998828Z_sensor_status_spoof_d10714f4",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -12732,8 +12732,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 642971002,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190153251040Z_normal_patrol_5a69b125",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -12768,8 +12768,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1775361444,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190237219007Z_sensor_status_spoof_cf16a440",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -12780,8 +12780,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "permissive",
       "seed": 431216337,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190329048685Z_heartbeat_replay_02212a67",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -12792,8 +12792,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1812692737,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190418433743Z_sensor_status_spoof_988a68bc",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -12828,8 +12828,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "permissive",
       "seed": 1583969787,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190507577155Z_parameter_tamper_2b0c123b",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -12852,8 +12852,8 @@
       "scenario_id": "alert_replay",
       "security_mode": "permissive",
       "seed": 33489157,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190558346474Z_alert_replay_e045975c",
+      "status": "complete"
     },
     {
       "attack_class": "identity_abuse",
@@ -12864,8 +12864,8 @@
       "scenario_id": "unauthorized_participant",
       "security_mode": "permissive",
       "seed": 1933177331,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190647491447Z_unauthorized_participant_9d5061c5",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -12888,8 +12888,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1753609951,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190737052602Z_sensor_status_spoof_aca7dfad",
+      "status": "complete"
     },
     {
       "attack_class": "message_dos",
@@ -12900,8 +12900,8 @@
       "scenario_id": "oversized_scan",
       "security_mode": "permissive",
       "seed": 1264285996,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190826166098Z_oversized_scan_6774569d",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -12912,8 +12912,8 @@
       "scenario_id": "cmd_vel_injection",
       "security_mode": "permissive",
       "seed": 209910952,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T190915406148Z_cmd_vel_injection_918f13bf",
+      "status": "complete"
     },
     {
       "attack_class": "message_dos",
@@ -12948,8 +12948,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 617561793,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T191007516434Z_normal_patrol_9a9077e9",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -12972,8 +12972,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 674286344,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T191053904738Z_normal_patrol_dd57e531",
+      "status": "complete"
     },
     {
       "attack_class": "message_dos",
@@ -13020,8 +13020,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 784210740,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T191137869005Z_normal_patrol_954cb18c",
+      "status": "complete"
     },
     {
       "attack_class": "command_injection",
@@ -13056,8 +13056,8 @@
       "scenario_id": "alert_replay",
       "security_mode": "permissive",
       "seed": 55559190,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T191224620780Z_alert_replay_db7d1309",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -13080,8 +13080,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 705642667,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T191313709552Z_normal_patrol_392784b4",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -13092,8 +13092,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 799838138,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T191400014701Z_normal_patrol_1236faaa",
+      "status": "complete"
     },
     {
       "attack_class": "normal",
@@ -13104,8 +13104,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 720925154,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T191443876084Z_normal_patrol_851c06ae",
+      "status": "complete"
     },
     {
       "attack_class": "sensor_spoof",
@@ -13116,8 +13116,8 @@
       "scenario_id": "sensor_status_spoof",
       "security_mode": "permissive",
       "seed": 1755632788,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T191530477789Z_sensor_status_spoof_c6c0f647",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -13128,8 +13128,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "permissive",
       "seed": 1612123255,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T191619657361Z_parameter_tamper_8238e1ec",
+      "status": "complete"
     },
     {
       "attack_class": "message_dos",
@@ -13164,8 +13164,8 @@
       "scenario_id": "normal_patrol",
       "security_mode": "permissive",
       "seed": 896055583,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260814T191708069302Z_normal_patrol_f294cdc7",
+      "status": "complete"
     },
     {
       "attack_class": "replay_dos",
