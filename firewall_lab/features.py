@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import re
@@ -179,6 +180,65 @@ def discover_sessions(dataset_root: str | Path) -> list[Path]:
             raise SchemaError(f"session evidence may not be symlinked: {session_dir}")
         sessions.append(session_dir)
     return sessions
+
+
+def verify_manifest_evidence(
+    session_dir: Path,
+    manifest: dict[str, Any],
+    *,
+    verify_hashes: bool = False,
+) -> None:
+    """Refuse a session whose evidence no longer matches its manifest.
+
+    Nothing between collection and training re-checked this, so session
+    20260807T080715844515Z_unauthorized_participant_ea19b28d reached the
+    feature table with training_eligible=true even though its attack.stderr.log
+    had grown from the recorded 3,231 bytes to 45,206: a surviving grandchild
+    held the inherited descriptor and kept writing after the manifest was
+    written. Its 18 windows landed in the Enforce training split.
+
+    Sizes are checked always -- one stat() per artifact, and the failure that
+    actually occurred changes the size. Hashes are opt-in because covering
+    1,100 sessions costs about a quarter of an hour, most of it the 7 MB
+    pcap per session.
+    """
+
+    evidence = manifest.get("evidence")
+    if not isinstance(evidence, dict) or not evidence:
+        raise SchemaError(f"{session_dir.name} manifest has no evidence block")
+    problems = []
+    for name, meta in sorted(evidence.items()):
+        if not isinstance(meta, dict) or "bytes" not in meta:
+            problems.append(f"{name}: manifest entry is malformed")
+            continue
+        path = session_dir / name
+        if path.is_symlink() or not path.is_file():
+            problems.append(f"{name}: missing")
+            continue
+        actual = path.stat().st_size
+        expected = int(meta["bytes"])
+        if actual != expected:
+            problems.append(
+                f"{name}: manifest {expected} bytes, on disk {actual}"
+            )
+            continue
+        if not verify_hashes:
+            continue
+        expected_hash = meta.get("sha256")
+        if not isinstance(expected_hash, str) or len(expected_hash) != 64:
+            problems.append(f"{name}: manifest sha256 is malformed")
+            continue
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1 << 20), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != expected_hash:
+            problems.append(f"{name}: sha256 does not match the manifest")
+    if problems:
+        raise SchemaError(
+            f"{session_dir.name} evidence does not match its manifest: "
+            + "; ".join(problems)
+        )
 
 
 def load_manifest(session_dir: Path) -> dict[str, Any]:
@@ -1003,6 +1063,7 @@ def build_features(
     include_nontrainable: bool = False,
     window_sec: float = 8.0,
     require_multimodal: bool = False,
+    verify_evidence_hashes: bool = False,
 ) -> dict[str, int]:
     if (
         isinstance(window_sec, bool)
@@ -1026,6 +1087,11 @@ def build_features(
         if not include_nontrainable and not manifest.get("training_eligible"):
             skipped += 1
             continue
+        # Only sessions that are about to contribute rows are checked; a
+        # session already excluded above cannot contaminate anything.
+        verify_manifest_evidence(
+            session_dir, manifest, verify_hashes=verify_evidence_hashes
+        )
         labels = load_label_intervals(session_dir)
         if len(labels) != 1:
             raise SchemaError(
@@ -1143,6 +1209,14 @@ def build_parser() -> argparse.ArgumentParser:
             "fail if any eligible live session lacks aligned telemetry/fusion"
         ),
     )
+    parser.add_argument(
+        "--verify-evidence-hashes",
+        action="store_true",
+        help=(
+            "also re-hash every artifact against the manifest; sizes are "
+            "always checked, hashing 1,100 sessions costs about 15 minutes"
+        ),
+    )
     return parser
 
 
@@ -1156,6 +1230,7 @@ def main(argv: list[str] | None = None) -> int:
         include_nontrainable=args.include_nontrainable,
         window_sec=args.window_sec,
         require_multimodal=args.require_multimodal,
+        verify_evidence_hashes=args.verify_evidence_hashes,
     )
     print(
         "✅ 特徵輸出完成："

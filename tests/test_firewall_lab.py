@@ -261,6 +261,12 @@ def test_live_network_features_use_session_ground_truth(tmp_path):
         code_revision="unknown",
         status="complete",
     )
+    # Record the evidence inventory the way the orchestrator does, after every
+    # artifact exists; feature building refuses a session whose files no longer
+    # match that block.
+    from firewall_lab.evidence import evidence_inventory
+
+    manifest.evidence = evidence_inventory(session)
     manifest.write(session / "manifest.json")
 
     result = build_features(
@@ -612,7 +618,9 @@ def test_live_multimodal_contract_requires_artifacts_and_exact_schema(
 
 
 def test_decision_policy_only_executes_high_confidence_allowlisted_adapter():
-    policy = DecisionPolicy.load()
+    # Confidence is the gate under test here, so the class has to be
+    # authorised; the shipped policy authorises nothing.
+    policy = DecisionPolicy.authorising(["command_injection"])
     accepted = policy.decide(
         predicted_class="command_injection",
         confidence=0.91,
@@ -838,6 +846,56 @@ def test_collector_wait_stops_early_when_the_process_dies():
         "deadline"
     )
     assert "stderr" in source, "the failure must surface the collector's stderr"
+
+
+def test_evidence_stops_growing_once_the_process_is_stopped(tmp_path):
+    """After stop() the evidence must be settled, because the manifest hashes it.
+
+    Killing the grandchild is not the whole property. In session
+    20260807T080715844515Z_unauthorized_participant_ea19b28d the surviving
+    process held the inherited stderr descriptor and kept writing after the
+    manifest had already recorded the file: 3,231 bytes in the manifest against
+    45,206 on disk. Every artifact of that session hashed clean except this
+    one, so the integrity check is only as good as the guarantee that nothing
+    can still be appending when it runs.
+    """
+    import os
+    import time
+
+    from firewall_lab.evidence import ManagedProcess
+
+    marker = tmp_path / "writer.pid"
+    stderr_path = tmp_path / "err.log"
+    # The backgrounded writer keeps the inherited stderr open and appends to it
+    # forever. Signalling only the shell would leave it running.
+    process = ManagedProcess(
+        argv=[
+            "/bin/sh",
+            "-c",
+            f"(while true; do echo still-writing >&2; sleep 0.02; done) & "
+            f"echo $! > {marker}; wait",
+        ],
+        cwd=tmp_path,
+        env=dict(os.environ),
+        stdout_path=tmp_path / "out.log",
+        stderr_path=stderr_path,
+    )
+    process.start()
+    for _ in range(100):
+        if stderr_path.is_file() and stderr_path.stat().st_size > 0:
+            break
+        time.sleep(0.05)
+    growing = stderr_path.stat().st_size
+    assert growing > 0, "test setup failed: nothing was written to stderr"
+
+    process.stop()
+
+    settled = stderr_path.stat().st_size
+    time.sleep(0.5)
+    assert stderr_path.stat().st_size == settled, (
+        "evidence kept growing after stop(); a manifest hash taken here would "
+        "not match the file"
+    )
 
 
 def test_managed_process_poll_reports_exit_without_reaping(tmp_path):

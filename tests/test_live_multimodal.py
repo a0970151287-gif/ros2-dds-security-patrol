@@ -22,6 +22,64 @@ from firewall_lab.schema import (
 )
 
 
+def _finalize_manifest(session, manifest):
+    """Record the evidence inventory, the way the orchestrator does.
+
+    A real session's manifest is rewritten after every artifact exists, so it
+    always carries an evidence block. Feature building now refuses a session
+    whose artifacts no longer match that block, so a fixture that skips this
+    step is not representative of anything the pipeline actually produces.
+    """
+    from firewall_lab.evidence import evidence_inventory
+
+    manifest.evidence = evidence_inventory(session)
+    manifest.write(session / "manifest.json")
+
+
+def test_feature_build_refuses_a_session_whose_evidence_grew(tmp_path):
+    """The exact failure that reached the Enforce training split.
+
+    Session 20260807T080715844515Z_unauthorized_participant_ea19b28d recorded
+    attack.stderr.log at 3,231 bytes and ended up with 45,206 on disk, yet
+    still carried training_eligible=true, so its 18 windows were used for
+    training. Nothing between collection and training re-checked the manifest.
+    """
+    session, _ = _write_live_session(tmp_path)
+    grown = session / "events.jsonl"
+    grown.write_text("a survivor kept writing\n" * 40, encoding="utf-8")
+
+    with pytest.raises(SchemaError, match="does not match its manifest"):
+        build_features(dataset_root=tmp_path, output_dir=tmp_path / "features")
+
+
+def test_feature_build_refuses_a_session_missing_recorded_evidence(tmp_path):
+    session, _ = _write_live_session(tmp_path)
+    (session / "resources.jsonl").unlink()
+
+    with pytest.raises(SchemaError, match="missing"):
+        build_features(dataset_root=tmp_path, output_dir=tmp_path / "features")
+
+
+def test_evidence_hash_check_is_opt_in_and_catches_same_size_edits(tmp_path):
+    """A same-size edit passes the cheap check, so hashing must be available."""
+    from firewall_lab.features import load_manifest, verify_manifest_evidence
+
+    session, _ = _write_live_session(tmp_path)
+    conn = session / "zeek" / "conn.log"
+    original = conn.read_bytes()
+    # Swap two characters: identical length, different content.
+    tampered = bytearray(original)
+    tampered[-2], tampered[-3] = tampered[-3], tampered[-2]
+    assert len(tampered) == len(original)
+    conn.write_bytes(bytes(tampered))
+
+    manifest = load_manifest(session)
+    # Size-only is satisfied by construction.
+    verify_manifest_evidence(session, manifest)
+    with pytest.raises(SchemaError, match="sha256 does not match"):
+        verify_manifest_evidence(session, manifest, verify_hashes=True)
+
+
 def _write_live_session(tmp_path):
     session_id = new_session_id("cmd_vel_injection")
     session = tmp_path / session_id
@@ -63,6 +121,7 @@ def _write_live_session(tmp_path):
         f"{base_seconds + 9:.6f}\t127.0.0.1\t127.0.0.1\t14913\tudp\n"
     )
     (session / "zeek" / "conn.log").write_text(conn, encoding="utf-8")
+    _finalize_manifest(session, manifest)
     return session, base_ns
 
 
@@ -733,6 +792,8 @@ def test_window_straddling_the_attack_boundary_gets_one_label_per_window(tmp_pat
     )
     for window_offset in (1_000_000_000, 9_000_000_000):
         collector.emit("collector_tick", {}, ts_unix_ns=base_ns + window_offset)
+
+    _finalize_manifest(session, manifest)
 
     output = tmp_path / "features"
     # Before the fix this raised SchemaError("network label disagreement").
