@@ -86,3 +86,4 @@ firewall_lab/readiness_evidence/
 
 # Authorised smoke-test evidence, reproducible from the runner; 20 MB.
 firewall_lab/dataset_smoke_*/
+firewall_lab/dataset_paired*/
