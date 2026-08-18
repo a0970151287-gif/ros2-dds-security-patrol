@@ -83,3 +83,6 @@ firewall_lab/features_per_mode/
 firewall_lab/readiness_evidence/
 紅隊測試/Claude回傳證據/
 紅隊測試/external_redteam_evidence/
+
+# Authorised smoke-test evidence, reproducible from the runner; 20 MB.
+firewall_lab/dataset_smoke_*/
