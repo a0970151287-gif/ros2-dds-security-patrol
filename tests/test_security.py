@@ -1664,27 +1664,3 @@ def test_security_log_profile_changes_nothing_but_logging():
             f"{forbidden} changes transport or discovery; this profile may only "
             "add security logging properties"
         )
-
-
-def test_audit_log_name_matches_the_profile():
-    """The orchestrator and the XML must agree on the filename.
-
-    They are set in different files, so a rename in one would silently send the
-    adapter back to following generic stack output -- the situation that
-    produced 249,670 unclassifiable lines and two features with no source.
-    """
-    import re
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parents[1]
-    profile = (root / "firewall_lab" / "fastdds_security_log.xml").read_text(
-        encoding="utf-8"
-    )
-    from firewall_lab.orchestrator import SECURITY_AUDIT_LOG_NAME
-
-    match = re.search(r"<value>(/[^<]*?)</value>", profile)
-    assert match, "no absolute log_file path in the profile"
-    assert match.group(1).endswith("/" + SECURITY_AUDIT_LOG_NAME), (
-        f"profile writes {match.group(1)} but the orchestrator follows "
-        f"{SECURITY_AUDIT_LOG_NAME}"
-    )

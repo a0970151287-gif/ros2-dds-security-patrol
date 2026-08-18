@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--
+  ⚠️ 這份 profile 在本技術棧下無效，且**未接進任何啟動腳本**。保留作為調查證據。
+
+  實測（2026-08-18）：未啟用 SROS2 時，plugin 會初始化並建立稽核檔；
+  一旦啟用 SROS2，rmw_fastrtps_shared_cpp 會自行組出 participant 的
+  dds.sec.* 屬性清單，其中不含 logging plugin，本檔的 propertiesPolicy
+  不被保留。RMW_FASTRTPS_USE_QOS_FROM_XML=1 亦無效。
+  完整證據見 文件/DDS_Security_audit_log_不可用_2026-08-18.md。
+
+  以下屬性名稱仍具參考價值：它們是從安裝版二進位與 header 抽出的，
+  而非文件推測。log_level 與 logging_file 這兩個拼法在二進位中不存在，
+  寫錯時 XML 解析器會照收然後靜默忽略。
+-->
+<!--
   Fast DDS participant profile that turns on the built-in DDS Security audit
   log. This is the missing source behind sros_auth_fail_rate and
   sros_permission_deny_rate: across the 1,100-session campaign the deny adapter

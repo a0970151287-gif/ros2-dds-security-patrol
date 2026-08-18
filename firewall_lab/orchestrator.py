@@ -48,9 +48,6 @@ POLICY_PATH = (
 INTERFACE_RE = re.compile(r"^[A-Za-z0-9_.:-]{1,32}$")
 MAX_SESSIONS_PER_INVOCATION = 10_000
 TELEMETRY_SOCKET_NAME = "runtime_telemetry.sock"
-# Written by the Fast DDS built-in security logging plugin; the path is
-# set in firewall_lab/fastdds_security_log.xml and must match it.
-SECURITY_AUDIT_LOG_NAME = "dds_security_audit.log"
 
 
 class SessionEvents:
@@ -274,18 +271,7 @@ def _start_sros2_log_adapter(
     session_dir: Path,
     env: dict[str, str],
 ) -> ManagedProcess | None:
-    # Prefer the dedicated DDS Security audit sink over the generic stack
-    # stdout. The stack log is whatever the nodes chose to print, where any
-    # node can emit prose that looks like a security record; across the
-    # 1,100-session campaign the adapter read 249,670 lines of it and could
-    # classify none. The audit log carries BuiltinLoggingType records with
-    # facility 0x0A and a fixed hostname/procid/msgid header, which is what
-    # makes a record trustworthy. Falling back keeps older runtime directories
-    # working, and the adapter's own counters record which source it followed.
-    audit_log = _live_runtime_dir() / SECURITY_AUDIT_LOG_NAME
-    stack_log = audit_log
-    if stack_log.is_symlink() or not stack_log.is_file():
-        stack_log = _live_runtime_dir() / f"{security_mode}.log"
+    stack_log = _live_runtime_dir() / f"{security_mode}.log"
     if stack_log.is_symlink() or not stack_log.is_file():
         return None
     process = ManagedProcess(

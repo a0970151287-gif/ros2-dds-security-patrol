@@ -27,7 +27,7 @@ set -u
 DURATION="${1:-40}"
 DOMAIN="${ROS_DOMAIN_ID:-30}"
 REAL_KEYSTORE="${SROS2_REAL_KEYSTORE:-$HOME/ros2_ws/sros2_keystore}"
-W=/tmp/sros2_wrongca
+W="${SROS2_WRONGCA_DIR:-$HOME/.local/share/sros2-firewall/wrongca}"
 NODE_CN="/wrong_ca_intruder"
 
 echo "=================================================================="
@@ -128,7 +128,10 @@ cat > permissions.xml <<XML
 </dds>
 XML
 for f in governance permissions; do
-  openssl smime -sign -in "$f.xml" -text -outform PEM \
+  # 必須是 S/MIME multipart，不是 PEM 包的 PKCS7。真 keystore 的 p7s 開頭是
+  # multipart/signed；-outform PEM 會產生 -----BEGIN PKCS7-----，Fast DDS 回
+  # "Input data has not PKCS7 S/MIME format" 並拒絕啟動。
+  openssl smime -sign -in "$f.xml" -text -nodetach \
     -signer public/ca.cert.pem -inkey private/ca.key.pem \
     -out "$E/$f.p7s" 2>/dev/null
 done
