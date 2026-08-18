@@ -32,6 +32,7 @@ setup(
             'velocity_guard_node       = dds_security_monitor.velocity_guard_node:main',
             'security_readiness_probe  = dds_security_monitor.readiness_probe_node:main',
             'local_outcome_observer    = dds_security_monitor.local_outcome_observer_node:main',
+            'delivery_canary           = dds_security_monitor.delivery_canary:main',
         ],
     },
 )
