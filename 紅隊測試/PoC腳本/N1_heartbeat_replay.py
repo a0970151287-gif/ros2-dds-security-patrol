@@ -34,7 +34,7 @@ try:  # rclpy exposes RCLError under different paths across distros
 except ImportError:  # pragma: no cover - fallback for older rclpy
     RCLError = RuntimeError
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
 
 
@@ -43,7 +43,21 @@ class HeartbeatRecorderReplayer(Node):
 
     def __init__(self):
         super().__init__('attacker_hb_replay')
-        qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT)
+        # Must match the monitor's publisher, which the G6/N1 hardening moved to
+        # RELIABLE + TRANSIENT_LOCAL. This script kept BEST_EFFORT and was never
+        # updated, so DDS refused to deliver anything it published: the IDS
+        # subscriber requests RELIABLE and a BEST_EFFORT publisher cannot serve
+        # it. Every session logged "incompatible QoS ... No messages will be sent
+        # to it" while the attacker counted successful replays, so all 100
+        # heartbeat_replay sessions in the campaign tested nothing -- the replay
+        # never reached the verifier and the nonce cache was never exercised.
+        # Capture still worked because a RELIABLE publisher can serve a
+        # BEST_EFFORT subscriber; only the replay direction was blocked.
+        qos = QoSProfile(
+            depth=1,
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+        )
         self._captured: str | None = None
         self._capture_sub = self.create_subscription(
             String, '/security/heartbeat', self._on_capture, qos)
