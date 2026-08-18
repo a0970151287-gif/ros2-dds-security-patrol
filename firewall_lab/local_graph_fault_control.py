@@ -20,7 +20,14 @@ from pathlib import Path
 from .schema import SchemaError
 
 
-ARM_SCHEMA = "sros2-firewall-controlled-graph-fault-arm/v1"
+ARM_SCHEMA = "sros2-firewall-controlled-graph-fault-arm/v2"
+# How long the consumer keeps the fault open once it consumes the arm.  v1 had
+# no hold: the fault healed on the next graph check and the whole trigger ->
+# guard lock -> recovery sequence collapsed into ~2 seconds, which cannot be
+# split across the three bounded windows local_outcomes requires.  The consumer
+# caps this independently at MAX_HOLD_NS, so a larger value here cannot widen it.
+MIN_HOLD_SEC = 1.0
+MAX_HOLD_SEC = 25.0
 LIVE_ACK = "I_CONFIRM_LIVE_SAME_HOST_LOOPBACK_EVIDENCE"
 GRAPH_FAULT_ACK = "I_CONFIRM_ONE_SHOT_CONTROLLED_GRAPH_FAULT"
 ROLE_FILES = ("monitor.arm", "ids.arm")
@@ -84,6 +91,7 @@ def arm_once(
     path: Path,
     *,
     ttl_sec: float,
+    hold_sec: float,
     live_ack: str,
     graph_fault_ack: str,
 ) -> dict[str, object]:
@@ -95,6 +103,15 @@ def arm_once(
         or not 5.0 <= float(ttl_sec) <= 30.0
     ):
         raise SchemaError("controlled graph fault ttl_sec must be in 5..30")
+    if (
+        isinstance(hold_sec, bool)
+        or not isinstance(hold_sec, (int, float))
+        or not MIN_HOLD_SEC <= float(hold_sec) <= MAX_HOLD_SEC
+    ):
+        raise SchemaError(
+            f"controlled graph fault hold_sec must be in "
+            f"{MIN_HOLD_SEC:.0f}..{MAX_HOLD_SEC:.0f}"
+        )
     targets = [path / name for name in ROLE_FILES]
     if any(target.exists() or target.is_symlink() for target in targets):
         raise SchemaError("controlled graph fault is already armed")
@@ -104,6 +121,7 @@ def arm_once(
         "kind": "graph_inspection",
         "created_unix_ns": created,
         "expires_unix_ns": created + int(float(ttl_sec) * 1e9),
+        "hold_ns": int(float(hold_sec) * 1e9),
         "nonce": secrets.token_hex(16),
     }
     written: list[Path] = []
@@ -142,6 +160,7 @@ def arm_once(
         "kind": "graph_inspection",
         "roles": ["monitor", "ids"],
         "expires_unix_ns": record["expires_unix_ns"],
+        "hold_ns": record["hold_ns"],
         "controlled_fault_injection": True,
     }
 
@@ -151,6 +170,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("action", choices=("prepare", "arm"))
     parser.add_argument("--runtime-dir", type=Path, required=True)
     parser.add_argument("--ttl-sec", type=float, default=20.0)
+    parser.add_argument(
+        "--hold-sec",
+        type=float,
+        default=12.0,
+        help="how long the consumer holds the fault open once it is consumed",
+    )
     parser.add_argument("--live-loopback-ack", required=True)
     parser.add_argument("--graph-fault-ack", required=True)
     return parser
@@ -169,12 +194,14 @@ def main(argv: list[str] | None = None) -> int:
     result = arm_once(
         args.runtime_dir,
         ttl_sec=args.ttl_sec,
+        hold_sec=args.hold_sec,
         live_ack=args.live_loopback_ack,
         graph_fault_ack=args.graph_fault_ack,
     )
     print(
         "controlled_graph_fault_armed=true "
-        f"expires_unix_ns={result['expires_unix_ns']}"
+        f"expires_unix_ns={result['expires_unix_ns']} "
+        f"hold_ns={result['hold_ns']}"
     )
     return 0
 

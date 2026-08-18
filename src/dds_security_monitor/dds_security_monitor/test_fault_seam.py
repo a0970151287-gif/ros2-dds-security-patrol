@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 
 
-ARM_SCHEMA = "sros2-firewall-controlled-graph-fault-arm/v1"
+ARM_SCHEMA = "sros2-firewall-controlled-graph-fault-arm/v2"
 LIVE_ACK = "I_CONFIRM_LIVE_SAME_HOST_LOOPBACK_EVIDENCE"
 GRAPH_FAULT_ACK = "I_CONFIRM_ONE_SHOT_CONTROLLED_GRAPH_FAULT"
 LIVE_ACK_ENV = "SROS2_FIREWALL_LIVE_ACK"
@@ -23,6 +23,13 @@ GRAPH_FAULT_ACK_ENV = "SROS2_FIREWALL_GRAPH_FAULT_ACK"
 GRAPH_FAULT_DIR_ENV = "SROS2_FIREWALL_GRAPH_FAULT_DIR"
 MAX_ARM_BYTES = 2048
 MAX_ARM_TTL_NS = 30_000_000_000
+# A v1 arm produced a fault that healed on the monitor's very next graph check,
+# roughly 1-2 seconds later.  That is too short to evidence: local_outcomes wants
+# the fault, the guard lock and the recovery in three separate bounded windows,
+# and a marker alone takes ~0.7s to be confirmed.  v2 therefore carries an
+# explicit hold, measured on the monotonic clock so no wall-clock change can
+# extend it, and hard-capped here regardless of what the arm record asks for.
+MAX_HOLD_NS = 25_000_000_000
 ROLE_FILES = {
     "monitor": "monitor.arm",
     "ids": "ids.arm",
@@ -67,6 +74,7 @@ class ControlledGraphFaultSeam:
         self._directory_identity = directory_identity
         self._triggered = False
         self._recovery_pending = False
+        self._hold_until_ns: int | None = None
 
     @classmethod
     def from_environment(cls, role: str, telemetry):
@@ -115,7 +123,26 @@ class ControlledGraphFaultSeam:
             except Exception:
                 pass
 
+    def _sustaining(self) -> bool:
+        """True while an already-consumed arm is still holding the fault open.
+
+        The deadline is monotonic and is set once, at consume time.  Nothing
+        here re-reads the arm file, so a hold cannot be extended by touching
+        the directory, and it expires on its own even if the seam is later
+        disabled or the directory disappears.
+        """
+        if self._hold_until_ns is None:
+            return False
+        if time.monotonic_ns() < self._hold_until_ns:
+            return True
+        self._hold_until_ns = None
+        return False
+
     def consume_if_armed(self) -> bool:
+        # Sustain first: while holding, report the fault without looking at the
+        # directory at all, so the hold cannot consume a second arm record.
+        if self._sustaining():
+            return True
         if not self.enabled or self._triggered or not self._directory_unchanged():
             return False
         assert self.directory is not None
@@ -154,11 +181,13 @@ class ControlledGraphFaultSeam:
                 "kind",
                 "created_unix_ns",
                 "expires_unix_ns",
+                "hold_ns",
                 "nonce",
             }:
                 return False
             created = value["created_unix_ns"]
             expires = value["expires_unix_ns"]
+            hold = value["hold_ns"]
             now = time.time_ns()
             if (
                 value["schema_version"] != ARM_SCHEMA
@@ -169,6 +198,9 @@ class ControlledGraphFaultSeam:
                 or not isinstance(expires, int)
                 or not created <= now <= expires
                 or not 0 < expires - created <= MAX_ARM_TTL_NS
+                or isinstance(hold, bool)
+                or not isinstance(hold, int)
+                or not 0 < hold <= MAX_HOLD_NS
                 or not isinstance(value["nonce"], str)
                 or NONCE_RE.fullmatch(value["nonce"]) is None
             ):
@@ -180,6 +212,7 @@ class ControlledGraphFaultSeam:
                 self.enabled = False
         self._triggered = True
         self._recovery_pending = True
+        self._hold_until_ns = time.monotonic_ns() + hold
         self._emit("trigger")
         return True
 
@@ -197,5 +230,6 @@ __all__ = [
     "GRAPH_FAULT_ACK_ENV",
     "GRAPH_FAULT_DIR_ENV",
     "LIVE_ACK_ENV",
+    "MAX_HOLD_NS",
     "ROLE_FILES",
 ]

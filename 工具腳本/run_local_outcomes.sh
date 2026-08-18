@@ -193,9 +193,9 @@ done
 log "✅ Enforce readiness 通過"
 
 # ── 3. bounded observer（/local_outcome_probe enclave）───────
-log "啟動 observer（duration 280s）"
+log "啟動 observer（duration 300s）"
 ( exec ros2 run dds_security_monitor local_outcome_observer --ros-args \
-    --enclave /local_outcome_probe -p duration_sec:=280.0 ) \
+    --enclave /local_outcome_probe -p duration_sec:=300.0 ) \
   >"$ROOT/observer.stdout.log" 2>"$ROOT/observer.stderr.log" &
 OBSERVER_PID=$!
 CLEAN_PIDS+=("$OBSERVER_PID")
@@ -240,25 +240,47 @@ mark unauthorized_participant_denied recovery end
 # 必須排在 guard 凍結之前：recovery 要 monitor 自己發出 graph_state=recovery，
 # monitor 一旦沒能從凍結中恢復，這一項就永遠取不到。
 log "stage: graph_failure_fail_safe（受控 seam）"
-GLINE0="$(telemetry_lines)"
+arm_seam() {  # hold_sec
+  rm -f "$FAULT_DIR"/monitor.arm "$FAULT_DIR"/ids.arm 2>/dev/null
+  ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control prepare \
+      --runtime-dir "$FAULT_DIR" --live-loopback-ack "$ACK" \
+      --graph-fault-ack "$FAULT_ACK" ) >>"$ROOT/driver.log" 2>&1
+  ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control arm \
+      --runtime-dir "$FAULT_DIR" --ttl-sec 20 --hold-sec "$1" \
+      --live-loopback-ack "$ACK" --graph-fault-ack "$FAULT_ACK" ) \
+    >>"$ROOT/driver.log" 2>&1 || log "⛔ seam arm 失敗"
+}
+
+# 這一項需要兩次故障，不是一次。實測時間軸：d4 incident 93.97 秒、guard lock
+# 94.00 秒、graph fault 95.06 秒——鎖定與 d4 只差 0.03 秒。trigger 窗必須同時
+# 涵蓋 d4 與 graph fault，所以 guard lock 無可避免落在 trigger 裡，protected 就
+# 沒有新的狀態轉換可看（guard_state 只在轉換時發）。
+#
+# 第一次故障取 trigger；等 guard 自己釋放之後再故障一次，「故障後才鎖定」才會
+# 是一個真正的新轉換，recovery 也才有自己的窗。
 mark graph_failure_fail_safe trigger start
-( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control arm \
-    --runtime-dir "$FAULT_DIR" --ttl-sec 20 --live-loopback-ack "$ACK" \
-    --graph-fault-ack "$FAULT_ACK" ) >>"$ROOT/driver.log" 2>&1 \
-  || log "⛔ seam arm 失敗"
-wait_for "$GLINE0" detector_state intelligent_defense_node 30 detector=d4 state=incident
-sleep 2
+GLINE0="$(telemetry_lines)"
+arm_seam 6
+wait_for "$GLINE0" graph_state dds_security_monitor 30 state=fault
 mark graph_failure_fail_safe trigger end
 
-GLINE1="$(telemetry_lines)"
+# 警報鎖是有期限的，實測約 30 秒後自行釋放。沒等到釋放就再故障一次的話，
+# protected 一樣看不到轉換。
+log "等待 guard 從第一次故障釋放"
+GREL="$(telemetry_lines)"
+wait_for "$GREL" guard_state velocity_guard_node 60 state=released \
+  || log "⚠️ guard 未釋放，graph/protected 可能取不到"
+
 mark graph_failure_fail_safe protected start
-wait_for "$GLINE1" guard_state velocity_guard_node 25 state=locked
-sleep 4
+GLINE1="$(telemetry_lines)"
+arm_seam 16
+wait_for "$GLINE1" guard_state velocity_guard_node 30 state=locked
+sleep 3
 mark graph_failure_fail_safe protected end
 
-GLINE2="$(telemetry_lines)"
 mark graph_failure_fail_safe recovery start
-wait_for "$GLINE2" graph_state dds_security_monitor 36 state=recovery
+GLINE2="$(telemetry_lines)"
+wait_for "$GLINE2" graph_state dds_security_monitor 34 state=recovery
 sleep 4
 mark graph_failure_fail_safe recovery end
 
@@ -292,7 +314,7 @@ if [[ -n "$MON_PID" ]]; then
 
   mark velocity_guard_recovered trigger start
   LINE1="$(telemetry_lines)"
-  wait_for "$LINE1" guard_state velocity_guard_node 24 state=locked reason=monitor_fault
+  wait_for "$LINE1" guard_state velocity_guard_node 30 state=locked reason=monitor_fault
   sleep 1
   mark velocity_guard_recovered trigger end         # monitor_fault → locked
 
