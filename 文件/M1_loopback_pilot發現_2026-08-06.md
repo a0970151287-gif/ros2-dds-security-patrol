@@ -12,19 +12,37 @@
 
 ## 二、已完成
 
-### blocker 2：SROS2 deny 模式校準（完成）
+### blocker 2：SROS2 deny 模式校準（⚠️ 本節已於 2026-08-17 撤回，見下）
+
+原本寫的是：
 
 | 驗證層級 | 修正前 | 修正後 |
 |---|---:|---:|
 | 安裝版 `libfastrtps.so.2.14.5` 抽出的真實字串 | 5/28（17.9%） | **28/28** |
 | 真實 runtime 拒絕訊息 | 0/2 | **2/2** |
-| benign 行誤報 | 0 | 0 |
 
-Fast DDS 多數安全失敗以 `Error …`／`Cannot …`／`Unable to …`／`Not found …`
-表述，舊 regex 只認 deny/reject/fail/invalid，因此
-`sros_auth_fail_rate`、`sros_permission_deny_rate` 在 live 資料中會近乎恆為 0。
-分類順序也已修正：governance 必須先於 authentication，否則
-`allow_unauthenticated_participants … rtps_protection_kind` 會被誤判。
+**這三個數字都是錯的，不可引用。** 2026-08-17 以 1,100 場正式資料複核後：
+
+- fixture 實際是 **27** 條，不是 28。分母從一開始就寫錯。
+- 那 27 條是**廠商字串詞彙表**，只證明 parser 認得這些片語，
+  **不證明 live 環境真的發生過拒絕**。
+- 所謂「2/2 真實 runtime 拒絕訊息」，實際是兩行 ROS 應用層日誌
+  （`mission_manager_node` 的 `only accept IDS authenticated clear`），
+  被舊的「泛用 ERROR ＋ authenticated」規則誤判。**真實拒絕數是 0。**
+
+正式 campaign 的實測：adapter 讀了 **249,670** 行
+（Enforce 123,787／Permissive 125,883），**classified 為 deny 的有 0 行**，
+1,100 份 adapter stderr 全空。原因是 repo／keystore 未配置 Fast DDS
+`dds.sec.log.*` 這類獨立 security audit sink，adapter 跟隨的是一般 stack stdout。
+
+因此 `sros_auth_fail_rate`、`sros_permission_deny_rate` 目前的正確語意是
+**`source_unavailable`（來源未觀測到可解析事件）**，
+不是「已量測且拒絕次數為零」，更不可當成 true negative 回填。
+
+分類器已於 2026-08-17 改為精確片語 allowlist 並拒絕 ROS 應用層日誌 header。
+已知限制：帶 ROS log header 的行會被整行略過，若真正的 DDS Security 拒絕
+以該格式出現也會漏掉（27 條 fixture 加上 header 後命中率為 0/27）；
+原生 Fast DDS `[SECURITY Error]` 格式仍可正確分類。
 
 ### keystore 與政策漂移（修復並加上防再犯機制）
 

@@ -43,11 +43,23 @@
   ],
   "resolved_2026_08_06": [
     "loopback live pilot passed: 9/9 Permissive scenarios and Enforce both produce complete, trainable sessions",
-    "SROS2 deny patterns calibrated against the installed Fast DDS 2.14.5: 28/28 vendor strings and 2/2 real runtime denials, up from 5/28",
+    "SROS2 deny patterns classify all 27 message fragments extracted from the installed Fast DDS 2.14.5 binary; this is a parser vocabulary fixture only, and the earlier '28/28 vendor strings and 2/2 real runtime denials' claim was wrong on all three counts -- the fixture holds 27 entries, and the 2 supposed runtime denials were ROS application log lines from mission_manager_node ('only accept IDS authenticated clear') that a generic ERROR+authenticated pattern mislabeled",
     "same-UID source attribution validated live across six distinct emitting nodes",
     "collector ticks, runtime events and full session-window coverage demonstrated; Zeek udp_inactivity_timeout pinned to 5s so long-lived DDS flows no longer collapse every session into window 0",
-    "all 18 telemetry features now have a live producer; the last five were emitting nothing and could never leave zero"
+    "all 18 telemetry features have a producer in code; see telemetry_features_without_live_evidence for the 8 that still emit nothing on real data"
   ],
+  "telemetry_features_without_live_evidence": {
+    "measured_on": "1,100-session live campaign, 2026-08-13/14",
+    "note": "Identically zero across every window in both modes. A code path exists for each; that is not the same as a producer firing, and the earlier contract text conflated the two. These must be reported as source_unavailable rather than as measured zeros or true negatives.",
+    "sros_auth_fail_rate": "no source: the deny adapter read 249,670 lines across the campaign and classified 0 as DDS Security denials; no Fast DDS security audit sink (dds.sec.log.*) is configured, so it follows generic stack stdout",
+    "sros_permission_deny_rate": "no source: same adapter, same result",
+    "parameter_call_rate": "fixed 2026-08-17: the hook was in the on_set_parameters callback, which rcl never reaches for a read-only parameter, and the service-flood scenario calls get_parameters which had no hook at all; counting now wraps the parameter service handlers",
+    "heartbeat_gap_sec": "no source: emit_heartbeat_state fires only on a fault state transition and never did during the campaign",
+    "scan_static_ratio": "no source: detector d3 never reported in 120 sampled sessions, and no scan_observation producer exists",
+    "nonce_reuse_ratio": "not reached: hmac_result reasons observed were accepted, malformed_envelope and timestamp_violation only; replays are caught by the timestamp check first",
+    "channel_mismatch_ratio": "not reached: same as nonce_reuse_ratio",
+    "qos_drop_ratio": "correctly zero: qos_delivery reports delivered_count == expected_count, there is no loopback message loss to measure"
+  },
   "blockers": [
     "the security mode must be shown to be unrecoverable from the network features alone (firewall_lab.mode_leakage). The pilot cannot answer this: Enforce covers two scenarios and Permissive nine, so the gate correctly refuses to score rather than measure scenario differences and report them as a pass. It needs paired sessions from the formal campaign, which is what this blocker is waiting for.",
     "two lab defects of exactly this kind have already been found by hand -- Permissive on shared memory while Enforce was forced onto UDP, and an Enforce-only source address -- so an RQ3 claim must not rest on the absence of a third being assumed"
