@@ -810,3 +810,45 @@ def test_window_straddling_the_attack_boundary_gets_one_label_per_window(tmp_pat
             f"window {window} carries multiple labels {labels}; the label must "
             "be a property of the time window, not of which source sent traffic"
         )
+
+
+def test_governance_faults_do_not_inflate_the_permission_rate():
+    """A configuration fault is not a remote peer being refused access.
+
+    The classifier emits three kinds. Folding everything that is not
+    authentication into the permission rate made our own governance or plugin
+    initialisation error indistinguishable from an attacker being denied, which
+    are different events calling for different responses. Both features are
+    source_unavailable today, so fixing the semantics now costs nothing;
+    discovering they were mixed after a sink existed and data had been
+    collected would cost a re-run.
+    """
+    from collections import defaultdict
+
+    from firewall_lab.features import _accumulate_telemetry
+
+    def accumulate(kind):
+        acc = defaultdict(float)
+        _accumulate_telemetry(
+            acc,
+            {
+                "event_type": "sros2_deny",
+                "details": {"kind": kind, "count": 3},
+            },
+        )
+        return acc
+
+    auth = accumulate("authentication")
+    assert auth["sros_auth_failures"] == 3
+    assert auth["sros_permission_denies"] == 0
+
+    permission = accumulate("permission")
+    assert permission["sros_permission_denies"] == 3
+    assert permission["sros_auth_failures"] == 0
+
+    governance = accumulate("governance")
+    assert governance["sros_permission_denies"] == 0, (
+        "a governance fault must not be counted as a remote permission denial"
+    )
+    assert governance["sros_auth_failures"] == 0
+    assert governance["sros_governance_faults"] == 3

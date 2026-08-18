@@ -743,10 +743,24 @@ def _accumulate_telemetry(
         if details["state"] in {"fault", "overflow"}:
             accumulator["log_rejects"] += 1
     elif event_type == "sros2_deny":
-        if details["kind"] == "authentication":
+        # The classifier emits three kinds. Folding everything that is not
+        # authentication into the permission rate made a governance or plugin
+        # initialisation fault indistinguishable from a remote peer being
+        # refused access, which are different events with different responses:
+        # one is our own misconfiguration, the other is an attacker. Both
+        # features are source_unavailable today, so nothing is lost by fixing
+        # the semantics now -- and waiting would mean finding out they were
+        # mixed only after a sink existed and data had been collected.
+        kind = details["kind"]
+        if kind == "authentication":
             accumulator["sros_auth_failures"] += details["count"]
-        else:
+        elif kind == "permission":
             accumulator["sros_permission_denies"] += details["count"]
+        else:
+            # governance: a configuration and source-health signal, not a
+            # denial of a remote peer. Counted so the window is not silently
+            # dropped, but it feeds no feature.
+            accumulator["sros_governance_faults"] += details["count"]
     elif event_type in NON_FEATURE_TELEMETRY_EVENTS:
         # Counted in telemetry_event_count above, but contributes no feature.
         return

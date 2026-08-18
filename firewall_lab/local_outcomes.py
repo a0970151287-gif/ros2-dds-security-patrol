@@ -55,7 +55,7 @@ REQUIRED_FACT_KEYS: dict[tuple[str, str], frozenset[str]] = {
         }
     ),
     ("unauthorized_participant_denied", "trigger"): frozenset(
-        {"sros_deny_count", "unauthorized_delivery_count"}
+        {"sros_deny_count", "sros_deny_evaluable", "unauthorized_delivery_count"}
     ),
     ("unauthorized_participant_denied", "protected"): frozenset(
         {"protected_state_unchanged"}
@@ -308,7 +308,14 @@ def _assert_outcome(check_id: str, stages: dict[str, dict[str, Any]]) -> None:
             _expect(fact("baseline", name), lambda value: value is True, name)
         _expect(fact("baseline", "unauthorized_publishers"), lambda value: _is_count(value) and value == 0, "unauthorized_publishers")
     elif check_id == "unauthorized_participant_denied":
-        _expect(fact("trigger", "sros_deny_count"), lambda value: _is_count(value) and value >= 1, "sros_deny_count")
+        # Delivery is the security property and always binds. The vendor deny
+        # count binds only when a security audit sink actually produced records;
+        # under rmw_fastrtps it cannot, and absence must not be read as either
+        # evidence of denial or evidence of failure.
+        evaluable = fact("trigger", "sros_deny_evaluable")
+        _expect(evaluable, lambda value: isinstance(value, bool), "sros_deny_evaluable")
+        if evaluable:
+            _expect(fact("trigger", "sros_deny_count"), lambda value: _is_count(value) and value >= 1, "sros_deny_count")
         _expect(fact("trigger", "unauthorized_delivery_count"), lambda value: _is_count(value) and value == 0, "unauthorized_delivery_count")
         _expect(fact("protected", "protected_state_unchanged"), lambda value: value is True, "protected_state_unchanged")
         _expect(fact("recovery", "authorized_participant_healthy"), lambda value: value is True, "authorized_participant_healthy")

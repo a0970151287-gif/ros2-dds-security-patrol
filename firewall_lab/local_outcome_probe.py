@@ -333,12 +333,18 @@ def derive_facts(
             ),
         }
     elif (check_id, stage) == ("unauthorized_participant_denied", "trigger"):
-        denies = _required(
-            _matching(events, "sros2_deny", source=SROS_SOURCE),
-            "SROS2 deny event",
-        )
+        # A vendor deny record is not obtainable in this stack: rmw_fastrtps
+        # builds the participant's dds.sec.* properties itself and never sets
+        # dds.sec.log.plugin, so the Fast DDS security audit log cannot be
+        # enabled at all -- see 文件/DDS_Security_audit_log_不可用_2026-08-18.md.
+        # The check therefore rests on the security property itself, that
+        # nothing the unauthorized participant sent was delivered, and records
+        # the vendor evidence as not evaluable rather than counting its absence
+        # as either a pass or a failure.
+        denies = _matching(events, "sros2_deny", source=SROS_SOURCE)
         facts = {
-            "sros_deny_count": _sum_detail(denies, "count"),
+            "sros_deny_count": _sum_detail(denies, "count") if denies else 0,
+            "sros_deny_evaluable": bool(denies),
             "unauthorized_delivery_count": _delivery_count(
                 events, "unauthorized_participant"
             ),

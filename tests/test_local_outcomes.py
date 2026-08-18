@@ -17,6 +17,7 @@ from firewall_lab.local_outcomes import (
 )
 from firewall_lab.live_telemetry_collector import make_telemetry_event
 from firewall_lab.local_outcome_probe import (
+    derive_facts,
     derive_semantic_observation,
     discover_marked_windows,
 )
@@ -352,3 +353,82 @@ def test_semantic_artifact_reopens_raw_telemetry(tmp_path):
 
     with pytest.raises(SchemaError, match="telemetry hash or size mismatch"):
         _assemble(tmp_path, root, observations)
+
+
+def _ua_trigger_facts(records):
+    """Derive the unauthorized_participant_denied trigger facts from raw events."""
+    events = []
+    for index, (source, event_type, details) in enumerate(records):
+        events.append(
+            make_telemetry_event(
+                session_id=SESSION_ID,
+                source=source,
+                event_type=event_type,
+                details=details,
+                sequence=index,
+            )
+        )
+    return derive_facts(
+        check_id="unauthorized_participant_denied",
+        stage="trigger",
+        events=events,
+    )
+
+
+def test_absent_vendor_deny_is_not_evaluable_rather_than_a_failure():
+    """rmw_fastrtps cannot enable the Fast DDS security audit log at all.
+
+    It assembles the participant's dds.sec.* properties from the keystore and
+    never sets dds.sec.log.plugin, so no vendor denial record is obtainable in
+    this stack. Requiring one made this outcome permanently unreachable, and
+    treating its absence as proof of denial would be worse. The check now rests
+    on the security property itself.
+    """
+    facts = _ua_trigger_facts([
+        ("local_outcome_probe", "delivery_probe",
+         {"probe": "unauthorized_participant", "observed_count": 0}),
+    ])
+    assert facts["sros_deny_evaluable"] is False
+    assert facts["sros_deny_count"] == 0
+    assert facts["unauthorized_delivery_count"] == 0
+
+
+def test_delivery_still_binds_when_the_vendor_record_is_unavailable():
+    """The relaxation must not make the outcome easier to satisfy.
+
+    With no vendor record and traffic actually delivered, the participant was
+    not denied, and the check has to fail exactly as it did before.
+    """
+    from firewall_lab.local_outcomes import _assert_outcome
+
+    stages = {
+        "trigger": {"facts": {
+            "sros_deny_count": 0,
+            "sros_deny_evaluable": False,
+            "unauthorized_delivery_count": 3,
+        }},
+        "protected": {"facts": {"protected_state_unchanged": True}},
+        "recovery": {"facts": {"authorized_participant_healthy": True}},
+    }
+    with pytest.raises(SchemaError, match="unauthorized_delivery_count"):
+        _assert_outcome("unauthorized_participant_denied", stages)
+
+    stages["trigger"]["facts"]["unauthorized_delivery_count"] = 0
+    _assert_outcome("unauthorized_participant_denied", stages)
+
+
+def test_a_claimed_vendor_record_still_has_to_show_a_denial():
+    """If a sink ever does exist, an evaluable-but-empty record must fail."""
+    from firewall_lab.local_outcomes import _assert_outcome
+
+    stages = {
+        "trigger": {"facts": {
+            "sros_deny_count": 0,
+            "sros_deny_evaluable": True,
+            "unauthorized_delivery_count": 0,
+        }},
+        "protected": {"facts": {"protected_state_unchanged": True}},
+        "recovery": {"facts": {"authorized_participant_healthy": True}},
+    }
+    with pytest.raises(SchemaError, match="sros_deny_count"):
+        _assert_outcome("unauthorized_participant_denied", stages)
