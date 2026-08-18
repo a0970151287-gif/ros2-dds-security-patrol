@@ -88,3 +88,6 @@ firewall_lab/readiness_evidence/
 firewall_lab/dataset_smoke_*/
 firewall_lab/dataset_paired*/
 firewall_lab/dataset_verify_*/
+
+# Canary evidence lives outside the repo; reproducible from the runner.
+canary_evidence/

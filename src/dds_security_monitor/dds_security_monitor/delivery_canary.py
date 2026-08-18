@@ -175,7 +175,12 @@ class _ArchiveWriter:
 
 class DeliveryCanary(Node):
     def __init__(self, args: argparse.Namespace):
-        super().__init__(f"delivery_canary_{args.role}")
+        # SROS2 permissions are generated per node name: the /listener enclave
+        # only allows rq/listener/... parameter service topics, and rclpy
+        # creates those services for every node, so a node whose name does not
+        # match its enclave fails to start under Enforce with "failed to create
+        # request DataReader" rather than anything mentioning permissions.
+        super().__init__(args.node_name or f"delivery_canary_{args.role}")
         self.args = args
         binding = {
             "session_id": args.session_id,
@@ -194,6 +199,12 @@ class DeliveryCanary(Node):
             Path(args.output), binding=binding, role=args.role
         )
         self.writer.open_archive()
+        # Heartbeat immediately, before any canary record exists. The verifier
+        # requires first_heartbeat <= window.start and every body record inside
+        # the window, and the publish timer fires sooner than the heartbeat
+        # timer, so waiting for the first tick puts the earliest attempts
+        # outside any window the two archives can agree on.
+        self.writer.heartbeat()
 
         # RELIABLE on both sides. A mismatch here is exactly what silently
         # voided 100 heartbeat_replay sessions, and a canary that cannot be
@@ -213,11 +224,22 @@ class DeliveryCanary(Node):
 
         self.create_timer(args.heartbeat_sec, self.writer.heartbeat)
         self._deadline = time.monotonic() + args.duration_sec
+        self._match_deadline = time.monotonic() + args.match_timeout_sec
         self.create_timer(0.2, self._check_deadline)
 
     def _publish_once(self) -> None:
         if self._sent >= self.args.attempt_count:
             return
+        # Do not start counting attempts until a subscriber has matched, or the
+        # match deadline passes. An attempt made while nothing was listening is
+        # not evidence of anything: under Permissive it shows up as a spurious
+        # false positive, and under Enforce it would let "nobody had joined yet"
+        # masquerade as "the traffic was prevented". Once the deadline passes we
+        # publish regardless, because never matching is itself the Enforce
+        # result and the attempts have to be recorded for it to mean anything.
+        if self._sent == 0 and self._pub.get_subscription_count() == 0:
+            if time.monotonic() < self._match_deadline:
+                return
         sequence = self.args.first_sequence + self._sent
         payload = _payload(self.args.trial_id, sequence)
         message = String()
@@ -252,6 +274,11 @@ class DeliveryCanary(Node):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--role", choices=[ROLE_ATTEMPTED, ROLE_RECEIVED], required=True)
+    parser.add_argument(
+        "--node-name",
+        default=None,
+        help="must match the enclave's permitted parameter services under Enforce",
+    )
     parser.add_argument("--output", required=True)
     parser.add_argument("--session-id", required=True)
     parser.add_argument("--trial-id", required=True)
@@ -272,6 +299,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--interval-sec", type=float, default=0.5)
     parser.add_argument("--heartbeat-sec", type=float, default=1.0)
     parser.add_argument("--duration-sec", type=float, default=30.0)
+    parser.add_argument(
+        "--match-timeout-sec",
+        type=float,
+        default=5.0,
+        help="wait this long for a subscriber before publishing anyway",
+    )
     return parser
 
 
