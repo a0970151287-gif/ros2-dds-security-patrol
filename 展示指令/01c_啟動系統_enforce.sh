@@ -25,7 +25,15 @@ ENFORCE() {
   export ROS_SECURITY_STRATEGY=Enforce
   export ROS_DOMAIN_ID=30
   export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-  unset  FASTRTPS_DEFAULT_PROFILES_FILE   # 預設傳輸，勿掛 SHM 直連 profile
+  # Security audit sink only. The profile sets nothing but the four
+  # dds.sec.log.* properties, so the default transports the previous
+  # comment protected are untouched -- the profile that broke DDS set
+  # useBuiltinTransports=false with an interfaceWhiteList, and
+  # tests/test_security.py now refuses any profile that does that.
+  # Without this, sros_auth_fail_rate and sros_permission_deny_rate have
+  # no source at all: the adapter read 249,670 lines of generic stack
+  # stdout across the campaign and classified none of them.
+  export FASTRTPS_DEFAULT_PROFILES_FILE="$HOME/ros2_ws/firewall_lab/fastdds_security_log.xml"
   unset  ROS_SECURITY_ENCLAVE_OVERRIDE
   export TURTLEBOT3_MODEL=burger
 }

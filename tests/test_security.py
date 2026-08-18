@@ -1588,3 +1588,103 @@ class TestSecretFingerprint:
     def test_fingerprint_is_short(self):
         """fingerprint 該短到可印 banner（16 hex chars = 8 bytes）。"""
         assert len(secret_fingerprint(b"x" * 32)) == 16
+
+
+def test_security_log_profile_parses_and_carries_every_property():
+    """Fast DDS falls back to defaults silently when a profile fails to parse.
+
+    A single "--" inside an XML comment once disabled an entire profile in this
+    project with no warning, and the loopback pilot recorded that a parseability
+    test must be restored if a profile is ever reintroduced. This is that test.
+
+    The property suffixes are checked against the spellings that actually exist
+    in the installed build: LogOptions.h declares distribute, log_level and
+    log_file, but the property literals in libfastrtps.so are logging_level and
+    log_file. Writing log_level or logging_file would be accepted by the XML
+    parser and then ignored, which is the same silent failure in a new place.
+    """
+    import xml.etree.ElementTree as ET
+    from pathlib import Path
+
+    profile = Path(__file__).resolve().parents[1] / "firewall_lab" / "fastdds_security_log.xml"
+    assert profile.is_file(), "security log profile is missing"
+
+    # Parsing must not raise: that is the failure mode being guarded.
+    root = ET.parse(profile).getroot()
+
+    ns = {"dds": "http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles"}
+    properties = {
+        prop.findtext("dds:name", namespaces=ns): prop.findtext("dds:value", namespaces=ns)
+        for prop in root.iterfind(".//dds:property", ns)
+    }
+
+    assert properties.get("dds.sec.log.plugin") == "builtin.DDS_LogTopic"
+    prefix = "dds.sec.log.builtin.DDS_LogTopic"
+    assert properties.get(f"{prefix}.logging_level") == "WARNING_LEVEL"
+    assert properties.get(f"{prefix}.distribute") == "false"
+
+    log_file = properties.get(f"{prefix}.log_file")
+    assert log_file and log_file.startswith("/"), "log_file must be an absolute path"
+    assert not log_file.startswith("/mnt/"), (
+        "the audit log may not live on the 9p mount; the telemetry socket "
+        "already failed there with Errno 95"
+    )
+
+    # Spellings the binary does not contain would be silently ignored.
+    for wrong in (f"{prefix}.log_level", f"{prefix}.logging_file"):
+        assert wrong not in properties, f"{wrong} is not a property this build reads"
+
+
+def test_security_log_profile_changes_nothing_but_logging():
+    """The previous profile in this repo broke DDS while appearing to work.
+
+    It set useBuiltinTransports=false with an interfaceWhiteList, and the
+    resulting zero packets on the wire were mistaken for confinement until a
+    positive control showed the talker delivered 0 messages against 22 without
+    it. Transport and discovery must stay untouched here.
+    """
+    from pathlib import Path
+
+    import re
+
+    profile = Path(__file__).resolve().parents[1] / "firewall_lab" / "fastdds_security_log.xml"
+    # Strip comments first: the file explains what the earlier broken profile
+    # did, and naming a setting in prose is not the same as applying it.
+    text = re.sub(r"<!--.*?-->", "", profile.read_text(encoding="utf-8"), flags=re.S)
+
+    for forbidden in (
+        "useBuiltinTransports",
+        "interfaceWhiteList",
+        "<transport_descriptors>",
+        "userTransports",
+        "<discovery_config>",
+        "initialPeersList",
+    ):
+        assert forbidden not in text, (
+            f"{forbidden} changes transport or discovery; this profile may only "
+            "add security logging properties"
+        )
+
+
+def test_audit_log_name_matches_the_profile():
+    """The orchestrator and the XML must agree on the filename.
+
+    They are set in different files, so a rename in one would silently send the
+    adapter back to following generic stack output -- the situation that
+    produced 249,670 unclassifiable lines and two features with no source.
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    profile = (root / "firewall_lab" / "fastdds_security_log.xml").read_text(
+        encoding="utf-8"
+    )
+    from firewall_lab.orchestrator import SECURITY_AUDIT_LOG_NAME
+
+    match = re.search(r"<value>(/[^<]*?)</value>", profile)
+    assert match, "no absolute log_file path in the profile"
+    assert match.group(1).endswith("/" + SECURITY_AUDIT_LOG_NAME), (
+        f"profile writes {match.group(1)} but the orchestrator follows "
+        f"{SECURITY_AUDIT_LOG_NAME}"
+    )

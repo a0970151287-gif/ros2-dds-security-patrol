@@ -14,7 +14,12 @@ PIDS=()
 PERMISSIVE_ENV() {
   source "$WS/工具腳本/load_ros_environment.sh" || exit 1
   unset ROS_SECURITY_KEYSTORE ROS_SECURITY_ENABLE ROS_SECURITY_STRATEGY
-  unset ROS_SECURITY_ENCLAVE_OVERRIDE FASTRTPS_DEFAULT_PROFILES_FILE
+  unset ROS_SECURITY_ENCLAVE_OVERRIDE
+  # Same security audit sink as Enforce. Permissive has no access
+  # control, so it should produce no denial records -- but with the sink
+  # enabled that becomes a measured zero instead of an absent mechanism,
+  # which is the distinction the two sros_* features currently cannot make.
+  export FASTRTPS_DEFAULT_PROFILES_FILE="$WS/firewall_lab/fastdds_security_log.xml"
   # NOTE (2026-08-06): same-host Permissive runs on shared memory, so every
   # loopback session captures a header-only PCAP and is rejected as
   # non-trainable -- see 文件/M1_loopback_pilot發現_2026-08-06.md.  A UDPv4
