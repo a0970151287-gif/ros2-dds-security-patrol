@@ -20,9 +20,9 @@ import rclpy
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
 from rcl_interfaces.msg import ParameterDescriptor
+from rcl_interfaces.srv import GetParameters
 from rclpy.node import Node
 from rclpy.parameter import parameter_value_to_python
-from rclpy.parameter_client import AsyncParameterClient
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Imu, LaserScan
 from std_msgs.msg import String
@@ -96,8 +96,16 @@ class LocalOutcomeObserver(Node):
         self._valid_scan_count = 0
         self._chatter_count = 0
         self._parameter_pending = None
-        self._parameter_client = AsyncParameterClient(
-            self, "dds_security_monitor"
+        # One client, not AsyncParameterClient.  That helper builds a client
+        # for all six parameter services at once, and the /local_outcome_probe
+        # enclave grants exactly one: publish rq/dds_security_monitor/
+        # get_parametersRequest and subscribe rr/.../get_parametersReply.  Under
+        # Enforce the extra clients fail closed on the reply reader --
+        # "rr/dds_security_monitor/list_parametersReply topic not found in allow
+        # rule" -- and take the whole observer down with them.  Asking for only
+        # the privilege the policy grants is the point of this node.
+        self._parameter_client = self.create_client(
+            GetParameters, "/dds_security_monitor/get_parameters"
         )
 
         self.create_subscription(
@@ -175,7 +183,9 @@ class LocalOutcomeObserver(Node):
         if not self._parameter_client.service_is_ready():
             return
         try:
-            future = self._parameter_client.get_parameters(["whitelist"])
+            request = GetParameters.Request()
+            request.names = ["whitelist"]
+            future = self._parameter_client.call_async(request)
             future.add_done_callback(self._emit_parameter_digest)
             self._parameter_pending = future
         except Exception:
