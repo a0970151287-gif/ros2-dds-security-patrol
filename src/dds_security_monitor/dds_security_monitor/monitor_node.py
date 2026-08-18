@@ -221,20 +221,14 @@ def lock_sensitive_params(node, extra=frozenset()):
       本 callback 是 app 層縱深，與 SROS2 存取控制互補。
     必須在所有 declare_parameter 之後呼叫（read_only 參數由 rcl 在 callback 前先擋，
     declare 本身不觸發 callback，故不影響初始化）。
+
+    遙測不要掛在這個 callback 裡：read_only 參數被 rcl 先擋掉時它不會執行，
+    1,100 場正式資料的 parameter_call_rate 因此全為 0。計數改由
+    count_parameter_service_calls 包在服務層。
     """
     locked = SECURITY_LOCKED_PARAMS | set(extra)
 
     def _veto(params):
-        # Every set_parameters attempt reaching this node, vetoed or not, so
-        # parameter_call_rate has a live source.  Best-effort: evidence must
-        # never weaken or prevent the veto itself.
-        telemetry = getattr(node, "_telemetry", None)
-        emit_call = getattr(telemetry, "emit_parameter_call", None)
-        if callable(emit_call):
-            try:
-                emit_call(count=max(1, len(list(params))))
-            except Exception:
-                pass
         for p in params:
             if p.name in locked:
                 telemetry = getattr(node, "_telemetry", None)
@@ -254,6 +248,60 @@ def lock_sensitive_params(node, extra=frozenset()):
         return SetParametersResult(successful=True)
 
     node.add_on_set_parameters_callback(_veto)
+    count_parameter_service_calls(node)
+
+
+# The parameter services rclpy starts for every node.  Counting all of them,
+# not just set_parameters, is the point: the service-flood scenario hammers
+# get_parameters, which never reaches a set callback at all.
+_PARAMETER_SERVICE_SUFFIXES = (
+    "/describe_parameters",
+    "/get_parameters",
+    "/get_parameter_types",
+    "/list_parameters",
+    "/set_parameters",
+    "/set_parameters_atomically",
+)
+
+
+def count_parameter_service_calls(node):
+    """Feed parameter_call_rate from every parameter-service request.
+
+    The previous hook was the on_set_parameters callback, which rcl never
+    reaches for a read-only parameter: it rejects those in _apply_descriptors
+    first, with "Trying to set a read-only parameter". So the whitelist-hijack
+    attack was refused 18 times per session and emitted no telemetry at all,
+    and the service flood emitted none either because it calls get_parameters.
+    Wrapping the service handlers counts the attempt itself, whatever the node
+    decides to do with it.
+
+    Wrapping is idempotent and never alters the response.
+    """
+
+    def wrap(service):
+        original = service.callback
+        if getattr(original, "_counts_parameter_calls", False):
+            return
+
+        def counted(request, response):
+            telemetry = getattr(node, "_telemetry", None)
+            emit_call = getattr(telemetry, "emit_parameter_call", None)
+            if callable(emit_call):
+                try:
+                    emit_call(count=1)
+                except Exception:
+                    # Evidence is best-effort and must never break or delay
+                    # the node's own answer to the request.
+                    pass
+            return original(request, response)
+
+        counted._counts_parameter_calls = True
+        service.callback = counted
+
+    for service in list(node.services):
+        name = getattr(service, "srv_name", "") or ""
+        if name.endswith(_PARAMETER_SERVICE_SUFFIXES):
+            wrap(service)
 
 
 ## ── Anti-replay + channel-binding 簽章 (修補紅隊 N1 + N3 + N4) ─────────

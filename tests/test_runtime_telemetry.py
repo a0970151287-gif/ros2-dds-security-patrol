@@ -320,9 +320,13 @@ def test_sros2_deny_classifier_is_bounded_and_secret_free(line, expected):
 # Verbatim message strings extracted from the INSTALLED vendor build
 # (/opt/ros/jazzy/lib/libfastrtps.so.2.14.5, rmw_fastrtps_cpp).  These are what
 # this exact Fast DDS version can actually emit, not hand-written examples.
-# An earlier generic pattern classified only 5/28 of them, which would have
-# left sros_auth_fail_rate and sros_permission_deny_rate near zero for every
-# live session.  Keep this set green whenever the RMW vendor or version changes.
+# This is a parser vocabulary fixture: it proves the classifier recognises the
+# phrases this build can emit.  It is NOT evidence that a denial ever occurred.
+# Across the 1,100-session campaign the adapter read 249,670 lines and
+# classified none of them as a denial, because no Fast DDS security audit sink
+# is configured; sros_auth_fail_rate and sros_permission_deny_rate are
+# source_unavailable, not measured zeros.  Keep this set green whenever the RMW
+# vendor or version changes.
 VENDOR_DENY_STRINGS = [
     ("Handshake failed: ", "authentication"),
     ("Handshake message not supported (", "authentication"),
@@ -654,3 +658,125 @@ def test_stale_telemetry_socket_is_reclaimed_but_live_one_is_not(tmp_path):
     regular.write_text("", encoding="utf-8")
     assert _reclaim_stale_socket(regular) is False
     assert regular.exists()
+
+
+class _FakeService:
+    """Stands in for an rclpy Service: a name plus a swappable callback."""
+
+    def __init__(self, srv_name, callback):
+        self.srv_name = srv_name
+        self.callback = callback
+
+
+class _FakeTelemetry:
+    def __init__(self):
+        self.parameter_calls = 0
+
+    def emit_parameter_call(self, *, count=1):
+        self.parameter_calls += count
+        return True
+
+
+class _FakeNode:
+    def __init__(self, services):
+        self._telemetry = _FakeTelemetry()
+        self.services = services
+
+
+def _param_node():
+    handled = []
+
+    def handler(request, response):
+        handled.append(request)
+        return response
+
+    services = [
+        _FakeService("/dds_security_monitor/get_parameters", handler),
+        _FakeService("/dds_security_monitor/set_parameters", handler),
+        _FakeService("/dds_security_monitor/list_parameters", handler),
+        _FakeService("/dds_security_monitor/some_other_service", handler),
+    ]
+    return _FakeNode(services), handled
+
+
+def test_parameter_calls_are_counted_at_the_service_not_the_set_callback():
+    """The read-only rejection happens inside rcl, before any set callback.
+
+    On the 1,100-session campaign the whitelist-hijack attack was refused 18
+    times per session with "Trying to set a read-only parameter" and produced
+    zero telemetry, because the old hook sat in the on_set_parameters callback
+    that rcl never reaches. Counting at the service records the attempt.
+    """
+
+    node, handled = _param_node()
+    monitor_node.count_parameter_service_calls(node)
+
+    for service in node.services:
+        if service.srv_name.endswith("/set_parameters"):
+            service.callback(object(), "response")
+
+    assert node._telemetry.parameter_calls == 1
+    assert len(handled) == 1
+
+
+def test_get_parameters_flood_is_counted():
+    """The service-flood scenario calls get_parameters ~1,300 times a second.
+
+    It never touches a set callback, so the old hook could not see it at all.
+    """
+
+    node, handled = _param_node()
+    monitor_node.count_parameter_service_calls(node)
+
+    getter = next(
+        s for s in node.services if s.srv_name.endswith("/get_parameters")
+    )
+    for _ in range(50):
+        getter.callback(object(), "response")
+
+    assert node._telemetry.parameter_calls == 50
+    assert len(handled) == 50
+
+
+def test_non_parameter_services_are_left_alone():
+    node, _ = _param_node()
+    other = next(
+        s for s in node.services if s.srv_name.endswith("/some_other_service")
+    )
+    original = other.callback
+    monitor_node.count_parameter_service_calls(node)
+    assert other.callback is original
+
+    other.callback(object(), "response")
+    assert node._telemetry.parameter_calls == 0
+
+
+def test_wrapping_parameter_services_twice_does_not_double_count():
+    node, _ = _param_node()
+    monitor_node.count_parameter_service_calls(node)
+    monitor_node.count_parameter_service_calls(node)
+
+    getter = next(
+        s for s in node.services if s.srv_name.endswith("/get_parameters")
+    )
+    getter.callback(object(), "response")
+    assert node._telemetry.parameter_calls == 1
+
+
+def test_telemetry_failure_never_breaks_the_parameter_service():
+    """Evidence is best-effort; the node must still answer the request."""
+
+    node, handled = _param_node()
+
+    class _Broken:
+        def emit_parameter_call(self, *, count=1):
+            raise RuntimeError("socket is gone")
+
+    node._telemetry = _Broken()
+    monitor_node.count_parameter_service_calls(node)
+
+    getter = next(
+        s for s in node.services if s.srv_name.endswith("/get_parameters")
+    )
+    assert getter.callback(object(), "response") == "response"
+    assert len(handled) == 1
