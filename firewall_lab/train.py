@@ -32,6 +32,11 @@ MODEL_SCHEMA_VERSION = "sros2-intelligent-firewall-model/v1"
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 ML_DIR = WORKSPACE_ROOT / "ML防禦"
 ACTION_POLICY_PATH = Path(__file__).with_name("action_policy.json")
+LEGACY_TRAINER_DEPLOYMENT_ELIGIBLE = False
+LEGACY_TRAINER_BLOCK_REASON = (
+    "legacy trainer has no immutable validation/calibration/final-test or live "
+    "response gates; use grouped or hierarchical training"
+)
 
 
 def _boolean_series(series):
@@ -252,7 +257,8 @@ def train_model(
         "schema_version": "sros2-firewall-training-metrics/v1",
         "trained_utc": utc_now(),
         "data_tier": data_tier,
-        "deployment_eligible": data_tier == "live",
+        "deployment_eligible": LEGACY_TRAINER_DEPLOYMENT_ELIGIBLE,
+        "deployment_block_reason": LEGACY_TRAINER_BLOCK_REASON,
         "rows": len(frame),
         "sessions": len(set(groups)),
         "train_rows": len(train_index),
@@ -292,7 +298,8 @@ def train_model(
         "training": {
             "grouping": "session_id",
             "data_tier": data_tier,
-            "deployment_eligible": data_tier == "live",
+            "deployment_eligible": LEGACY_TRAINER_DEPLOYMENT_ELIGIBLE,
+            "deployment_block_reason": LEGACY_TRAINER_BLOCK_REASON,
             "train_sessions": train_groups,
             "test_sessions": test_groups,
             "policy_sha256_values": policy_hashes,

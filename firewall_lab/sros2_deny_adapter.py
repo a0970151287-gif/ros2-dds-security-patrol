@@ -23,40 +23,66 @@ from dds_security_monitor.runtime_telemetry import RuntimeTelemetryProducer
 MAX_LOG_LINE_CHARS = 8192
 MAX_LINES_PER_BATCH = 4096
 
-# Calibrated against strings extracted from the installed vendor build
-# (rmw_fastrtps_cpp / libfastrtps.so.2.14.5).  Fast DDS reports most security
-# failures as "Error ...", "Cannot ...", "Unable to ..." or "Not found ..."
-# rather than the deny/reject vocabulary an earlier generic pattern assumed,
-# so those forms must be part of the denial gate or live SROS2 deny telemetry
-# stays silently near zero.  See tests/test_runtime_telemetry.py for the
-# vendor-string regression set.
-_DENIAL = re.compile(
-    r"(?:den(?:y|ied|ies)|reject(?:ed|ion)?|fail(?:ed|ure)?|"
-    r"not[ _-]+(?:allow(?:ed)?|found|receive[d]?|support(?:ed)?|configured|"
-    r"of[ _-]+the[ _-]+type)|"
-    r"unauthori[sz]ed|invalid|error|cannot|unable)",
+# These are precise message fragments extracted from the installed Fast DDS
+# 2.14.5 vendor binary.  They are vocabulary fixtures, not proof that a live
+# denial occurred.  The old classifier combined a generic word such as ERROR
+# with an authentication-related word anywhere in the line.  That mislabeled
+# application messages such as "[ERROR] ... authenticated clear" as DDS
+# authentication failures.  Exact phrases keep an arbitrary ROS application
+# log from manufacturing security telemetry merely by mentioning security.
+_AUTHENTICATION_DENIALS = re.compile(
+    r"(?:\bhandshake\s+failed\b|"
+    r"\bhandshake\s+message\s+not\s+supported\b|"
+    r"\binvalid\s+handshake\s+handle\b|"
+    r"\binvalid\s+identity\s+handle\b|"
+    r"\binvalid\s+pki\s+identity\s+handle\s+or\s+invalid\s+certificate\b|"
+    r"\bidentityhandle\s+is\s+not\s+of\s+the\s+type\s+pkiidentityhandle\b|"
+    r"\bnot\s+found\s+dds\.sec\.auth\.builtin\.pki-dh\."
+    r"identity_(?:ca|certificate)\s+property\b|"
+    r"\bunable\s+to\s+authenticate\s+the\s+message\b|"
+    r"\bauthentication\s+plugin\s+not\s+configured\b)",
     re.IGNORECASE,
 )
-# Governance is evaluated before authentication because vendor governance
-# errors legitimately contain "unauthenticated" (e.g. the
-# allow_unauthenticated_participants / rtps_protection_kind conflict).
-_GOVERNANCE = re.compile(
-    r"(?:governance|protection[ _-]?kind)",
+_PERMISSION_DENIALS = re.compile(
+    r"(?:\baccess\s+control\s+permission\s+denied\b|"
+    r"\baccess\s+permission\s+denied\b|"
+    r"\btopic\s+denied\s+by\s+deny\s+rule\b|"
+    r"\bnot\s+found\s+topic\s+access\s+rule\s+for\s+topic\b|"
+    r"\berror\s+validating\s+remote\s+permissions\s+for\b|"
+    r"\bnot\s+receive\s+remote\s+permissions\s+of\s+participant\b|"
+    r"\bparticipant\s+is\s+not\s+allowed\s+with\s+its\s+own\s+"
+    r"permissions\s+file\b|"
+    r"\bcannot\s+find\s+permissions\s+file\s+in\s+permissions\s+"
+    r"credential\s+token\b|"
+    r"\bcannot\s+read\s+as\s+pkcs7\s+the\s+permissions\s+file\b|"
+    r"\berror\s+loading\s+permissions\s+xml\b|"
+    r"\binvalid\s+permissions\s+handle\b|"
+    r"\bnot\s+found\s+root\s+node\s+in\s+permissions\s+xml\b|"
+    r"\bnot\s+found\s+any\s+dds\.sec\.access\.builtin\."
+    r"access-permissions\s+property\b|"
+    r"\bnot\s+found\s+the\s+identity\s+subject\s+name\s+in\s+"
+    r"permissions\s+file\b)",
     re.IGNORECASE,
 )
-# Deliberately does NOT match a bare "identity": the vendor also emits
-# "the identity subject name in permissions file", which is a permission
-# failure, not an authentication one.
-_AUTHENTICATION = re.compile(
-    r"(?:authenticat(?:e|ed|ion)|handshake|identity[ _-]+certificate|"
-    r"validate_(?:local|remote)_identity|identity[ _-]+validation|"
-    r"identity[ _-]?handle|pkiidentity|identity_ca|dds\.sec\.auth)",
+_GOVERNANCE_DENIALS = re.compile(
+    r"(?:\bgovernance\s+protection\s+kind\s+rejected\b|"
+    r"\berror\s+loading\s+governance\s+xml\b|"
+    r"\bnot\s+found\s+root\s+node\s+in\s+governance\s+xml\b|"
+    r"\bnot\s+found\s+dds\.sec\.access\.builtin\."
+    r"access-permissions\.governance\s+property\b|"
+    r"\ballow_unauthenticated_participants\s+cannot\s+be\s+enabled\s+if\s+"
+    r"rtps_protection_kind\s+is\s+not\s+none\b)",
     re.IGNORECASE,
 )
-_PERMISSION = re.compile(
-    r"(?:permission|access[ _-]+control|check_remote_(?:datareader|datawriter)|"
-    r"readwrite[ _-]+permissions?|topic[ _-]+access|"
-    r"deny[ _-]+rule|access[ _-]+rule|access-permissions)",
+
+# ROS application records are not a trusted DDS Security audit source.  A
+# node can log arbitrary prose, including exact words such as "authenticated"
+# and "permission denied".  Dedicated Fast DDS security records use a
+# different header and should eventually be supplied by a configured security
+# logging sink rather than the generic stack stdout currently followed here.
+_ROS_APPLICATION_RECORD = re.compile(
+    r"^\[(?:DEBUG|INFO|WARN|ERROR|FATAL)\]\s+"
+    r"\[[0-9]+(?:\.[0-9]+)?\]\s+\[[^\]]+\]:",
     re.IGNORECASE,
 )
 
@@ -65,13 +91,13 @@ def classify_sros2_deny(line: str) -> str | None:
     """Return one stable category for a bounded denial line."""
     if not isinstance(line, str) or not line or len(line) > MAX_LOG_LINE_CHARS:
         return None
-    if not _DENIAL.search(line):
+    if _ROS_APPLICATION_RECORD.search(line):
         return None
-    if _GOVERNANCE.search(line):
+    if _GOVERNANCE_DENIALS.search(line):
         return "governance"
-    if _AUTHENTICATION.search(line):
+    if _AUTHENTICATION_DENIALS.search(line):
         return "authentication"
-    if _PERMISSION.search(line):
+    if _PERMISSION_DENIALS.search(line):
         return "permission"
     return None
 
@@ -80,18 +106,49 @@ class Sros2DenyLogAdapter:
     def __init__(self, producer: RuntimeTelemetryProducer) -> None:
         self.producer = producer
         self.lines_seen = 0
+        self.records_classified = 0
         self.denies_emitted = 0
+        self.send_failures = 0
         self.ignored = 0
+        self.oversize_lines = 0
+        self.ros_application_lines = 0
 
     def ingest_line(self, line: str) -> str | None:
         self.lines_seen += 1
-        kind = classify_sros2_deny(line.rstrip("\r\n"))
+        bounded = line.rstrip("\r\n") if isinstance(line, str) else line
+        if isinstance(bounded, str) and len(bounded) > MAX_LOG_LINE_CHARS:
+            self.oversize_lines += 1
+        if isinstance(bounded, str) and _ROS_APPLICATION_RECORD.search(bounded):
+            self.ros_application_lines += 1
+        kind = classify_sros2_deny(bounded)
         if kind is None:
             self.ignored += 1
             return None
+        self.records_classified += 1
         if self.producer.emit_sros2_deny(kind):
             self.denies_emitted += 1
+        else:
+            self.send_failures += 1
         return kind
+
+    def summary(self) -> dict[str, int | str]:
+        """Return secret-free counters without claiming zero means observed."""
+        if self.records_classified:
+            observability = "deny_records_observed"
+        elif self.lines_seen:
+            observability = "no_deny_records_observed"
+        else:
+            observability = "no_records_observed"
+        return {
+            "lines_seen": self.lines_seen,
+            "records_classified": self.records_classified,
+            "denies_emitted": self.denies_emitted,
+            "send_failures": self.send_failures,
+            "ignored": self.ignored,
+            "oversize_lines": self.oversize_lines,
+            "ros_application_lines": self.ros_application_lines,
+            "observability": observability,
+        }
 
     def ingest_lines(
         self,
@@ -190,10 +247,8 @@ def main(argv: list[str] | None = None) -> int:
         producer.close()
         signal.signal(signal.SIGTERM, old_term)
         signal.signal(signal.SIGINT, old_int)
-    print(
-        f"lines_seen={adapter.lines_seen} denies_emitted={adapter.denies_emitted} "
-        f"ignored={adapter.ignored}"
-    )
+    summary = adapter.summary()
+    print(" ".join(f"{key}={value}" for key, value in summary.items()))
     return 0
 
 

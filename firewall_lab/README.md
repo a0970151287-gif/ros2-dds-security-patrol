@@ -533,3 +533,113 @@ python3 -m firewall_lab.cross_host_admission \
 Zeek 現在只產生偵測與 suppressed response request；即使把舊
 `DOS_BLOCK_ENABLED` 打開，也不會直接呼叫 privileged helper。所有 live IP 動作必須先經
 `ResponseAuthorizer`，避免來源 IP spoof、NAT 或同 IP 多 participant 造成誤封。
+
+## 2026-08-17：分層 AI、開發期比較與證據工具
+
+### 分層候選模型
+
+`hierarchical_training.py` 建立的 v2 候選將判斷拆成 binary attack、
+response family、family-conditioned leaf 及 OOD；148 項因果時序特徵只使用
+目前與過去視窗。候選會綁定 data policy、action policy、程式與套件版本，
+但目前固定：
+
+```text
+deployment_eligible=false
+independent_final_test=false
+test_prediction_passes=0
+executable=false
+adapter=none
+```
+
+正式 raw dataset 不會被改寫。`dataset_exclusions.v1.json` 只以外部 registry
+釘住一筆封存後仍變動的 Enforce session；候選資料為 1,099 sessions。
+
+### Development-only 公平比較
+
+`development_evaluation.py` 只能使用 frozen train／selection／calibration／
+threshold session contract；它不存取、轉換、回傳或預測歷史 test 的 label／
+feature，也不保存 estimator。輸出目錄若存在會拒絕覆寫。
+
+```bash
+python3 -m firewall_lab.development_evaluation \
+  --features firewall_lab/features_per_mode/fusion_features_permissive.csv \
+  --contract-metrics <hierarchical-candidate>/permissive/training_metrics.json \
+  --security-mode permissive \
+  --bootstrap-replicates 200 \
+  --output <new-development-output-directory>
+```
+
+預設比較 3 個 task、5 個 feature view 與 5 個 sklearn model，共 75 組／模式，
+並輸出 session-bootstrap 95% CI、per-class metrics、ECE、Brier、P50／P95
+inference time 及 observed RSS delta。這些值是 development validation，不能當
+independent final test、Pi benchmark 或部署資格。
+
+### SROS2 direct-delivery 證據驗票
+
+`sros2_delivery_evidence.py` 不會啟動 publisher／subscriber，也不會發封包；
+它只驗證已收集的雙端 JSONL 與 contract：
+
+```bash
+python3 -m firewall_lab.sros2_delivery_evidence verify \
+  --contract <delivery-contract.json> \
+  --output <new-verification-report.json>
+
+python3 -m firewall_lab.sros2_delivery_evidence aggregate \
+  --contract <paired-permissive-contract.json> \
+  --contract <paired-enforce-contract.json> \
+  --output <new-aggregate-report.json>
+```
+
+驗票器會重新計算 attempt／receipt sequence、collector heartbeat、bytes／SHA-256、
+session、mode、policy、source、enclave、topic 與 UTC window。Vendor security log
+不是 delivery ground truth；缺少 archive 時只能標 blocked，不能補造 live pass。
+所有輸出固定 `source_ip_attribution_verified=false`、`deployment_eligible=false`、
+`executable=false`。
+
+### 專案證據總帳與可重現性
+
+`project_evidence.py` 只接受 `verified`、`provisional`、`blocked` 三種主張。
+`verified` 必須引用非空、repo-relative、非 symlink 的 artifact，且 bytes／SHA-256
+完全一致；ledger JSON 與 Markdown 原子發布並拒絕覆寫。它是證據 inventory，
+不是簽章、runtime 授權或 live firewall acceptance。
+
+```python
+from firewall_lab.project_evidence import (
+    generate_evidence_ledger,
+    verify_evidence_ledger,
+)
+
+generate_evidence_ledger(
+    "firewall_lab/project_claims_20260817.json",
+    ".",
+    "<new-ledger-directory>",
+)
+verify_evidence_ledger("<ledger-directory>/evidence_ledger.json", ".")
+```
+
+被動重現性稽核不安裝套件、不啟動 ROS、不送流量：
+
+```bash
+python3 工具腳本/verify_reproducibility.py --pretty
+
+# 只有明確要求時才呼叫既有完整測試 runner
+python3 工具腳本/verify_reproducibility.py --run-tests --pretty
+```
+
+完整研究與部署邊界見：
+
+- `文件/核心AI模型升級_2026-08-17.md`
+- `文件/專題主計畫與WBS_2026-08-17.md`
+- `文件/風險登錄與驗收矩陣_2026-08-17.md`
+- `文件/國際標準與社會倫理_2026-08-17.md`
+
+本輪已實際產生並反向驗證：
+
+- `文件/可重現性稽核_2026-08-17.json`：12/12 checks verified；完整測試
+  **583 passed、0 failed、268 warnings**。
+- `文件/證據總帳_2026-08-17/evidence_ledger.json`：6 verified、
+  2 provisional、1 blocked；`deployment_eligible=false`、
+  `runtime_authorization=false`。
+- `文件/SROS2智慧防火牆_專題最終報告_自然色系_2026-08-17.pptx`：29 頁，
+  每頁含 `[Sources]` 講者備註；不把 development／same-host／dry-run 結果升級成
+  production、跨主機或自動封鎖證據。
