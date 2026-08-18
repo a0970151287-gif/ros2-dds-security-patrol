@@ -16,8 +16,13 @@ pytestmark = pytest.mark.skipif(
 
 if np is not None and pd is not None:
     from firewall_lab.grouped_training import (
+        DEFAULT_ANOMALY_FEATURE_SET,
+        DEFAULT_ANOMALY_NORMAL_FPR,
+        FEATURE_SETS,
+        MAX_DEPLOYMENT_ANOMALY_FPR,
         choose_reject_threshold,
         split_validation_for_calibration,
+        train_grouped_model,
         validate_preassigned_split,
     )
 
@@ -112,3 +117,37 @@ def test_reject_threshold_uses_precision_and_normal_fpr_constraints():
     assert selected["threshold"] > 0.51
     assert selected["attack_precision"] == 1.0
     assert selected["normal_fpr"] == 0.0
+
+
+def test_anomaly_defaults_are_telemetry_and_inside_the_deployment_gate():
+    """Pin the two defaults the live unknown-attack result depends on.
+
+    Network features gave 0.055 unknown recall on live Permissive data and
+    telemetry gave 0.616; the second number also needs most of the false-
+    positive allowance, so a silent revert to a small budget would quietly
+    undo the fix while every test still passed.
+    """
+
+    assert DEFAULT_ANOMALY_FEATURE_SET == "telemetry"
+    assert DEFAULT_ANOMALY_FEATURE_SET in FEATURE_SETS
+    assert 0.0 < DEFAULT_ANOMALY_NORMAL_FPR <= MAX_DEPLOYMENT_ANOMALY_FPR
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    (
+        {"anomaly_feature_set": "not_a_feature_set"},
+        {"anomaly_normal_fpr": 0.0},
+        {"anomaly_normal_fpr": MAX_DEPLOYMENT_ANOMALY_FPR + 0.001},
+    ),
+)
+def test_training_refuses_an_anomaly_budget_beyond_the_gate(tmp_path, kwargs):
+    """A budget above the gate would produce a model that cannot ever pass."""
+
+    with pytest.raises(ValueError):
+        train_grouped_model(
+            feature_csv=tmp_path / "missing.csv",
+            output_dir=tmp_path / "out",
+            data_tier="live",
+            **kwargs,
+        )

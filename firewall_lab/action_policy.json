@@ -2,6 +2,7 @@
   "schema_version": "sros2-firewall-action-policy/v1",
   "default_action": "alert",
   "unknown_anomaly_action": "quarantine",
+  "executable_classes": [],
   "rules": {
     "normal": {
       "action": "allow",

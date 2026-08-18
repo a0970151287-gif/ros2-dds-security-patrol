@@ -76,6 +76,13 @@ class FirewallModel:
         model_features = bundle.get("features")
         if model_features not in ALLOWED_FEATURE_ORDERS:
             raise ValueError("firewall model feature order mismatch")
+        # The normal-only detector may be fitted on a different feature set
+        # from the classifier -- on live data it is, because unknown attacks
+        # show up in telemetry and not in traffic shape. Bundles written before
+        # that change carry no anomaly_features and shared one row for both.
+        anomaly_features = bundle.get("anomaly_features", model_features)
+        if anomaly_features not in ALLOWED_FEATURE_ORDERS:
+            raise ValueError("firewall anomaly feature order mismatch")
         if not isinstance(bundle.get("classes"), list) or not bundle["classes"]:
             raise ValueError("firewall model classes are missing")
         classifier = bundle.get("classifier")
@@ -126,13 +133,29 @@ class FirewallModel:
         ):
             raise ValueError("action policy integrity does not match model")
         policy = DecisionPolicy.load(policy_path)
-        if set(bundle_classes) != set(policy.rules):
-            raise ValueError("model classes are not exactly covered by action policy")
+        # Every class the model can emit must have a rule. The reverse is not
+        # required: the policy carries 23 attack classes while the live models
+        # are trained on the 9 the campaign actually produces, and demanding
+        # equality refused those models outright -- not just for enforcement,
+        # but for alert-only observation too. Rules with no matching class
+        # simply never fire, and the classes a model cannot emit are held back
+        # by the policy's executable_classes list rather than by this check.
+        uncovered = set(bundle_classes) - set(policy.rules)
+        if uncovered:
+            raise ValueError(
+                "action policy has no rule for model classes: "
+                f"{sorted(uncovered)}"
+            )
 
         self.bundle = bundle
         self.classifier = classifier
         self.anomaly_detector = anomaly
         self.features = list(model_features)
+        self.anomaly_features = list(anomaly_features)
+        # What predict() must be handed: everything either model consumes.
+        self.required_features = list(
+            dict.fromkeys(self.features + self.anomaly_features)
+        )
         self.classes = bundle_classes
         self.policy = policy
         self.deployment_eligible = deployment_eligible
@@ -140,12 +163,14 @@ class FirewallModel:
         self.policy_verified = True
 
     def predict(self, features: dict[str, Any]) -> dict[str, Any]:
-        if not isinstance(features, dict) or set(features) != set(self.features):
+        if not isinstance(features, dict) or set(features) != set(
+            self.required_features
+        ):
             raise ValueError(
-                f"features must contain exactly {self.features}"
+                f"features must contain exactly {self.required_features}"
             )
-        row = []
-        for name in self.features:
+        admitted = {}
+        for name in self.required_features:
             value = features[name]
             if (
                 isinstance(value, bool)
@@ -159,7 +184,9 @@ class FirewallModel:
                 raise ValueError(
                     f"feature {name} is outside the admitted range"
                 )
-            row.append(numeric)
+            admitted[name] = numeric
+        row = [admitted[name] for name in self.features]
+        anomaly_row = [admitted[name] for name in self.anomaly_features]
         try:
             probability = [
                 float(value)
@@ -180,7 +207,7 @@ class FirewallModel:
         predicted_class = self.classes[best_index]
         confidence = probability[best_index]
         try:
-            anomaly_value = int(self.anomaly_detector.predict([row])[0])
+            anomaly_value = int(self.anomaly_detector.predict([anomaly_row])[0])
         except (IndexError, TypeError, ValueError, OverflowError) as exc:
             raise RuntimeError("anomaly detector emitted invalid prediction") from exc
         if anomaly_value not in {-1, 1}:

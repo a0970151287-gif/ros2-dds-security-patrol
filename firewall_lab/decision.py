@@ -6,7 +6,7 @@ import json
 import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from .catalog import ALLOWED_ACTIONS
 from .schema import SchemaError, require_identifier, safe_json_value
@@ -52,11 +52,17 @@ class FirewallDecision:
 
 class DecisionPolicy:
     def __init__(self, value: dict[str, Any]):
-        if not isinstance(value, dict) or set(value) != {
+        if not isinstance(value, dict) or not {
             "schema_version",
             "default_action",
             "unknown_anomaly_action",
             "rules",
+        } <= set(value) <= {
+            "schema_version",
+            "default_action",
+            "unknown_anomaly_action",
+            "rules",
+            "executable_classes",
         }:
             raise SchemaError("action policy has unexpected keys")
         if value["schema_version"] != POLICY_SCHEMA_VERSION:
@@ -78,6 +84,29 @@ class DecisionPolicy:
             raise SchemaError("unknown_anomaly_action must be non-executable")
         if not isinstance(value["rules"], dict) or not value["rules"]:
             raise SchemaError("action policy rules must be non-empty")
+        # Which classes may ever reach an adapter. A closed-set classifier
+        # answers every input with one of the classes it was trained on, so an
+        # attack type absent from training does not fall through to
+        # unknown_anomaly_action -- it is reported as the nearest known class
+        # and would otherwise inherit that class's executable adapter. This
+        # list is the operator's separate statement of which classes have been
+        # validated well enough to act on. Absent means none of them.
+        raw_executable = value.get("executable_classes", [])
+        if not isinstance(raw_executable, list) or not all(
+            isinstance(name, str) for name in raw_executable
+        ):
+            raise SchemaError("executable_classes must be a list of strings")
+        self.executable_classes = frozenset(
+            require_identifier(name, "executable_classes entry")
+            for name in raw_executable
+        )
+        unknown_executable = self.executable_classes - set(value["rules"])
+        if unknown_executable:
+            raise SchemaError(
+                f"executable_classes has no rule: {sorted(unknown_executable)}"
+            )
+        if "normal" in self.executable_classes:
+            raise SchemaError("normal may never be executable")
         self.rules = {}
         for attack_class, rule in value["rules"].items():
             require_identifier(attack_class, "rules class")
@@ -114,6 +143,33 @@ class DecisionPolicy:
                 "adapter": adapter,
                 "min_confidence": float(threshold),
             }
+
+    @classmethod
+    def authorising(
+        cls,
+        classes: Iterable[str],
+        *,
+        path: str | Path | None = None,
+    ) -> "DecisionPolicy":
+        """The shipped policy, with the named classes authorised to execute.
+
+        ``executable_classes`` ships empty: no model has passed a deployment
+        gate, so nothing is authorised to act. Code that has to exercise the
+        enforcement path anyway -- the cross-host admission self-test, and the
+        authorizer/backend tests -- must ask for that authority explicitly here
+        instead of depending on the operational policy staying permissive.
+        Nothing in this constructor grants an adapter a rule does not already
+        have; it only lifts the authorisation gate for the named classes.
+        """
+
+        policy_path = (
+            Path(path)
+            if path is not None
+            else Path(__file__).with_name("action_policy.json")
+        )
+        value = json.loads(policy_path.read_text(encoding="utf-8"))
+        value["executable_classes"] = sorted({str(name) for name in classes})
+        return cls(value)
 
     @classmethod
     def load(cls, path: str | Path | None = None) -> "DecisionPolicy":
@@ -189,6 +245,23 @@ class DecisionPolicy:
             )
         action = rule["action"]
         adapter = rule["adapter"]
+        if (
+            action != "allow"
+            and adapter != "none"
+            and predicted_class not in self.executable_classes
+        ):
+            return FirewallDecision(
+                predicted_class=predicted_class,
+                confidence=confidence,
+                anomaly=bool(anomaly),
+                action="alert",
+                adapter="none",
+                executable=False,
+                reason=(
+                    f"{predicted_class} is not in the policy's "
+                    "executable_classes; observe only"
+                ),
+            )
         return FirewallDecision(
             predicted_class=predicted_class,
             confidence=confidence,

@@ -324,7 +324,11 @@ def test_existing_evidence_authority_issues_backend_verifiable_v2_ticket(tmp_pat
         collector_id="pytest-backend-integration",
         ticket_issuer=ticket_issuer,
     )
-    decision = DecisionPolicy.load().decide(
+    decision = DecisionPolicy.authorising(
+        ["service_dos", "command_injection", "identity_abuse",
+         "message_dos", "replay", "replay_dos", "sensor_spoof",
+         "parameter_tamper"]
+    ).decide(
         predicted_class="service_dos",
         confidence=0.99,
         anomaly=True,

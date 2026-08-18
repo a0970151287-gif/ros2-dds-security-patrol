@@ -13,6 +13,18 @@ from firewall_lab.schema import SchemaError
 from firewall_lab.synthetic_dataset import ATTACK_PROFILES, load_synthetic_scenarios
 
 
+# The shipped policy authorises no class to execute, because no model has
+# passed a deployment gate. These tests exist to check what the authorizer does
+# once a class IS authorised, so they ask for that authority explicitly: every
+# class whose rule already carries an adapter.
+_EXECUTABLE_FOR_TESTS = tuple(
+    sorted(
+        name
+        for name, rule in DecisionPolicy.load().rules.items()
+        if rule["adapter"] != "none" and rule["action"] != "allow"
+    )
+)
+
 MODEL_HASH = "1" * 64
 POLICY_HASH = "2" * 64
 BACKEND_ID = "pytest-nft-timeout-set"
@@ -23,7 +35,7 @@ def _authority():
 
 
 def _decision(attack_class="service_dos"):
-    return DecisionPolicy.load().decide(
+    return DecisionPolicy.authorising(_EXECUTABLE_FOR_TESTS).decide(
         predicted_class=attack_class,
         confidence=0.99,
         anomaly=True,
@@ -88,12 +100,12 @@ def _network_authorizer(authority, **overrides):
 
 
 def test_action_policy_explicitly_covers_every_model_class():
-    policy = DecisionPolicy.load()
+    policy = DecisionPolicy.authorising(_EXECUTABLE_FOR_TESTS)
     assert set(policy.rules) == {"normal", *ATTACK_PROFILES}
 
 
 def test_training_catalog_actions_match_runtime_policy_semantics():
-    policy = DecisionPolicy.load()
+    policy = DecisionPolicy.authorising(_EXECUTABLE_FOR_TESTS)
     expected = {
         scenario.attack_class: scenario.expected_action
         for scenario in load_catalog().values()
@@ -360,7 +372,7 @@ def test_velocity_guard_requires_signed_behavior_evidence_and_recovery():
 
 
 def test_sros2_and_hmac_controls_are_upstream_prevention_without_dynamic_ticket():
-    policy = DecisionPolicy.load()
+    policy = DecisionPolicy.authorising(_EXECUTABLE_FOR_TESTS)
     for attack_class in ("identity_abuse", "hmac_forgery"):
         decision = policy.decide(
             predicted_class=attack_class,

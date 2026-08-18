@@ -253,7 +253,11 @@ def _check_response_authorizer() -> tuple[bool, str]:
             signals: dict[str, float] | None = None,
             source_shared: bool = False,
         ) -> tuple[Any, ResponseContext]:
-            decision = DecisionPolicy.load().decide(
+            # This gate proves the authorizer refuses/permits correctly, so it
+            # needs a decision that is allowed to execute.  The shipped policy
+            # authorises nothing, so ask for that authority explicitly here
+            # rather than depending on the operational policy being permissive.
+            decision = DecisionPolicy.authorising(["service_dos"]).decide(
                 predicted_class="service_dos", confidence=0.99, anomaly=True
             )
             evidence = authority.issue(

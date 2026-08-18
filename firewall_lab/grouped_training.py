@@ -41,6 +41,26 @@ FEATURE_SETS = {
     "telemetry": tuple(TELEMETRY_FEATURES),
     "fusion": tuple(FEATURES + TELEMETRY_FEATURES),
 }
+
+# The normal-only detector does not have to share the classifier's features,
+# and on live data it should not. Fitting it on the network features gave 0.055
+# unknown-attack recall in Permissive against a 0.60 bar, while spending only
+# 19% of the 5% false-positive budget: patrol traffic varies enough that an
+# unseen attack falls inside the normal envelope. The same detector on the 18
+# telemetry features reaches 0.616 at 5.1% measured FPR, because an attack that
+# reaches the application layer leaves categorical evidence -- HMAC failures,
+# unknown nodes, parameter calls -- rather than a subtle change in traffic
+# shape. Set to None to reuse the classifier's feature set.
+DEFAULT_ANOMALY_FEATURE_SET = "telemetry"
+
+# Fraction of normal traffic the detector is allowed to flag. The old hardcoded
+# 0.02 spent well under half the 0.05 deployment allowance and cost real
+# detection: on live Permissive telemetry, 0.02 finds 0.25 of held-out unknown
+# attacks and 0.04 finds 0.62. The 20% margin under MAX_DEPLOYMENT_ANOMALY_FPR
+# is for estimation drift -- the threshold is set on a few hundred validation
+# normal windows, and the rate it produces on unseen traffic moves by about a
+# percentage point either way.
+DEFAULT_ANOMALY_NORMAL_FPR = 0.04
 SPLIT_NAMES = ("train", "validation", "test")
 MIN_DEPLOYMENT_SESSIONS = 1100
 MIN_DEPLOYMENT_BALANCED_ACCURACY = 0.80
@@ -460,10 +480,27 @@ def _fit_unknown_detector(
     normal_train = train_mask & labels.eq("normal").to_numpy()
     normal_validation = validation_mask & labels.eq("normal").to_numpy()
     known_attack_validation = validation_mask & binary.eq("attack").to_numpy()
+    novelty_mask = (
+        novelty.eq("novelty_holdout_candidate").to_numpy()
+        if novelty is not None
+        else np.zeros(len(frame), dtype=bool)
+    )
     if novelty is not None:
-        known_attack_validation &= novelty.ne(
-            "novelty_holdout_candidate"
-        ).to_numpy()
+        known_attack_validation &= ~novelty_mask
+    # What the detector is actually fitted on, so the artifact can report it
+    # instead of asserting it.  Normal-only by construction, which is why no
+    # attack class -- held out or not -- contributes to the fit.
+    fit_provenance = {
+        "fit_rows": int(normal_train.sum()),
+        "fit_rows_labelled_attack": int(
+            (normal_train & binary.eq("attack").to_numpy()).sum()
+        ),
+        "fit_rows_in_novelty_holdout": int((normal_train & novelty_mask).sum()),
+        "threshold_rows": int(normal_validation.sum()),
+        "threshold_rows_in_novelty_holdout": int(
+            (normal_validation & novelty_mask).sum()
+        ),
+    }
 
     comparisons = []
     fitted = []
@@ -496,7 +533,11 @@ def _fit_unknown_detector(
             "known_attack_validation_recall": float(
                 (known_scores < threshold).mean()
             ),
-            "novel_attack_validation_rows_used": 0,
+            # Measured, not asserted: novelty rows are excluded from the
+            # selection mask above, and this counts what actually survived it.
+            "novel_attack_validation_rows_used": int(
+                (known_attack_validation & novelty_mask).sum()
+            ),
         }
         comparisons.append(item)
         fitted.append((item, detector))
@@ -511,7 +552,7 @@ def _fit_unknown_detector(
     # this public fitted attribute makes the validation-only threshold part of
     # the signed artifact while preserving the standard sklearn interface.
     selected.offset_ = selected_item["threshold_from_normal_validation_only"]
-    return selected, comparisons, selected_item
+    return selected, comparisons, selected_item, fit_provenance
 
 
 def _unknown_test_metrics(
@@ -519,6 +560,7 @@ def _unknown_test_metrics(
     frame,
     feature_names: Sequence[str],
     test_index,
+    fit_provenance: dict[str, int],
 ) -> dict:
     import numpy as np
 
@@ -558,8 +600,22 @@ def _unknown_test_metrics(
         "novel_holdout_attack_rows": int(novel_attack.sum()),
         "per_novel_class": per_class,
         "training_labels": ["normal"],
-        "novel_attack_train_rows_used": 0,
-        "novel_attack_validation_rows_used_for_selection": 0,
+        # Counted from the masks the detector was actually fitted and
+        # thresholded with.  These were previously hardcoded to 0, which made
+        # a correct-but-unverified assertion look like a measurement.
+        "novel_attack_train_rows_used": int(
+            fit_provenance["fit_rows_in_novelty_holdout"]
+        ),
+        "novel_attack_validation_rows_used_for_selection": int(
+            fit_provenance["threshold_rows_in_novelty_holdout"]
+        ),
+        "detector_fit_provenance": dict(fit_provenance),
+        # The isolation is the anomaly head's, not the bundle's: the
+        # closed-set classifier trains on the whole train split, holdout
+        # classes included.  Reporting this next to the recall stops the
+        # number being read as an open-set result for the whole model.
+        "isolation_scope": "anomaly_head_only",
+        "classifier_saw_novel_holdout_classes": True,
     }
 
 
@@ -630,6 +686,9 @@ def train_grouped_model(
     *,
     data_tier: str = "live",
     feature_set: str = "fusion",
+    anomaly_feature_set: str | None = DEFAULT_ANOMALY_FEATURE_SET,
+    anomaly_normal_fpr: float = DEFAULT_ANOMALY_NORMAL_FPR,
+    anomaly_budget_chosen_with_test_knowledge: bool = False,
     random_state: int = 20260803,
     n_estimators: int = 400,
     bootstrap_samples: int = 500,
@@ -638,12 +697,22 @@ def train_grouped_model(
     """Train, calibrate and optionally perform the one final test evaluation."""
 
     import numpy as np
+    import pandas as pd
     from sklearn.calibration import CalibratedClassifierCV
     from sklearn.ensemble import ExtraTreesClassifier
     from sklearn.frozen import FrozenEstimator
 
     if feature_set not in FEATURE_SETS:
         raise ValueError(f"feature_set must be one of {sorted(FEATURE_SETS)}")
+    if anomaly_feature_set is not None and anomaly_feature_set not in FEATURE_SETS:
+        raise ValueError(
+            f"anomaly_feature_set must be None or one of {sorted(FEATURE_SETS)}"
+        )
+    if not 0.0 < anomaly_normal_fpr <= MAX_DEPLOYMENT_ANOMALY_FPR:
+        raise ValueError(
+            "anomaly_normal_fpr must be in (0, "
+            f"{MAX_DEPLOYMENT_ANOMALY_FPR}]"
+        )
     if n_estimators < 20:
         raise ValueError("n_estimators must be at least 20")
     if bootstrap_samples < 20:
@@ -655,7 +724,12 @@ def train_grouped_model(
         data_tier=data_tier,
         feature_names=feature_names,
         extra_columns=("split",),
-        optional_columns=("novelty_role",),
+        # The anomaly detector may use columns the classifier does not, so ask
+        # for them here. They stay optional: a network-only CSV still trains,
+        # and the detector then falls back to the classifier's features with
+        # anomaly_feature_set_used recording what it actually got.
+        optional_columns=("novelty_role",)
+        + tuple(FEATURE_SETS.get(anomaly_feature_set or feature_set, ())),
     )
     if len(frame) < 20 or frame["label"].nunique() < 2:
         raise ValueError("at least 20 rows and two classes are required")
@@ -794,12 +868,52 @@ def train_grouped_model(
         calibrated.classes_,
     )
 
-    anomaly, anomaly_comparison, anomaly_selection = _fit_unknown_detector(
+    # Report the holdout the data actually carries. The old code printed the
+    # synthetic set's four class names next to live results whose holdout was
+    # sensor_spoof/service_dos -- the numbers were right, the label on them was
+    # not. _fit_unknown_detector already reads novelty_role, so this reads the
+    # same column rather than a second, independent notion of "held out".
+    actual_holdout_classes = sorted(DEFAULT_HOLDOUT_CLASSES)
+    if "novelty_role" in frame.columns:
+        actual_holdout_classes = sorted(
+            frame.loc[
+                frame["novelty_role"].astype(str).eq("novelty_holdout_candidate"),
+                "label",
+            ]
+            .astype(str)
+            .unique()
+        )
+
+    anomaly_feature_names = list(feature_names)
+    anomaly_feature_set_used = feature_set
+    if (
+        anomaly_feature_set is not None
+        and set(FEATURE_SETS[anomaly_feature_set]).issubset(frame.columns)
+    ):
+        anomaly_feature_names = list(FEATURE_SETS[anomaly_feature_set])
+        anomaly_feature_set_used = anomaly_feature_set
+        # load_training_frame only coerces and range-checks the classifier's
+        # columns. These arrived as optional extras, so hold them to the same
+        # bar here instead of letting a NaN reach IsolationForest.
+        anomaly_matrix = frame[anomaly_feature_names].apply(
+            pd.to_numeric, errors="coerce"
+        )
+        if not bool(np.isfinite(anomaly_matrix.to_numpy(dtype=float)).all()):
+            raise ValueError(
+                f"anomaly features {anomaly_feature_set} contain NaN or Infinity"
+            )
+        frame[anomaly_feature_names] = anomaly_matrix
+    (
+        anomaly,
+        anomaly_comparison,
+        anomaly_selection,
+        anomaly_fit_provenance,
+    ) = _fit_unknown_detector(
         frame,
-        feature_names,
+        anomaly_feature_names,
         split_index,
         seed=random_state,
-        target_normal_fpr=0.02,
+        target_normal_fpr=anomaly_normal_fpr,
         n_estimators=n_estimators,
     )
 
@@ -828,6 +942,9 @@ def train_grouped_model(
         "deployment_block_reason": "deployment gates have not been evaluated",
         "feature_set": feature_set,
         "features": feature_names,
+        "anomaly_feature_set_requested": anomaly_feature_set,
+        "anomaly_feature_set_used": anomaly_feature_set_used,
+        "anomaly_normal_fpr_budget": float(anomaly_normal_fpr),
         "rows": int(len(frame)),
         "sessions": int(frame["group_id"].astype(str).nunique()),
         "classes": [str(value) for value in calibrated.classes_],
@@ -837,7 +954,18 @@ def train_grouped_model(
             "selection_split": "validation",
             "calibration_subset": "validation sessions only",
             "reject_threshold_subset": "disjoint validation sessions only",
-            "test_used_for_selection": False,
+            # This run performs no selection against test.  It cannot know
+            # whether the hyperparameters it was handed were themselves picked
+            # after someone looked at test, so the caller must say so, and the
+            # artifact records it rather than the document alone.
+            "test_used_for_selection_in_this_run": False,
+            "anomaly_budget_chosen_with_test_knowledge": bool(
+                anomaly_budget_chosen_with_test_knowledge
+            ),
+            "independent_final_test": bool(
+                final_evaluate_test
+                and not anomaly_budget_chosen_with_test_knowledge
+            ),
             "test_prediction_passes": 1 if final_evaluate_test else 0,
             "session_overlap": 0,
             "rows": {
@@ -866,7 +994,7 @@ def train_grouped_model(
         "unknown_detector_selection_validation": {
             "candidates": anomaly_comparison,
             "selected": anomaly_selection,
-            "holdout_classes": sorted(DEFAULT_HOLDOUT_CLASSES),
+            "holdout_classes": actual_holdout_classes,
         },
         "feature_importance": feature_importance,
         "test_metrics": None,
@@ -911,8 +1039,9 @@ def train_grouped_model(
         metrics["unknown_attack_test"] = _unknown_test_metrics(
             anomaly,
             frame,
-            feature_names,
+            anomaly_feature_names,
             test_index,
+            anomaly_fit_provenance,
         )
 
     from .formal_preflight import _live_multimodal_contract_check
@@ -979,20 +1108,34 @@ def train_grouped_model(
         "classifier": calibrated,
         "anomaly_detector": anomaly,
         "features": feature_names,
+        "anomaly_features": anomaly_feature_names,
         "classes": [str(value) for value in calibrated.classes_],
         "training": {
             "protocol": "preassigned_session_train_validation_test",
             "grouping": "session_id/group_id",
             "data_tier": data_tier,
             "feature_set": feature_set,
+            "anomaly_feature_set_used": anomaly_feature_set_used,
+            "anomaly_normal_fpr_budget": float(anomaly_normal_fpr),
             "deployment_eligible": deployment_eligible,
             "selected_model": selected_name,
             "reject_threshold": float(reject_selection["threshold"]),
-            "unknown_holdout_classes": sorted(DEFAULT_HOLDOUT_CLASSES),
+            "unknown_holdout_classes": actual_holdout_classes,
             "policy_sha256_values": policy_hashes,
             "action_policy_sha256": sha256_file(ACTION_POLICY_PATH),
             "feature_csv_sha256": sha256_file(feature_path),
-            "test_used_for_selection": False,
+            # This run performs no selection against test.  It cannot know
+            # whether the hyperparameters it was handed were themselves picked
+            # after someone looked at test, so the caller must say so, and the
+            # artifact records it rather than the document alone.
+            "test_used_for_selection_in_this_run": False,
+            "anomaly_budget_chosen_with_test_knowledge": bool(
+                anomaly_budget_chosen_with_test_knowledge
+            ),
+            "independent_final_test": bool(
+                final_evaluate_test
+                and not anomaly_budget_chosen_with_test_knowledge
+            ),
             "test_prediction_passes": 1 if final_evaluate_test else 0,
         },
         "metrics": {
@@ -1052,7 +1195,18 @@ def train_grouped_model(
                     set(frame.iloc[threshold_index]["group_id"].astype(str))
                 ),
             },
-            "test_used_for_selection": False,
+            # This run performs no selection against test.  It cannot know
+            # whether the hyperparameters it was handed were themselves picked
+            # after someone looked at test, so the caller must say so, and the
+            # artifact records it rather than the document alone.
+            "test_used_for_selection_in_this_run": False,
+            "anomaly_budget_chosen_with_test_knowledge": bool(
+                anomaly_budget_chosen_with_test_knowledge
+            ),
+            "independent_final_test": bool(
+                final_evaluate_test
+                and not anomaly_budget_chosen_with_test_knowledge
+            ),
             "test_prediction_passes": 1 if final_evaluate_test else 0,
         },
     )
@@ -1094,6 +1248,33 @@ def build_parser() -> argparse.ArgumentParser:
         choices=tuple(FEATURE_SETS),
         default="fusion",
     )
+    parser.add_argument(
+        "--anomaly-feature-set",
+        choices=tuple(FEATURE_SETS) + ("same-as-classifier",),
+        default=DEFAULT_ANOMALY_FEATURE_SET,
+        help=(
+            "feature set for the normal-only unknown-attack detector; "
+            "telemetry by default because network features gave 0.055 "
+            "unknown recall against 0.616 on live Permissive data"
+        ),
+    )
+    parser.add_argument(
+        "--anomaly-normal-fpr",
+        type=float,
+        default=DEFAULT_ANOMALY_NORMAL_FPR,
+        help=(
+            "share of normal traffic the unknown-attack detector may flag; "
+            f"must not exceed the {MAX_DEPLOYMENT_ANOMALY_FPR} deployment gate"
+        ),
+    )
+    parser.add_argument(
+        "--anomaly-budget-chosen-with-test-knowledge",
+        action="store_true",
+        help=(
+            "record in the artifact that --anomaly-normal-fpr was picked after "
+            "seeing test results; forces independent_final_test=false"
+        ),
+    )
     parser.add_argument("--random-state", type=int, default=20260803)
     parser.add_argument("--n-estimators", type=int, default=400)
     parser.add_argument("--bootstrap-samples", type=int, default=500)
@@ -1112,6 +1293,15 @@ def main(argv: list[str] | None = None) -> int:
         args.output,
         data_tier=args.data_tier,
         feature_set=args.feature_set,
+        anomaly_feature_set=(
+            None
+            if args.anomaly_feature_set == "same-as-classifier"
+            else args.anomaly_feature_set
+        ),
+        anomaly_normal_fpr=args.anomaly_normal_fpr,
+        anomaly_budget_chosen_with_test_knowledge=(
+            args.anomaly_budget_chosen_with_test_knowledge
+        ),
         random_state=args.random_state,
         n_estimators=args.n_estimators,
         bootstrap_samples=args.bootstrap_samples,

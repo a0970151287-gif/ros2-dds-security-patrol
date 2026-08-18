@@ -178,16 +178,31 @@ def _estimator_sha256(bundle: dict[str, Any]) -> str:
 def _load_train_canary(
     path: Path,
     feature_names: Sequence[str],
+    anomaly_feature_names: Sequence[str],
     *,
     rows: int,
-) -> tuple[list[list[float]], str]:
+) -> tuple[list[list[float]], list[list[float]], str]:
+    """Build one canary row per estimator.
+
+    The classifier and the unknown-attack detector are fitted on different
+    feature sets, so a single row cannot drive both: on the Enforce model the
+    classifier takes 14 network features and the detector takes 18 telemetry
+    ones. Reusing one matrix raises inside sklearn when the widths differ, and
+    would silently score the wrong columns if they ever matched.
+    """
+
     if rows < 1:
         raise ValueError("canary rows must be positive")
     selected: list[list[float]] = []
+    anomaly_selected: list[list[float]] = []
     identities: list[dict[str, str]] = []
     with path.open(encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
-        required = set(feature_names) | {"split", "group_id", "window"}
+        required = (
+            set(feature_names)
+            | set(anomaly_feature_names)
+            | {"split", "group_id", "window"}
+        )
         missing = required - set(reader.fieldnames or ())
         if missing:
             raise ValueError(f"canary CSV is missing {sorted(missing)}")
@@ -195,9 +210,13 @@ def _load_train_canary(
             if row["split"] != "train":
                 continue
             values = [float(row[name]) for name in feature_names]
-            if any(not math.isfinite(value) for value in values):
+            anomaly_values = [float(row[name]) for name in anomaly_feature_names]
+            if any(
+                not math.isfinite(value) for value in values + anomaly_values
+            ):
                 raise ValueError("canary feature is not finite")
             selected.append(values)
+            anomaly_selected.append(anomaly_values)
             identities.append(
                 {"group_id": row["group_id"], "window": row["window"]}
             )
@@ -205,14 +224,18 @@ def _load_train_canary(
                 break
     if len(selected) != rows:
         raise ValueError(f"only found {len(selected)} train canary rows")
-    return selected, _canonical_sha256(identities)
+    return selected, anomaly_selected, _canonical_sha256(identities)
 
 
-def _prediction_sha256(bundle: dict[str, Any], rows: list[list[float]]) -> str:
+def _prediction_sha256(
+    bundle: dict[str, Any],
+    rows: list[list[float]],
+    anomaly_rows: list[list[float]],
+) -> str:
     classifier = bundle["classifier"]
     anomaly = bundle["anomaly_detector"]
     probabilities = classifier.predict_proba(rows)
-    anomaly_values = anomaly.predict(rows)
+    anomaly_values = anomaly.predict(anomaly_rows)
     payload = {
         "classes": [str(value) for value in bundle["classes"]],
         "probability_hex": [
@@ -264,23 +287,29 @@ def rebind_model_policy(
     if not isinstance(old_policy_sha256, str) or len(old_policy_sha256) != 64:
         raise ValueError("old action policy hash is invalid")
     policy = DecisionPolicy.load(policy_path)
-    if set(str(value) for value in bundle.get("classes", [])) != set(policy.rules):
-        raise ValueError("new action policy does not cover model classes exactly")
+    uncovered = {
+        str(value) for value in bundle.get("classes", [])
+    } - set(policy.rules)
+    if uncovered:
+        raise ValueError(
+            f"new action policy has no rule for model classes: {sorted(uncovered)}"
+        )
     new_policy_sha256 = sha256_file(policy_path)
     if old_policy_sha256 == new_policy_sha256:
         raise ValueError("model is already bound to this action policy")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     report.parent.mkdir(parents=True, exist_ok=True)
-    canary, canary_identity_sha256 = _load_train_canary(
+    canary, anomaly_canary, canary_identity_sha256 = _load_train_canary(
         canary_path,
         bundle["features"],
+        bundle.get("anomaly_features", bundle["features"]),
         rows=canary_rows,
     )
     source_model_sha256 = sha256_file(source_path)
     source_metrics_sha256 = sha256_file(source_metrics)
     source_estimator_sha256 = _estimator_sha256(bundle)
-    source_prediction_sha256 = _prediction_sha256(bundle, canary)
+    source_prediction_sha256 = _prediction_sha256(bundle, canary, anomaly_canary)
     source_metadata_sha256 = _non_policy_metadata_digest(bundle)
     source_deployment_eligible = bundle["training"].get(
         "deployment_eligible"
@@ -298,7 +327,9 @@ def rebind_model_policy(
     rebound = verified_joblib_load(output_path, **load_kwargs)
 
     rebound_estimator_sha256 = _estimator_sha256(rebound)
-    rebound_prediction_sha256 = _prediction_sha256(rebound, canary)
+    rebound_prediction_sha256 = _prediction_sha256(
+        rebound, canary, anomaly_canary
+    )
     rebound_metadata_sha256 = _non_policy_metadata_digest(rebound)
     if rebound["training"].get("action_policy_sha256") != new_policy_sha256:
         raise RuntimeError("rebound policy hash was not persisted")
