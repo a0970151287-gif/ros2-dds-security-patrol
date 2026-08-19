@@ -66,30 +66,32 @@ enabled() {
   [[ " $ENABLED " == *" $1 "* ]]
 }
 
+# marker 的兩個輔助函式只掃檔案尾端。整份掃描是 O(檔案大小)，而 telemetry 會長到
+# 數十萬行；mark 最多重試 4 次、每次掃一遍，光是「確認 marker 落地」就能吃掉數十
+# 秒，窗因此被撐過 60 秒安全上限而作廢——量測工具自己把證據弄丟。
+MARKER_TAIL_LINES=4000
+
 marker_landed() {
-  python3 - "$ROOT/telemetry_events.jsonl" "$1" "$2" "$3" <<'PY'
+  tail -n "$MARKER_TAIL_LINES" "$ROOT/telemetry_events.jsonl" 2>/dev/null |
+    python3 - "$1" "$2" "$3" <<'PYEOF'
 import json, sys
-path, check_id, stage, boundary = sys.argv[1:5]
-try:
-    with open(path, encoding="utf-8") as handle:
-        for line in handle:
-            try:
-                event = json.loads(line)
-            except ValueError:
-                continue
-            if event.get("event_type") != "outcome_marker":
-                continue
-            details = event.get("details", {})
-            if (
-                details.get("check_id") == check_id
-                and details.get("stage") == stage
-                and details.get("boundary") == boundary
-            ):
-                raise SystemExit(0)
-except FileNotFoundError:
-    pass
+check_id, stage, boundary = sys.argv[1:4]
+for line in sys.stdin:
+    try:
+        event = json.loads(line)
+    except ValueError:
+        continue
+    if event.get("event_type") != "outcome_marker":
+        continue
+    details = event.get("details", {})
+    if (
+        details.get("check_id") == check_id
+        and details.get("stage") == stage
+        and details.get("boundary") == boundary
+    ):
+        raise SystemExit(0)
 raise SystemExit(1)
-PY
+PYEOF
 }
 
 # marker 走的是 Unix datagram socket。第一次排練有兩個 marker 送出成功卻沒進
@@ -120,43 +122,35 @@ telemetry_lines() {
 # mark 要等 0.7 秒確認落地，取「之前」會讓等待器找到窗外的舊事件，取「之後」
 # 會漏掉這 0.7 秒內發生的轉換。兩種都踩過：前者讓 velocity_guard_recovered/
 # trigger 空了兩輪，後者讓 guard_clear 落進 trigger 窗而 recovery 空掉。
-marker_line() {  # check stage boundary
-  python3 - "$ROOT/telemetry_events.jsonl" "$1" "$2" "$3" <<'PYEOF'
+marker_line() {  # check stage boundary -> 該 marker 在檔案中的行號
+  local total start
+  total="$(telemetry_lines)"
+  start=0
+  if (( total > MARKER_TAIL_LINES )); then
+    start=$(( total - MARKER_TAIL_LINES ))
+  fi
+  tail -n +"$(( start + 1 ))" "$ROOT/telemetry_events.jsonl" 2>/dev/null |
+    python3 - "$1" "$2" "$3" "$start" <<'PYEOF'
 import json, sys
-path, check_id, stage, boundary = sys.argv[1:5]
-found = 0
-try:
-    with open(path, encoding="utf-8") as handle:
-        for index, line in enumerate(handle):
-            try:
-                event = json.loads(line)
-            except ValueError:
-                continue
-            if event.get("event_type") != "outcome_marker":
-                continue
-            details = event.get("details", {})
-            if (
-                details.get("check_id") == check_id
-                and details.get("stage") == stage
-                and details.get("boundary") == boundary
-            ):
-                found = index
-except FileNotFoundError:
-    pass
+check_id, stage, boundary, start = sys.argv[1:5]
+start = int(start)
+found = start
+for offset, line in enumerate(sys.stdin):
+    try:
+        event = json.loads(line)
+    except ValueError:
+        continue
+    if event.get("event_type") != "outcome_marker":
+        continue
+    details = event.get("details", {})
+    if (
+        details.get("check_id") == check_id
+        and details.get("stage") == stage
+        and details.get("boundary") == boundary
+    ):
+        found = start + offset
 print(found)
 PYEOF
-}
-
-# 等某個狀態轉換真的出現才關窗。guard_state / graph_state / detector_state 都
-# 只在轉換時發一次，用固定 sleep 猜時機前兩輪空了四個窗。
-wait_for() {  # since_line event_type source timeout [detail ...]
-  local since="$1" etype="$2" source="$3" timeout="$4"; shift 4
-  local args=()
-  for detail in "$@"; do args+=(--detail "$detail"); done
-  python3 "$WS/工具腳本/wait_for_telemetry.py" \
-    --telemetry "$ROOT/telemetry_events.jsonl" --event-type "$etype" \
-    ${source:+--source "$source"} --since-line "$since" \
-    --timeout-sec "$timeout" "${args[@]}" >>"$ROOT/driver.log" 2>&1
 }
 
 CLEAN_PIDS=()
@@ -338,22 +332,38 @@ if enabled replay_dropped; then
   # 側錄心跳而不是 alert：monitor 每秒都在發，側錄幾乎瞬間完成。alert 只有偵測器
   # 投票時才出現，上一輪側錄 70 秒一則都沒等到。IDS 訂閱心跳、monitor 發布心跳，
   # 所以側錄與重放各用一個被攻陷的身分。
-  # 順序很重要：publisher 先起、先 discovery（心跳新鮮度只有 3 秒，來不及現起）；
-  # 但它必須等 go 檔而不是等側錄檔，否則會早於開窗就發送。窗因此只涵蓋真正的
-  # 重放，不含數十秒的佈署。
+  # 改回 alerts 頻道：它的 freshness window 是 REPLAY_MAX_AGE_SEC = 10 秒，
+  # 心跳只有 3 秒（velocity_guard 對心跳更嚴），三種排法都輸掉那場競速。
+  #
+  # 順序：publisher 先起、先完成 discovery → 側錄與誘發同時跑 → **等側錄完成才
+  # 開窗** → 放行 go 檔。把 marker 的 0.7 秒挪到窗外，窗因此只涵蓋真正的重放，
+  # 而側錄到發送的間隔壓在 1 秒出頭，遠在 10 秒內。
   GO="$RUNTIME/replay_go"
   rm -f "$CAPTURE" "$GO"
-  insider /dds_security_monitor replay_publish --count 12 --duration-sec 45     --settle-sec 6 --topic /security/heartbeat     --capture-file "$CAPTURE" --go-file "$GO" &
+  insider /intelligent_defense_node replay_publish --count 12 --duration-sec 60     --settle-sec 6 --topic /security/alerts     --capture-file "$CAPTURE" --go-file "$GO" &
   ATTACK_PID=$!
-  sleep 9
 
-  mark replay_dropped trigger start
-  PLINE="$(marker_line replay_dropped trigger start)"
-  insider /intelligent_defense_node replay_capture --duration-sec 15     --topic /security/heartbeat --capture-file "$CAPTURE"
-  : > "$GO"
+  ( insider /velocity_guard_node replay_capture --duration-sec 45       --topic /security/alerts --capture-file "$CAPTURE" ) &
+  CAPTURE_PID=$!
+
+  # 真品 alert 要有人產生：無憑證 participant 會讓 IDS 投票發警報（前幾輪
+  # 觀察到 generic_alert 鎖定就是這樣來的）。
+  (
+    export ROS_SECURITY_ENABLE=false
+    unset ROS_SECURITY_STRATEGY ROS_SECURITY_KEYSTORE
+    exec ros2 topic pub -r 5 /chatter std_msgs/msg/String       "{data: 'replay-alert-provoke'}"
+  ) >>"$ROOT/replay_provoke.log" 2>&1 &
+  PROVOKE_PID=$!
+  CLEAN_PIDS+=("$PROVOKE_PID")
+
+  wait "$CAPTURE_PID" 2>/dev/null
+  kill -TERM "$PROVOKE_PID" 2>/dev/null
 
   if [[ -s "$CAPTURE" ]]; then
-    wait_for "$PLINE" hmac_result "" 25 reason=nonce_reuse_or_capacity
+    mark replay_dropped trigger start
+    PLINE="$(marker_line replay_dropped trigger start)"
+    : > "$GO"
+    wait_for "$PLINE" hmac_result "" 22 reason=nonce_reuse_or_capacity
     sleep 2
     mark replay_dropped trigger end
     wait "$ATTACK_PID" 2>/dev/null

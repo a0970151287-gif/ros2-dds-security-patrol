@@ -144,9 +144,25 @@ def _run_replay_capture(args) -> int:
     node = InsiderNode("insider_capture_probe")
     captured: list[str] = []
 
+    def _age_sec(envelope: str) -> float | None:
+        """信封自己宣告的年齡。回傳 None 表示解析不出來。"""
+        try:
+            body = json.loads(json.loads(envelope)["body"])
+            return time.time() - float(body["ts"])
+        except (ValueError, TypeError, KeyError):
+            return None
+
     def _on_alert(message: String) -> None:
-        if not captured:
-            captured.append(message.data)
+        if captured:
+            return
+        # 只收夠新鮮的。alerts topic 若是 TRANSIENT_LOCAL，後加入的訂閱者會先拿到
+        # durability 快取裡的舊樣本——那可能已經好幾分鐘大，重放出去必然先被
+        # 時間戳檢查攔下，拒絕理由是 timestamp_violation 而不是 nonce 重用。
+        # 實測 12 則重放全部落在 timestamp_violation，就是這個原因。
+        age = _age_sec(message.data)
+        if age is None or age > args.max_capture_age_sec:
+            return
+        captured.append(message.data)
 
     node.create_subscription(
         String, args.topic, _on_alert,
@@ -234,6 +250,7 @@ def main() -> int:
     parser.add_argument("--interval-sec", type=float, default=0.15)
     parser.add_argument("--duration-sec", type=float, default=20.0)
     parser.add_argument("--settle-sec", type=float, default=4.0)
+    parser.add_argument("--max-capture-age-sec", type=float, default=2.0)
     parser.add_argument("--go-file", default=None)
     # 心跳是最可靠的側錄來源：monitor 每秒都在發，側錄幾乎瞬間完成。alert 只有
     # 偵測器投票時才出現，側錄可能等不到，而信封的 freshness window 只有 10 秒
