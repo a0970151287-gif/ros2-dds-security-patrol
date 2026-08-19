@@ -50,9 +50,12 @@ from dds_security_monitor.monitor_node import CH_ALERTS, sign_alert
 
 
 ALERT_TOPIC = "/security/alerts"
+HEARTBEAT_TOPIC = "/security/heartbeat"
 SCAN_TOPIC = "/scan"
 # SensorHub 的上限是 4096；超過就走 rejection 分支並計入 oversized_count。
-OVERSIZED_POINTS = 8192
+# 取剛好超過而不是遠遠超過：8,192 點約 32KB，大樣本在預設 Fast DDS buffer 下
+# 可能在傳輸層就被丟掉，那會讓「訊息沒到」看起來像「防禦擋下了」。
+OVERSIZED_POINTS = 4097
 
 
 def _wrong_secret() -> bytes:
@@ -146,7 +149,7 @@ def _run_replay_capture(args) -> int:
             captured.append(message.data)
 
     node.create_subscription(
-        String, ALERT_TOPIC, _on_alert,
+        String, args.topic, _on_alert,
         QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE),
     )
     deadline = time.monotonic() + args.duration_sec
@@ -162,28 +165,49 @@ def _run_replay_capture(args) -> int:
 
 
 def _run_replay_publish(args) -> int:
+    """先建好 publisher 並完成 discovery，再等側錄檔出現就立刻重放。
+
+    心跳的 freshness window 只有 3 秒。若等側錄完成才啟動這個行程，光是 rclpy
+    初始化與 DDS discovery 就用掉數秒，信封到達時已經過期——拒絕理由會是
+    timestamp_violation 而不是 nonce 重用。擋是擋住了，但擋它的是另一道防線，
+    這一項要驗的是 ReplayCache。
+    """
+    node = InsiderNode("insider_replay_probe")
+    publisher = node.create_publisher(
+        String, args.topic, QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
+    )
+    # 先讓 discovery 完成，之後重放才會是「立刻」。
+    settle = time.monotonic() + args.settle_sec
+    while time.monotonic() < settle:
+        rclpy.spin_once(node, timeout_sec=0.05)
+
+    # 等一個獨立的 go 檔，而不是等側錄檔本身：呼叫端要先把 trigger 窗開好，
+    # 重放才能落在窗內。marker 要 0.7 秒確認落地，若直接盯側錄檔，發送會早於
+    # 開窗，證據就掉在窗外。
+    gate = Path(args.go_file) if args.go_file else Path(args.capture_file)
     path = Path(args.capture_file)
-    if not path.is_file():
+    deadline = time.monotonic() + args.duration_sec
+    while time.monotonic() < deadline and not (gate.is_file() and gate.stat().st_size >= 0):
+        rclpy.spin_once(node, timeout_sec=0.05)
+        time.sleep(0.05)
+    if not (path.is_file() and path.stat().st_size > 0):
         print("insider_replay_publish=0 reason=no_capture", file=sys.stderr)
+        node.destroy_node()
         return 1
+
     envelope = path.read_text(encoding="utf-8").strip()
     try:
-        # 只確認它是完整信封；不改內容，重放必須逐位元組相同，否則簽章就壞了，
-        # 拒絕理由會變成 invalid_signature 而不是 nonce 重用。
+        # 只確認它是完整信封；不改內容，重放必須逐位元組相同，否則簽章就壞了。
         parsed = json.loads(envelope)
         if not {"body", "sig"} <= set(parsed):
             raise ValueError
     except (ValueError, TypeError):
         print("insider_replay_publish=0 reason=malformed_capture", file=sys.stderr)
+        node.destroy_node()
         return 1
 
-    node = InsiderNode("insider_replay_probe")
-    publisher = node.create_publisher(
-        String, ALERT_TOPIC, QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
-    )
-    deadline = time.monotonic() + args.duration_sec
     sent = 0
-    while time.monotonic() < deadline and sent < args.count:
+    while sent < args.count:
         message = String()
         message.data = envelope
         publisher.publish(message)
@@ -207,8 +231,19 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=tuple(MODES), required=True)
     parser.add_argument("--count", type=int, default=12)
-    parser.add_argument("--interval-sec", type=float, default=0.4)
+    parser.add_argument("--interval-sec", type=float, default=0.15)
     parser.add_argument("--duration-sec", type=float, default=20.0)
+    parser.add_argument("--settle-sec", type=float, default=4.0)
+    parser.add_argument("--go-file", default=None)
+    # 心跳是最可靠的側錄來源：monitor 每秒都在發，側錄幾乎瞬間完成。alert 只有
+    # 偵測器投票時才出現，側錄可能等不到，而信封的 freshness window 只有 10 秒
+    # （guard 對心跳更嚴，是 3 秒），等太久就會先被時間戳檢查攔下。
+    parser.add_argument(
+        "--topic",
+        default=ALERT_TOPIC,
+        choices=(ALERT_TOPIC, HEARTBEAT_TOPIC),
+        help="replay_capture / replay_publish 使用的 topic",
+    )
     parser.add_argument(
         "--capture-file",
         default="/home/jesse/.local/share/sros2-firewall/live_runtime/captured_alert.json",

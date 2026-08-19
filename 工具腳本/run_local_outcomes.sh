@@ -285,13 +285,6 @@ insider() {  # enclave mode [extra...]
 
 # 側錄一則真品 alert 供之後重放。攻擊者簽不出有效訊息，重放必須用真的；而沒有
 # 任何 enclave 同時有 alerts 的發布與訂閱權，所以重放需要兩個被攻陷的身分。
-if enabled replay_dropped; then
-  rm -f "$CAPTURE"
-  ( insider /velocity_guard_node replay_capture --duration-sec 90       --capture-file "$CAPTURE" ) &
-  CAPTURE_PID=$!
-  CLEAN_PIDS+=("$CAPTURE_PID")
-fi
-
 if enabled hmac_forgery_dropped; then
   log "stage: hmac_forgery_dropped（IDS 憑證被竊）"
   mark hmac_forgery_dropped trigger start
@@ -337,13 +330,29 @@ if enabled oversized_input_dropped; then
 fi
 
 if enabled replay_dropped; then
-  log "stage: replay_dropped（重放側錄到的真品 alert）"
-  wait "$CAPTURE_PID" 2>/dev/null
+  log "stage: replay_dropped（側錄真品 alert 後立刻重放）"
+  # 攻擊者簽不出有效訊息，重放必須用真品；而信封的 freshness window 只有
+  # REPLAY_MAX_AGE_SEC = 10 秒，所以側錄與重放必須貼在一起。先前把側錄放在整場
+  # 開頭、90 秒後才重放，訊息一律先被時間戳檢查攔下，拒絕理由是
+  # timestamp_violation 而不是 nonce 重用——擋是擋住了，但擋它的是另一道防線。
+  # 側錄心跳而不是 alert：monitor 每秒都在發，側錄幾乎瞬間完成。alert 只有偵測器
+  # 投票時才出現，上一輪側錄 70 秒一則都沒等到。IDS 訂閱心跳、monitor 發布心跳，
+  # 所以側錄與重放各用一個被攻陷的身分。
+  # 順序很重要：publisher 先起、先 discovery（心跳新鮮度只有 3 秒，來不及現起）；
+  # 但它必須等 go 檔而不是等側錄檔，否則會早於開窗就發送。窗因此只涵蓋真正的
+  # 重放，不含數十秒的佈署。
+  GO="$RUNTIME/replay_go"
+  rm -f "$CAPTURE" "$GO"
+  insider /dds_security_monitor replay_publish --count 12 --duration-sec 45     --settle-sec 6 --topic /security/heartbeat     --capture-file "$CAPTURE" --go-file "$GO" &
+  ATTACK_PID=$!
+  sleep 9
+
+  mark replay_dropped trigger start
+  PLINE="$(marker_line replay_dropped trigger start)"
+  insider /intelligent_defense_node replay_capture --duration-sec 15     --topic /security/heartbeat --capture-file "$CAPTURE"
+  : > "$GO"
+
   if [[ -s "$CAPTURE" ]]; then
-    mark replay_dropped trigger start
-    PLINE="$(marker_line replay_dropped trigger start)"
-    insider /intelligent_defense_node replay_publish --count 12 --duration-sec 12       --capture-file "$CAPTURE" &
-    ATTACK_PID=$!
     wait_for "$PLINE" hmac_result "" 25 reason=nonce_reuse_or_capacity
     sleep 2
     mark replay_dropped trigger end
@@ -356,7 +365,7 @@ if enabled replay_dropped; then
 
     mark replay_dropped recovery start
     QLINE="$(marker_line replay_dropped recovery start)"
-    wait_for "$QLINE" hmac_result "" 25 reason=accepted
+    wait_for "$QLINE" hmac_result "" 20 reason=accepted
     sleep 2
     mark replay_dropped recovery end
   else
