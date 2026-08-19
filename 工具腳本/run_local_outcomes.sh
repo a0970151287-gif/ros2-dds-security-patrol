@@ -271,8 +271,101 @@ mark unauthorized_participant_denied recovery end
 
 # graph 整段只在它被列入本次紀錄時才跑。marker 停用時 arm 與等待仍會執行，
 # 白白吃掉 observer 的 300 秒預算，還會消耗掉一次性的 seam。
+  # 4c2. 內部威脅：持合法憑證、無 HMAC 金鑰
+# Enforce 下無憑證攻擊者連 handshake 都建不起來，訊息到不了 HMAC 驗證器、
+# SensorHub 的 oversized 分支或 parameter veto——那幾道防線在外部威脅模型下
+# 無法被觀測。竊取的身分決定能打哪裡，這本身就是最小權限 ACL 的實測結果。
+N29="$WS/紅隊測試/PoC腳本/N29_insider_credentialed.py"
+CAPTURE="$RUNTIME/captured_alert.json"
+
+insider() {  # enclave mode [extra...]
+  local enclave="$1" mode="$2"; shift 2
+  ( exec python3 "$N29" --mode "$mode" "$@"       --ros-args --enclave "$enclave" )     >>"$ROOT/insider_${mode}.log" 2>&1
+}
+
+# 側錄一則真品 alert 供之後重放。攻擊者簽不出有效訊息，重放必須用真的；而沒有
+# 任何 enclave 同時有 alerts 的發布與訂閱權，所以重放需要兩個被攻陷的身分。
+if enabled replay_dropped; then
+  rm -f "$CAPTURE"
+  ( insider /velocity_guard_node replay_capture --duration-sec 90       --capture-file "$CAPTURE" ) &
+  CAPTURE_PID=$!
+  CLEAN_PIDS+=("$CAPTURE_PID")
+fi
+
+if enabled hmac_forgery_dropped; then
+  log "stage: hmac_forgery_dropped（IDS 憑證被竊）"
+  mark hmac_forgery_dropped trigger start
+  FLINE="$(marker_line hmac_forgery_dropped trigger start)"
+  insider /intelligent_defense_node hmac_forgery --count 12 --duration-sec 12 &
+  ATTACK_PID=$!
+  wait_for "$FLINE" hmac_result "" 25 reason=invalid_signature
+  sleep 2
+  mark hmac_forgery_dropped trigger end
+  wait "$ATTACK_PID" 2>/dev/null
+  sleep 10
+
+  mark hmac_forgery_dropped protected start
+  sleep 7
+  mark hmac_forgery_dropped protected end
+
+  mark hmac_forgery_dropped recovery start
+  RLINE="$(marker_line hmac_forgery_dropped recovery start)"
+  wait_for "$RLINE" hmac_result "" 25 reason=accepted
+  sleep 2
+  mark hmac_forgery_dropped recovery end
+fi
+
+if enabled oversized_input_dropped; then
+  log "stage: oversized_input_dropped（gazebo 憑證被竊）"
+  mark oversized_input_dropped trigger start
+  OLINE="$(marker_line oversized_input_dropped trigger start)"
+  insider /gazebo oversized_scan --count 12 --duration-sec 12 &
+  ATTACK_PID=$!
+  wait_for "$OLINE" message_validation sensor_hub_node 22 oversized_count=1
+  sleep 2
+  mark oversized_input_dropped trigger end
+  wait "$ATTACK_PID" 2>/dev/null
+  sleep 10
+
+  mark oversized_input_dropped protected start
+  sleep 7
+  mark oversized_input_dropped protected end
+
+  mark oversized_input_dropped recovery start
+  sleep 8
+  mark oversized_input_dropped recovery end
+fi
+
+if enabled replay_dropped; then
+  log "stage: replay_dropped（重放側錄到的真品 alert）"
+  wait "$CAPTURE_PID" 2>/dev/null
+  if [[ -s "$CAPTURE" ]]; then
+    mark replay_dropped trigger start
+    PLINE="$(marker_line replay_dropped trigger start)"
+    insider /intelligent_defense_node replay_publish --count 12 --duration-sec 12       --capture-file "$CAPTURE" &
+    ATTACK_PID=$!
+    wait_for "$PLINE" hmac_result "" 25 reason=nonce_reuse_or_capacity
+    sleep 2
+    mark replay_dropped trigger end
+    wait "$ATTACK_PID" 2>/dev/null
+    sleep 10
+
+    mark replay_dropped protected start
+    sleep 7
+    mark replay_dropped protected end
+
+    mark replay_dropped recovery start
+    QLINE="$(marker_line replay_dropped recovery start)"
+    wait_for "$QLINE" hmac_result "" 25 reason=accepted
+    sleep 2
+    mark replay_dropped recovery end
+  else
+    log "⚠️ 沒有側錄到 alert，replay_dropped 這一輪取不到"
+  fi
+fi
+
 if enabled graph_failure_fail_safe; then
-  # 4d. 受控 graph fault seam（一次性、不殺行程、只寫兩個 0600 arm 檔）
+# 4d. 受控 graph fault seam（一次性、不殺行程、只寫兩個 0600 arm 檔）
   # 必須排在 guard 凍結之前：recovery 要 monitor 自己發出 graph_state=recovery，
   # monitor 一旦沒能從凍結中恢復，這一項就永遠取不到。
   log "stage: graph_failure_fail_safe（受控 seam）"
@@ -328,6 +421,9 @@ fi
 # liveliness lease 會判死 monitor，心跳再也不回來，recovery 就永遠拿不到。
 # 五次嘗試 trigger 成功 2 次、recovery 成功 2 次、同場同時成功 0 次。
 # 心跳抑制只跳過 publish 那一行，行程、participant 與其他職責照常運作。
+if ! enabled velocity_guard_recovered; then
+  log "跳過 velocity_guard_recovered（未列入本次紀錄）"
+else
 log "stage: velocity_guard_recovered（受控心跳抑制 24 秒）"
 rm -f "$FAULT_DIR"/monitor.heartbeat.arm 2>/dev/null
 ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control prepare     --runtime-dir "$FAULT_DIR" --kind heartbeat_suppression     --live-loopback-ack "$ACK" --graph-fault-ack "$HB_ACK" )   >>"$ROOT/driver.log" 2>&1
@@ -355,6 +451,8 @@ HLINE2="$(marker_line velocity_guard_recovered recovery start)"
 wait_for "$HLINE2" authenticated_action velocity_guard_node 26 action=guard_clear
 sleep 6
 mark velocity_guard_recovered recovery end
+
+fi
 
 # 4f. guard 歸零：沿用 SIGSTOP，它已穩定拿到六次量測，且放在最後不需要恢復。
 MON_PID2="$(pgrep -f 'dds_security_monitor/monitor_node' | head -1)"
