@@ -31,11 +31,27 @@ MAX_HOLD_SEC = 25.0
 LIVE_ACK = "I_CONFIRM_LIVE_SAME_HOST_LOOPBACK_EVIDENCE"
 GRAPH_FAULT_ACK = "I_CONFIRM_ONE_SHOT_CONTROLLED_GRAPH_FAULT"
 ROLE_FILES = ("monitor.arm", "ids.arm")
+# 心跳抑制是第二個獨立的接縫，有自己的 ack 與自己的 arm 檔。開啟 graph fault
+# 不會順便開啟心跳抑制，反之亦然。
+HEARTBEAT_SUPPRESS_ACK = "I_CONFIRM_ONE_SHOT_CONTROLLED_HEARTBEAT_SUPPRESS"
+KIND_ROLE_FILES = {
+    "graph_inspection": ROLE_FILES,
+    "heartbeat_suppression": ("monitor.heartbeat.arm",),
+}
+KIND_ACKS = {
+    "graph_inspection": GRAPH_FAULT_ACK,
+    "heartbeat_suppression": HEARTBEAT_SUPPRESS_ACK,
+}
 
 
-def _require_gates(live_ack: str, graph_fault_ack: str) -> None:
-    if live_ack != LIVE_ACK or graph_fault_ack != GRAPH_FAULT_ACK:
-        raise SchemaError("both live and one-shot graph-fault acknowledgements are required")
+def _require_gates(
+    live_ack: str, graph_fault_ack: str, kind: str = "graph_inspection"
+) -> None:
+    expected_ack = KIND_ACKS.get(kind)
+    if expected_ack is None:
+        raise SchemaError("unsupported controlled fault kind")
+    if live_ack != LIVE_ACK or graph_fault_ack != expected_ack:
+        raise SchemaError("both live and one-shot fault acknowledgements are required")
     expected = {
         "ROS_LOCALHOST_ONLY": "1",
         "ROS_SECURITY_ENABLE": "true",
@@ -73,9 +89,9 @@ def _validate_directory(path: Path) -> None:
 
 
 def prepare_directory(
-    path: Path, *, live_ack: str, graph_fault_ack: str
+    path: Path, *, live_ack: str, graph_fault_ack: str, kind: str = "graph_inspection"
 ) -> Path:
-    _require_gates(live_ack, graph_fault_ack)
+    _require_gates(live_ack, graph_fault_ack, kind)
     _validate_parent(path)
     try:
         path.mkdir(mode=0o700)
@@ -94,8 +110,9 @@ def arm_once(
     hold_sec: float,
     live_ack: str,
     graph_fault_ack: str,
+    kind: str = "graph_inspection",
 ) -> dict[str, object]:
-    _require_gates(live_ack, graph_fault_ack)
+    _require_gates(live_ack, graph_fault_ack, kind)
     _validate_directory(path)
     if (
         isinstance(ttl_sec, bool)
@@ -112,13 +129,13 @@ def arm_once(
             f"controlled graph fault hold_sec must be in "
             f"{MIN_HOLD_SEC:.0f}..{MAX_HOLD_SEC:.0f}"
         )
-    targets = [path / name for name in ROLE_FILES]
+    targets = [path / name for name in KIND_ROLE_FILES[kind]]
     if any(target.exists() or target.is_symlink() for target in targets):
         raise SchemaError("controlled graph fault is already armed")
     created = time.time_ns()
     record = {
         "schema_version": ARM_SCHEMA,
-        "kind": "graph_inspection",
+        "kind": kind,
         "created_unix_ns": created,
         "expires_unix_ns": created + int(float(ttl_sec) * 1e9),
         "hold_ns": int(float(hold_sec) * 1e9),
@@ -157,8 +174,8 @@ def arm_once(
         raise
     return {
         "armed": True,
-        "kind": "graph_inspection",
-        "roles": ["monitor", "ids"],
+        "kind": kind,
+        "roles": [name.split(".")[0] for name in KIND_ROLE_FILES[kind]],
         "expires_unix_ns": record["expires_unix_ns"],
         "hold_ns": record["hold_ns"],
         "controlled_fault_injection": True,
@@ -169,6 +186,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("prepare", "arm"))
     parser.add_argument("--runtime-dir", type=Path, required=True)
+    parser.add_argument(
+        "--kind",
+        choices=tuple(KIND_ROLE_FILES),
+        default="graph_inspection",
+    )
     parser.add_argument("--ttl-sec", type=float, default=20.0)
     parser.add_argument(
         "--hold-sec",
@@ -188,6 +210,7 @@ def main(argv: list[str] | None = None) -> int:
             args.runtime_dir,
             live_ack=args.live_loopback_ack,
             graph_fault_ack=args.graph_fault_ack,
+            kind=args.kind,
         )
         print(f"controlled_graph_fault_prepared={directory}")
         return 0
@@ -197,9 +220,11 @@ def main(argv: list[str] | None = None) -> int:
         hold_sec=args.hold_sec,
         live_ack=args.live_loopback_ack,
         graph_fault_ack=args.graph_fault_ack,
+        kind=args.kind,
     )
     print(
         "controlled_graph_fault_armed=true "
+        f"kind={result['kind']} "
         f"expires_unix_ns={result['expires_unix_ns']} "
         f"hold_ns={result['hold_ns']}"
     )

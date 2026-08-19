@@ -29,6 +29,7 @@ RUNTIME="/home/jesse/.local/share/sros2-firewall/live_runtime"
 SOCK="$RUNTIME/runtime_telemetry.sock"
 ACK="I_CONFIRM_LIVE_SAME_HOST_LOOPBACK_EVIDENCE"
 FAULT_ACK="I_CONFIRM_ONE_SHOT_CONTROLLED_GRAPH_FAULT"
+HB_ACK="I_CONFIRM_ONE_SHOT_CONTROLLED_HEARTBEAT_SUPPRESS"
 FAULT_DIR="/home/jesse/.local/share/sros2-firewall/controlled_graph_fault"
 
 # collector 的 session_id 有固定格式：8 位日期 T 12 位時間（含微秒）Z_名稱_8 位 hex。
@@ -49,6 +50,7 @@ setup_env() {
   export SROS2_FIREWALL_LIVE_ACK="$ACK"
   export SROS2_FIREWALL_TELEMETRY_SOCKET="$SOCK"
   export SROS2_FIREWALL_GRAPH_FAULT_ACK="$FAULT_ACK"
+  export SROS2_FIREWALL_HEARTBEAT_SUPPRESS_ACK="$HB_ACK"
   export SROS2_FIREWALL_GRAPH_FAULT_DIR="$FAULT_DIR"
   export FIREWALL_LIVE_RUNTIME="$RUNTIME"
   unset FASTRTPS_DEFAULT_PROFILES_FILE
@@ -112,6 +114,37 @@ mark() {
 
 telemetry_lines() {
   wc -l < "$ROOT/telemetry_events.jsonl" 2>/dev/null || echo 0
+}
+
+# 窗的起點就是那個 start marker 自己那一行——不是呼叫 mark 之前或之後的行數。
+# mark 要等 0.7 秒確認落地，取「之前」會讓等待器找到窗外的舊事件，取「之後」
+# 會漏掉這 0.7 秒內發生的轉換。兩種都踩過：前者讓 velocity_guard_recovered/
+# trigger 空了兩輪，後者讓 guard_clear 落進 trigger 窗而 recovery 空掉。
+marker_line() {  # check stage boundary
+  python3 - "$ROOT/telemetry_events.jsonl" "$1" "$2" "$3" <<'PYEOF'
+import json, sys
+path, check_id, stage, boundary = sys.argv[1:5]
+found = 0
+try:
+    with open(path, encoding="utf-8") as handle:
+        for index, line in enumerate(handle):
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if event.get("event_type") != "outcome_marker":
+                continue
+            details = event.get("details", {})
+            if (
+                details.get("check_id") == check_id
+                and details.get("stage") == stage
+                and details.get("boundary") == boundary
+            ):
+                found = index
+except FileNotFoundError:
+    pass
+print(found)
+PYEOF
 }
 
 # 等某個狀態轉換真的出現才關窗。guard_state / graph_state / detector_state 都
@@ -236,119 +269,110 @@ mark unauthorized_participant_denied recovery start
 sleep 5
 mark unauthorized_participant_denied recovery end
 
-# 4d. 受控 graph fault seam（一次性、不殺行程、只寫兩個 0600 arm 檔）
-# 必須排在 guard 凍結之前：recovery 要 monitor 自己發出 graph_state=recovery，
-# monitor 一旦沒能從凍結中恢復，這一項就永遠取不到。
-log "stage: graph_failure_fail_safe（受控 seam）"
-arm_seam() {  # hold_sec
-  rm -f "$FAULT_DIR"/monitor.arm "$FAULT_DIR"/ids.arm 2>/dev/null
-  ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control prepare \
-      --runtime-dir "$FAULT_DIR" --live-loopback-ack "$ACK" \
-      --graph-fault-ack "$FAULT_ACK" ) >>"$ROOT/driver.log" 2>&1
-  ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control arm \
-      --runtime-dir "$FAULT_DIR" --ttl-sec 20 --hold-sec "$1" \
-      --live-loopback-ack "$ACK" --graph-fault-ack "$FAULT_ACK" ) \
-    >>"$ROOT/driver.log" 2>&1 || log "⛔ seam arm 失敗"
-}
+# graph 整段只在它被列入本次紀錄時才跑。marker 停用時 arm 與等待仍會執行，
+# 白白吃掉 observer 的 300 秒預算，還會消耗掉一次性的 seam。
+if enabled graph_failure_fail_safe; then
+  # 4d. 受控 graph fault seam（一次性、不殺行程、只寫兩個 0600 arm 檔）
+  # 必須排在 guard 凍結之前：recovery 要 monitor 自己發出 graph_state=recovery，
+  # monitor 一旦沒能從凍結中恢復，這一項就永遠取不到。
+  log "stage: graph_failure_fail_safe（受控 seam）"
+  arm_seam() {  # hold_sec
+    rm -f "$FAULT_DIR"/monitor.arm "$FAULT_DIR"/ids.arm 2>/dev/null
+    ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control prepare \
+        --runtime-dir "$FAULT_DIR" --live-loopback-ack "$ACK" \
+        --graph-fault-ack "$FAULT_ACK" ) >>"$ROOT/driver.log" 2>&1
+    ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control arm \
+        --runtime-dir "$FAULT_DIR" --ttl-sec 20 --hold-sec "$1" \
+        --live-loopback-ack "$ACK" --graph-fault-ack "$FAULT_ACK" ) \
+      >>"$ROOT/driver.log" 2>&1 || log "⛔ seam arm 失敗"
+  }
 
-# 這一項需要兩次故障，不是一次。實測時間軸：d4 incident 93.97 秒、guard lock
-# 94.00 秒、graph fault 95.06 秒——鎖定與 d4 只差 0.03 秒。trigger 窗必須同時
-# 涵蓋 d4 與 graph fault，所以 guard lock 無可避免落在 trigger 裡，protected 就
-# 沒有新的狀態轉換可看（guard_state 只在轉換時發）。
-#
-# 第一次故障取 trigger；等 guard 自己釋放之後再故障一次，「故障後才鎖定」才會
-# 是一個真正的新轉換，recovery 也才有自己的窗。
-mark graph_failure_fail_safe trigger start
-GLINE0="$(telemetry_lines)"
-arm_seam 6
-wait_for "$GLINE0" graph_state dds_security_monitor 30 state=fault
-mark graph_failure_fail_safe trigger end
-
-# 警報鎖是有期限的，實測約 30 秒後自行釋放。沒等到釋放就再故障一次的話，
-# protected 一樣看不到轉換。
-log "等待 guard 從第一次故障釋放"
-GREL="$(telemetry_lines)"
-wait_for "$GREL" guard_state velocity_guard_node 60 state=released \
-  || log "⚠️ guard 未釋放，graph/protected 可能取不到"
-
-mark graph_failure_fail_safe protected start
-GLINE1="$(telemetry_lines)"
-arm_seam 16
-wait_for "$GLINE1" guard_state velocity_guard_node 30 state=locked
-sleep 3
-mark graph_failure_fail_safe protected end
-
-mark graph_failure_fail_safe recovery start
-GLINE2="$(telemetry_lines)"
-wait_for "$GLINE2" graph_state dds_security_monitor 34 state=recovery
-sleep 4
-mark graph_failure_fail_safe recovery end
-
-# 4e. guard 歸零／恢復：暫停 monitor 心跳 → D5（10 秒）→ 已簽章 fault
-MON_PID="$(pgrep -f 'dds_security_monitor/monitor_node' | head -1)"
-if [[ -z "$MON_PID" ]]; then
-  MON_PID="$(pgrep -af 'monitor_node' | grep -v 'ros2 run' | awk '{print $1}' | head -1)"
-fi
-log "monitor pid=${MON_PID:-none}"
-
-if [[ -n "$MON_PID" ]]; then
-  # 窗序依「哪個轉換何時發生」排，不是依 check 的字面順序。guard_state 只在
-  # (state, reason) 改變時發一次：心跳一停會先出 monitor_lease_missing，D5 在
-  # 10 秒後才讓 IDS 發已簽章 fault，才出現 monitor_fault。第一次排練把兩個轉換
-  # 一起關在同一個 26 秒窗裡，後面的窗自然就空了。
+  # 這一項需要兩次故障，不是一次。實測時間軸：d4 incident 93.97 秒、guard lock
+  # 94.00 秒、graph fault 95.06 秒——鎖定與 d4 只差 0.03 秒。trigger 窗必須同時
+  # 涵蓋 d4 與 graph fault，所以 guard lock 無可避免落在 trigger 裡，protected 就
+  # 沒有新的狀態轉換可看（guard_state 只在轉換時發）。
   #
-  # 凍結時間縮到 28 秒。前一次凍 48 秒之後 monitor 心跳再也沒回來（結束時仍顯示
-  # 116 秒未到達），研判是 DDS liveliness lease 已經把它判死。
-  # 凍結時間是這裡唯一真正的風險。48 秒與 28 秒各試過一次，monitor 心跳都
-  # 再也沒回來（結束時仍顯示 116 秒未到達），研判 DDS liveliness lease 已判死。
-  # D5 的門檻是 10 秒，所以只凍到 fault 一出現就立刻放回去，把 lease 的餘裕
-  # 留給恢復。
-  log "stage: velocity_guard_recovered（短暫凍結，fault 一出現就放回）"
-  LINE0="$(telemetry_lines)"
-  kill -STOP "$MON_PID"
+  # 第一次故障取 trigger；等 guard 自己釋放之後再故障一次，「故障後才鎖定」才會
+  # 是一個真正的新轉換，recovery 也才有自己的窗。
+  mark graph_failure_fail_safe trigger start
+  GLINE0="$(marker_line graph_failure_fail_safe trigger start)"
+  arm_seam 6
+  wait_for "$GLINE0" graph_state dds_security_monitor 30 state=fault
+  mark graph_failure_fail_safe trigger end
 
-  mark velocity_guard_recovered baseline start
-  wait_for "$LINE0" guard_state velocity_guard_node 12 state=locked
-  sleep 1
-  mark velocity_guard_recovered baseline end        # 第一個 locked 轉換
+  # 警報鎖是有期限的，實測約 30 秒後自行釋放。沒等到釋放就再故障一次的話，
+  # protected 一樣看不到轉換。
+  log "等待 guard 從第一次故障釋放"
+  GREL="$(telemetry_lines)"
+  wait_for "$GREL" guard_state velocity_guard_node 60 state=released \
+    || log "⚠️ guard 未釋放，graph/protected 可能取不到"
 
-  mark velocity_guard_recovered trigger start
-  LINE1="$(telemetry_lines)"
-  wait_for "$LINE1" guard_state velocity_guard_node 30 state=locked reason=monitor_fault
-  sleep 1
-  mark velocity_guard_recovered trigger end         # monitor_fault → locked
+  mark graph_failure_fail_safe protected start
+  GLINE1="$(marker_line graph_failure_fail_safe protected start)"
+  arm_seam 16
+  wait_for "$GLINE1" guard_state velocity_guard_node 30 state=locked
+  sleep 3
+  mark graph_failure_fail_safe protected end
 
-  log "SIGCONT monitor"
-  mark velocity_guard_recovered recovery start
-  LINE2="$(telemetry_lines)"
-  kill -CONT "$MON_PID"
-  MON_PID=""
-  # 需要 fresh heartbeat + authenticated clear + 新指令 + 非零輸出，全部要在窗內。
-  wait_for "$LINE2" authenticated_action velocity_guard_node 38 action=guard_clear
-  sleep 10
-  mark velocity_guard_recovered recovery end
-
-  # guard 歸零放最後：它需要的 guard_lock 每 5 秒隨 fault 重發一次，前兩輪都
-  # 穩定拿到（0.0874s、0.0293s），所以放在可能讓 monitor 不再恢復的凍結之後。
-  log "stage: velocity_guard_zeroed（第二次凍結）"
-  MON_PID2="$(pgrep -f 'dds_security_monitor/monitor_node' | head -1)"
-  if [[ -n "$MON_PID2" ]]; then
-    kill -STOP "$MON_PID2"
-    mark velocity_guard_zeroed trigger start
-    LINE3="$(telemetry_lines)"
-    wait_for "$LINE3" authenticated_action velocity_guard_node 25 action=guard_lock
-    sleep 3
-    mark velocity_guard_zeroed trigger end
-
-    mark velocity_guard_zeroed protected start
-    sleep 6
-    mark velocity_guard_zeroed protected end
-    kill -CONT "$MON_PID2" 2>/dev/null
-  else
-    log "⚠️ 第二次凍結找不到 monitor，跳過 velocity_guard_zeroed"
-  fi
+  mark graph_failure_fail_safe recovery start
+  GLINE2="$(marker_line graph_failure_fail_safe recovery start)"
+  wait_for "$GLINE2" graph_state dds_security_monitor 34 state=recovery
+  sleep 4
+  mark graph_failure_fail_safe recovery end
 else
-  log "⚠️ 找不到 monitor 行程，跳過 guard 兩項"
+  log "跳過 graph_failure_fail_safe（未列入本次紀錄）"
+fi
+
+# 4e. guard 恢復：用受控心跳抑制，不再凍結整個行程
+# SIGSTOP 讓兩個 stage 互相排斥——凍久一點 trigger 才穩，但超過約 40 秒 DDS
+# liveliness lease 會判死 monitor，心跳再也不回來，recovery 就永遠拿不到。
+# 五次嘗試 trigger 成功 2 次、recovery 成功 2 次、同場同時成功 0 次。
+# 心跳抑制只跳過 publish 那一行，行程、participant 與其他職責照常運作。
+log "stage: velocity_guard_recovered（受控心跳抑制 24 秒）"
+rm -f "$FAULT_DIR"/monitor.heartbeat.arm 2>/dev/null
+( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control prepare     --runtime-dir "$FAULT_DIR" --kind heartbeat_suppression     --live-loopback-ack "$ACK" --graph-fault-ack "$HB_ACK" )   >>"$ROOT/driver.log" 2>&1
+( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control arm     --runtime-dir "$FAULT_DIR" --kind heartbeat_suppression     --ttl-sec 20 --hold-sec 24     --live-loopback-ack "$ACK" --graph-fault-ack "$HB_ACK" )   >>"$ROOT/driver.log" 2>&1 || log "⛔ 心跳抑制 arm 失敗"
+
+if ! wait_for 0 controlled_fault_injection dds_security_monitor 12 kind=heartbeat_suppression state=trigger; then
+  log "⚠️ 心跳抑制未被消費，velocity_guard_recovered 這一輪取不到"
+fi
+
+mark velocity_guard_recovered baseline start
+HLINE0="$(marker_line velocity_guard_recovered baseline start)"
+wait_for "$HLINE0" guard_state velocity_guard_node 14 state=locked
+sleep 1
+mark velocity_guard_recovered baseline end
+
+mark velocity_guard_recovered trigger start
+HLINE1="$(marker_line velocity_guard_recovered trigger start)"
+wait_for "$HLINE1" guard_state velocity_guard_node 20 state=locked reason=monitor_fault
+sleep 1
+mark velocity_guard_recovered trigger end
+
+# hold 期滿後心跳自己回來，IDS 收到新鮮心跳就發 authenticated clear。
+mark velocity_guard_recovered recovery start
+HLINE2="$(marker_line velocity_guard_recovered recovery start)"
+wait_for "$HLINE2" authenticated_action velocity_guard_node 26 action=guard_clear
+sleep 6
+mark velocity_guard_recovered recovery end
+
+# 4f. guard 歸零：沿用 SIGSTOP，它已穩定拿到六次量測，且放在最後不需要恢復。
+MON_PID2="$(pgrep -f 'dds_security_monitor/monitor_node' | head -1)"
+if [[ -n "$MON_PID2" ]]; then
+  log "stage: velocity_guard_zeroed（SIGSTOP，最後一段）"
+  kill -STOP "$MON_PID2"
+  mark velocity_guard_zeroed trigger start
+  LINE3="$(marker_line velocity_guard_zeroed trigger start)"
+  wait_for "$LINE3" authenticated_action velocity_guard_node 25 action=guard_lock
+  sleep 3
+  mark velocity_guard_zeroed trigger end
+
+  mark velocity_guard_zeroed protected start
+  sleep 6
+  mark velocity_guard_zeroed protected end
+  kill -CONT "$MON_PID2" 2>/dev/null
+else
+  log "⚠️ 找不到 monitor，跳過 velocity_guard_zeroed"
 fi
 
 log "所有 stage 結束"

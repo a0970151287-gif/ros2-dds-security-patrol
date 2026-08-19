@@ -95,7 +95,7 @@ OUTCOME_MARKER_STAGES = {
     "velocity_guard_recovered": frozenset({"baseline", "trigger", "recovery"}),
     "graph_failure_fail_safe": frozenset({"trigger", "protected", "recovery"}),
 }
-CONTROLLED_FAULT_KINDS = frozenset({"graph_inspection"})
+CONTROLLED_FAULT_KINDS = frozenset({"graph_inspection", "heartbeat_suppression"})
 CONTROLLED_FAULT_STATES = frozenset({"trigger", "recovery"})
 
 

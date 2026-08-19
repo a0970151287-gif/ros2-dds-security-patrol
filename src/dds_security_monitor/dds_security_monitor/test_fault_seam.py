@@ -34,6 +34,13 @@ ROLE_FILES = {
     "monitor": "monitor.arm",
     "ids": "ids.arm",
 }
+# Heartbeat suppression is a second, independent seam.  It carries its own
+# acknowledgement rather than sharing the graph one: arming a graph fault must
+# not implicitly grant the ability to silence the monitor's heartbeat, and each
+# acknowledgement is popped by exactly one consumer in each process.
+HEARTBEAT_SUPPRESS_ACK = "I_CONFIRM_ONE_SHOT_CONTROLLED_HEARTBEAT_SUPPRESS"
+HEARTBEAT_SUPPRESS_ACK_ENV = "SROS2_FIREWALL_HEARTBEAT_SUPPRESS_ACK"
+HEARTBEAT_ROLE_FILES = {"monitor": "monitor.heartbeat.arm"}
 NONCE_RE = re.compile(r"[0-9a-f]{32}")
 
 
@@ -53,8 +60,19 @@ def _verified_private_directory(path: Path) -> tuple[int, int]:
     return metadata.st_dev, metadata.st_ino
 
 
-class ControlledGraphFaultSeam:
-    """Consume at most one arm record and report one recovery transition."""
+class ControlledFaultSeam:
+    """Consume at most one arm record and report one recovery transition.
+
+    Two seams exist and they are deliberately independent: a graph inspection
+    fault and a heartbeat suppression.  Each has its own acknowledgement
+    environment variable and its own arm file, so enabling one never enables
+    the other, and each process pops its own copy of exactly one ack.
+    """
+
+    KIND = "graph_inspection"
+    ROLE_FILE_MAP = ROLE_FILES
+    ACK_ENV = GRAPH_FAULT_ACK_ENV
+    ACK_VALUE = GRAPH_FAULT_ACK
 
     def __init__(
         self,
@@ -65,8 +83,8 @@ class ControlledGraphFaultSeam:
         enabled: bool,
         directory_identity: tuple[int, int] | None = None,
     ) -> None:
-        if role not in ROLE_FILES:
-            raise ValueError("unsupported controlled graph fault role")
+        if role not in self.ROLE_FILE_MAP:
+            raise ValueError("unsupported controlled fault role")
         self.role = role
         self.telemetry = telemetry
         self.directory = directory
@@ -81,14 +99,14 @@ class ControlledGraphFaultSeam:
         # Pop the acknowledgement in this process so it cannot be reused by a
         # later dynamically loaded component.  Each supervised ROS process has
         # its own environment and independently consumes its copy.
-        graph_ack = os.environ.pop(GRAPH_FAULT_ACK_ENV, None)
+        graph_ack = os.environ.pop(cls.ACK_ENV, None)
         directory_text = os.environ.get(GRAPH_FAULT_DIR_ENV, "")
         gates = (
             os.environ.get("ROS_LOCALHOST_ONLY") == "1",
             os.environ.get("ROS_SECURITY_ENABLE") == "true",
             os.environ.get("ROS_SECURITY_STRATEGY") == "Enforce",
             os.environ.get(LIVE_ACK_ENV) == LIVE_ACK,
-            graph_ack == GRAPH_FAULT_ACK,
+            graph_ack == cls.ACK_VALUE,
         )
         if not all(gates) or not directory_text or len(directory_text) > 256:
             return cls(role=role, telemetry=telemetry, directory=None, enabled=False)
@@ -119,7 +137,7 @@ class ControlledGraphFaultSeam:
         )
         if callable(callback):
             try:
-                callback("graph_inspection", state_value)
+                callback(self.KIND, state_value)
             except Exception:
                 pass
 
@@ -146,7 +164,7 @@ class ControlledGraphFaultSeam:
         if not self.enabled or self._triggered or not self._directory_unchanged():
             return False
         assert self.directory is not None
-        source = self.directory / ROLE_FILES[self.role]
+        source = self.directory / self.ROLE_FILE_MAP[self.role]
         claim = self.directory / f".{self.role}.{os.getpid()}.{time.time_ns()}.claim"
         try:
             os.replace(source, claim)
@@ -191,7 +209,7 @@ class ControlledGraphFaultSeam:
             now = time.time_ns()
             if (
                 value["schema_version"] != ARM_SCHEMA
-                or value["kind"] != "graph_inspection"
+                or value["kind"] != self.KIND
                 or isinstance(created, bool)
                 or not isinstance(created, int)
                 or isinstance(expires, bool)
@@ -223,9 +241,43 @@ class ControlledGraphFaultSeam:
         self._emit("recovery")
 
 
+class ControlledGraphFaultSeam(ControlledFaultSeam):
+    """Makes one ROS graph inspection call fail for the length of the hold."""
+
+
+class ControlledHeartbeatSuppressSeam(ControlledFaultSeam):
+    """Silences the monitor's signed heartbeat for the length of the hold.
+
+    velocity_guard_recovered needs the monitor heartbeat to lapse and then come
+    back.  Doing that with SIGSTOP on the whole process does not work: five
+    attempts produced the latched fault twice and a clean recovery twice, but
+    never both in one session, because a freeze long enough for D5 to fire is
+    also long enough for the DDS liveliness lease to declare the participant
+    dead, after which the heartbeat never returns.  Suppressing only the
+    publish call leaves the process, its participant and every other duty
+    running, so the two stages stop competing for the same freeze duration.
+    """
+
+    KIND = "heartbeat_suppression"
+    ROLE_FILE_MAP = HEARTBEAT_ROLE_FILES
+    ACK_ENV = HEARTBEAT_SUPPRESS_ACK_ENV
+    ACK_VALUE = HEARTBEAT_SUPPRESS_ACK
+
+    def suppress_if_armed(self) -> bool:
+        return self.consume_if_armed()
+
+    def record_normal_heartbeat(self) -> None:
+        self.record_normal_graph()
+
+
 __all__ = [
     "ARM_SCHEMA",
+    "ControlledFaultSeam",
     "ControlledGraphFaultSeam",
+    "ControlledHeartbeatSuppressSeam",
+    "HEARTBEAT_ROLE_FILES",
+    "HEARTBEAT_SUPPRESS_ACK",
+    "HEARTBEAT_SUPPRESS_ACK_ENV",
     "GRAPH_FAULT_ACK",
     "GRAPH_FAULT_ACK_ENV",
     "GRAPH_FAULT_DIR_ENV",

@@ -48,19 +48,34 @@ def main() -> int:
     args = parser.parse_args()
 
     deadline = time.monotonic() + args.timeout_sec
+    # 只讀新增的部分。原本每次輪詢重讀整個檔案，而 telemetry 一個窗就可能有
+    # 五千筆以上，單次掃描要十幾秒；逾時只在掃完後才檢查，於是 22 秒的等待做出
+    # 137 秒的窗，整個窗因為超過 60 秒安全上限而作廢。
+    offset = 0
+    index = 0
     while True:
         try:
-            with args.telemetry.open(encoding="utf-8") as handle:
-                for index, line in enumerate(handle):
-                    if index < args.since_line:
+            with args.telemetry.open("rb") as handle:
+                handle.seek(offset)
+                for raw in handle:
+                    if not raw.endswith(b"\n"):
+                        # 寫到一半的行：不要前進 offset，下一輪重讀。
+                        break
+                    offset += len(raw)
+                    current = index
+                    index += 1
+                    if current < args.since_line:
                         continue
                     try:
-                        event = json.loads(line)
-                    except ValueError:
+                        event = json.loads(raw.decode("utf-8"))
+                    except (ValueError, UnicodeDecodeError):
                         continue
                     if matches(event, args.event_type, args.source, args.detail):
-                        print(f"found line={index}")
+                        print(f"found line={current}")
                         return 0
+                    if time.monotonic() >= deadline:
+                        print("not found", file=sys.stderr)
+                        return 1
         except FileNotFoundError:
             pass
         if time.monotonic() >= deadline:

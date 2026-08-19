@@ -32,7 +32,10 @@ from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
 
 from dds_security_monitor.runtime_telemetry import RuntimeTelemetryProducer
-from dds_security_monitor.test_fault_seam import ControlledGraphFaultSeam
+from dds_security_monitor.test_fault_seam import (
+    ControlledGraphFaultSeam,
+    ControlledHeartbeatSuppressSeam,
+)
 
 
 # N2 修補：完全移除 _INTERNAL_NODE_REGEX 白名單。
@@ -736,6 +739,11 @@ class DDSSecurityMonitor(Node):
         self._graph_fault_test_seam = ControlledGraphFaultSeam.from_environment(
             "monitor", self._telemetry
         )
+        self._heartbeat_suppress_seam = (
+            ControlledHeartbeatSuppressSeam.from_environment(
+                "monitor", self._telemetry
+            )
+        )
         self._graph_runtime_state = "healthy"
 
         # N14 修補（藍方主動預判）：安全敏感參數一律 read_only。
@@ -1106,6 +1114,19 @@ class DDSSecurityMonitor(Node):
         """G6 + N4: 持續送已簽章心跳給 intelligent_defense_node。channel='heartbeat'
         確保 attacker forward 到 alerts channel 會被 receiver 拒絕。
         """
+        # Test-only seam, inert unless five independent gates plus its own
+        # acknowledgement are present and a short-lived mode-0600 arm file is
+        # atomically consumed.  It skips only this publish: the process, its
+        # DDS participant and every other duty keep running, which is the whole
+        # point -- SIGSTOP on the process makes D5 fire but also lets the
+        # liveliness lease kill the participant, so the heartbeat never returns
+        # and velocity_guard_recovered can never show fault and recovery in one
+        # session.
+        seam = getattr(self, "_heartbeat_suppress_seam", None)
+        if seam is not None and seam.suppress_if_armed():
+            return
+        if seam is not None:
+            seam.record_normal_heartbeat()
         payload = f'hb|{time.time():.3f}'
         msg = String()
         msg.data = sign_alert(payload, self._alert_secret, channel=CH_HEARTBEAT)

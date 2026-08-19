@@ -11,6 +11,7 @@ import pytest
 
 from firewall_lab.local_graph_fault_control import (
     GRAPH_FAULT_ACK,
+    HEARTBEAT_SUPPRESS_ACK,
     LIVE_ACK,
     MAX_HOLD_SEC,
     arm_once,
@@ -280,3 +281,119 @@ def test_writer_refuses_an_out_of_range_hold(tmp_path, monkeypatch):
             )
     assert not list(runtime.glob("*.arm"))
 
+
+
+# ── 心跳抑制接縫 ────────────────────────────────────────────────────────────
+
+
+def _heartbeat_environment(monkeypatch, runtime: Path, *, ack: bool = True):
+    monkeypatch.setenv("ROS_LOCALHOST_ONLY", "1")
+    monkeypatch.setenv("ROS_SECURITY_ENABLE", "true")
+    monkeypatch.setenv("ROS_SECURITY_STRATEGY", "Enforce")
+    monkeypatch.setenv(LIVE_ACK_ENV, LIVE_ACK)
+    monkeypatch.setenv(GRAPH_FAULT_DIR_ENV, str(runtime))
+    if ack:
+        monkeypatch.setenv(
+            test_fault_seam.HEARTBEAT_SUPPRESS_ACK_ENV,
+            test_fault_seam.HEARTBEAT_SUPPRESS_ACK,
+        )
+    else:
+        monkeypatch.delenv(
+            test_fault_seam.HEARTBEAT_SUPPRESS_ACK_ENV, raising=False
+        )
+
+
+def test_graph_acknowledgement_does_not_enable_heartbeat_suppression(
+    tmp_path, monkeypatch
+):
+    """The two seams are separate powers and must not imply one another."""
+    tmp_path.chmod(0o700)
+    runtime = tmp_path / "controlled_graph_fault"
+    _gated_environment(monkeypatch, runtime)  # graph ack only
+    prepare_directory(
+        runtime,
+        live_ack=LIVE_ACK,
+        graph_fault_ack=GRAPH_FAULT_ACK,
+    )
+
+    seam = test_fault_seam.ControlledHeartbeatSuppressSeam.from_environment(
+        "monitor", _Telemetry()
+    )
+
+    assert seam.enabled is False
+    assert seam.suppress_if_armed() is False
+
+
+def test_heartbeat_suppression_holds_then_reports_recovery(tmp_path, monkeypatch):
+    tmp_path.chmod(0o700)
+    runtime = tmp_path / "controlled_graph_fault"
+    _heartbeat_environment(monkeypatch, runtime)
+    prepare_directory(
+        runtime,
+        live_ack=LIVE_ACK,
+        graph_fault_ack=HEARTBEAT_SUPPRESS_ACK,
+        kind="heartbeat_suppression",
+    )
+    result = arm_once(
+        runtime,
+        ttl_sec=20.0,
+        hold_sec=14.0,
+        live_ack=LIVE_ACK,
+        graph_fault_ack=HEARTBEAT_SUPPRESS_ACK,
+        kind="heartbeat_suppression",
+    )
+    assert result["kind"] == "heartbeat_suppression"
+    assert result["roles"] == ["monitor"]
+    assert (runtime / "monitor.heartbeat.arm").is_file()
+    # The graph seam's own arm files are not created by a heartbeat arm.
+    assert not (runtime / "monitor.arm").exists()
+
+    _heartbeat_environment(monkeypatch, runtime)
+    telemetry = _Telemetry()
+    seam = test_fault_seam.ControlledHeartbeatSuppressSeam.from_environment(
+        "monitor", telemetry
+    )
+
+    assert seam.suppress_if_armed() is True
+    for _ in range(10):
+        assert seam.suppress_if_armed() is True
+    assert telemetry.events == [("heartbeat_suppression", "trigger")]
+
+    seam._hold_until_ns = time.monotonic_ns() - 1
+    assert seam.suppress_if_armed() is False
+    seam.record_normal_heartbeat()
+    assert telemetry.events == [
+        ("heartbeat_suppression", "trigger"),
+        ("heartbeat_suppression", "recovery"),
+    ]
+
+
+def test_heartbeat_seam_refuses_a_graph_arm_record(tmp_path, monkeypatch):
+    """An arm of the wrong kind must not be honoured by the other seam."""
+    tmp_path.chmod(0o700)
+    runtime = tmp_path / "controlled_graph_fault"
+    _gated_environment(monkeypatch, runtime)
+    prepare_directory(
+        runtime,
+        live_ack=LIVE_ACK,
+        graph_fault_ack=GRAPH_FAULT_ACK,
+    )
+    arm_once(
+        runtime,
+        ttl_sec=20.0,
+        hold_sec=5.0,
+        live_ack=LIVE_ACK,
+        graph_fault_ack=GRAPH_FAULT_ACK,
+    )
+    # Rename a graph arm into the heartbeat seam's slot: the file is valid and
+    # correctly owned, only its declared kind is wrong.
+    (runtime / "monitor.arm").rename(runtime / "monitor.heartbeat.arm")
+
+    _heartbeat_environment(monkeypatch, runtime)
+    telemetry = _Telemetry()
+    seam = test_fault_seam.ControlledHeartbeatSuppressSeam.from_environment(
+        "monitor", telemetry
+    )
+
+    assert seam.suppress_if_armed() is False
+    assert telemetry.events == []
