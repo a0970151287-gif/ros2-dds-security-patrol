@@ -72,11 +72,16 @@ enabled() {
 MARKER_TAIL_LINES=4000
 
 marker_landed() {
-  tail -n "$MARKER_TAIL_LINES" "$ROOT/telemetry_events.jsonl" 2>/dev/null |
-    python3 - "$1" "$2" "$3" <<'PYEOF'
-import json, sys
-check_id, stage, boundary = sys.argv[1:4]
-for line in sys.stdin:
+  python3 - "$ROOT/telemetry_events.jsonl" "$1" "$2" "$3" "$MARKER_TAIL_LINES" <<'PYEOF'
+import collections, json, sys
+path, check_id, stage, boundary, tail = sys.argv[1:6]
+try:
+    with open(path, encoding="utf-8") as handle:
+        # 只 JSON-parse 檔尾。讀行本身很快，貴的是每行都 json.loads。
+        lines = collections.deque(handle, maxlen=int(tail))
+except FileNotFoundError:
+    raise SystemExit(1)
+for line in lines:
     try:
         event = json.loads(line)
     except ValueError:
@@ -105,7 +110,7 @@ mark() {
     ( cd "$WS" && python3 -m firewall_lab.local_outcome_marker \
         --socket "$SOCK" --check-id "$1" --stage "$2" --boundary "$3" \
         --live-loopback-ack "$ACK" ) >>"$ROOT/markers.log" 2>&1
-    sleep 0.7
+    sleep 2.0
     if marker_landed "$1" "$2" "$3"; then
       return 0
     fi
@@ -123,19 +128,23 @@ telemetry_lines() {
 # 會漏掉這 0.7 秒內發生的轉換。兩種都踩過：前者讓 velocity_guard_recovered/
 # trigger 空了兩輪，後者讓 guard_clear 落進 trigger 窗而 recovery 空掉。
 marker_line() {  # check stage boundary -> 該 marker 在檔案中的行號
-  local total start
-  total="$(telemetry_lines)"
-  start=0
-  if (( total > MARKER_TAIL_LINES )); then
-    start=$(( total - MARKER_TAIL_LINES ))
-  fi
-  tail -n +"$(( start + 1 ))" "$ROOT/telemetry_events.jsonl" 2>/dev/null |
-    python3 - "$1" "$2" "$3" "$start" <<'PYEOF'
-import json, sys
-check_id, stage, boundary, start = sys.argv[1:5]
-start = int(start)
+  python3 - "$ROOT/telemetry_events.jsonl" "$1" "$2" "$3" "$MARKER_TAIL_LINES" <<'PYEOF'
+import collections, json, sys
+path, check_id, stage, boundary, tail = sys.argv[1:6]
+tail = int(tail)
+found = 0
+try:
+    # 單次讀取：先前先數行數再 seek(0) 重讀，等於掃兩遍，而檔案已達數十萬行。
+    # 每個 mark 的開銷約 5 秒，三個窗就吃掉受控故障的整個持續時間。
+    with open(path, encoding="utf-8") as handle:
+        window = collections.deque(enumerate(handle), maxlen=tail)
+    start = window[0][0] if window else 0
+    window = [line for _index, line in window]
+except FileNotFoundError:
+    print(0)
+    raise SystemExit(0)
 found = start
-for offset, line in enumerate(sys.stdin):
+for offset, line in enumerate(window):
     try:
         event = json.loads(line)
     except ValueError:
@@ -399,31 +408,26 @@ if enabled graph_failure_fail_safe; then
       >>"$ROOT/driver.log" 2>&1 || log "⛔ seam arm 失敗"
   }
 
-  # 這一項需要兩次故障，不是一次。實測時間軸：d4 incident 93.97 秒、guard lock
-  # 94.00 秒、graph fault 95.06 秒——鎖定與 d4 只差 0.03 秒。trigger 窗必須同時
-  # 涵蓋 d4 與 graph fault，所以 guard lock 無可避免落在 trigger 裡，protected 就
-  # 沒有新的狀態轉換可看（guard_state 只在轉換時發）。
+  # 單次 arm，hold 取消費端上限 25 秒。
   #
-  # 第一次故障取 trigger；等 guard 自己釋放之後再故障一次，「故障後才鎖定」才會
-  # 是一個真正的新轉換，recovery 也才有自己的窗。
+  # 先前試過「兩次故障」（第一次取 trigger、等 guard 釋放後再故障一次），
+  # **不可行**：seam 是每個行程最多消費一張 arm，第二張寫進去了但沒有任何行程
+  # 消費它，實際只有第一張的 6 秒 hold 生效，故障總長 10 秒（hold 6 ＋ 一次
+  # graph 輪詢），三個窗根本塞不下。那個一次性保證是刻意的，不該為了讓檢查過
+  # 而拿掉。
+  #
+  # protected 不再需要「鎖定轉換」——判準已改為「窗內每一筆輸出都鎖定且為零」，
+  # 那個轉換落在 trigger 窗裡也無妨（artifact 會如實記 lock_transition_observed）。
   mark graph_failure_fail_safe trigger start
   GLINE0="$(marker_line graph_failure_fail_safe trigger start)"
-  arm_seam 6
-  wait_for "$GLINE0" graph_state dds_security_monitor 30 state=fault
+  arm_seam 25
+  wait_for "$GLINE0" graph_state dds_security_monitor 25 state=fault
   mark graph_failure_fail_safe trigger end
 
-  # 警報鎖是有期限的，實測約 30 秒後自行釋放。沒等到釋放就再故障一次的話，
-  # protected 一樣看不到轉換。
-  log "等待 guard 從第一次故障釋放"
-  GREL="$(telemetry_lines)"
-  wait_for "$GREL" guard_state velocity_guard_node 60 state=released \
-    || log "⚠️ guard 未釋放，graph/protected 可能取不到"
-
+  # protected 必須整段落在故障期間內：窗一旦拖過 hold 期滿、guard 釋放，就會出現
+  # 未鎖定輸出而正確地被拒。
   mark graph_failure_fail_safe protected start
-  GLINE1="$(marker_line graph_failure_fail_safe protected start)"
-  arm_seam 16
-  wait_for "$GLINE1" guard_state velocity_guard_node 30 state=locked
-  sleep 3
+  sleep 4
   mark graph_failure_fail_safe protected end
 
   mark graph_failure_fail_safe recovery start

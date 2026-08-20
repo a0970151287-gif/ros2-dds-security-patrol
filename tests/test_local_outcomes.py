@@ -110,6 +110,9 @@ def _stage_records(
         ],
         ("graph_failure_fail_safe", "protected"): [
             (guard, "guard_state", {"state": "locked", "reason": "generic_alert"}),
+            # 兩筆輸出：這一項要證明的是故障期間「全程」鎖定且為零，不是出現過
+            # 一次鎖定轉換，所以需要跨距足夠的連續樣本。
+            (guard, "guard_output", {"linear_x": 0.0, "angular_z": 0.0, "blocked": True}),
             (guard, "guard_output", {"linear_x": 0.0, "angular_z": 0.0, "blocked": True}),
         ],
         ("graph_failure_fail_safe", "recovery"): [
@@ -432,3 +435,47 @@ def test_a_claimed_vendor_record_still_has_to_show_a_denial():
     }
     with pytest.raises(SchemaError, match="sros_deny_count"):
         _assert_outcome("unauthorized_participant_denied", stages)
+
+
+def test_graph_protection_refuses_any_unlocked_output(tmp_path):
+    """故障期間只要有一筆輸出未鎖定，這一窗就不成立。
+
+    這一項原本要求「窗內出現一次鎖定轉換」，但 guard_state 只在轉換時發一次，
+    而實測 guard lock 落在 d4 incident 之後 0.04 秒，必然被關進 trigger 窗，
+    protected 因此永遠是空的。改成量真正的安全性質——全程鎖定且輸出為零——
+    比原本嚴格，所以要有測試證明它真的會咬人。
+    """
+    guard = "velocity_guard_node"
+    base = 5_000_000_000
+    events = []
+    for index, blocked in enumerate((True, True, False)):
+        events.append(
+            {
+                "source": guard,
+                "event_type": "guard_output",
+                "monotonic_ns": base + index * 150_000_000,
+                "details": {"linear_x": 0.0, "angular_z": 0.0, "blocked": blocked},
+            }
+        )
+
+    with pytest.raises(SchemaError, match="unlocked output"):
+        derive_facts("graph_failure_fail_safe", "protected", events)
+
+    # 拿掉那一筆未鎖定的輸出就成立，且如實記錄沒有觀察到鎖定轉換。
+    facts = derive_facts("graph_failure_fail_safe", "protected", events[:2])
+    assert facts["guard_zeroed"] is True
+    assert facts["lock_transition_observed"] is False
+
+
+def test_graph_protection_requires_a_span_not_a_single_sample(tmp_path):
+    guard = "velocity_guard_node"
+    events = [
+        {
+            "source": guard,
+            "event_type": "guard_output",
+            "monotonic_ns": 5_000_000_000,
+            "details": {"linear_x": 0.0, "angular_z": 0.0, "blocked": True},
+        }
+    ]
+    with pytest.raises(SchemaError, match="two samples spanning"):
+        derive_facts("graph_failure_fail_safe", "protected", events)

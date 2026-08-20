@@ -105,7 +105,7 @@ REQUIRED_FACT_KEYS: dict[tuple[str, str], frozenset[str]] = {
         {"graph_exception_observed", "d4_fault_emitted"}
     ),
     ("graph_failure_fail_safe", "protected"): frozenset(
-        {"guard_zeroed", "detail_bounded"}
+        {"guard_zeroed", "lock_transition_observed", "detail_bounded"}
     ),
     ("graph_failure_fail_safe", "recovery"): frozenset(
         {"graph_recovery_event", "monitor_healthy"}

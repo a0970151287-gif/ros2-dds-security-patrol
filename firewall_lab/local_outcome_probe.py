@@ -577,12 +577,44 @@ def derive_facts(
         )
         facts = {"graph_exception_observed": bool(graph), "d4_fault_emitted": bool(d4)}
     elif (check_id, stage) == ("graph_failure_fail_safe", "protected"):
-        states = _required(
-            _matching(events, "guard_state", source=GUARD_SOURCE, state="locked"),
-            "guard lock after graph fault",
+        # 這裡量的是「故障期間 guard 全程鎖定且輸出為零」，不是「窗內出現一次
+        # 鎖定轉換」。
+        #
+        # 原本要求後者，但它在本系統上取不到：guard_state 只在 (state, reason)
+        # 轉換時發一次，而實測 guard lock 落在 d4 incident 之後 0.04 秒，
+        # 而 trigger 窗必須同時涵蓋 d4 與 graph_state=fault——那次轉換因此必然被
+        # 關在 trigger 裡，protected 永遠是空的。要讓原本的寫法成立，只能讓
+        # guard 的已驗章鎖定晚於故障偵測，那是改防禦去遷就量測。
+        #
+        # 新的判準比舊的**嚴格**：舊的只要有一次轉換加一筆零速，新的要求窗內
+        # 每一筆輸出都處於鎖定且為零，因此排除了任何未鎖定輸出漏出去的可能。
+        # 因果仍由整個檢查提供：trigger 窗證明故障確實發生，窗是有序的，而
+        # _controlled_fault_injection 另外保證受控故障事件不會出現在本窗。
+        outputs = _required(
+            _matching(events, "guard_output", source=GUARD_SOURCE),
+            "guard output during graph fault",
         )
-        zeros = _required(_guard_zero_samples(events), "guard zero after graph fault")
-        facts = {"guard_zeroed": bool(states and zeros), "detail_bounded": True}
+        if (
+            len(outputs) < 2
+            or outputs[-1]["monotonic_ns"] - outputs[0]["monotonic_ns"] < 100_000_000
+        ):
+            raise SchemaError(
+                "graph fault protection requires two samples spanning 0.1 sec"
+            )
+        if any(event["details"]["blocked"] is not True for event in outputs):
+            raise SchemaError(
+                "graph fault protection window contains an unlocked output"
+            )
+        zeros = _guard_zero_samples(events)
+        facts = {
+            "guard_zeroed": len(zeros) == len(outputs),
+            # 轉換若剛好落在本窗就一併記錄，但不作為通過條件——它的有無取決於
+            # 窗切在哪裡，不取決於防禦有沒有守住。
+            "lock_transition_observed": bool(
+                _matching(events, "guard_state", source=GUARD_SOURCE, state="locked")
+            ),
+            "detail_bounded": True,
+        }
     elif (check_id, stage) == ("graph_failure_fail_safe", "recovery"):
         graph = _required(
             _matching(
