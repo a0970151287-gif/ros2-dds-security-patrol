@@ -91,3 +91,6 @@ firewall_lab/dataset_verify_*/
 
 # Canary evidence lives outside the repo; reproducible from the runner.
 canary_evidence/
+
+# campaign 執行中的鎖檔，不進版控
+firewall_lab/campaign_*.json.lock
