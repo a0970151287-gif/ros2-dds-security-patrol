@@ -83,13 +83,26 @@ ATTACK_FAMILIES = tuple(sorted(set(FAMILY_BY_LABEL.values()) - {"normal"}))
 # raw value is therefore forced to zero and a separate mask is supplied to the
 # estimator.  When a source becomes trustworthy the model must be retrained;
 # inference refuses a profile different from the signed bundle.
+# 哪些 telemetry 來源在 live 資料上真的沒有產出。這是**量測值**，不是判斷：
+# build_expanded_row 會斷言「不可用的來源其特徵必須為零」，所以把一個活著的
+# 來源標成不可用會直接讓訓練失敗——這道斷言正確地擋下了過期的 mask。
+#
+# 2026-08-21 依 300 場重跑後的合併特徵重新量測（Permissive 非零率）：
+#
+#   parameter_call_rate        24.15%  ← 復活，hook 已從 rcl 拒絕之下移到服務層
+#   nonce_reuse_ratio           2.32%  ← 復活，N1 的 QoS 修好後重放才送得到
+#   heartbeat_gap_sec           0.05%  ← 復活（2 列），只在 fault 轉換時發
+#   sros_auth_fail_rate         0.00%     本技術棧不可能——rmw_fastrtps 不傳遞
+#   sros_permission_deny_rate   0.00%     logging plugin，見 DDS_Security_audit_log_不可用
+#   scan_static_ratio           0.00%     detector d3 從未 fire
+#
+# Enforce 下全部為零，但那是「攻擊被擋在 handshake」而不是「來源不存在」，
+# 所以不能據此標成不可用。
 DEFAULT_LIVE_SOURCE_AVAILABILITY = {
     name: name
     not in {
         "sros_auth_fail_rate",
         "sros_permission_deny_rate",
-        "parameter_call_rate",
-        "heartbeat_gap_sec",
         "scan_static_ratio",
     }
     for name in TELEMETRY_FEATURES
