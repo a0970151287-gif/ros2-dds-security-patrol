@@ -2952,8 +2952,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "enforce",
       "seed": 1707838168,
-      "session_id": null,
-      "status": "running"
+      "session_id": "20260821T021736913775Z_parameter_tamper_3a110039",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -2964,8 +2964,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1499607505,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T021833329479Z_parameter_flood_9377dd48",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -2976,8 +2976,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 522708392,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T021931303767Z_heartbeat_replay_187f0f5e",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -2988,8 +2988,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 593627977,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T022037096873Z_heartbeat_replay_4774a692",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -3000,8 +3000,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 542333657,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T022133531698Z_heartbeat_replay_85b477d6",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -3019,13 +3019,13 @@
       "attack_class": "service_dos",
       "domain_id": 30,
       "entry_id": "rerun_00252",
-      "error": null,
+      "error": "RuntimeError: live session failed training gate: status=complete gate=not_eligible:attack_process",
       "expected_action": "temporary_block",
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1532387173,
       "session_id": null,
-      "status": "pending"
+      "status": "failed"
     },
     {
       "attack_class": "parameter_tamper",
@@ -3060,8 +3060,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1516283092,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T055423496097Z_parameter_flood_20ab73f7",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -3072,8 +3072,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "enforce",
       "seed": 1712893703,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T055526840956Z_parameter_tamper_b4b7274c",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -3084,8 +3084,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1471835766,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T055627014536Z_parameter_flood_0c18904c",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -3096,8 +3096,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1524235553,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T055722315207Z_parameter_flood_bfe6f8d8",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -3120,8 +3120,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "enforce",
       "seed": 1667661909,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T055820752314Z_parameter_tamper_c2b9606a",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -3144,8 +3144,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 589446043,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T055917543643Z_heartbeat_replay_f90eb135",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -3169,7 +3169,7 @@
       "security_mode": "enforce",
       "seed": 576468296,
       "session_id": null,
-      "status": "pending"
+      "status": "running"
     },
     {
       "attack_class": "service_dos",
