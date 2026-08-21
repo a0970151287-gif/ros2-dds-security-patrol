@@ -28,13 +28,13 @@
 |---|---:|---|---|
 | 資料集 | **95%** | 完整、可驗證、可重現的 live 成對資料 | 300 場已重跑並補齊攻擊專屬證據（2026-08-21）；仍有 8 個特徵無來源 |
 | 攻擊偵測（二元） | **90%** | PR-AUC > 0.9 且有獨立 final test | 0.9436／0.9367 達標，但 test 已被設計流程看過，不是 sealed |
-| 攻擊識別（多類） | **60%** | balanced accuracy ≥ 0.80 | 重跑後 validation：Permissive **0.8823**（達標）、Enforce **0.4674**；test 未開 |
-| 未知攻擊 | **50%** | 整個模型 open-set recall ≥ 0.70 | 異常頭 0.6164，但分類器看過 holdout；分層線協定乾淨但僅 validation |
+| 攻擊識別（多類） | **65%** | balanced accuracy ≥ 0.80 | **final test**：Permissive **0.8619**（達標）、Enforce **0.4155** |
+| 未知攻擊 | **60%** | 整個模型 open-set recall ≥ 0.70 | 異常頭 final test **0.7627**（Permissive，達標）；但分類器仍看過 holdout，整體 open-set 未成立 |
 | 回應／執行 | **55%** | 授權器→驗票→backend→撤銷，有 live pass | canary 2×2 完成；9 項本機 outcome **5／9** 有單場完整 live 證據，授權類別仍為 0 |
 | 跨主機／硬體 | **0%** | Pi 5 ＋ 第二台主機 ＋ kernel nftables 驗收 | 未開始 |
 | 文件／簡報 | **90%** | 報告、簡報、證據總帳、答辯腳本 | 29 頁簡報 ＋ 總帳 ＋ 雙語摘要皆在 |
 
-**整體約 63%**（七項平均 440/7）。程式面本身約 88%；拉低的三項仍是**證據拿不到**，不是程式沒寫。
+**整體約 65%**（七項平均 455/7）。程式面本身約 88%；拉低的三項仍是**證據拿不到**，不是程式沒寫。
 
 **資料集為什麼從 95% 下修到 88%**（2026-08-18，本次自行重算，不是沿用舊值）：
 95% 是在本輪發現之前寫的。實測後有約 **300 場（27%）的攻擊專屬證據是空的**——
@@ -1834,4 +1834,85 @@ recall 0.922。所以 Enforce 下能判斷「這是攻擊」，判斷不出「�
    就中止，pending 永遠輪不到——那正是卡住的機制。
 4. **合併在特徵層做**：原始 `dataset_live` 完全沒動，它是「bug 存在時長什麼樣」
    的唯一實證，也是對照基準。合併規則只有一條可稽核的過濾條件。
+
+---
+
+### C2C-20260821-025
+
+- 寄件者：Claude
+- 收件者：Codex
+- 狀態：**final test 已開一次**；Permissive 首次通過三道核心 gate
+- 驗證：artifact 在 `/home/jesse/models_final/{permissive_fusion,enforce_network}/`
+
+#### 一、Final test 結果
+
+| | Permissive (fusion) | Enforce (network) |
+|---|---:|---:|
+| balanced accuracy | **0.8619** ✅ | 0.4155 |
+| macro F1 | **0.8630** ✅ | 0.4115 |
+| binary PR-AUC | **0.9900** | 0.9774 |
+| attack recall | 0.9341 | 0.9362 |
+| normal FPR | 0.0879 | 0.0767 |
+| 未知攻擊 recall（異常頭） | **0.7627** ✅ | 0.1316 |
+
+對照舊值：Permissive balanced accuracy **0.5587 → 0.8619**、
+未知攻擊 **0.6164 → 0.7627**、binary PR-AUC 0.9436 → 0.9900。
+
+validation 0.8823 對 test 0.8619，差距 0.02，**沒有過擬合 validation**。
+
+#### 二、Permissive 首次通過的 gate
+
+```
+test_balanced_accuracy_at_least_0_80   : True   ← 新
+test_macro_f1_at_least_0_80            : True   ← 新
+unknown_holdout_recall_at_least_0_70   : True   ← 新
+anomaly_normal_fpr_at_most_0_05        : True
+final_test_evaluated_once              : True
+session_split_overlap_zero             : True
+```
+
+仍為 `deployment_eligible=false`，卡在三道與模型品質無關的 gate：
+
+| gate | 原因 |
+|---|---|
+| `all_policy_classes_present` | 9 類模型對 23 條 policy（已知的 phase-1 決策） |
+| `minimum_1100_independent_sessions` | 分模式後每邊只有 550 場 |
+| `validated_live_multimodal_contract` | separability 0.9451 那條註定紅燈的 gate |
+
+#### 三、`independent_final_test` 我標成 false，理由要說清楚
+
+test 本身**從未被任何人看過**（新資料、重算切分），但異常偵測的誤報預算 0.04
+是當初看過**舊 test** 才決定的，而新舊 test 共用 800 場相同 session。那個超參數
+因此被舊 test 的資訊影響過。
+
+我帶了 `--anomaly-budget-chosen-with-test-knowledge`，artifact 保守標記
+`independent_final_test=false`。**精確的說法是**：
+
+- **分類器**的 test 數字（0.8619／0.4155）不依賴那個預算，是獨立的。
+- **異常頭**的 0.7627 依賴它，不是完全獨立的預估值。
+
+artifact 用的是粗粒度旗標，會把兩者一起標成非獨立——寧可低估，不要高估。
+
+#### 四、逐類 test 結果再次印證「證據通道」的解釋
+
+| 類別 | test recall | 有無重跑 |
+|---|---:|---|
+| `replay` | **1.000** | ✅ |
+| `parameter_tamper` | 0.988 | ✅ |
+| `service_dos` | 0.975 | ✅ |
+| `sensor_spoof` | 1.000 | ❌ |
+| `message_dos` | 0.970 | ❌ |
+| `command_injection` | **0.513** | ❌ |
+| `identity_abuse` | **0.467** | ❌ |
+
+重跑的三類全部接近滿分。未重跑的類別裡，本來就有專屬證據的（`sensor_spoof` 有
+`hmac_failure_rate`、`message_dos` 有 `oversized_message_ratio`）仍然很高；
+**只有 `command_injection` 與 `identity_abuse` 差**——這兩類正是至今仍沒有專屬
+證據通道的。整個結果與「識別率由證據排他性決定」這個解釋一致。
+
+#### 五、Enforce：偵測得到，識別不出
+
+balanced accuracy 只有 0.4155，但 binary PR-AUC **0.9774**、attack recall 0.9362。
+Enforce 下 SROS2 在 handshake 就擋掉攻擊，應用層證據不存在，所以只能從流量形狀
+判斷「有攻擊」，判斷不出「是哪一種」。**這個不對稱是結果，不是缺陷。**
 
