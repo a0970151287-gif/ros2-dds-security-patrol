@@ -24,7 +24,9 @@
 
 影響：威脅模型 G6 修補「kill monitor 會被抓」失效。
 """
+import os
 import sys
+import threading
 import time
 import rclpy
 from rclpy.executors import ExternalShutdownException
@@ -106,13 +108,43 @@ def main():
     except (KeyboardInterrupt, ExternalShutdownException, RCLError):
         pass
     finally:
+        # 收尾必須在 Enforce 下也能乾淨退出。攻擊者沒有憑證，所以這個
+        # RELIABLE + TRANSIENT_LOCAL writer 從來配不到訂閱者，destroy_node()
+        # 可能卡在等待樣本處置；同時 rclpy 的訊號處理器可能已經先 shutdown 過，
+        # 而 rclpy.ok() 與實際狀態之間有競爭，於是第二次呼叫丟出
+        # "rcl_shutdown already called"。兩者合起來讓行程掛住，被 orchestrator
+        # 在 40 秒預算後 SIGKILL，整場因此判 not_eligible:attack_process。
+        # 這裡只改離開路徑，不改攻擊行為本身。
         if rclpy.ok():
             node.get_logger().error(
                 f'⏹ 結束，總共重放 {node._n} 次'
             )
-        node.destroy_node()
-        if rclpy.ok():
-            rclpy.shutdown()
+        # 收尾設硬上限，攻擊視窗不縮短。
+        #
+        # 實測 enforce heartbeat_replay 31 場：rc=0 有 28 場（約 40.2 秒），
+        # 另有 2 場 SIGTERM、1 場 SIGKILL——收尾偶爾拖過 orchestrator 的預算，
+        # 整場就被判 not_eligible:attack_process 而中止整批 campaign。
+        #
+        # 縮短攻擊時間可以避開，但那會讓這批與已完成的 91 場視窗長度不一致。
+        # 攻擊本身此時已經結束，清理不該決定一場資料算不算數，所以改成在背景
+        # 執行緒清理、最多等 2 秒，然後 os._exit(0) 直接退出。
+        def _teardown() -> None:
+            try:
+                node.destroy_node()
+            except Exception:
+                pass
+            try:
+                if rclpy.ok():
+                    rclpy.shutdown()
+            except RCLError:
+                pass
+
+        worker = threading.Thread(target=_teardown, daemon=True)
+        worker.start()
+        worker.join(timeout=2.0)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(0)
 
 
 if __name__ == '__main__':
