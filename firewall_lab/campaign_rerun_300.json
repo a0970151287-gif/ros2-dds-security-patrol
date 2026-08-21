@@ -3019,13 +3019,13 @@
       "attack_class": "service_dos",
       "domain_id": 30,
       "entry_id": "rerun_00252",
-      "error": "RuntimeError: live session failed training gate: status=complete gate=not_eligible:attack_process",
+      "error": null,
       "expected_action": "temporary_block",
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1532387173,
-      "session_id": null,
-      "status": "failed"
+      "session_id": "20260821T062548553850Z_parameter_flood_ec52ecc3",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -3168,8 +3168,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 576468296,
-      "session_id": null,
-      "status": "running"
+      "session_id": "20260821T060012836574Z_heartbeat_replay_44c4d398",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -3228,8 +3228,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1463940881,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T060108739418Z_parameter_flood_015c1b21",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -3240,8 +3240,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "enforce",
       "seed": 1692399661,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T062645979674Z_parameter_tamper_f7acf002",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -3300,8 +3300,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1449084554,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T060524483014Z_parameter_flood_e25048a7",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -3336,8 +3336,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "enforce",
       "seed": 1717790035,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T060632119164Z_parameter_tamper_33eff01b",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -3348,8 +3348,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "enforce",
       "seed": 1714524253,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T060737875223Z_parameter_tamper_df990bd2",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -3384,8 +3384,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1464807923,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T060845916901Z_parameter_flood_20db6bea",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -3396,8 +3396,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "enforce",
       "seed": 1675789438,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T060959220163Z_parameter_tamper_485bb8c8",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -3408,8 +3408,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "enforce",
       "seed": 1717114252,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T061106613021Z_parameter_tamper_a7060df0",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -3420,8 +3420,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1509629344,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T061213175889Z_parameter_flood_8234b152",
+      "status": "complete"
     },
     {
       "attack_class": "service_dos",
@@ -3456,8 +3456,8 @@
       "scenario_id": "parameter_flood",
       "security_mode": "enforce",
       "seed": 1493491780,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T061320293936Z_parameter_flood_4d56a772",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -3468,8 +3468,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 581660665,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T061424679209Z_heartbeat_replay_57b4080c",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -3480,8 +3480,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 555322122,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T061530999753Z_heartbeat_replay_93692dbb",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -3516,8 +3516,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 526391782,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T061640490122Z_heartbeat_replay_46c92ae8",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -3528,8 +3528,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 563918984,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T062746862566Z_heartbeat_replay_191db687",
+      "status": "complete"
     },
     {
       "attack_class": "replay",
@@ -3552,8 +3552,8 @@
       "scenario_id": "parameter_tamper",
       "security_mode": "enforce",
       "seed": 1730557109,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T062053261997Z_parameter_tamper_e9e586e7",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -3576,8 +3576,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 532545574,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T062204288427Z_heartbeat_replay_eace49f4",
+      "status": "complete"
     },
     {
       "attack_class": "parameter_tamper",
@@ -3600,8 +3600,8 @@
       "scenario_id": "heartbeat_replay",
       "security_mode": "enforce",
       "seed": 565309826,
-      "session_id": null,
-      "status": "pending"
+      "session_id": "20260821T062301715184Z_heartbeat_replay_8de61207",
+      "status": "complete"
     }
   ],
   "experiment_mode": "live",

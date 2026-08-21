@@ -918,3 +918,78 @@ def test_managed_process_poll_reports_exit_without_reaping(tmp_path):
         time.sleep(0.05)
     assert process.poll() == 7
     assert process.stop().return_code == 7
+
+
+# ── 釘住的資料集排除 ────────────────────────────────────────────────────────
+
+
+def _exclusion_registry(tmp_path, session_id, *, observed_bytes, path="attack.stderr.log"):
+    registry = tmp_path / "exclusions.json"
+    registry.write_text(
+        json.dumps(
+            {
+                "schema_version": "sros2-firewall-dataset-exclusions/v1",
+                "exclusions": [
+                    {
+                        "session_id": session_id,
+                        "reason": "attack stderr continued growing after sealing",
+                        "artifact": {
+                            "path": path,
+                            "manifest_bytes": 10,
+                            "observed_bytes": observed_bytes,
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return registry
+
+
+def test_pinned_exclusion_only_applies_to_the_recorded_mismatch(tmp_path):
+    """排除是釘住的一筆事實，不是「跳過這個 session」的萬用通行證。
+
+    registry 的 policy 寫著「只在每個釘住的失配欄位都相符時才排除」。同一個
+    session 若出現任何**不同**的損壞，仍必須 fail-closed——否則一張排除名單
+    會變成把後來所有損壞都掩蓋掉的洞。
+    """
+    from firewall_lab.features import exclusion_matches, load_pinned_exclusions
+
+    session_id = "20260807T080715844515Z_unauthorized_participant_ea19b28d"
+    session_dir = tmp_path / session_id
+    session_dir.mkdir()
+    (session_dir / "attack.stderr.log").write_bytes(b"x" * 45206)
+
+    registry = _exclusion_registry(tmp_path, session_id, observed_bytes=45206)
+    pinned = load_pinned_exclusions(registry)
+    entry = pinned[session_id]
+
+    recorded = "attack.stderr.log: manifest 10 bytes, on disk 45206"
+    assert exclusion_matches(session_dir, entry, recorded) is True
+
+    # 同一個檔案、不同的大小 → 不是當初記錄的那一筆損壞。
+    other_size = "attack.stderr.log: manifest 10 bytes, on disk 999"
+    assert exclusion_matches(session_dir, entry, other_size) is False
+
+    # 另一個檔案壞掉 → 完全不在排除範圍內。
+    other_file = "traffic.pcapng: manifest 10 bytes, on disk 45206"
+    assert exclusion_matches(session_dir, entry, other_file) is False
+
+
+def test_exclusion_registry_rejects_an_unknown_schema(tmp_path):
+    from firewall_lab.features import load_pinned_exclusions
+
+    registry = tmp_path / "bad.json"
+    registry.write_text(
+        json.dumps({"schema_version": "something-else", "exclusions": []}),
+        encoding="utf-8",
+    )
+    with pytest.raises(SchemaError):
+        load_pinned_exclusions(registry)
+
+
+def test_no_exclusions_path_means_no_exclusions(tmp_path):
+    from firewall_lab.features import load_pinned_exclusions
+
+    assert load_pinned_exclusions(None) == {}

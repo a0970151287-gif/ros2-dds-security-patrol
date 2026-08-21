@@ -182,6 +182,18 @@ def discover_sessions(dataset_root: str | Path) -> list[Path]:
     return sessions
 
 
+class ManifestEvidenceMismatch(SchemaError):
+    """帶著逐項問題清單的失配，讓呼叫端能比對釘住的排除記錄。"""
+
+    def __init__(self, session_name: str, problems: list[str]):
+        self.session_name = session_name
+        self.problems = list(problems)
+        super().__init__(
+            f"{session_name} evidence does not match its manifest: "
+            + "; ".join(problems)
+        )
+
+
 def verify_manifest_evidence(
     session_dir: Path,
     manifest: dict[str, Any],
@@ -235,10 +247,58 @@ def verify_manifest_evidence(
         if digest.hexdigest() != expected_hash:
             problems.append(f"{name}: sha256 does not match the manifest")
     if problems:
-        raise SchemaError(
-            f"{session_dir.name} evidence does not match its manifest: "
-            + "; ".join(problems)
+        raise ManifestEvidenceMismatch(session_dir.name, problems)
+
+
+def load_pinned_exclusions(path: Path | None) -> dict[str, dict[str, Any]]:
+    """讀入 dataset_exclusions registry，回傳 session_id → 排除記錄。
+
+    registry 的 policy 寫得很清楚：「只在每個釘住的失配欄位都相符時才排除」。
+    所以這裡不是一份「跳過這些 session」的名單——它釘住了完整的失配指紋
+    （manifest 的 bytes／sha256 與實際觀察到的 bytes／sha256）。排除只在
+    **實際看到的損壞與當初記錄的完全相同**時才成立；同一個 session 若出現
+    任何新的、不同的損壞，仍然會被 fail-closed 擋下。
+    """
+    if path is None:
+        return {}
+    value = _read_json(path)
+    if value.get("schema_version") != "sros2-firewall-dataset-exclusions/v1":
+        raise SchemaError("unsupported dataset exclusions schema")
+    entries = value.get("exclusions")
+    if not isinstance(entries, list):
+        raise SchemaError("dataset exclusions must be a list")
+    pinned: dict[str, dict[str, Any]] = {}
+    for entry in entries:
+        session_id = entry.get("session_id")
+        artifact = entry.get("artifact")
+        if not isinstance(session_id, str) or not isinstance(artifact, dict):
+            raise SchemaError("dataset exclusion entry is malformed")
+        for field in ("path", "manifest_bytes", "observed_bytes"):
+            if field not in artifact:
+                raise SchemaError(
+                    f"dataset exclusion for {session_id} is missing {field}"
+                )
+        pinned[session_id] = entry
+    return pinned
+
+
+def exclusion_matches(session_dir: Path, entry: dict[str, Any], problem: str) -> bool:
+    """實際失配是否與釘住的那一筆完全相符。"""
+    artifact = entry["artifact"]
+    name = artifact["path"]
+    expected = (
+        f"{name}: manifest {int(artifact['manifest_bytes'])} bytes, "
+        f"on disk {int(artifact['observed_bytes'])}"
+    )
+    if problem != expected:
+        return False
+    path = session_dir / name
+    try:
+        return path.is_file() and path.stat().st_size == int(
+            artifact["observed_bytes"]
         )
+    except OSError:
+        return False
 
 
 def load_manifest(session_dir: Path) -> dict[str, Any]:
@@ -1078,6 +1138,7 @@ def build_features(
     window_sec: float = 8.0,
     require_multimodal: bool = False,
     verify_evidence_hashes: bool = False,
+    exclusions_path: str | Path | None = None,
 ) -> dict[str, int]:
     if (
         isinstance(window_sec, bool)
@@ -1089,8 +1150,12 @@ def build_features(
     session_rows = []
     network_rows = []
     telemetry_rows = []
+    pinned_exclusions = load_pinned_exclusions(
+        Path(exclusions_path) if exclusions_path else None
+    )
     fusion_rows = []
     observation_rows = []
+    excluded_sessions: list[str] = []
     skipped = 0
     missing_multimodal_sessions = 0
     for session_dir in discover_sessions(dataset_root):
@@ -1103,9 +1168,23 @@ def build_features(
             continue
         # Only sessions that are about to contribute rows are checked; a
         # session already excluded above cannot contaminate anything.
-        verify_manifest_evidence(
-            session_dir, manifest, verify_hashes=verify_evidence_hashes
-        )
+        try:
+            verify_manifest_evidence(
+                session_dir, manifest, verify_hashes=verify_evidence_hashes
+            )
+        except ManifestEvidenceMismatch as mismatch:
+            entry = pinned_exclusions.get(manifest.get("session_id", ""))
+            # 只有「單一問題」且與釘住的那一筆逐欄相符才排除。多個問題代表
+            # 這場的損壞已經超出當初記錄的範圍，仍舊 fail-closed。
+            if (
+                entry is not None
+                and len(mismatch.problems) == 1
+                and exclusion_matches(session_dir, entry, mismatch.problems[0])
+            ):
+                excluded_sessions.append(manifest["session_id"])
+                skipped += 1
+                continue
+            raise
         labels = load_label_intervals(session_dir)
         if len(labels) != 1:
             raise SchemaError(
@@ -1178,6 +1257,9 @@ def build_features(
         "fusion_rows": len(fusion_rows),
         "smoke_observation_rows": len(observation_rows),
         "skipped_sessions": skipped,
+        # 逐一列出被排除的 session，讓特徵表的來源可稽核：排除是有記錄的決定，
+        # 不是靜默跳過。
+        "pinned_exclusions_applied": sorted(excluded_sessions),
         "missing_multimodal_sessions": missing_multimodal_sessions,
         "include_nontrainable": include_nontrainable,
         "require_multimodal": require_multimodal,
@@ -1192,6 +1274,9 @@ def build_features(
         "fusion_rows": len(fusion_rows),
         "observation_rows": len(observation_rows),
         "skipped_sessions": skipped,
+        # 逐一列出被排除的 session，讓特徵表的來源可稽核：排除是有記錄的決定，
+        # 不是靜默跳過。
+        "pinned_exclusions_applied": sorted(excluded_sessions),
         "missing_multimodal_sessions": missing_multimodal_sessions,
     }
 
@@ -1224,6 +1309,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--exclusions",
+        type=Path,
+        default=None,
+        help=(
+            "dataset_exclusions registry；只在實際失配與釘住的那一筆逐欄相符時"
+            "才排除該 session，其餘一律 fail-closed"
+        ),
+    )
+    parser.add_argument(
         "--verify-evidence-hashes",
         action="store_true",
         help=(
@@ -1245,6 +1339,7 @@ def main(argv: list[str] | None = None) -> int:
         window_sec=args.window_sec,
         require_multimodal=args.require_multimodal,
         verify_evidence_hashes=args.verify_evidence_hashes,
+        exclusions_path=args.exclusions,
     )
     print(
         "✅ 特徵輸出完成："
