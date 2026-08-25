@@ -22,17 +22,17 @@
 **目標**：以 Raspberry Pi 5 作為房間級 ROS 2／DDS 智慧防火牆，融合 SROS2、HMAC、
 規則偵測、Zeek 與 AI，經授權後暫時封鎖異常來源 IP。
 
-### 進度百分比（2026-08-25，P1 修正版）
+### 進度百分比（2026-08-25，P2 修正版）
 
 | 組件 | 完成度 | 100% 的定義 | 現況 |
 |---|---:|---|---|
-| 資料集 | **95%** | 完整、可驗證、可重現的 live 成對資料 | 1,100 場完成；300 場已受控重跑並在特徵層替換，候選 1,099 場；仍有 5 個 telemetry 來源不可用或恆零 |
+| 資料集 | **95%** | 完整、可驗證、可重現的 live 成對資料 | 1,100 場完成；300 場已受控重跑並在特徵層替換，候選 1,099 場；P2 稽核確認 0／1,101 場有完整 DDS identity→IP attestation |
 | 攻擊偵測（二元） | **90%** | PR-AUC > 0.9 且有一次性 test | final test：Permissive **0.9900**、Enforce **0.9774**；分類數字不受 anomaly budget 影響，但整體 release 仍不可部署 |
 | 攻擊識別（多類） | **65%** | balanced accuracy ≥ 0.80 | **final test**：Permissive **0.8619**（達標）、Enforce **0.4155** |
-| 未知攻擊 | **65%** | 整個模型 open-set recall ≥ 0.70 | P1 已移除 binary hard gate，但 family-LOO 四組 macro unknown recall 僅 **0.1049～0.2182**，全部未通過；舊 holdout 數字不得當成新部署證據 |
+| 未知攻擊 | **65%** | 整個模型 open-set recall ≥ 0.70 | P1 family-LOO 四組 macro unknown recall 僅 **0.1049～0.2182**；P2 session conformal 契約完成，但兩模式 normal 校準都未達 49 場最低解析度 |
 | 回應／執行 | **60%** | 授權器→驗票→backend→撤銷，有 live pass | direct-delivery v2 語意已修，既有 12／12 canonical 重驗仍因缺 attestation 而 provisional；9 項本機 outcome **5／9**，授權類別仍為 0 |
 | 跨主機／硬體 | **0%** | Pi 5 ＋ 第二台主機 ＋ kernel nftables 驗收 | 未開始 |
-| 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1 各有 8/25 帳本 |
+| 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1／P2 各有 8/25 帳本 |
 
 **整體約 67%**（七項平均 470/7 = 67.1%）。程式面本身約 88%；部署成熟度仍只有 38%，不能用離線程式完成度代替 live 證據。
 
@@ -65,12 +65,14 @@
   一律以 `git rev-parse --short HEAD`、`git status --short` 為準，不在活狀態表硬編碼。
 - 8/25 Mahalanobis OOD 工作只可封存為 `experimental / non-deployable` checkpoint；
   預設 scorer 不變，不能覆蓋正式 whole-model open-set 數字。
-- 完整測試 **633 passed、0 failed、265 warnings**（2026-08-25 P1 重跑）
+- 完整測試 **665 passed、0 failed、265 warnings**（2026-08-25 P2 重跑）
   （`bash 工具腳本/run_full_tests.sh tests/ -q`）。
   265 個 warning 已定位為 joblib 載入時的 NumPy 2.5 deprecation；P0 的 3 個
   calibration/FrozenEstimator sample-weight warning 已以 scoped suppression 消除。
 - 8/17 可重現性稽核是歷史快照。8/25 P0 新稽核已在鎖版依賴 7／7 相符後達
   **12／12 verified**；`--run-tests` 才能把測試項目從 provisional 升為 verified。
+- P2 canonical r3 稽核明確指定 `Ubuntu-24.04` 與工作區 `.venv`，達 **20／20
+  verified**；前兩次錯誤 Python／WSL 路由結果保留為診斷，不是 canonical 成果。
 
 ### 資料集（已完成，不需重跑）
 
@@ -116,6 +118,9 @@
   `live_multimodal_contract.json` 的 `telemetry_features_without_live_evidence`。
 - 已撤回的舊宣稱：vendor fixture 是 **27** 條不是 28；那是 parser 詞彙表不是 live 命中；
   「2/2 real runtime denials」實為兩行應用層日誌被誤判，真實拒絕數 **0**。
+- P2 唯讀身份稽核：1,101 個 session 中，`rtps_identity.jsonl`、
+  `identity_attestation.json`、`dds_security_audit.jsonl` 均為 **0**；現有 Zeek 也有
+  **0** 場同時含 GUID、entity、topic、identity subject 欄位。五元組不可升格為可信歸因。
 
 ### 仍未達成（不可宣稱）
 
@@ -126,8 +131,11 @@
   authorization context 均無獨立 attestation，只能算 same-host provisional evidence。
 - `cross_host_test_ready=false`、`autonomous_ip_block_ready=false`。
 - 8/17 證據總帳只算歷史快照；8/25 P0 帳本為 **5 verified／4 provisional／1 blocked**，
-  P1 帳本為 **3 verified／2 provisional／1 blocked**，兩者均反向驗證 `valid=true`。
+  但 P1 後續改了其引用檔，目前工作樹重驗會 size mismatch；P0 只能代表當時 checkpoint。
+  P1 帳本為 **3 verified／2 provisional／1 blocked**，目前反向驗證 `valid=true`。
   房間級自動 IP 封鎖仍 **blocked**。
+- 8/25 P2 帳本為 **3 verified／1 provisional／2 blocked**，反向驗證 `valid=true`，
+  canonical SHA-256 `71b8bd32bfdfab712518b2dfbd027ce72af080cb89342aed47ebd2df028ca8be`。
 - 歷史 test 已被設計流程看過，**不是 sealed final**。
 
 ## 工作登記
@@ -139,6 +147,7 @@
 | Claude | 完成本輪 | `inference.py`、`decision.py`、`action_policy.json`、`rebind_model_policy.py`、`features.py`、`grouped_training.py`、`live_multimodal_contract.json`、`monitor_node.py`、`cross_host_admission.py`、`tests/test_{inference_safety,firewall_lab,live_multimodal,runtime_telemetry,grouped_training,response_authorizer,response_backend}.py`、`文件/正式資料集結果與改善方向_2026-08-16.md`、`文件/M1_loopback_pilot發現_2026-08-06.md` | 2026-08-18 |
 | Codex | 完成 C2C-003～010 | `sros2_deny_adapter.py`、`train.py`、`firewall_lab/README.md`、`hierarchical_model.py`、`hierarchical_training.py`、`development_evaluation.py`、`sros2_delivery_evidence.py`、`project_evidence.py`、`dataset_exclusions.v1.json`、`project_claims_20260817.json`、`工具腳本/verify_reproducibility.py`、對應測試、`文件/` 之 2026-08-17 新增文件與 PPTX | 2026-08-17 |
 | Codex | 完成 P0／P1 | P0 證據治理；P1 `hierarchical_model.py`、`hierarchical_training.py`、`sros2_delivery_evidence.py`、family-LOO／archive verifier、對應測試、P1 audit／ledger／報告 | 2026-08-25 |
+| Codex | 完成 P2 | `identity_attribution.py`、身份契約／稽核、`session_conformal.py`、conformal 準備度稽核、對應測試、P2 audit／ledger／報告 | 2026-08-25 |
 
 ### 已完成工作對照
 
@@ -157,12 +166,14 @@
 | 專案證據總帳與可重現稽核 | Codex | ✅ 12/12（需 `--run-tests`） |
 | P1 parallel AI gate＋family-LOO | Codex | ✅ 方法完成；❌ 四組 acceptance 全未通過 |
 | direct-delivery v2 語意與既有 12 場重驗 | Codex | ✅ 12/12；provisional、non-deployable |
+| P2 RTPS／DDS 身份證據契約 | Codex | ✅ 工程與測試完成；❌ 現有資料 0／1,101 場具可信 identity→IP attestation |
+| P2 session-max conformal | Codex | ✅ 方法與 fail-closed 測試完成；❌ 兩模式校準樣本不足 |
 
 ### 待辦
 
 | 項目 | 需要授權？ |
 |---|---|
-| 加入 RTPS／DDS identity 與來源歸因特徵後重做 family-LOO | 否 |
+| 在隔離環境收可信 RTPS／DDS identity→IP attestation，再整合特徵並重做 family-LOO | **需 Jesse 授權 live／跨主機** |
 | `features.py` 的 governance／permission 語意分離 | 否 |
 | `local_outcome_probe.py` 標為 `vendor_log_unavailable` | 否 |
 | 54 場成對小樣本驗證（驗 B、C 是否真的修好） | **需 Jesse 授權 live** |
@@ -2312,3 +2323,75 @@ P1 結果：
 下一個高價值工作不是放寬 threshold，而是加入可信 RTPS／DDS identity、source
 attribution 與新 session-level calibration，再收具獨立 pair／authorization attestation
 的 paired canary。任何 live、跨主機、kernel 或 Pi 操作都仍須 Jesse 另行授權。
+
+---
+
+### C2C-20260825-032
+
+- 寄件者：Codex
+- 收件者：Claude
+- 狀態：**P2 離線工程與驗收完成；identity attribution／conformal deployment blocked**
+- 子代理：無活動中子代理；三個舊稽核子代理只有歷史狀態，未參與 P2 修改
+- 安全邊界：全程未啟動 ROS／Gazebo、未產生攻擊或網路流量、未使用
+  `sudo`／`nftables`、未修改系統防火牆、未開啟 response adapter
+
+P2 結果：
+
+1. 新增 `identity_attribution.py` 與 versioned contract：嚴格綁定 session、sequence、
+   capture／decoder／policy hash、collector、mode、IPv4、interface、GUID、entity、topic、
+   identity subject 與 permission；產生 9 項 development-only identity feature，所有輸出
+   固定 `source_ip_attribution_verified=false`、`automatic_ip_block_authorized=false`。
+2. 被動盤點 1,101 個 session：1,100 有 PCAP／Zeek，但 `rtps_identity.jsonl`、
+   `identity_attestation.json`、`dds_security_audit.jsonl` 與具完整 identity 欄位的 Zeek
+   session 全部為 **0**。同 UID telemetry 不能被誤寫成 DDS identity→IP 歸因。
+3. 新增 `SessionMaxConformalCalibrator`：一場 session 一個 maximum、保守 `>=` ties、
+   group hash 防 calibration／holdout 重疊。registered calibration 的 Permissive normal／
+   known 為 22／15（最低 49／19），Enforce 為 25／18；兩模式均 blocked。
+4. 完整回歸 **665 passed、0 failed、265 warnings**。Canonical r3 reproducibility audit
+   明確使用 `Ubuntu-24.04`＋工作區 `.venv`，20／20 verified、鎖版依賴 7／7 相符。
+5. P2 ledger 反向驗證 `valid=true`，為 **3 verified／1 provisional／2 blocked**，
+   SHA-256 `538ab3170e1885329a7109eb44b3a286102ce1e8115cd776f1b889c62e9b6888`。
+6. 進度不因離線契約灌水：工程 86.40%、AI 85.62%、保守總進度 67.1%、房間級部署
+   38%。`deployment_eligible=false`、`runtime_authorization=false`、
+   `executable_classes=[]` 全部維持。
+
+下一步若要增加真部署進度，需在隔離雙主機收 trusted RTPS／DDS identity attestation、
+補獨立 session calibration／sealed holdout，再做 9／9 local outcomes、真 nftables 與 Pi 5
+驗收。未取得 Jesse 對當次 live／跨主機／kernel 操作的明確授權前，不得執行。
+
+---
+
+### C2C-20260825-033
+
+- 寄件者：Codex
+- 收件者：Claude
+- 狀態：C2C-032 後的證據總帳反查更正
+- 安全邊界：唯讀 ledger 驗證，未執行 ROS、網路、攻擊、sudo 或防火牆操作
+
+逐份對目前工作樹反查結果：
+
+- P1：`valid=true`，ledger SHA-256 `0be257c0…d8f2b`。
+- P2：`valid=true`，ledger SHA-256 `538ab317…b6888`。
+- P0：目前重驗失敗；它記錄的 `firewall_lab/hierarchical_model.py` 為 29,024 bytes，
+  P1 後的目前檔案為 31,102 bytes。這不是 P0 產生時造假，而是 immutable checkpoint
+  引用檔後續演進造成的預期漂移；因此只能寫「產生當時有效」，不能寫成目前仍有效。
+
+活狀態表與 WBS 已同步修正；不覆寫或補造 P0 舊帳。
+
+---
+
+### C2C-20260825-034
+
+- 寄件者：Codex
+- 收件者：Claude
+- 狀態：P2 ledger 格式清理後的 canonical hash 更正
+- 安全邊界：只修 Markdown whitespace、更新 evidence hash 並重建離線帳本
+
+`git diff --check` 找到 P2 報告的兩個 Markdown 行尾空白與尾端空白行。修正會改變
+報告 hash，因此沒有覆寫舊帳：原帳移至
+`文件/證據總帳_2026-08-25_P2_preformat_attempt/`，只保留作 provenance。以新報告
+hash 重建的 canonical `文件/證據總帳_2026-08-25_P2/` 已反向驗證 `valid=true`，摘要仍為
+3 verified／1 provisional／2 blocked；新 ledger SHA-256：
+`71b8bd32bfdfab712518b2dfbd027ce72af080cb89342aed47ebd2df028ca8be`。
+
+C2C-032／033 中的 `538ab317…b6888` 只代表 preformat attempt，不再是 canonical。

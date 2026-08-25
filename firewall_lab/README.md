@@ -13,7 +13,11 @@
   PR-AUC 0.9900；Enforce balanced accuracy 0.4155、binary PR-AUC 0.9774。
 - 乾淨 whole-model open-set recall：Permissive 0.5499、Enforce 0.6583，皆低於 0.70。
   2026-08-25 Mahalanobis 結果是 experimental／non-deployable，不能覆蓋這組正式數字。
-- 完整離線回歸：**633 passed、0 failed、265 warnings**。
+- P2 身份歸因稽核：現有 1,101 個 session 中，完整 RTPS identity／獨立 attestation／
+  DDS security audit archive 均為 **0**；五元組不能當成 DDS 身份→來源 IP 證據。
+- P2 session conformal：normality `alpha=0.02` 至少需 49 場；registered calibration
+  目前 Permissive 22、Enforce 25，兩者均 blocked。合併 threshold 的開發池仍各缺 8、5 場。
+- 完整離線回歸：**665 passed、0 failed、265 warnings**。
 - 所有候選維持 `deployment_eligible=false`、`executable=false`；出貨政策
   `executable_classes=[]`，不得解讀成已可自動封鎖 IP。
 
@@ -656,11 +660,11 @@ python3 工具腳本/verify_reproducibility.py --run-tests --pretty
 - `文件/風險登錄與驗收矩陣_2026-08-17.md`
 - `文件/國際標準與社會倫理_2026-08-17.md`
 
-以下是 2026-08-17 的歷史快照，不能代表目前工作樹；P0／P1 均另建
+以下是 2026-08-17 的歷史快照，不能代表目前工作樹；P0／P1／P2 均另建
 2026-08-25 稽核與證據總帳，不覆寫舊檔：
 
 - `文件/可重現性稽核_2026-08-17.json`：當時 12/12 checks verified；完整測試
-  **583 passed、0 failed、268 warnings**。目前回歸為 633 passed，舊 hash 已失效。
+  **583 passed、0 failed、268 warnings**。目前回歸為 665 passed，舊 hash 已失效。
 - `文件/證據總帳_2026-08-17/evidence_ledger.json`：6 verified、
   2 provisional、1 blocked；`deployment_eligible=false`、
   `runtime_authorization=false`。
@@ -673,8 +677,9 @@ python3 工具腳本/verify_reproducibility.py --run-tests --pretty
 - `文件/可重現性稽核_2026-08-25_P0_verified.json`：12／12 verified；
   **615 passed、0 failed、268 warnings**，依賴鎖版 7／7 相符。
 - `firewall_lab/project_claims_20260825_p0.json`：當前 bytes／SHA-256 與限制敘述。
-- `文件/證據總帳_2026-08-25_P0/`：反向驗證 `valid=true`；5 verified、
-  4 provisional、1 blocked，且固定 `deployment_eligible=false`。
+- `文件/證據總帳_2026-08-25_P0/`：產生當時為 `valid=true`；5 verified、
+  4 provisional、1 blocked。P1 後續修改了其引用的 `hierarchical_model.py`，因此這份
+  歷史帳本現在不能對目前工作樹重驗；仍固定 `deployment_eligible=false`。
 
 目前可引用的 P1 checkpoint：
 
@@ -684,3 +689,15 @@ python3 工具腳本/verify_reproducibility.py --run-tests --pretty
   **633 passed、0 failed、265 warnings**，依賴鎖版 7／7 相符。
 - `文件/證據總帳_2026-08-25_P1/`：反向驗證 `valid=true`；3 verified、
   2 provisional、1 blocked。AI family-LOO acceptance 未通過，房間級自動封鎖仍 blocked。
+
+目前可引用的 P2 checkpoint：
+
+- `文件/P2_身份歸因與SessionConformal_2026-08-25.md`：身份→IP 證據契約、現有資料
+  0／1,101 的缺口，以及兩模式 conformal 有限樣本不足的完整說明。
+- `文件/可重現性稽核_2026-08-25_P2_verified_r3.json`：20／20 verified；
+  **665 passed、0 failed、265 warnings**，依賴鎖版 7／7 相符。
+- `文件/證據總帳_2026-08-25_P2/`：反向驗證 `valid=true`；3 verified、
+  1 provisional、2 blocked，ledger SHA-256 `71b8bd32…ca8be`。格式修正前的帳本保留於
+  `文件/證據總帳_2026-08-25_P2_preformat_attempt/`，不可當 canonical 結果。
+- P2 只完成離線工程與準備度量測；`source_ip_attribution_verified=false`、
+  `cross_host_test_ready=false`、`autonomous_ip_block_ready=false`。
