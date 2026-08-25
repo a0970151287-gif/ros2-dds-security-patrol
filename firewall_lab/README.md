@@ -2,6 +2,21 @@
 
 這個目錄是專題的新主軸：以 SROS2 作為預防層，再用 Zeek／ML 判斷已知攻擊與未知異常，最後只把高信心結果映射到受限制的防禦動作。紅隊腳本在這裡只是隔離實驗室內的資料產生器，不是產品本體。
 
+## 目前基準（2026-08-25）
+
+- 正式 Gazebo live campaign：**1,100／1,100 complete**，Permissive／Enforce 各 550。
+- 候選資料：排除一場封存後仍增長的 session，實際 **1,099 場**；300 場 corrective
+  rerun 在特徵層替換舊缺陷資料，不重複計數。
+- 特徵：14 個 DDS network＋18 個 ROS／SROS2 telemetry 原始特徵，展開為 148 個
+  causal temporal feature；其中 5 個 telemetry 來源仍不可用或恆零。
+- 一次性測試結果：Permissive balanced accuracy 0.8619、macro-F1 0.8630、binary
+  PR-AUC 0.9900；Enforce balanced accuracy 0.4155、binary PR-AUC 0.9774。
+- 乾淨 whole-model open-set recall：Permissive 0.5499、Enforce 0.6583，皆低於 0.70。
+  2026-08-25 Mahalanobis 結果是 experimental／non-deployable，不能覆蓋這組正式數字。
+- 完整離線回歸：**615 passed、0 failed、268 warnings**。
+- 所有候選維持 `deployment_eligible=false`、`executable=false`；出貨政策
+  `executable_classes=[]`，不得解讀成已可自動封鎖 IP。
+
 ## 要解決的問題
 
 模型需要學到「DDS 行為是否異常」，不能只記住某個 IP、domain、固定流量或攻擊腳本。資料工廠因此強制：
@@ -25,7 +40,7 @@ Gazebo / ROS2 / DDS
                                                   ▼
                                   8 秒 network feature windows
                                                   │
-                         session-grouped RF + normal-only IsolationForest
+                     session-grouped binary → family → leaf + parallel OOD
                                                   │
                                                   ▼
                               信心門檻 → allowlisted 防禦意圖
@@ -44,9 +59,9 @@ Gazebo / ROS2 / DDS
 
 「攻擊程式有跑」本身不等於資料合格；正式成效必須通過最後一列的 gate。合成資料的 `evaluation_eligible` 永遠是 false，訓練器也要求用 `--data-tier synthetic-pretrain` 明確選擇，避免誤當 live 資料。
 
-## 已建立的 1100-session 計畫
+## 已完成的 1100-session campaign
 
-預設 campaign 為：
+正式 campaign 已完成，固定計畫為：
 
 | 情境 | 數量 | Permissive | Enforce |
 |---|---:|---:|---:|
@@ -67,7 +82,7 @@ python3 -m firewall_lab.campaign plan \
   --seed 20260727
 ```
 
-## 已完成的 20-session live pilot
+## 歷史基準：已完成的 20-session live pilot
 
 `campaign_pilot_20.json` 已在本機隔離的 Gazebo／ROS2 domain 30
 完成一輪成對 live 擷取：
@@ -633,13 +648,22 @@ python3 工具腳本/verify_reproducibility.py --run-tests --pretty
 - `文件/風險登錄與驗收矩陣_2026-08-17.md`
 - `文件/國際標準與社會倫理_2026-08-17.md`
 
-本輪已實際產生並反向驗證：
+以下是 2026-08-17 的歷史快照，不能代表目前工作樹；目前 P0 會另建
+2026-08-25 稽核與證據總帳，不覆寫舊檔：
 
-- `文件/可重現性稽核_2026-08-17.json`：12/12 checks verified；完整測試
-  **583 passed、0 failed、268 warnings**。
+- `文件/可重現性稽核_2026-08-17.json`：當時 12/12 checks verified；完整測試
+  **583 passed、0 failed、268 warnings**。目前回歸為 615 passed，舊 hash 已失效。
 - `文件/證據總帳_2026-08-17/evidence_ledger.json`：6 verified、
   2 provisional、1 blocked；`deployment_eligible=false`、
   `runtime_authorization=false`。
-- `文件/SROS2智慧防火牆_專題最終報告_自然色系_2026-08-17.pptx`：29 頁，
-  每頁含 `[Sources]` 講者備註；不把 development／same-host／dry-run 結果升級成
-  production、跨主機或自動封鎖證據。
+- `文件/SROS2智慧防火牆_專題最終報告_自然色系_2026-08-17.pptx`：檔名為歷史相容而
+  保留，實際定位是 **29 頁階段成果簡報**，不是最終簡報；每頁含 `[Sources]` 講者備註，
+  不把 development／same-host／dry-run 結果升級成 production、跨主機或自動封鎖證據。
+
+目前可引用的 P0 checkpoint：
+
+- `文件/可重現性稽核_2026-08-25_P0_verified.json`：12／12 verified；
+  **615 passed、0 failed、268 warnings**，依賴鎖版 7／7 相符。
+- `firewall_lab/project_claims_20260825_p0.json`：當前 bytes／SHA-256 與限制敘述。
+- `文件/證據總帳_2026-08-25_P0/`：反向驗證 `valid=true`；5 verified、
+  4 provisional、1 blocked，且固定 `deployment_eligible=false`。

@@ -33,8 +33,13 @@ from .hierarchical_model import (
     normalize_policy_sha256,
     normalize_source_availability,
 )
+from .ood_scorers import MahalanobisNoveltyDetector
 from .schema import atomic_write_json, sha256_file, utc_now
 from .train import ACTION_POLICY_PATH, ML_DIR, WORKSPACE_ROOT, load_training_frame
+
+# 未知攻擊評分器。預設維持 isolation_forest，讓既有 artifact 逐位可重現；
+# mahalanobis 是量測後的改良版，必須明示選用。
+ATTACK_OOD_SCORERS = ("isolation_forest", "mahalanobis")
 
 
 HIERARCHICAL_METRICS_SCHEMA = "sros2-firewall-hierarchical-metrics/v2"
@@ -931,6 +936,7 @@ def train_hierarchical_candidate(
     n_estimators: int = 160,
     maximum_normal_fpr: float = 0.02,
     maximum_known_attack_ood_fpr: float = 0.05,
+    attack_ood_scorer: str = "isolation_forest",
     signing_secret: bytes | None = None,
 ) -> dict[str, Any]:
     import numpy as np
@@ -945,6 +951,10 @@ def train_hierarchical_candidate(
     ):
         if isinstance(value, bool) or not 0.0 < float(value) <= 0.10:
             raise ValueError(f"{name} must be in (0, 0.10]")
+    if attack_ood_scorer not in ATTACK_OOD_SCORERS:
+        raise ValueError(
+            f"attack_ood_scorer must be one of {sorted(ATTACK_OOD_SCORERS)}"
+        )
 
     _ensure_output_outside_dataset(output_dir, dataset_root)
     output = Path(output_dir)
@@ -1173,12 +1183,21 @@ def train_hierarchical_candidate(
         seed=random_state + 10,
         n_estimators=n_estimators,
     )
-    attack_ood_detector = _fit_isolation_detector(
-        matrix[attack_train],
-        _session_equal_weights(frame, attack_train),
-        seed=random_state + 11,
-        n_estimators=n_estimators,
-    )
+    if attack_ood_scorer == "mahalanobis":
+        # 判別式評分：量到最近的已知攻擊類別中心的距離。IsolationForest 是
+        # 密度式的，只認得比已知更「極端」的樣本，認不得只是「不一樣」的樣本
+        # ——用 leave-one-known-class-out 量到 Permissive 六類 macro AUC 僅
+        # 0.5381，其中四類低於 0.5。詳見 firewall_lab/ood_scorers.py。
+        attack_ood_detector = MahalanobisNoveltyDetector().fit(
+            matrix[attack_train], labels[attack_train]
+        )
+    else:
+        attack_ood_detector = _fit_isolation_detector(
+            matrix[attack_train],
+            _session_equal_weights(frame, attack_train),
+            seed=random_state + 11,
+            n_estimators=n_estimators,
+        )
     normal_threshold_rows = threshold_index[binary[threshold_index] == "normal"]
     known_attack_threshold_rows = threshold_index[
         known_attack[threshold_index]
@@ -1311,6 +1330,7 @@ def train_hierarchical_candidate(
             "known_attack_false_unknown_budget": float(
                 maximum_known_attack_ood_fpr
             ),
+            "attack_ood_scorer": attack_ood_scorer,
         },
         "event_level_development_metrics": event_metrics,
         "limitations": [
@@ -1408,6 +1428,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--maximum-known-attack-ood-fpr", type=float, default=0.05
     )
+    parser.add_argument(
+        "--attack-ood-scorer",
+        choices=sorted(ATTACK_OOD_SCORERS),
+        default="isolation_forest",
+        help="未知攻擊評分器。預設維持 isolation_forest，改動必須是明示的。",
+    )
     return parser
 
 
@@ -1426,6 +1452,7 @@ def main(argv: list[str] | None = None) -> int:
         n_estimators=args.n_estimators,
         maximum_normal_fpr=args.maximum_normal_fpr,
         maximum_known_attack_ood_fpr=args.maximum_known_attack_ood_fpr,
+        attack_ood_scorer=args.attack_ood_scorer,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return 0

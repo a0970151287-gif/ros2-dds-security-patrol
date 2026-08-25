@@ -334,7 +334,7 @@ def _render_markdown(ledger: Mapping[str, Any]) -> str:
             "",
             "## Safety boundary",
             "",
-            "This is an evidence inventory, not a cryptographic signature or live-test authorization. ",
+            "This is an evidence inventory, not a cryptographic signature or live-test authorization.",
             "A valid ledger proves only that the cited repository files matched the recorded size and hash at verification time.",
             "",
         ]

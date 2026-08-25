@@ -2,7 +2,7 @@
 
 本專題的產品主軸是「圍繞 SROS2 的智慧防火牆」：以 Gazebo 中的 TurtleBot3 作為受測系統，自動產生正常與受控攻擊的 ROS2／DDS 流量，經 Zeek 特徵、ML 判斷與受限制的回應策略形成縱深防禦。紅隊 PoC 是訓練和驗證資料來源，不是專題本體。
 
-新的[防火牆資料工廠](firewall_lab/README.md)會記錄每場實驗的精確標籤、SROS2 模式、PCAP、Zeek 結果與政策雜湊，並以 session 分組避免模型資料洩漏。目前有兩個清楚分層的資料集：2500 sessions／90,000 windows、22 種攻擊加 normal 的合成預訓練集；以及 20-session、Permissive／Enforce 各 10 的 Gazebo live pilot。live pilot 共擷取 168,507 個封包且 0 drop，20/20 通過證據雜湊與訓練資格 gate；它仍只是小型受控實驗，不是實體機器人或生產工廠保證。證據邊界與殘餘風險見[專題完整總報告](文件/專題完整總報告.md)。
+新的[防火牆資料工廠](firewall_lab/README.md)會記錄每場實驗的精確標籤、SROS2 模式、PCAP、Zeek 結果與政策雜湊，並以 session 分組避免模型資料洩漏。目前有兩個清楚分層的資料來源：2,500 sessions／90,000 windows、22 種攻擊加 normal 的合成預訓練集；以及已完成的 1,100-session Gazebo live campaign。正式候選資料排除一場封存後仍增長的 session，實際使用 1,099 場（Permissive 550、Enforce 549）；另有 300 場缺陷情境已用相同 scenario／seed／mode 受控重跑並在特徵層替換，不重複灌成 1,399 場。所有模型仍為 observe-only、`deployment_eligible=false`，不代表實體機器人或生產環境保證。證據邊界與殘餘風險見[2026-08-21 階段完整總報告](文件/專題完整總報告_2026-08-21.md)。
 
 ## 系統重點
 
@@ -18,7 +18,7 @@
 ## 建議閱讀順序
 
 1. [防火牆資料工廠](firewall_lab/README.md)：資料生成、1100-session campaign、品質 gate 與模型決策。
-2. [專題完整總報告](文件/專題完整總報告.md)：架構、證據邊界、成果與殘餘風險。
+2. [階段完整總報告](文件/專題完整總報告_2026-08-21.md)：架構、證據邊界、成果與殘餘風險。
 3. [系統架構](紅隊測試/ARCHITECTURE.md)：節點、topic 與信任邊界。
 4. [展示流程](展示指令/README.md)：SROS2 Enforce 與 demo 操作。
 5. [ML-IDS 說明](ML防禦/README.md)：資料、模型、評估與回應安全閘。
@@ -108,9 +108,11 @@ python3 -m firewall_lab.cross_host_admission \
 - 應用層 HMAC 仍是集中式共享金鑰，尚缺輪替與首次安全分發機制。
 - mode 0600 與禁止環境變數可減少跨帳號／`/proc` 被動曝露，但擋不住已取得同一 Unix UID 任意讀檔能力的程式；完整隔離仍需獨立服務帳號或 OS secret store。
 - 倉庫既有的歷史 `.joblib` 沒有 HMAC sidecar；安全載入器會拒絕它們，須從可信資料重新訓練，不能把來源未確認的 pickle 直接補簽當成可信。
-- 20-session live pilot 已完成；正式 1100-session campaign 尚待逐批
-  擷取，smoke 與被 quarantine 的產物不可當作訓練資料或成效證據。
-- ML-IDS 的 live 精確標註資料仍不足，不應把離線指標外推成生產保證。
+- 20-session pilot 與 1,100-session live campaign 均已完成；正式候選為
+  1,099 場。smoke、被 quarantine 的產物與 300 場被替換的缺陷版本不可重複計入
+  訓練規模或成效證據。
+- live 資料仍是同機 Gazebo 受控實驗，不具企業現場、隔離跨主機、Pi 5 或生產環境代表性；
+  不應把離線指標外推成自動封鎖保證。
 - 修補後的 `01c` 全 Gazebo 長時間場景尚未完成完整紅隊回歸。
 
 紅隊 PoC 僅能在已獲授權、隔離的 ROS domain／實驗網路執行；不要把測試腳本指向第三方或生產系統。

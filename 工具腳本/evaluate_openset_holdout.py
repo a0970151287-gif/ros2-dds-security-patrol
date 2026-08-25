@@ -112,11 +112,19 @@ def main() -> int:
     # 時序特徵失去意義。
     rows.sort(key=lambda r: (r["session_id"], r["source"], int(r["window"])))
 
-    holdout_rows = [r for r in rows if r.get("novelty_role") == HOLDOUT_ROLE]
+    # 依 metrics 宣告的 holdout 標籤選列，而不是 CSV 的 novelty_role 欄位。
+    # 兩者在原始設定下等價，但 --holdout-label 可以指定別的類別，那時
+    # novelty_role 仍指向舊的那兩類，會選錯列。下面的斷言守住等價性。
+    holdout_rows = [r for r in rows if r["label"] in holdout_labels]
+    if holdout_labels == {"sensor_spoof", "service_dos"}:
+        marked = {r["session_id"] for r in rows if r.get("novelty_role") == HOLDOUT_ROLE}
+        if marked and marked != {r["session_id"] for r in holdout_rows}:
+            print("⛔ holdout 標籤與 novelty_role 欄位不一致", file=sys.stderr)
+            return 1
     normal_rows = [
         r
         for r in rows
-        if r.get("novelty_role") != HOLDOUT_ROLE and r["label"] == "normal"
+        if r["label"] not in holdout_labels and r["label"] == "normal"
     ]
     if not holdout_rows:
         print("⛔ 特徵表裡沒有任何 holdout 列", file=sys.stderr)
