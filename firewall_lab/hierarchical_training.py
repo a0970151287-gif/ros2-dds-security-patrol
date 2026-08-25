@@ -558,13 +558,29 @@ def _select_estimator(
 
 
 def _calibrate(estimator, x, y, weights):
+    import warnings
+
     from sklearn.calibration import CalibratedClassifierCV
     from sklearn.frozen import FrozenEstimator
 
     calibrated = CalibratedClassifierCV(
         FrozenEstimator(estimator), method="sigmoid", cv=None, n_jobs=1
     )
-    calibrated.fit(x, y, sample_weight=weights)
+    # The base estimator was already fitted with session-equal weights and is
+    # intentionally frozen.  In this configuration sample_weight belongs only
+    # to the sigmoid calibration fit.  scikit-learn emits a generic warning
+    # because FrozenEstimator has no fit(sample_weight=...) signature, even
+    # though "calibrator only" is precisely the intended protocol here.
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=(
+                "Since FrozenEstimator does not appear to accept sample_weight, "
+                "sample weights will only be used for the calibration itself.*"
+            ),
+            category=UserWarning,
+        )
+        calibrated.fit(x, y, sample_weight=weights)
     return calibrated
 
 

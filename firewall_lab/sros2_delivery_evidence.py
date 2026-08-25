@@ -34,10 +34,10 @@ from typing import Any, Iterable, Sequence
 from .schema import SchemaError, require_identifier, sha256_file, utc_now
 
 
-CONTRACT_SCHEMA = "sros2-firewall-direct-delivery-contract/v1"
+CONTRACT_SCHEMA = "sros2-firewall-direct-delivery-contract/v2"
 ARCHIVE_RECORD_SCHEMA = "sros2-firewall-direct-delivery-record/v1"
-REPORT_SCHEMA = "sros2-firewall-direct-delivery-report/v1"
-AGGREGATE_SCHEMA = "sros2-firewall-direct-delivery-aggregate/v1"
+REPORT_SCHEMA = "sros2-firewall-direct-delivery-report/v2"
+AGGREGATE_SCHEMA = "sros2-firewall-direct-delivery-aggregate/v2"
 
 SESSION_RE = re.compile(
     r"[0-9]{8}T[0-9]{12}Z_[a-z][a-z0-9_]{0,63}_[0-9a-f]{8}"
@@ -48,6 +48,16 @@ TOKEN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{7,127}")
 
 SECURITY_MODES = frozenset({"permissive", "enforce"})
 ARCHIVE_ROLES = frozenset({"attempted", "protected_received"})
+AUTHORIZATION_CASES = frozenset(
+    {
+        "authorized_publisher",
+        "uncredentialed_publisher",
+        "invalid_credential_publisher",
+        "acl_denied_publisher",
+    }
+)
+CREDENTIAL_STATES = frozenset({"security_disabled", "valid", "absent", "invalid"})
+PERMISSION_STATES = frozenset({"not_enforced", "allow", "deny", "not_reached"})
 MAX_CONTRACT_BYTES = 1024 * 1024
 MAX_ARCHIVE_BYTES = 8 * 1024 * 1024
 MAX_JSONL_LINES = 8194
@@ -198,11 +208,96 @@ def _read_json_object(path: Path, *, maximum_bytes: int, label: str) -> dict[str
     return value
 
 
+def _normalize_authorization(
+    value: Any,
+    *,
+    security_mode: str,
+    source_enclave: str,
+    canary_topic: str,
+) -> dict[str, str | bool]:
+    """Validate the five inputs that determine expected delivery.
+
+    A contract assertion is not a hardware trust root, so the context carries
+    an explicit attestation flag.  The verifier still refuses internally
+    inconsistent combinations instead of inferring authorization from a node
+    name, directory order, or the security mode alone.
+    """
+
+    raw = _expect_exact_keys(
+        value,
+        {
+            "authorization_case",
+            "credential_state",
+            "permission_state",
+            "subject_enclave",
+            "topic",
+            "context_attested",
+        },
+        "publisher authorization",
+    )
+    authorization_case = raw["authorization_case"]
+    if authorization_case not in AUTHORIZATION_CASES:
+        raise SchemaError("publisher authorization_case is invalid")
+    credential_state = raw["credential_state"]
+    if credential_state not in CREDENTIAL_STATES:
+        raise SchemaError("publisher credential_state is invalid")
+    permission_state = raw["permission_state"]
+    if permission_state not in PERMISSION_STATES:
+        raise SchemaError("publisher permission_state is invalid")
+    subject_enclave = _ros_path(raw["subject_enclave"], "publisher subject_enclave")
+    topic = _ros_path(raw["topic"], "publisher authorization topic")
+    if subject_enclave != source_enclave:
+        raise SchemaError("publisher authorization is bound to a different source enclave")
+    if topic != canary_topic:
+        raise SchemaError("publisher authorization is bound to a different canary topic")
+    if not isinstance(raw["context_attested"], bool):
+        raise SchemaError("publisher context_attested must be bool")
+
+    if security_mode == "permissive":
+        if credential_state != "security_disabled" or permission_state != "not_enforced":
+            raise SchemaError(
+                "permissive authorization must declare security_disabled/not_enforced"
+            )
+        expected_delivery = "full_delivery"
+        expected_reason = "security_disabled_in_permissive_control"
+    else:
+        expected_by_case = {
+            "authorized_publisher": ("valid", "allow", "full_delivery"),
+            "uncredentialed_publisher": ("absent", "not_reached", "zero_delivery"),
+            "invalid_credential_publisher": ("invalid", "not_reached", "zero_delivery"),
+            "acl_denied_publisher": ("valid", "deny", "zero_delivery"),
+        }
+        expected_credential, expected_permission, expected_delivery = expected_by_case[
+            authorization_case
+        ]
+        if (credential_state, permission_state) != (
+            expected_credential,
+            expected_permission,
+        ):
+            raise SchemaError(
+                "enforce authorization fields contradict the authorization_case"
+            )
+        expected_reason = f"enforce_{authorization_case}"
+
+    return {
+        "authorization_case": authorization_case,
+        "credential_state": credential_state,
+        "permission_state": permission_state,
+        "subject_enclave": subject_enclave,
+        "topic": topic,
+        "context_attested": raw["context_attested"],
+        "expected_delivery": expected_delivery,
+        "expected_reason": expected_reason,
+    }
+
+
 def _load_contract(path_value: str | Path) -> tuple[Path, dict[str, Any]]:
     path = Path(path_value)
     raw = _read_json_object(path, maximum_bytes=MAX_CONTRACT_BYTES, label="delivery contract")
     expected = {
         "schema_version",
+        "pair_id",
+        "pairing_attested",
         "trial_id",
         "session_id",
         "security_mode",
@@ -212,6 +307,7 @@ def _load_contract(path_value: str | Path) -> tuple[Path, dict[str, Any]]:
         "protected_sink_id",
         "protected_enclave",
         "canary_topic",
+        "publisher_authorization",
         "window",
         "expected_first_sequence",
         "expected_attempt_count",
@@ -221,7 +317,13 @@ def _load_contract(path_value: str | Path) -> tuple[Path, dict[str, Any]]:
     _expect_exact_keys(raw, expected, "delivery contract")
     if raw["schema_version"] != CONTRACT_SCHEMA:
         raise SchemaError("unsupported delivery contract schema")
+    pair_id = require_identifier(raw["pair_id"], "pair_id")
+    pairing_attested = raw["pairing_attested"]
+    if not isinstance(pairing_attested, bool):
+        raise SchemaError("pairing_attested must be bool")
     trial_id = require_identifier(raw["trial_id"], "trial_id")
+    if pairing_attested and pair_id != trial_id:
+        raise SchemaError("attested pair_id must equal the archive-bound trial_id")
     session_id = raw["session_id"]
     if not isinstance(session_id, str) or not SESSION_RE.fullmatch(session_id):
         raise SchemaError("invalid delivery session_id")
@@ -238,6 +340,12 @@ def _load_contract(path_value: str | Path) -> tuple[Path, dict[str, Any]]:
     if source_enclave == protected_enclave:
         raise SchemaError("source and protected sink enclaves must be distinct")
     canary_topic = _ros_path(raw["canary_topic"], "canary_topic")
+    authorization = _normalize_authorization(
+        raw["publisher_authorization"],
+        security_mode=mode,
+        source_enclave=source_enclave,
+        canary_topic=canary_topic,
+    )
 
     window = _expect_exact_keys(raw["window"], {"start_utc", "end_utc"}, "delivery window")
     start = _utc(window["start_utc"], "window.start_utc")
@@ -293,6 +401,8 @@ def _load_contract(path_value: str | Path) -> tuple[Path, dict[str, Any]]:
 
     normalized = {
         **raw,
+        "pair_id": pair_id,
+        "pairing_attested": pairing_attested,
         "trial_id": trial_id,
         "session_id": session_id,
         "security_mode": mode,
@@ -302,6 +412,7 @@ def _load_contract(path_value: str | Path) -> tuple[Path, dict[str, Any]]:
         "protected_sink_id": protected_sink_id,
         "protected_enclave": protected_enclave,
         "canary_topic": canary_topic,
+        "publisher_authorization": authorization,
         "window": {
             "start_utc": window["start_utc"],
             "end_utc": window["end_utc"],
@@ -530,6 +641,17 @@ def _attempt_set_sha256(records: Sequence[dict[str, Any]]) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
+def _expected_canary_sha256(trial_id: str, sequence: int) -> str:
+    return hashlib.sha256(f"{trial_id}:{sequence}".encode("utf-8")).hexdigest()
+
+
+def _normalized_stimulus_sha256(sequences: Sequence[int]) -> str:
+    canonical = json.dumps(
+        list(sequences), separators=(",", ":"), allow_nan=False
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
 def _build_report(contract_path: Path, contract: dict[str, Any]) -> dict[str, Any]:
     attempted = _validate_archive("attempted", contract)
     received = _validate_archive("protected_received", contract)
@@ -541,6 +663,9 @@ def _build_report(contract_path: Path, contract: dict[str, Any]) -> dict[str, An
 
     attempt_by_sequence = {item["sequence"]: item["payload_sha256"] for item in attempted["records"]}
     received_by_sequence = {item["sequence"]: item["payload_sha256"] for item in received["records"]}
+    for sequence, digest in attempt_by_sequence.items():
+        if digest != _expected_canary_sha256(contract["trial_id"], sequence):
+            raise SchemaError("attempted canary does not match the deterministic payload scheme")
     unexpected = sorted(set(received_by_sequence) - set(attempt_by_sequence))
     if unexpected:
         raise SchemaError("received archive contains a canary that was never attempted")
@@ -560,10 +685,11 @@ def _build_report(contract_path: Path, contract: dict[str, Any]) -> dict[str, An
         observed = "full_delivery"
     else:
         observed = "partial_delivery"
-    expected = "zero_delivery" if contract["security_mode"] == "enforce" else "full_delivery"
+    authorization = contract["publisher_authorization"]
+    expected = authorization["expected_delivery"]
     passed = observed == expected
 
-    if contract["security_mode"] == "enforce":
+    if expected == "zero_delivery":
         confusion = {"tp": blocked_count, "fn": delivered_count, "fp": 0, "tn": 0}
     else:
         confusion = {"tp": 0, "fn": 0, "fp": blocked_count, "tn": delivered_count}
@@ -571,6 +697,8 @@ def _build_report(contract_path: Path, contract: dict[str, Any]) -> dict[str, An
     return {
         "schema_version": REPORT_SCHEMA,
         "created_utc": utc_now(),
+        "pair_id": contract["pair_id"],
+        "pairing_attested": contract["pairing_attested"],
         "trial_id": contract["trial_id"],
         "session_id": contract["session_id"],
         "security_mode": contract["security_mode"],
@@ -584,9 +712,14 @@ def _build_report(contract_path: Path, contract: dict[str, Any]) -> dict[str, An
             "window_start_utc": contract["window"]["start_utc"],
             "window_end_utc": contract["window"]["end_utc"],
         },
+        "publisher_authorization": dict(authorization),
         "integrity": {
             "contract_sha256": sha256_file(contract_path),
             "attempt_set_sha256": _attempt_set_sha256(attempted["records"]),
+            "normalized_stimulus_sha256": _normalized_stimulus_sha256(
+                attempted_sequences
+            ),
+            "payload_scheme": "trial_id_colon_sequence/v1",
             "attempted_archive": attempted["archive"],
             "protected_received_archive": received["archive"],
             "archive_sequences_continuous": True,
@@ -598,18 +731,23 @@ def _build_report(contract_path: Path, contract: dict[str, Any]) -> dict[str, An
             "vendor_security_log_used_as_ground_truth": False,
             "claim_scope": "direct_canary_delivery_only",
             "collector_authenticity_attested": False,
+            "publisher_authorization_context_attested": authorization[
+                "context_attested"
+            ],
+            "pairing_attested": contract["pairing_attested"],
         },
         "classification_semantics": {
-            "positive_condition": "enforce_canary_should_be_blocked",
-            "negative_condition": "permissive_canary_should_be_delivered",
-            "tp": "enforce_canary_not_received",
-            "fn": "enforce_canary_received",
-            "fp": "permissive_canary_not_received",
-            "tn": "permissive_canary_received",
+            "positive_condition": "policy_expected_zero_delivery",
+            "negative_condition": "policy_expected_full_delivery",
+            "tp": "expected_zero_and_canary_not_received",
+            "fn": "expected_zero_but_canary_received",
+            "fp": "expected_full_but_canary_not_received",
+            "tn": "expected_full_and_canary_received",
         },
         "result": {
             "evaluable": True,
             "expected": expected,
+            "expected_reason": authorization["expected_reason"],
             "observed": observed,
             "passed": passed,
             "attempted_count": attempted_count,
@@ -692,15 +830,15 @@ def aggregate_delivery_evidence(
     if len({report["integrity"]["contract_sha256"] for report in reports}) != len(reports):
         raise SchemaError("aggregate contains a duplicate delivery contract")
 
-    by_trial: dict[str, dict[str, dict[str, Any]]] = {}
+    by_pair: dict[str, dict[str, dict[str, Any]]] = {}
     for report in reports:
-        mode_map = by_trial.setdefault(report["trial_id"], {})
+        mode_map = by_pair.setdefault(report["pair_id"], {})
         if report["security_mode"] in mode_map:
-            raise SchemaError("each trial must contain exactly one session per security mode")
+            raise SchemaError("each pair must contain exactly one session per security mode")
         mode_map[report["security_mode"]] = report
-    for trial_id, mode_map in by_trial.items():
+    for pair_id, mode_map in by_pair.items():
         if set(mode_map) != SECURITY_MODES:
-            raise SchemaError(f"trial {trial_id} is not a complete permissive/enforce pair")
+            raise SchemaError(f"pair {pair_id} is not a complete permissive/enforce pair")
         permissive = mode_map["permissive"]
         enforce = mode_map["enforce"]
         for field in (
@@ -713,9 +851,18 @@ def aggregate_delivery_evidence(
                 left = {key: value for key, value in left.items() if not key.startswith("window_")}
                 right = {key: value for key, value in right.items() if not key.startswith("window_")}
             if left != right:
-                raise SchemaError(f"paired trial {trial_id} has mismatched {field}")
-        if permissive["integrity"]["attempt_set_sha256"] != enforce["integrity"]["attempt_set_sha256"]:
-            raise SchemaError(f"paired trial {trial_id} did not attempt the same canaries")
+                raise SchemaError(f"paired evidence {pair_id} has mismatched {field}")
+        for field in ("authorization_case", "subject_enclave", "topic"):
+            if permissive["publisher_authorization"][field] != enforce[
+                "publisher_authorization"
+            ][field]:
+                raise SchemaError(
+                    f"paired evidence {pair_id} has mismatched authorization {field}"
+                )
+        if permissive["integrity"]["normalized_stimulus_sha256"] != enforce[
+            "integrity"
+        ]["normalized_stimulus_sha256"]:
+            raise SchemaError(f"paired evidence {pair_id} did not attempt the same canaries")
 
     confusion = {
         key: sum(report["confusion_matrix"][key] for report in reports)
@@ -739,18 +886,26 @@ def aggregate_delivery_evidence(
             "ground_truth": "paired_direct_application_delivery",
             "vendor_security_log_used_as_ground_truth": False,
             "all_inputs_reverified": True,
-            "all_trials_paired": True,
+            "all_sessions_paired": True,
+            "publisher_authorization_contexts_all_attested": all(
+                report["publisher_authorization"]["context_attested"]
+                for report in reports
+            ),
+            "all_pairings_attested": all(
+                report["pairing_attested"] for report in reports
+            ),
         },
         "classification_semantics": {
-            "positive_condition": "enforce_canary_should_be_blocked",
-            "negative_condition": "permissive_canary_should_be_delivered",
-            "tp": "enforce_canary_not_received",
-            "fn": "enforce_canary_received",
-            "fp": "permissive_canary_not_received",
-            "tn": "permissive_canary_received",
+            "positive_condition": "policy_expected_zero_delivery",
+            "negative_condition": "policy_expected_full_delivery",
+            "tp": "expected_zero_and_canary_not_received",
+            "fn": "expected_zero_but_canary_received",
+            "fp": "expected_full_but_canary_not_received",
+            "tn": "expected_full_and_canary_received",
         },
         "counts": {
-            "trials": len(by_trial),
+            "pairs": len(by_pair),
+            "trials": len(reports),
             "sessions": len(reports),
             "messages": total,
             "passed_sessions": sum(1 for report in reports if report["result"]["passed"]),
@@ -760,13 +915,15 @@ def aggregate_delivery_evidence(
         "sessions": [
             {
                 "trial_id": report["trial_id"],
+                "pair_id": report["pair_id"],
+                "pairing_attested": report["pairing_attested"],
                 "session_id": report["session_id"],
                 "security_mode": report["security_mode"],
                 "contract_sha256": report["integrity"]["contract_sha256"],
                 "observed": report["result"]["observed"],
                 "passed": report["result"]["passed"],
             }
-            for report in sorted(reports, key=lambda item: (item["trial_id"], item["security_mode"]))
+            for report in sorted(reports, key=lambda item: (item["pair_id"], item["security_mode"]))
         ],
         "safety": {
             "offline_verification_only": True,
@@ -811,7 +968,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         report = aggregate_delivery_evidence(args.contract, output_path=args.output)
         summary = {
             "output": str(args.output),
-            "trials": report["counts"]["trials"],
+            "pairs": report["counts"]["pairs"],
+            "sessions": report["counts"]["sessions"],
             "confusion_matrix": report["confusion_matrix"],
             "executable": False,
         }

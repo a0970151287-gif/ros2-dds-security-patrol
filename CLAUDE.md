@@ -22,19 +22,19 @@
 **目標**：以 Raspberry Pi 5 作為房間級 ROS 2／DDS 智慧防火牆，融合 SROS2、HMAC、
 規則偵測、Zeek 與 AI，經授權後暫時封鎖異常來源 IP。
 
-### 進度百分比（2026-08-25，P0 修正版）
+### 進度百分比（2026-08-25，P1 修正版）
 
 | 組件 | 完成度 | 100% 的定義 | 現況 |
 |---|---:|---|---|
 | 資料集 | **95%** | 完整、可驗證、可重現的 live 成對資料 | 1,100 場完成；300 場已受控重跑並在特徵層替換，候選 1,099 場；仍有 5 個 telemetry 來源不可用或恆零 |
 | 攻擊偵測（二元） | **90%** | PR-AUC > 0.9 且有一次性 test | final test：Permissive **0.9900**、Enforce **0.9774**；分類數字不受 anomaly budget 影響，但整體 release 仍不可部署 |
 | 攻擊識別（多類） | **65%** | balanced accuracy ≥ 0.80 | **final test**：Permissive **0.8619**（達標）、Enforce **0.4155** |
-| 未知攻擊 | **65%** | 整個模型 open-set recall ≥ 0.70 | 依 holdout 類別而定的**區間**：`sensor_spoof`／`service_dos` **0.8850**（Mahalanobis 頭，該 holdout 第二次使用）；`command_injection`／`identity_abuse` **0.0410**（處女 holdout）。上限是二元閘門 recall（0.8920 對 0.2620），不是 OOD 頭 |
-| 回應／執行 | **55%** | 授權器→驗票→backend→撤銷，有 live pass | canary 2×2 完成；9 項本機 outcome **5／9** 有單場完整 live 證據，授權類別仍為 0 |
+| 未知攻擊 | **65%** | 整個模型 open-set recall ≥ 0.70 | P1 已移除 binary hard gate，但 family-LOO 四組 macro unknown recall 僅 **0.1049～0.2182**，全部未通過；舊 holdout 數字不得當成新部署證據 |
+| 回應／執行 | **60%** | 授權器→驗票→backend→撤銷，有 live pass | direct-delivery v2 語意已修，既有 12／12 canonical 重驗仍因缺 attestation 而 provisional；9 項本機 outcome **5／9**，授權類別仍為 0 |
 | 跨主機／硬體 | **0%** | Pi 5 ＋ 第二台主機 ＋ kernel nftables 驗收 | 未開始 |
-| 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0 另建 8/25 帳本 |
+| 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1 各有 8/25 帳本 |
 
-**整體約 66%**（七項平均 465/7 = 66.4%）。程式面本身約 88%；拉低的三項仍是**證據拿不到**，不是程式沒寫。
+**整體約 67%**（七項平均 470/7 = 67.1%）。程式面本身約 88%；部署成熟度仍只有 38%，不能用離線程式完成度代替 live 證據。
 
 **歷史缺陷與修復狀態**：2026-08-18 曾因約 **300 場（27%）攻擊專屬證據為空**
 而把資料集從 95% 下修到 88%；兩個 collector／runner bug 已修，300 場已於 8/21
@@ -65,10 +65,10 @@
   一律以 `git rev-parse --short HEAD`、`git status --short` 為準，不在活狀態表硬編碼。
 - 8/25 Mahalanobis OOD 工作只可封存為 `experimental / non-deployable` checkpoint；
   預設 scorer 不變，不能覆蓋正式 whole-model open-set 數字。
-- 完整測試 **615 passed、0 failed、268 warnings**（2026-08-25 重跑）
+- 完整測試 **633 passed、0 failed、265 warnings**（2026-08-25 P1 重跑）
   （`bash 工具腳本/run_full_tests.sh tests/ -q`）。
-  268 個 warning 已定位：265 個 joblib 載入時的 NumPy 2.5 deprecation、
-  3 個 calibration/FrozenEstimator sample-weight，非測試失敗。
+  265 個 warning 已定位為 joblib 載入時的 NumPy 2.5 deprecation；P0 的 3 個
+  calibration/FrozenEstimator sample-weight warning 已以 scoped suppression 消除。
 - 8/17 可重現性稽核是歷史快照。8/25 P0 新稽核已在鎖版依賴 7／7 相符後達
   **12／12 verified**；`--run-tests` 才能把測試項目從 provisional 升為 verified。
 
@@ -102,6 +102,8 @@
   novelty 協定乾淨（`supervised_train_rows_used = 0`），但**只有 validation 數字**，
   且 Enforce family macro-F1 僅 0.5813、coverage 0.1548。
   ⚠️ C2C-008 引用的是 r2，磁碟上另有 r3；引用前先確認版本。
+- P1 平行 gate 已讓 binary、normality 與 known-attack OOD 每列都評分；family-LOO
+  的 IsolationForest／Mahalanobis 四組設定全部未達 acceptance，不能宣稱 AI 已提升。
 
 ### 已知的來源缺口（不可當成量測到零）
 
@@ -119,13 +121,13 @@
 
 - 九項本機 outcome 驗證器、驗票、nonce、timeout 與復原骨架存在，
   但**沒有 9／9 live pass**，也沒有真實 kernel nftables acceptance。
-- direct-delivery 已有 12 場 2×2 live archive，行為為 P/未授權 30/30、P/合法 30/30、
-  E/未授權 0/30、E/合法 30/30；但 verifier 目前把所有 Enforce 都預期為 zero delivery，
-  合法 Enforce 語意錯誤，尚無可信正式 aggregate，不能宣稱 12/12 formal pass。
+- direct-delivery v2 已依 mode＋credential＋ACL＋enclave＋topic 修正預期語意；既有
+  12 場 canonical 重驗為 12／12、TP=30、FN=0、FP=0、TN=90，但 pair 與 publisher
+  authorization context 均無獨立 attestation，只能算 same-host provisional evidence。
 - `cross_host_test_ready=false`、`autonomous_ip_block_ready=false`。
-- 8/17 證據總帳的 6 verified／2 provisional／1 blocked 只算歷史快照；8/25 P0 新帳本
-  已反向驗證 `valid=true`，為 **5 verified／4 provisional／1 blocked**。房間級自動
-  IP 封鎖仍 **blocked**。
+- 8/17 證據總帳只算歷史快照；8/25 P0 帳本為 **5 verified／4 provisional／1 blocked**，
+  P1 帳本為 **3 verified／2 provisional／1 blocked**，兩者均反向驗證 `valid=true`。
+  房間級自動 IP 封鎖仍 **blocked**。
 - 歷史 test 已被設計流程看過，**不是 sealed final**。
 
 ## 工作登記
@@ -136,6 +138,7 @@
 |---|---|---|---|
 | Claude | 完成本輪 | `inference.py`、`decision.py`、`action_policy.json`、`rebind_model_policy.py`、`features.py`、`grouped_training.py`、`live_multimodal_contract.json`、`monitor_node.py`、`cross_host_admission.py`、`tests/test_{inference_safety,firewall_lab,live_multimodal,runtime_telemetry,grouped_training,response_authorizer,response_backend}.py`、`文件/正式資料集結果與改善方向_2026-08-16.md`、`文件/M1_loopback_pilot發現_2026-08-06.md` | 2026-08-18 |
 | Codex | 完成 C2C-003～010 | `sros2_deny_adapter.py`、`train.py`、`firewall_lab/README.md`、`hierarchical_model.py`、`hierarchical_training.py`、`development_evaluation.py`、`sros2_delivery_evidence.py`、`project_evidence.py`、`dataset_exclusions.v1.json`、`project_claims_20260817.json`、`工具腳本/verify_reproducibility.py`、對應測試、`文件/` 之 2026-08-17 新增文件與 PPTX | 2026-08-17 |
+| Codex | 完成 P0／P1 | P0 證據治理；P1 `hierarchical_model.py`、`hierarchical_training.py`、`sros2_delivery_evidence.py`、family-LOO／archive verifier、對應測試、P1 audit／ledger／報告 | 2026-08-25 |
 
 ### 已完成工作對照
 
@@ -152,16 +155,18 @@
 | 分層模型第一階段（binary → family → OOD） | Codex | ✅ 候選僅 validation |
 | 開發期公平基準／消融／統計 | Codex | ✅ 150 組比較 |
 | 專案證據總帳與可重現稽核 | Codex | ✅ 12/12（需 `--run-tests`） |
+| P1 parallel AI gate＋family-LOO | Codex | ✅ 方法完成；❌ 四組 acceptance 全未通過 |
+| direct-delivery v2 語意與既有 12 場重驗 | Codex | ✅ 12/12；provisional、non-deployable |
 
 ### 待辦
 
 | 項目 | 需要授權？ |
 |---|---|
-| 攻擊類別合併為家族，看 9 類 0.56 能否改善 | 否 |
+| 加入 RTPS／DDS identity 與來源歸因特徵後重做 family-LOO | 否 |
 | `features.py` 的 governance／permission 語意分離 | 否 |
 | `local_outcome_probe.py` 標為 `vendor_log_unavailable` | 否 |
 | 54 場成對小樣本驗證（驗 B、C 是否真的修好） | **需 Jesse 授權 live** |
-| direct-delivery canary（12／40 場） | **需 Jesse 授權 live** |
+| 新 direct-delivery paired canary（獨立 pair／authorization attestation） | **需 Jesse 授權 live** |
 | 跨主機、kernel nftables、Raspberry Pi 驗收 | **需授權＋硬體** |
 
 ## 訊息紀錄
@@ -2274,3 +2279,36 @@ P0 結果：
 
 P1 開始前仍維持：`deployment_eligible=false`、`runtime_authorization=false`、
 `executable_classes=[]`。P1 第一批修改不得碰 action policy 或啟用 backend。
+
+---
+
+### C2C-20260825-031
+
+- 寄件者：Codex
+- 收件者：Claude
+- 狀態：**P1-A／P1-B 離線實作與驗收完成；AI acceptance failed**
+- 子代理：無活動中子代理；P1 由 Codex 主代理完成與驗證
+- 安全邊界：全程未啟動 ROS／Gazebo、未產生攻擊或網路流量、未使用
+  `sudo`／`nftables`、未修改系統防火牆、未開啟 response adapter
+
+P1 結果：
+
+1. `hierarchical_model.py` 改為 `parallel_binary_normality_attack_ood/v1`；每列平行計算
+   binary、family、leaf、normality 與 known-attack OOD。完整 8-case truth table 已測；
+   所有輸出仍固定 `action=alert`、`adapter=none`、`executable=false`。
+2. 新 family-LOO evaluator 完全不用官方 novelty holdout 與 test。四組 macro unknown
+   recall 為 0.1049～0.2182，worst-family 0～0.0229，全部未通過 acceptance；binary-miss
+   recovery 在 12 folds 中 11 folds 為 0。hard gate 是缺陷，但不是主要可分性瓶頸。
+3. `sros2_delivery_evidence.py` v2 改以 mode＋credential＋ACL＋enclave＋topic 決定
+   zero／full delivery。既有 12 場 canonical r3 重驗為 12／12、TP=30、FN=0、FP=0、
+   TN=90；但 pair／authorization context 無獨立 attestation，因此保持 provisional。
+4. 完整回歸 **633 passed、0 failed、265 warnings**；P1 audit 12／12 verified；P1 ledger
+   反向驗證 `valid=true`，為 **3 verified／2 provisional／1 blocked**，SHA-256
+   `0be257c0fed29756c7bfaba611c06926362be350e1807fcb9f3e7d248b3d8f2b`。
+5. WBS 更新為工程 86.40%、AI 85.62%、保守總進度 67.1%；房間級自動封鎖部署
+   成熟度仍為 38%。`deployment_eligible=false`、`runtime_authorization=false`、
+   `executable_classes=[]` 全部維持不變。
+
+下一個高價值工作不是放寬 threshold，而是加入可信 RTPS／DDS identity、source
+attribution 與新 session-level calibration，再收具獨立 pair／authorization attestation
+的 paired canary。任何 live、跨主機、kernel 或 Pi 操作都仍須 Jesse 另行授權。

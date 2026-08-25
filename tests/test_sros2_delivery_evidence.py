@@ -28,18 +28,25 @@ def _ts(seconds: float) -> str:
     return (BASE + timedelta(seconds=seconds)).isoformat(timespec="milliseconds")
 
 
-def _payload(sequence: int) -> str:
-    return hashlib.sha256(f"canary:{sequence}".encode()).hexdigest()
+def _payload(trial_id: str, sequence: int) -> str:
+    return hashlib.sha256(f"{trial_id}:{sequence}".encode()).hexdigest()
 
 
-def _binding(*, mode: str, trial_id: str, session_id: str) -> dict[str, object]:
+def _binding(
+    *,
+    mode: str,
+    trial_id: str,
+    session_id: str,
+    authorization_case: str,
+) -> dict[str, object]:
+    authorized = authorization_case == "authorized_publisher"
     return {
         "session_id": session_id,
         "trial_id": trial_id,
         "security_mode": mode,
         "policy_sha256": "a" * 64,
-        "source_id": "unauthorized_canary_source",
-        "source_enclave": "/redteam/canary_source",
+        "source_id": "credentialed_source" if authorized else "uncredentialed_source",
+        "source_enclave": "/talker" if authorized else "/uncredentialed_source",
         "protected_sink_id": "protected_canary_sink",
         "protected_enclave": "/robot/protected_sink",
         "canary_topic": "/firewall_lab/protected_canary",
@@ -52,9 +59,15 @@ def _archive_records(
     mode: str,
     trial_id: str,
     session_id: str,
+    authorization_case: str,
     canary_sequences: list[int],
 ) -> list[dict[str, object]]:
-    binding = _binding(mode=mode, trial_id=trial_id, session_id=session_id)
+    binding = _binding(
+        mode=mode,
+        trial_id=trial_id,
+        session_id=session_id,
+        authorization_case=authorization_case,
+    )
     collector_id = "attempt_collector" if role == "attempted" else "receipt_collector"
     boot_id = "attempt-boot-0001" if role == "attempted" else "receipt-boot-0001"
     common = {
@@ -95,7 +108,7 @@ def _archive_records(
                     "record_type": body_type,
                     "ts_utc": _ts(offset),
                     "sequence": sequence,
-                    "payload_sha256": _payload(sequence),
+                    "payload_sha256": _payload(trial_id, sequence),
                 },
             )
         )
@@ -148,6 +161,9 @@ def _write_contract(
     mode: str,
     received_sequences: list[int],
     trial_id: str = "delivery_trial",
+    pair_id: str | None = None,
+    pairing_attested: bool | None = None,
+    authorization_case: str = "uncredentialed_publisher",
     session_tag: str = "1234abcd",
 ) -> Path:
     root.mkdir(parents=True)
@@ -161,6 +177,7 @@ def _write_contract(
             mode=mode,
             trial_id=trial_id,
             session_id=session_id,
+            authorization_case=authorization_case,
             canary_sequences=[10, 11, 12],
         ),
     )
@@ -171,20 +188,55 @@ def _write_contract(
             mode=mode,
             trial_id=trial_id,
             session_id=session_id,
+            authorization_case=authorization_case,
             canary_sequences=received_sequences,
         ),
     )
+    binding = _binding(
+        mode=mode,
+        trial_id=trial_id,
+        session_id=session_id,
+        authorization_case=authorization_case,
+    )
+    if mode == "permissive":
+        credential_state = "security_disabled"
+        permission_state = "not_enforced"
+    elif authorization_case == "authorized_publisher":
+        credential_state = "valid"
+        permission_state = "allow"
+    elif authorization_case == "acl_denied_publisher":
+        credential_state = "valid"
+        permission_state = "deny"
+    elif authorization_case == "invalid_credential_publisher":
+        credential_state = "invalid"
+        permission_state = "not_reached"
+    else:
+        credential_state = "absent"
+        permission_state = "not_reached"
+    effective_pair_id = pair_id or trial_id
+    if pairing_attested is None:
+        pairing_attested = effective_pair_id == trial_id
     contract = {
         "schema_version": CONTRACT_SCHEMA,
+        "pair_id": effective_pair_id,
+        "pairing_attested": pairing_attested,
         "trial_id": trial_id,
         "session_id": session_id,
         "security_mode": mode,
         "policy_sha256": "a" * 64,
-        "source_id": "unauthorized_canary_source",
-        "source_enclave": "/redteam/canary_source",
-        "protected_sink_id": "protected_canary_sink",
-        "protected_enclave": "/robot/protected_sink",
-        "canary_topic": "/firewall_lab/protected_canary",
+        "source_id": binding["source_id"],
+        "source_enclave": binding["source_enclave"],
+        "protected_sink_id": binding["protected_sink_id"],
+        "protected_enclave": binding["protected_enclave"],
+        "canary_topic": binding["canary_topic"],
+        "publisher_authorization": {
+            "authorization_case": authorization_case,
+            "credential_state": credential_state,
+            "permission_state": permission_state,
+            "subject_enclave": binding["source_enclave"],
+            "topic": binding["canary_topic"],
+            "context_attested": False,
+        },
         "window": {"start_utc": _ts(10), "end_utc": _ts(20)},
         "expected_first_sequence": 10,
         "expected_attempt_count": 3,
@@ -237,7 +289,7 @@ def _rewrite_and_repin(contract_path: Path, role: str, records: list[dict[str, o
     _repin(contract_path, role)
 
 
-def test_enforce_zero_delivery_is_evaluable_direct_evidence(tmp_path):
+def test_enforce_uncredentialed_zero_delivery_is_evaluable_direct_evidence(tmp_path):
     contract = _write_contract(tmp_path / "enforce", mode="enforce", received_sequences=[])
     report = verify_delivery_evidence(contract)
 
@@ -249,13 +301,63 @@ def test_enforce_zero_delivery_is_evaluable_direct_evidence(tmp_path):
     assert report["confusion_matrix"] == {"tp": 3, "fn": 0, "fp": 0, "tn": 0}
     assert report["evidence_basis"]["vendor_security_log_used_as_ground_truth"] is False
     assert report["evidence_basis"]["collector_authenticity_attested"] is False
-    assert report["classification_semantics"]["tp"] == "enforce_canary_not_received"
+    assert report["classification_semantics"]["tp"] == (
+        "expected_zero_and_canary_not_received"
+    )
+    assert report["publisher_authorization"]["authorization_case"] == (
+        "uncredentialed_publisher"
+    )
+    assert report["evidence_basis"]["publisher_authorization_context_attested"] is False
     assert report["safety"]["network_activity_performed"] is False
     assert report["safety"]["network_action_performed"] is False
     assert report["safety"]["source_ip_attribution_verified"] is False
     assert report["safety"]["automatic_ip_block_authorized"] is False
     assert report["safety"]["deployment_eligible"] is False
     assert report["safety"]["executable"] is False
+
+
+def test_enforce_authorized_publisher_is_expected_to_deliver(tmp_path):
+    contract = _write_contract(
+        tmp_path / "authorized",
+        mode="enforce",
+        authorization_case="authorized_publisher",
+        received_sequences=[10, 11, 12],
+    )
+    report = verify_delivery_evidence(contract)
+
+    assert report["result"]["expected"] == "full_delivery"
+    assert report["result"]["expected_reason"] == "enforce_authorized_publisher"
+    assert report["result"]["observed"] == "full_delivery"
+    assert report["result"]["passed"] is True
+    assert report["confusion_matrix"] == {"tp": 0, "fn": 0, "fp": 0, "tn": 3}
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("credential_state", "absent", "contradict"),
+        ("permission_state", "deny", "contradict"),
+        ("subject_enclave", "/different", "different source enclave"),
+        ("topic", "/different", "different canary topic"),
+    ],
+)
+def test_authorization_context_must_be_internally_bound(
+    tmp_path, field, value, message
+):
+    contract = _write_contract(
+        tmp_path / field,
+        mode="enforce",
+        authorization_case="authorized_publisher",
+        received_sequences=[10, 11, 12],
+    )
+    payload = json.loads(contract.read_text(encoding="utf-8"))
+    payload["publisher_authorization"][field] = value
+    contract.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    with pytest.raises(SchemaError, match=message):
+        verify_delivery_evidence(contract)
 
 
 def test_permissive_delivery_and_partial_delivery_have_tn_fp_counts(tmp_path):
@@ -428,7 +530,8 @@ def test_paired_aggregate_reverifies_inputs_and_computes_confusion(tmp_path):
 
     assert aggregate["schema_version"] == AGGREGATE_SCHEMA
     assert aggregate["counts"] == {
-        "trials": 1,
+        "pairs": 1,
+        "trials": 2,
         "sessions": 2,
         "messages": 6,
         "passed_sessions": 0,
@@ -438,6 +541,36 @@ def test_paired_aggregate_reverifies_inputs_and_computes_confusion(tmp_path):
     assert aggregate["evidence_basis"]["vendor_security_log_used_as_ground_truth"] is False
     assert aggregate["safety"]["deployment_eligible"] is False
     assert aggregate["safety"]["executable"] is False
+
+
+def test_aggregate_counts_authorized_enforce_delivery_as_true_negative(tmp_path):
+    permissive = _write_contract(
+        tmp_path / "permissive",
+        mode="permissive",
+        authorization_case="authorized_publisher",
+        received_sequences=[10, 11, 12],
+        trial_id="authorized_permissive",
+        pair_id="authorized_pair",
+        session_tag="7777aaaa",
+    )
+    enforce = _write_contract(
+        tmp_path / "enforce",
+        mode="enforce",
+        authorization_case="authorized_publisher",
+        received_sequences=[10, 11, 12],
+        trial_id="authorized_enforce",
+        pair_id="authorized_pair",
+        session_tag="8888bbbb",
+    )
+    aggregate = aggregate_delivery_evidence([permissive, enforce])
+
+    assert aggregate["counts"]["passed_sessions"] == 2
+    assert aggregate["confusion_matrix"] == {"tp": 0, "fn": 0, "fp": 0, "tn": 6}
+    assert aggregate["metrics"]["true_positive_rate"] is None
+    assert aggregate["metrics"]["true_negative_rate"] == 1.0
+    assert aggregate["evidence_basis"][
+        "publisher_authorization_contexts_all_attested"
+    ] is False
 
 
 def test_aggregate_refuses_unpaired_or_mismatched_trials(tmp_path):
@@ -461,7 +594,7 @@ def test_aggregate_refuses_unpaired_or_mismatched_trials(tmp_path):
     contract_data = json.loads(enforce.read_text(encoding="utf-8"))
     contract_data["canary_topic"] = "/firewall_lab/other_canary"
     enforce.write_text(json.dumps(contract_data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    with pytest.raises(SchemaError, match="cross-canary_topic"):
+    with pytest.raises(SchemaError, match="different canary topic"):
         aggregate_delivery_evidence([permissive, enforce])
 
 

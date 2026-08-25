@@ -2,7 +2,7 @@
 
 本專題的產品主軸是「圍繞 SROS2 的智慧防火牆」：以 Gazebo 中的 TurtleBot3 作為受測系統，自動產生正常與受控攻擊的 ROS2／DDS 流量，經 Zeek 特徵、ML 判斷與受限制的回應策略形成縱深防禦。紅隊 PoC 是訓練和驗證資料來源，不是專題本體。
 
-新的[防火牆資料工廠](firewall_lab/README.md)會記錄每場實驗的精確標籤、SROS2 模式、PCAP、Zeek 結果與政策雜湊，並以 session 分組避免模型資料洩漏。目前有兩個清楚分層的資料來源：2,500 sessions／90,000 windows、22 種攻擊加 normal 的合成預訓練集；以及已完成的 1,100-session Gazebo live campaign。正式候選資料排除一場封存後仍增長的 session，實際使用 1,099 場（Permissive 550、Enforce 549）；另有 300 場缺陷情境已用相同 scenario／seed／mode 受控重跑並在特徵層替換，不重複灌成 1,399 場。所有模型仍為 observe-only、`deployment_eligible=false`，不代表實體機器人或生產環境保證。證據邊界與殘餘風險見[2026-08-21 階段完整總報告](文件/專題完整總報告_2026-08-21.md)。
+新的[防火牆資料工廠](firewall_lab/README.md)會記錄每場實驗的精確標籤、SROS2 模式、PCAP、Zeek 結果與政策雜湊，並以 session 分組避免模型資料洩漏。目前有兩個清楚分層的資料來源：2,500 sessions／90,000 windows、22 種攻擊加 normal 的合成預訓練集；以及已完成的 1,100-session Gazebo live campaign。正式候選資料排除一場封存後仍增長的 session，實際使用 1,099 場（Permissive 550、Enforce 549）；另有 300 場缺陷情境已用相同 scenario／seed／mode 受控重跑並在特徵層替換，不重複灌成 1,399 場。2026-08-25 的 P1 已完成平行 AI gate 與 credential／ACL-aware direct-delivery 驗票；但 family-LOO 四組設定全部未達 AI acceptance，既有 12 場 delivery 重驗也因缺獨立配對與授權情境 attestation 而只算 provisional。所有模型仍為 observe-only、`deployment_eligible=false`，不代表實體機器人或生產環境保證。證據邊界與殘餘風險見[2026-08-21 階段完整總報告](文件/專題完整總報告_2026-08-21.md)與[P1 修正報告](文件/P1_平行AI與DirectDelivery修正_2026-08-25.md)。
 
 ## 系統重點
 
@@ -18,11 +18,13 @@
 ## 建議閱讀順序
 
 1. [防火牆資料工廠](firewall_lab/README.md)：資料生成、1100-session campaign、品質 gate 與模型決策。
-2. [階段完整總報告](文件/專題完整總報告_2026-08-21.md)：架構、證據邊界、成果與殘餘風險。
-3. [系統架構](紅隊測試/ARCHITECTURE.md)：節點、topic 與信任邊界。
-4. [展示流程](展示指令/README.md)：SROS2 Enforce 與 demo 操作。
-5. [ML-IDS 說明](ML防禦/README.md)：資料、模型、評估與回應安全閘。
-6. [Code review 指引](REVIEW_README.md)：原始碼導覽與測試入口。
+2. [P1 修正報告](文件/P1_平行AI與DirectDelivery修正_2026-08-25.md)：平行 AI gate、family-LOO 失敗結果與 direct-delivery v2 邊界。
+3. [主計畫與 WBS](文件/專題主計畫與WBS_2026-08-17.md)：可追溯完成度、路線圖與 Jesse 待辦。
+4. [階段完整總報告](文件/專題完整總報告_2026-08-21.md)：架構、證據邊界、成果與殘餘風險。
+5. [系統架構](紅隊測試/ARCHITECTURE.md)：節點、topic 與信任邊界。
+6. [展示流程](展示指令/README.md)：SROS2 Enforce 與 demo 操作。
+7. [ML-IDS 說明](ML防禦/README.md)：資料、模型、評估與回應安全閘。
+8. [Code review 指引](REVIEW_README.md)：原始碼導覽與測試入口。
 
 ## 開發與快速驗證
 
@@ -51,6 +53,8 @@ bash 工具腳本/run_full_tests.sh -q
 
 第二支腳本會同時保留專案根目錄與 ROS2 Jazzy 的 Python 路徑，避免
 `firewall_lab` 或 `rclpy` 因 `PYTHONPATH` 被覆寫而在測試收集階段消失。
+2026-08-25 P1 checkpoint 的完整離線回歸為 **633 passed、0 failed、265 warnings**；
+warning 是載入既有 joblib 時的 NumPy 2.5 deprecation，不是測試失敗。
 
 HMAC 金鑰只從權限受限的檔案載入，不應放進環境變數、原始碼或 Git：
 

@@ -129,6 +129,8 @@ def _contract(tmp_path, mode, attempted, received, *, attempts):
     end = min(a[-1], b[-1])
     contract = {
         "schema_version": CONTRACT_SCHEMA,
+        "pair_id": TRIAL,
+        "pairing_attested": True,
         "trial_id": TRIAL,
         "session_id": SESSION_ID,
         "security_mode": mode,
@@ -138,6 +140,18 @@ def _contract(tmp_path, mode, attempted, received, *, attempts):
         "protected_sink_id": "canary_sink",
         "protected_enclave": "/canary_sink",
         "canary_topic": TOPIC,
+        "publisher_authorization": {
+            "authorization_case": "uncredentialed_publisher",
+            "credential_state": (
+                "security_disabled" if mode == "permissive" else "absent"
+            ),
+            "permission_state": (
+                "not_enforced" if mode == "permissive" else "not_reached"
+            ),
+            "subject_enclave": "/canary_source",
+            "topic": TOPIC,
+            "context_attested": False,
+        },
         "window": {"start_utc": start, "end_utc": end},
         "expected_first_sequence": 0,
         "expected_attempt_count": attempts,

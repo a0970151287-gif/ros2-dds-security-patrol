@@ -1,0 +1,17 @@
+{
+  "pairs": {
+    "canary_trial_0001": "uncredentialed_seed_01",
+    "canary_trial_0002": "uncredentialed_seed_02",
+    "canary_trial_0003": "uncredentialed_seed_03",
+    "canary_trial_0004": "authorized_seed_01",
+    "canary_trial_0005": "authorized_seed_02",
+    "canary_trial_0006": "authorized_seed_03",
+    "canary_trial_0007": "uncredentialed_seed_01",
+    "canary_trial_0008": "uncredentialed_seed_02",
+    "canary_trial_0009": "uncredentialed_seed_03",
+    "canary_trial_0010": "authorized_seed_01",
+    "canary_trial_0011": "authorized_seed_02",
+    "canary_trial_0012": "authorized_seed_03"
+  },
+  "schema_version": "sros2-firewall-direct-delivery-pair-map/v1"
+}

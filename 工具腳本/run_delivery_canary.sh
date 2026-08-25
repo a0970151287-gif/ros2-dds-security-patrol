@@ -7,8 +7,14 @@
 set -o pipefail
 cd /home/jesse/ros2_ws
 export FIREWALL_LIVE_RUNTIME=/home/jesse/.local/share/sros2-firewall/live_runtime
-OUT=/home/jesse/canary_evidence
-rm -rf "$OUT"; mkdir -p "$OUT"
+EVIDENCE_ROOT=${CANARY_EVIDENCE_ROOT:-/home/jesse/canary_evidence}
+RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)_direct_delivery"
+OUT="$EVIDENCE_ROOT/$RUN_ID"
+if [ -e "$OUT" ]; then
+  echo "refusing to overwrite existing evidence directory: $OUT" >&2
+  exit 1
+fi
+mkdir -p "$OUT"
 KEYSTORE=$HOME/ros2_ws/sros2_keystore
 POLICY_SHA=$(sha256sum firewall_lab/action_policy.json | cut -d" " -f1)
 
@@ -35,14 +41,21 @@ for mode in permissive enforce; do
   for source_kind in uncredentialed credentialed; do
    for seed in 1 2 3; do
     trial=$((trial+1))
-    TID="canary_trial_$(printf '%04d' $trial)"
+    TID="canary_${source_kind}_seed_$(printf '%02d' "$seed")"
     SID="$(date -u +%Y%m%dT%H%M%S%6NZ)_delivery_canary_$(openssl rand -hex 4)"
-    D="$OUT/$TID"; mkdir -p "$D"
+    D="$OUT/${TID}_${mode}"; mkdir -p "$D"
     printf '  [%2d/12] %-11s %-14s %s ... ' "$trial" "$mode" "$source_kind" "$TID"
 
+    if [ "$source_kind" = credentialed ]; then
+      SOURCE_ID=credentialed_source
+      SOURCE_ENCLAVE=/talker
+    else
+      SOURCE_ID=uncredentialed_source
+      SOURCE_ENCLAVE=/uncredentialed_source
+    fi
     common=(--session-id "$SID" --trial-id "$TID" --security-mode "$mode"
             --policy-sha256 "$POLICY_SHA"
-            --source-id "${source_kind}_source" --source-enclave "/${source_kind}_source"
+            --source-id "$SOURCE_ID" --source-enclave "$SOURCE_ENCLAVE"
             --protected-sink-id canary_listener --protected-enclave /listener
             --canary-topic /chatter --first-sequence 0 --attempt-count 10
             --interval-sec 0.4 --heartbeat-sec 1.0)

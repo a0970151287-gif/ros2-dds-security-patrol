@@ -13,7 +13,7 @@
   PR-AUC 0.9900；Enforce balanced accuracy 0.4155、binary PR-AUC 0.9774。
 - 乾淨 whole-model open-set recall：Permissive 0.5499、Enforce 0.6583，皆低於 0.70。
   2026-08-25 Mahalanobis 結果是 experimental／non-deployable，不能覆蓋這組正式數字。
-- 完整離線回歸：**615 passed、0 failed、268 warnings**。
+- 完整離線回歸：**633 passed、0 failed、265 warnings**。
 - 所有候選維持 `deployment_eligible=false`、`executable=false`；出貨政策
   `executable_classes=[]`，不得解讀成已可自動封鎖 IP。
 
@@ -605,11 +605,19 @@ python3 -m firewall_lab.sros2_delivery_evidence aggregate \
   --output <new-aggregate-report.json>
 ```
 
-驗票器會重新計算 attempt／receipt sequence、collector heartbeat、bytes／SHA-256、
-session、mode、policy、source、enclave、topic 與 UTC window。Vendor security log
-不是 delivery ground truth；缺少 archive 時只能標 blocked，不能補造 live pass。
-所有輸出固定 `source_ip_attribution_verified=false`、`deployment_eligible=false`、
-`executable=false`。
+v2 驗票器會重新計算 attempt／receipt sequence、deterministic payload、collector
+heartbeat、bytes／SHA-256、session、mode、credential state、ACL permission、source、
+enclave、topic、pair 與 UTC window。預期交付由安全語意決定：Permissive 完整交付；
+Enforce 的 valid＋allow 完整交付，absent／invalid credential 或 valid＋deny 則為零交付。
+矛盾欄位一律 fail closed，不能再把所有 Enforce 誤當成零交付。
+
+既有 12 場 archive 的 canonical 重驗位於
+`文件/direct_delivery_P1_既有12場重驗_2026-08-25_r3/`：12／12 session 符合修正後
+預期，TP=30、FN=0、FP=0、TN=90、balanced accuracy=1.0。但歷史 archive 沒有獨立
+pair attestation 與 publisher authorization context attestation，因此只能算 same-host
+provisional evidence，固定 `source_ip_attribution_verified=false`、
+`deployment_eligible=false`、`executable=false`。Vendor security log 不是 delivery ground
+truth；缺少 archive 時只能標 blocked，不能補造 live pass。
 
 ### 專案證據總帳與可重現性
 
@@ -648,11 +656,11 @@ python3 工具腳本/verify_reproducibility.py --run-tests --pretty
 - `文件/風險登錄與驗收矩陣_2026-08-17.md`
 - `文件/國際標準與社會倫理_2026-08-17.md`
 
-以下是 2026-08-17 的歷史快照，不能代表目前工作樹；目前 P0 會另建
+以下是 2026-08-17 的歷史快照，不能代表目前工作樹；P0／P1 均另建
 2026-08-25 稽核與證據總帳，不覆寫舊檔：
 
 - `文件/可重現性稽核_2026-08-17.json`：當時 12/12 checks verified；完整測試
-  **583 passed、0 failed、268 warnings**。目前回歸為 615 passed，舊 hash 已失效。
+  **583 passed、0 failed、268 warnings**。目前回歸為 633 passed，舊 hash 已失效。
 - `文件/證據總帳_2026-08-17/evidence_ledger.json`：6 verified、
   2 provisional、1 blocked；`deployment_eligible=false`、
   `runtime_authorization=false`。
@@ -667,3 +675,12 @@ python3 工具腳本/verify_reproducibility.py --run-tests --pretty
 - `firewall_lab/project_claims_20260825_p0.json`：當前 bytes／SHA-256 與限制敘述。
 - `文件/證據總帳_2026-08-25_P0/`：反向驗證 `valid=true`；5 verified、
   4 provisional、1 blocked，且固定 `deployment_eligible=false`。
+
+目前可引用的 P1 checkpoint：
+
+- `文件/P1_平行AI與DirectDelivery修正_2026-08-25.md`：平行 gate、family-LOO 與
+  direct-delivery v2 的完整結果及限制。
+- `文件/可重現性稽核_2026-08-25_P1_verified.json`：12／12 verified；
+  **633 passed、0 failed、265 warnings**，依賴鎖版 7／7 相符。
+- `文件/證據總帳_2026-08-25_P1/`：反向驗證 `valid=true`；3 verified、
+  2 provisional、1 blocked。AI family-LOO acceptance 未通過，房間級自動封鎖仍 blocked。

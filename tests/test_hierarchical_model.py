@@ -12,11 +12,13 @@ from firewall_lab.hierarchical_model import (
     EXPANDED_FEATURES,
     FAMILY_BY_LABEL,
     HIERARCHICAL_MODEL_SCHEMA,
+    PARALLEL_GATE_CONTRACT,
     RAW_FEATURES,
     HierarchicalFirewallModel,
     build_temporal_row,
     conditional_leaf_candidate,
     family_map_sha256,
+    parallel_gate_membership,
     validate_hierarchical_bundle,
 )
 from firewall_lab.train import FEATURES, LEGACY_TRAINER_DEPLOYMENT_ELIGIBLE
@@ -50,7 +52,12 @@ def _raw_features(**overrides):
     return values
 
 
-def _bundle(*, attack_ood_score=1.0):
+def _bundle(
+    *,
+    attack_probability=0.95,
+    normality_score=1.0,
+    attack_ood_score=1.0,
+):
     return {
         "schema_version": HIERARCHICAL_MODEL_SCHEMA,
         "architecture": ARCHITECTURE_NAME,
@@ -62,7 +69,8 @@ def _bundle(*, attack_ood_score=1.0):
         "source_availability": dict(DEFAULT_LIVE_SOURCE_AVAILABILITY),
         "family_map_sha256": family_map_sha256(),
         "binary_classifier": _FixedClassifier(
-            ["attack", "normal"], [0.95, 0.05]
+            ["attack", "normal"],
+            [attack_probability, 1.0 - attack_probability],
         ),
         "family_classifier": _FixedClassifier(
             ["application_drop", "network_block"], [0.05, 0.95]
@@ -70,7 +78,7 @@ def _bundle(*, attack_ood_score=1.0):
         "leaf_classifier": _FixedClassifier(
             ["message_dos", "service_dos"], [0.10, 0.90]
         ),
-        "normality_detector": _FixedDetector(1.0),
+        "normality_detector": _FixedDetector(normality_score),
         "attack_ood_detector": _FixedDetector(attack_ood_score),
         "binary_threshold": 0.80,
         "family_threshold": 0.80,
@@ -105,6 +113,38 @@ def test_family_map_covers_every_action_policy_rule():
 
 def test_legacy_trainer_can_never_mark_a_model_deployable():
     assert LEGACY_TRAINER_DEPLOYMENT_ELIGIBLE is False
+
+
+@pytest.mark.parametrize(
+    ("binary_attack", "abnormal", "attack_ood", "normal", "unknown"),
+    [
+        (False, False, False, True, False),
+        (False, False, True, True, False),
+        (False, True, False, False, False),
+        (False, True, True, False, True),
+        (True, False, False, False, False),
+        (True, False, True, False, True),
+        (True, True, False, False, False),
+        (True, True, True, False, True),
+    ],
+)
+def test_parallel_gate_truth_table(
+    binary_attack, abnormal, attack_ood, normal, unknown
+):
+    assert parallel_gate_membership(
+        binary_attack=binary_attack,
+        abnormal_vs_normal=abnormal,
+        unknown_vs_known_attack=attack_ood,
+    ) == (normal, unknown)
+
+
+def test_parallel_gate_refuses_non_boolean_inputs():
+    with pytest.raises(ValueError, match="must be bool"):
+        parallel_gate_membership(
+            binary_attack=1,
+            abnormal_vs_normal=False,
+            unknown_vs_known_attack=False,
+        )
 
 
 def test_temporal_features_are_causal_and_mark_cold_start():
@@ -195,6 +235,83 @@ def test_attack_ood_forces_unknown_and_no_adapter():
     assert result["predicted_class"] == "unknown_attack"
     assert result["decision"]["executable"] is False
     assert result["decision"]["adapter"] == "none"
+
+
+def test_parallel_gate_recovers_binary_missed_unknown_attack():
+    model = HierarchicalFirewallModel._from_bundle_for_testing(
+        _bundle(
+            attack_probability=0.20,
+            normality_score=-1.0,
+            attack_ood_score=-1.0,
+        ),
+        data_policy_sha256=TEST_POLICY_SHA256,
+        action_policy_sha256=TEST_POLICY_SHA256,
+    )
+    result = model.predict(
+        _raw_features(),
+        security_mode="permissive",
+        source_availability=DEFAULT_LIVE_SOURCE_AVAILABILITY,
+        session_id="session-a",
+        source="10.0.0.2",
+        window=0,
+    )
+
+    assert result["decision_contract"] == PARALLEL_GATE_CONTRACT
+    assert result["status"] == "unknown_attack"
+    assert result["normal_eligible"] is False
+    assert result["unknown_attack_eligible"] is True
+    assert "binary miss" in result["decision"]["reason"]
+    assert result["decision"]["executable"] is False
+
+
+def test_attack_ood_alone_cannot_turn_normal_traffic_into_an_attack():
+    model = HierarchicalFirewallModel._from_bundle_for_testing(
+        _bundle(
+            attack_probability=0.20,
+            normality_score=1.0,
+            attack_ood_score=-1.0,
+        ),
+        data_policy_sha256=TEST_POLICY_SHA256,
+        action_policy_sha256=TEST_POLICY_SHA256,
+    )
+    result = model.predict(
+        _raw_features(),
+        security_mode="permissive",
+        source_availability=DEFAULT_LIVE_SOURCE_AVAILABILITY,
+        session_id="session-a",
+        source="10.0.0.2",
+        window=0,
+    )
+
+    assert result["status"] == "normal"
+    assert result["normal_eligible"] is True
+    assert result["unknown_vs_known_attack"] is True
+    assert result["unknown_attack_eligible"] is False
+
+
+def test_parallel_gate_abstains_when_only_normality_rejects_binary_normal():
+    model = HierarchicalFirewallModel._from_bundle_for_testing(
+        _bundle(
+            attack_probability=0.20,
+            normality_score=-1.0,
+            attack_ood_score=1.0,
+        ),
+        data_policy_sha256=TEST_POLICY_SHA256,
+        action_policy_sha256=TEST_POLICY_SHA256,
+    )
+    result = model.predict(
+        _raw_features(),
+        security_mode="permissive",
+        source_availability=DEFAULT_LIVE_SOURCE_AVAILABILITY,
+        session_id="session-a",
+        source="10.0.0.2",
+        window=0,
+    )
+
+    assert result["status"] == "abstained_anomaly"
+    assert result["normal_eligible"] is False
+    assert result["unknown_attack_eligible"] is False
+    assert result["decision"]["executable"] is False
 
 
 def test_runtime_rejects_mode_or_source_profile_drift():

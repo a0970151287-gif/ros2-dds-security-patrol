@@ -24,8 +24,9 @@ from .train import FEATURES, ML_DIR
 
 
 HIERARCHICAL_MODEL_SCHEMA = "sros2-firewall-hierarchical-model/v2"
-HIERARCHICAL_INFERENCE_SCHEMA = "sros2-firewall-hierarchical-inference/v2"
+HIERARCHICAL_INFERENCE_SCHEMA = "sros2-firewall-hierarchical-inference/v3"
 ARCHITECTURE_NAME = "mode_aware_binary_family_ood_v2"
+PARALLEL_GATE_CONTRACT = "parallel_binary_normality_attack_ood/v1"
 MASK_PREFIX = "source_available__"
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAX_STREAMS = 4096
@@ -129,6 +130,30 @@ def normalize_policy_sha256(value: object) -> str:
     if not isinstance(value, str) or SHA256_PATTERN.fullmatch(value) is None:
         raise ValueError("policy_sha256 must be 64 lowercase hexadecimal characters")
     return value
+
+
+def parallel_gate_membership(
+    *,
+    binary_attack: bool,
+    abnormal_vs_normal: bool,
+    unknown_vs_known_attack: bool,
+) -> tuple[bool, bool]:
+    """Return ``(normal_eligible, unknown_attack_eligible)`` for gate v1.
+
+    The attack-reference OOD detector cannot reject normal traffic by itself;
+    normal rows are expected to sit outside the known-attack distribution.
+    """
+
+    if not all(
+        isinstance(value, bool)
+        for value in (binary_attack, abnormal_vs_normal, unknown_vs_known_attack)
+    ):
+        raise ValueError("parallel gate inputs must be bool")
+    normal_eligible = not binary_attack and not abnormal_vs_normal
+    unknown_attack_eligible = unknown_vs_known_attack and (
+        binary_attack or abnormal_vs_normal
+    )
+    return normal_eligible, unknown_attack_eligible
 
 
 def conditional_leaf_candidate(
@@ -632,15 +657,32 @@ class HierarchicalFirewallModel:
             if not math.isfinite(score):
                 raise RuntimeError(f"{name} detector score must be finite")
             scores[name] = score
+        # Every row reaches all three independent gates.  The known-attack OOD
+        # head cannot veto a row by itself: normal traffic is expected to be
+        # outside the known-attack reference distribution.  A binary miss is
+        # recovered as unknown only when the normal reference *also* rejects
+        # the row.  This keeps normal acceptance explicit and removes the old
+        # hard binary precondition that made a missed novel attack invisible.
         abnormal_vs_normal = scores["normality"] < self.normality_threshold
         unknown_vs_known_attack = scores["attack_ood"] < self.attack_ood_threshold
         binary_attack = attack_probability >= self.binary_threshold
+        normal_eligible, unknown_attack_eligible = parallel_gate_membership(
+            binary_attack=binary_attack,
+            abnormal_vs_normal=abnormal_vs_normal,
+            unknown_vs_known_attack=unknown_vs_known_attack,
+        )
 
-        if binary_attack and unknown_vs_known_attack:
+        if unknown_attack_eligible:
             status = "unknown_attack"
             output_family = "unknown"
             output_leaf = "unknown_attack"
-            reason = "known-attack OOD head rejected the observation"
+            if binary_attack:
+                reason = "known-attack OOD head rejected a binary attack candidate"
+            else:
+                reason = (
+                    "normality and known-attack references both rejected the "
+                    "observation despite the binary miss"
+                )
         elif (
             binary_attack
             and family_confidence >= self.family_threshold
@@ -660,16 +702,20 @@ class HierarchicalFirewallModel:
             status = "abstained_anomaly"
             output_family = "unknown"
             output_leaf = "unknown_attack"
-            reason = "normality detector disagreed with the binary gate"
+            reason = (
+                "normality rejected the observation while the binary and "
+                "known-attack OOD heads disagreed"
+            )
         else:
             status = "normal"
             output_family = "normal"
             output_leaf = "normal"
-            reason = "binary gate remained below its validation-only threshold"
+            reason = "binary and normality gates jointly accepted normal traffic"
 
         return {
             "schema_version": HIERARCHICAL_INFERENCE_SCHEMA,
             "architecture": ARCHITECTURE_NAME,
+            "decision_contract": PARALLEL_GATE_CONTRACT,
             "security_mode": self.security_mode,
             "status": status,
             "attack_probability": attack_probability,
@@ -684,9 +730,11 @@ class HierarchicalFirewallModel:
             "leaf_threshold": self.leaf_threshold,
             "hierarchy_consistent": hierarchy_consistent,
             "abnormal_vs_normal": abnormal_vs_normal,
+            "normal_eligible": normal_eligible,
             "normality_score": scores["normality"],
             "normality_threshold": self.normality_threshold,
             "unknown_vs_known_attack": unknown_vs_known_attack,
+            "unknown_attack_eligible": unknown_attack_eligible,
             "attack_ood_score": scores["attack_ood"],
             "attack_ood_threshold": self.attack_ood_threshold,
             "binary_probabilities": binary_by_class,
