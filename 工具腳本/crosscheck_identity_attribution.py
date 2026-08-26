@@ -50,6 +50,10 @@ def main() -> int:
     parser.add_argument("--observer-events", type=Path, required=True,
                         help="security_observer 的事件檔（認證判定）")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--expect-attacker-ip", default=None,
+                        help="攻擊機回報的實際 IPv4。給了之後，若擷取檔裡"
+                             "完全沒有這個位址，報告會明確標成「路徑不通」"
+                             "而不是安靜地少一列。")
     args = parser.parse_args()
 
     if args.output.exists():
@@ -114,6 +118,23 @@ def main() -> int:
     multi_ip_guids = {g: sorted(ips) for g, ips in guid_to_ips.items()
                       if len(ips) > 1}
 
+    # 攻擊機宣稱跑了，但它的位址在擷取檔裡一個封包都沒有——那是**網路路徑不通**
+    # （防火牆丟包、跨網段、多播沒穿過去），不是防禦把它擋住了。
+    #
+    # 這兩件事的產物完全一樣：一份沒有攻擊者的證據。這個專案已經被同一類混淆
+    # 咬過四次，所以在這裡把它變成報告裡一個明確的欄位，而不是少一列讓人自己看出來。
+    reachability = None
+    if args.expect_attacker_ip:
+        seen = args.expect_attacker_ip in ip_to_guids
+        reachability = {
+            "expected_attacker_ip": args.expect_attacker_ip,
+            "attacker_ip_present_in_capture": seen,
+            "verdict": "ok" if seen else "path_blocked_evidence_void",
+            "note": None if seen else
+                    "攻擊機的位址在擷取檔裡完全不存在。這一輪的證據無效，"
+                    "**不可**解讀成防禦成功——要先修好網路路徑再重跑。",
+        }
+
     report = {
         "schema_version": "sros2-firewall-identity-crosscheck/v1",
         "inputs": {
@@ -133,6 +154,7 @@ def main() -> int:
             "guids_appearing_at_multiple_ips": multi_ip_guids,
         },
         "per_ip": verdicts,
+        "attacker_reachability": reachability,
         "blockable_ips": sorted(blockable),
         # 這份報告本身**不授權**任何封鎖動作。它只說「證據是否支持」。
         # 實際執行仍須經過授權器，而 executable_classes 目前為空清單。
@@ -151,7 +173,15 @@ def main() -> int:
     print(f"  **兩半都看到的 GUID** : {len(observed_both)}")
     if not observed_both:
         print("     ⚠️ 交集為零——兩半沒有對上，歸因無從談起。")
-        print("        常見原因：擷取介面錯、觀測者與攻擊時間沒重疊、domain 不同。")
+        print("        常見原因：擷取介面錯、觀測者與攻擊時間沒重疊、domain 不同、")
+        print("        或 FastCDR 與 FastRTPS 不同源導致 discovery 靜默失效。")
+    if reachability and not reachability["attacker_ip_present_in_capture"]:
+        print()
+        print(f"  ⛔ **本輪證據無效**：攻擊機位址 "
+              f"{reachability['expected_attacker_ip']} 在擷取檔裡完全不存在。")
+        print("     封包根本沒到這台機器——網路路徑不通（防火牆、跨網段、")
+        print("     多播未穿透），**不是**防禦把它擋住了。")
+        print("     先修好路徑再重跑；這一輪不可寫成任何結論。")
     print()
     print("  逐 IP 判定：")
     for address, verdict in verdicts.items():

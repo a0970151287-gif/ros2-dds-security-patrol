@@ -162,10 +162,16 @@ cd "$WORKSPACE" || exit 1
 
 echo "[4/4] 交叉比對"
 echo
+# ATTACKER_IP 由攻擊機回報。給了之後，若它的封包一個都沒到，報告會明確標成
+# 「路徑不通、本輪證據無效」，而不是安靜地少一列——那會被誤讀成防禦成功。
+CROSSCHECK_ARGS=""
+[ -n "${ATTACKER_IP:-}" ] && CROSSCHECK_ARGS="--expect-attacker-ip $ATTACKER_IP"
+
+# shellcheck disable=SC2086
 "$VENV_PYTHON" 工具腳本/crosscheck_identity_attribution.py \
   --packet-observations "$OUT/rtps_identity_packets.jsonl" \
   --observer-events "$OUT/observer_events.jsonl" \
-  --output "$OUT/crosscheck.json"
+  --output "$OUT/crosscheck.json" $CROSSCHECK_ARGS
 
 echo
 echo "=================================================================="
