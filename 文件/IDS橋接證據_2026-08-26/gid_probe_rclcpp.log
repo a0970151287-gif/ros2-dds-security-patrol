@@ -1,0 +1,2 @@
+publisher_gid=010f667d5c038e040000000000001403  populated=yes  prefix12=010f667d5c038e0400000000  impl=rmw_fastrtps_cpp
+[INFO] [1787731637.879762114] [rclcpp]: signal_handler(SIGINT/SIGTERM)

@@ -1,0 +1,2 @@
+[INFO] [1787732163.952935925] [guard_filter]: guarding chatter; blocklist /home/jesse/guard_blocklist.txt
+[INFO] [1787732191.965395785] [rclcpp]: signal_handler(SIGINT/SIGTERM)

@@ -99,6 +99,11 @@ CONTROLLED_FAULT_KINDS = frozenset({"graph_inspection", "heartbeat_suppression"}
 CONTROLLED_FAULT_STATES = frozenset({"trigger", "recovery"})
 
 
+# 與 firewall_lab/identity_attribution.py 的格式相同：12 個小寫十六進位位元組。
+# 刻意重複定義而不是 import——收集器是獨立行程，不該把驗證相依綁到模型那一側。
+_GUID_PREFIX_RE = re.compile(r"^[0-9a-f]{24}$")
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+
 EVENT_DETAIL_KEYS: dict[str, frozenset[str]] = {
     "collector_tick": frozenset(),
     "sros_auth_failure": frozenset({"count"}),
@@ -124,6 +129,11 @@ EVENT_DETAIL_KEYS: dict[str, frozenset[str]] = {
     "odom_cmd_observation": frozenset({"count", "mismatch_count"}),
     "alert_observation": frozenset({"count", "reflection_count"}),
     "log_reject": frozenset({"count"}),
+    # DDS 層身份事件，來自 firewall_lab/security_observer。
+    # 這是 IDS 唯一看得到 GUID 的管道：ROS 把 DDS 身份完全抽象掉了，
+    # 所以偵測層原本說得出「這像攻擊」卻說不出「是哪一個 participant」。
+    # 見 文件/IDS與SROS2協作設計_2026-08-26.md。
+    "dds_identity": frozenset({"guid_prefix", "verdict", "subject_sha256"}),
     "hmac_result": frozenset({"outcome", "reason"}),
     "detector_state": frozenset({"detector", "state"}),
     "authenticated_heartbeat_state": frozenset({"state", "gap_sec"}),
@@ -203,6 +213,26 @@ def _validate_details(event_type: str, value: Any) -> dict[str, Any]:
         if state not in HEARTBEAT_STATES:
             raise SchemaError("unsupported authenticated heartbeat state")
         return {"state": state, "gap_sec": float(gap)}
+
+    if event_type == "dds_identity":
+        prefix = value["guid_prefix"]
+        if not isinstance(prefix, str) or not _GUID_PREFIX_RE.fullmatch(prefix):
+            raise SchemaError("guid_prefix must be 12 lowercase hexadecimal bytes")
+        if value["verdict"] not in {"authorized", "unauthorized"}:
+            raise SchemaError("dds_identity verdict must be authorized or unauthorized")
+        subject = value["subject_sha256"]
+        # 認證失敗的 participant 沒有經驗證的 subject，所以允許 null——
+        # 但通過認證的必須有，否則就是一筆說不出身份的「合法」記錄。
+        if value["verdict"] == "authorized":
+            if not isinstance(subject, str) or not _SHA256_RE.fullmatch(subject):
+                raise SchemaError("authorized dds_identity requires subject_sha256")
+        elif subject is not None:
+            raise SchemaError("unauthorized dds_identity may not carry a subject")
+        return {
+            "guid_prefix": prefix,
+            "verdict": value["verdict"],
+            "subject_sha256": subject,
+        }
 
     if event_type == "hmac_result":
         outcome = value["outcome"]
