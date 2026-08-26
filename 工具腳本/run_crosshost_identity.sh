@@ -86,6 +86,11 @@ case "${IFACE_IPV4:-}" in
     ;;
 esac
 
+# SPDP 預設走多播。有線沒問題，**Wi-Fi 對 Wi-Fi 常常被 AP 吃掉**，而失敗形態
+# 又是「觀測者什麼都沒記到」——與防禦成功外觀相同。既然攻擊機的位址本來就要
+# 給（ATTACKER_IP），就直接拿它當 unicast initial peer，discovery 不再賭多播。
+PEERS="${OBSERVER_PEERS:-${ATTACKER_IP:-}}"
+
 POLICY_SHA="$(sha256sum "$WORKSPACE/firewall_lab/action_policy.json" | cut -c1-64)"
 
 echo "=================================================================="
@@ -96,6 +101,11 @@ echo "  介面      : $IFACE"
 echo "  domain    : $DOMAIN"
 echo "  觀測者    : $ENCLAVE"
 echo "  輸出      : $OUT"
+if [ -n "$PEERS" ]; then
+  echo "  unicast peer : $PEERS（discovery 不依賴多播）"
+else
+  echo "  unicast peer : 未設定——只靠多播。Wi-Fi 連線建議設 ATTACKER_IP。"
+fi
 echo
 
 # ── 1. 封包擷取 ───────────────────────────────────────────────────────────
@@ -120,6 +130,7 @@ OBSERVER_PERMISSIONS_CA="$ENCLAVE/permissions_ca.cert.pem" \
 OBSERVER_AUDIT_LOG="$OUT/dds_security_audit.log" \
 OBSERVER_EVENTS_LOG="$OUT/observer_events.jsonl" \
 OBSERVER_LOG_LEVEL=DEBUG_LEVEL \
+OBSERVER_PEERS="$PEERS" \
 "$OBSERVER_BIN" "$DOMAIN" "$DURATION" > "$OUT/observer.log" 2>&1 &
 OBS=$!
 sleep 3

@@ -53,6 +53,8 @@
 #include <fastdds/dds/domain/DomainParticipantListener.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 #include <fastdds/dds/domain/qos/DomainParticipantQos.hpp>
+#include <fastdds/rtps/common/Locator.h>
+#include <fastrtps/utils/IPLocator.h>
 
 using eprosima::fastdds::dds::DomainParticipant;
 using eprosima::fastdds::dds::DomainParticipantFactory;
@@ -81,6 +83,57 @@ std::string required_env(const char* name) {
 void add_property(DomainParticipantQos& qos, const std::string& name,
                   const std::string& value) {
     qos.properties().properties().emplace_back(name, value);
+}
+
+// SPDP discovery 預設走多播 239.255.0.1。有線上沒問題，**Wi-Fi 對 Wi-Fi 常常
+// 會被吃掉**——AP 用最低 basic rate 發多播，加上 IGMP snooping 或
+// multicast-to-unicast 轉換，封包可能根本不到對面。
+//
+// 這件事危險的地方不是不通，是它的失敗形態：攻擊者跑滿整個視窗、log 乾乾淨淨、
+// 觀測者一筆都沒記到——與「防禦成功攔阻」外觀完全相同。這個專案已經被同一類
+// 混淆咬過五次。
+//
+// 所以支援明確指定 unicast initial peer。指定之後 discovery 不再依賴多播：
+// 觀測者會直接對那些位址發 SPDP。這不會關掉多播，只是多一條路。
+//
+// 注意 ROS 的 ROS_STATIC_PEERS 對這支程式**無效**——它是 rmw_fastrtps 讀的，
+// 而這個 participant 是用 Fast DDS API 直接建的，不經 rmw。
+//
+// 格式：OBSERVER_PEERS="192.168.0.30,192.168.0.31"
+// port 留 0，Fast DDS 會自己展開成該 domain 的 well-known participant 埠範圍。
+std::size_t add_initial_peers(DomainParticipantQos& qos,
+                              const std::string& spec) {
+    std::size_t added = 0;
+    std::size_t start = 0;
+    while (start <= spec.size()) {
+        const std::size_t comma = spec.find(',', start);
+        std::string item = spec.substr(
+            start, comma == std::string::npos ? std::string::npos
+                                              : comma - start);
+        // 去掉前後空白，避免 "a, b" 這種寫法變成 " b"。
+        const std::size_t first = item.find_first_not_of(" \t");
+        const std::size_t last = item.find_last_not_of(" \t");
+        if (first != std::string::npos) {
+            item = item.substr(first, last - first + 1);
+            eprosima::fastrtps::rtps::Locator_t peer;
+            peer.kind = LOCATOR_KIND_UDPv4;
+            peer.port = 0;
+            if (eprosima::fastrtps::rtps::IPLocator::setIPv4(peer, item)) {
+                qos.wire_protocol().builtin.initialPeersList.push_back(peer);
+                ++added;
+            } else {
+                // 打錯位址時大聲失敗。安靜地忽略一個 peer，症狀會變成
+                // 「什麼都沒收到」——正是我們最怕被誤讀的那一種。
+                std::cerr << "invalid initial peer address: " << item << "\n";
+                std::exit(2);
+            }
+        }
+        if (comma == std::string::npos) {
+            break;
+        }
+        start = comma + 1;
+    }
+    return added;
 }
 
 
@@ -408,6 +461,13 @@ int main(int argc, char** argv) {
     // 不要把稽核記錄再發回 DDS 匯流排——攻擊者就在那條匯流排上。
     add_property(qos, "dds.sec.log.builtin.DDS_LogTopic.distribute", "false");
 
+    // 跨主機且兩端都在 Wi-Fi 時建議指定，見 add_initial_peers 的說明。
+    const char* peers_env = std::getenv("OBSERVER_PEERS");
+    std::size_t peer_count = 0;
+    if (peers_env != nullptr && *peers_env != 0) {
+        peer_count = add_initial_peers(qos, peers_env);
+    }
+
     std::signal(SIGINT, handle_signal);
     std::signal(SIGTERM, handle_signal);
 
@@ -436,8 +496,15 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "security observer running on domain " << domain_id
-              << " for " << seconds << "s; audit log: " << audit_log << "\n"
-              << std::flush;
+              << " for " << seconds << "s; audit log: " << audit_log << "\n";
+    if (peer_count > 0) {
+        std::cout << "unicast initial peers: " << peer_count
+                  << " (discovery does not depend on multicast)\n";
+    } else {
+        std::cout << "discovery via multicast only "
+                     "(set OBSERVER_PEERS for Wi-Fi links)\n";
+    }
+    std::cout << std::flush;
 
     const auto deadline =
         std::chrono::steady_clock::now() + std::chrono::seconds(seconds);
