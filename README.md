@@ -1,6 +1,13 @@
-# SROS2 智慧防火牆與 ROS2／DDS 實驗平台
+# SROS2 預防＋多模態 AI 的 ROS 2／DDS 安全回應研究原型
 
-本專題的產品主軸是「圍繞 SROS2 的智慧防火牆」：以 Gazebo 中的 TurtleBot3 作為受測系統，自動產生正常與受控攻擊的 ROS2／DDS 流量，經 Zeek 特徵、ML 判斷與受限制的回應策略形成縱深防禦。紅隊 PoC 是訓練和驗證資料來源，不是專題本體。
+系統短名為 **SROS2 智慧防火牆研究原型**。正式研究主軸是：SROS2 負責身分驗證與
+最小權限預防後，融合 DDS 網路、機器人行為與安全遙測的多模態 AI，能否可靠偵測或
+拒判已知／未知攻擊，並只在來源可被可信歸因時觸發可撤銷、可復原的安全回應。
+Gazebo TurtleBot3 是受測系統；受控紅隊案例是資料與驗證來源，不是專題本體。
+
+正式題目、單一主研究問題、三項貢獻與名稱升級條件見
+[方向收斂與驗收基準](文件/專題方向收斂與驗收基準_2026-08-25.md)。在 identity→IP、
+真 nftables、隔離雙主機與 Pi gateway 驗收完成前，不宣稱已建置房間級自動封鎖產品。
 
 新的[防火牆資料工廠](firewall_lab/README.md)會記錄每場實驗的精確標籤、SROS2 模式、PCAP、Zeek 結果與政策雜湊，並以 session 分組避免模型資料洩漏。目前有兩個清楚分層的資料來源：2,500 sessions／90,000 windows、22 種攻擊加 normal 的合成預訓練集；以及已完成的 1,100-session Gazebo live campaign。正式候選資料排除一場封存後仍增長的 session，實際使用 1,099 場（Permissive 550、Enforce 549）；另有 300 場缺陷情境已用相同 scenario／seed／mode 受控重跑並在特徵層替換，不重複灌成 1,399 場。2026-08-25 的 P1 已完成平行 AI gate 與 credential／ACL-aware direct-delivery 驗票，但 family-LOO 四組設定全部未達 AI acceptance；P2 接著建立嚴格 RTPS／DDS 身份歸因契約與 session-level conformal，並確認現有 1,101 個 session 中 **0 場**具備完整身份→來源 IP 證據，兩模式的 normal conformal 校準數也未達 49 場最低解析度。所有模型仍為 observe-only、`deployment_eligible=false`，不代表實體機器人或生產環境保證。證據邊界與殘餘風險見[2026-08-21 階段完整總報告](文件/專題完整總報告_2026-08-21.md)、[P1 修正報告](文件/P1_平行AI與DirectDelivery修正_2026-08-25.md)與[P2 身份歸因／Conformal 報告](文件/P2_身份歸因與SessionConformal_2026-08-25.md)。
 
@@ -12,20 +19,22 @@
 - SROS2 Enforce 使用雙 CA、逐節點最小權限與 DDS discovery/data 保護，是外部未授權 participant 的主要預防層。
 - Zeek 從網路層偵測 DDS 偵察、注入、DoS、參數竄改與來源偽造跡象。
 - 防火牆資料工廠平衡產生 Permissive／Enforce 實驗，smoke 資料永遠不得進入正式訓練。
-- ML-IDS 以精確 session 標籤和 Zeek 流量特徵訓練 RandomForest／IsolationForest；回應只允許固定 adapter，低信心預設 observe-only。
+- ML-IDS 以精確 session 標籤和 Zeek／robot telemetry 特徵訓練分層模型；模型輸出與
+  動作授權隔離，低信心、未知來源或證據不足一律 observe-only。
 - TQC 是獨立的未來工作軌，不作為 DDS 攻防成效的證據。
 
 ## 建議閱讀順序
 
-1. [防火牆資料工廠](firewall_lab/README.md)：資料生成、1100-session campaign、品質 gate 與模型決策。
-2. [P1 修正報告](文件/P1_平行AI與DirectDelivery修正_2026-08-25.md)：平行 AI gate、family-LOO 失敗結果與 direct-delivery v2 邊界。
-3. [P2 身份歸因／Conformal 報告](文件/P2_身份歸因與SessionConformal_2026-08-25.md)：可信來源歸因契約、現有資料缺口與有限樣本校準門檻。
-4. [主計畫與 WBS](文件/專題主計畫與WBS_2026-08-17.md)：可追溯完成度、路線圖與 Jesse 待辦。
-5. [階段完整總報告](文件/專題完整總報告_2026-08-21.md)：架構、證據邊界、成果與殘餘風險。
-6. [系統架構](紅隊測試/ARCHITECTURE.md)：節點、topic 與信任邊界。
-7. [展示流程](展示指令/README.md)：SROS2 Enforce 與 demo 操作。
-8. [ML-IDS 說明](ML防禦/README.md)：資料、模型、評估與回應安全閘。
-9. [Code review 指引](REVIEW_README.md)：原始碼導覽與測試入口。
+1. [方向收斂與驗收基準](文件/專題方向收斂與驗收基準_2026-08-25.md)：題目、主 RQ、貢獻、名稱與驗收閘門。
+2. [主計畫與 WBS](文件/專題主計畫與WBS_2026-08-17.md)：唯一 canonical 進度、路線圖與 Jesse 待辦。
+3. [防火牆資料工廠](firewall_lab/README.md)：資料生成、1100-session campaign、品質 gate 與模型決策。
+4. [P1 修正報告](文件/P1_平行AI與DirectDelivery修正_2026-08-25.md)：平行 AI gate、family-LOO 失敗結果與 direct-delivery v2 邊界。
+5. [P2 身份歸因／Conformal 報告](文件/P2_身份歸因與SessionConformal_2026-08-25.md)：可信來源歸因契約、現有資料缺口與有限樣本校準門檻。
+6. [階段完整總報告](文件/專題完整總報告_2026-08-21.md)：架構、證據邊界、成果與殘餘風險。
+7. [系統架構](紅隊測試/ARCHITECTURE.md)：節點、topic 與信任邊界。
+8. [展示流程](展示指令/README.md)：SROS2 Enforce 與 demo 操作。
+9. [ML-IDS 說明](ML防禦/README.md)：資料、模型、評估與回應安全閘。
+10. [Code review 指引](REVIEW_README.md)：原始碼導覽與測試入口。
 
 ## 開發與快速驗證
 
