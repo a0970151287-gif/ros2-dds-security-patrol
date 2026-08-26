@@ -30,11 +30,11 @@
 | 攻擊偵測（二元） | **90%** | PR-AUC > 0.9 且有一次性 test | final test：Permissive **0.9900**、Enforce **0.9774**；分類數字不受 anomaly budget 影響，但整體 release 仍不可部署 |
 | 攻擊識別（多類） | **65%** | balanced accuracy ≥ 0.80 | **final test**：Permissive **0.8619**（達標）、Enforce **0.4155** |
 | 未知攻擊 | **70%** | 整個模型 open-set recall ≥ 0.70 | **2026-08-25 更正串流歷史後重量**（舊值 0.5499／0.6583 作廢）。原 holdout（`sensor_spoof`／`service_dos`）：Enforce **0.8563**（現行預設，已達標）、Permissive 0.5789，換 Mahalanobis 評分器後 **0.9543**（該 holdout 第二次使用）。處女 holdout（`command_injection`／`identity_abuse`）僅 **0.0273**——上限是二元閘門對未見類別的 recall（0.9612／0.9729 對 0.3394），不是 OOD 頭 |
-| 回應／執行 | **60%** | 授權器→驗票→backend→撤銷，有 live pass | direct-delivery v2 語意已修，既有 12／12 canonical 重驗仍因缺 attestation 而 provisional；9 項本機 outcome **5／9**，授權類別仍為 0 |
+| 回應／執行 | **65%** | 授權器→驗票→backend→撤銷，有 live pass | **2026-08-26 新增**：第二層可撤銷守衛原型有 live 量測——依 publisher GUID 阻斷，啟用 0.0225 秒、**撤銷 0.0109 秒**、封鎖期間漏放行 0 筆、撤銷後恢復 8 筆。身份也第一次進到 IDS 的遙測串流（`dds_identity` 事件）。**但仍是原型**：守衛只判定不轉送、未接授權器、`executable_classes` 仍為空清單、nftables backend 從未真跑、來源歸因 0／1,101 |
 | 跨主機／硬體 | **0%** | Pi 5 ＋ 第二台主機 ＋ kernel nftables 驗收 | 未開始 |
 | 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1／P2 各有 8/25 帳本 |
 
-**整體約 68%**（七項平均 475/7 = 67.9%）。程式面本身約 88%；拉低的三項仍是**證據拿不到**，不是程式沒寫。
+**整體約 69%**（七項平均 480/7 = 68.6%）。程式面本身約 90%；拉低的三項仍是**證據拿不到**，不是程式沒寫。
 
 **歷史缺陷與修復狀態**：2026-08-18 曾因約 **300 場（27%）攻擊專屬證據為空**
 而把資料集從 95% 下修到 88%；兩個 collector／runner bug 已修，300 場已於 8/21
@@ -65,7 +65,7 @@
   一律以 `git rev-parse --short HEAD`、`git status --short` 為準，不在活狀態表硬編碼。
 - 8/25 Mahalanobis OOD 工作只可封存為 `experimental / non-deployable` checkpoint；
   預設 scorer 不變，不能覆蓋正式 whole-model open-set 數字。
-- 完整測試 **674 passed、0 failed、265 warnings**（2026-08-25 Claude 重跑）。
+- 完整測試 **685 passed、0 failed、265 warnings**（2026-08-26 Claude 重跑）。
   P2 記的 **665** 已包含 `test_ood_scorers.py` 的 9 個（P0 commit `871f58b` 已追蹤），
   本輪只新增 `test_stream_replay.py` 4 個，故 665＋4＝669。先前寫「成因未查明」
   是我算錯基準（把已提交的 9 個也扣掉了），依 C2C-037 更正。
