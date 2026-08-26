@@ -1,0 +1,45 @@
+==================================================================
+ N28  wrong-CA secure participant → authentication denial
+==================================================================
+  domain    : 30
+  duration  : 30s
+  workspace : /home/jesse/.local/share/sros2-firewall/wrongca
+
+[1/4] 生成攻擊者自己的 CA（與防守方無任何關係）
+      CA subject: subject=CN = wrongCA
+      防守方 CA : subject=CN = sros2CA
+      → 兩者不同，憑證鏈驗證必定失敗，這正是本攻擊要觸發的路徑
+
+[2/4] 用攻擊者 CA 簽出身分憑證 CN=/wrong_ca_intruder
+
+[3/4] 產生並簽署 governance / permissions
+      enclave: cert.pem governance.p7s identity_ca.cert.pem key.pem permissions_ca.cert.pem permissions.p7s permissions.xml 
+
+[4/4] 以 wrong-CA 身分加入 domain 30（Enforce），持續 30s
+      預期：防守方驗不過憑證鏈 → 拒絕 → audit log 出現 authentication 記錄
+[INFO] [1787714700.459649062] [talker]: Publishing: 'Hello World: 11'
+[INFO] [1787714701.941547413] [talker]: Publishing: 'Hello World: 12'
+[INFO] [1787714702.941437171] [talker]: Publishing: 'Hello World: 13'
+[INFO] [1787714703.941217064] [talker]: Publishing: 'Hello World: 14'
+[INFO] [1787714704.941424460] [talker]: Publishing: 'Hello World: 15'
+[INFO] [1787714705.941693644] [talker]: Publishing: 'Hello World: 16'
+[INFO] [1787714706.941224080] [talker]: Publishing: 'Hello World: 17'
+[INFO] [1787714707.941391733] [talker]: Publishing: 'Hello World: 18'
+[INFO] [1787714708.941467512] [talker]: Publishing: 'Hello World: 19'
+[INFO] [1787714709.941084517] [talker]: Publishing: 'Hello World: 20'
+[INFO] [1787714710.941407993] [talker]: Publishing: 'Hello World: 21'
+[INFO] [1787714711.941395312] [talker]: Publishing: 'Hello World: 22'
+[INFO] [1787714712.941488224] [talker]: Publishing: 'Hello World: 23'
+[INFO] [1787714713.941230935] [talker]: Publishing: 'Hello World: 24'
+[INFO] [1787714714.941876151] [talker]: Publishing: 'Hello World: 25'
+[INFO] [1787714715.941096501] [talker]: Publishing: 'Hello World: 26'
+[INFO] [1787714716.941381616] [talker]: Publishing: 'Hello World: 27'
+[INFO] [1787714717.941372460] [talker]: Publishing: 'Hello World: 28'
+[INFO] [1787714718.941907160] [talker]: Publishing: 'Hello World: 29'
+[INFO] [1787714719.440632357] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+
+==================================================================
+ 結束（rc=124）。攻擊者產物保留在 /home/jesse/.local/share/sros2-firewall/wrongca 供稽核。
+ 檢查防守方是否記錄了拒絕：
+   $FIREWALL_LIVE_RUNTIME/dds_security_audit.log
+==================================================================
