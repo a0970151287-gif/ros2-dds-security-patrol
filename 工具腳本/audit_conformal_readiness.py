@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
-"""Audit session-level conformal finite-sample readiness without fitting models."""
+"""Audit session-level conformal finite-sample readiness without fitting models.
+
+**alpha 的選擇（2026-08-25 變更，Jesse 決定）。** conformal 的有限樣本下限是
+`ceil(1/alpha) - 1`：用 n 個校準場次，能發出的最小 p 值是 1/(n+1)，所以要宣稱
+p ≤ alpha 就必須有那麼多場。這是數學下限，與模型好壞無關。
+
+`normality` 原本用 0.02（沿用二元閘門的 `maximum_normal_fpr`），要求 49 場，
+實測只有 23／24 場，短缺 26／25。補足要約 2.1 倍的總場次（約 17 小時 live）。
+
+改為 **0.05** 之後要求降到 19 場，兩個模式的 normality 都已滿足。理由與代價
+都必須講清楚：
+
+- 理由：`known_attack` 本來就用 0.05，同一個 conformal 層裡兩個參考用不同
+  alpha 本身就不一致；0.05 也是 conformal 的慣用水準。
+- **代價：conformal 的 normality 參考現在容許 5% 誤報，而二元閘門仍以 2%
+  為目標——conformal 層不再是兩者中較嚴的那個。** 這是放寬，不是改良。
+
+要看原本 0.02 的結果仍可用 `--normal-alpha 0.02`；artifact 會記下實際採用的
+alpha，所以任何一份報告都能自證用的是哪一個。
+"""
 
 from __future__ import annotations
 
@@ -148,7 +167,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--features", type=Path, required=True)
     parser.add_argument("--metrics", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--normal-alpha", type=float, default=0.02)
+    # 0.02 → 0.05：見模組 docstring。這是放寬，不是改良，所以理由寫在那裡。
+    parser.add_argument("--normal-alpha", type=float, default=0.05)
     parser.add_argument("--known-attack-alpha", type=float, default=0.05)
     args = parser.parse_args(argv)
     if args.output.exists() or args.output.is_symlink():
