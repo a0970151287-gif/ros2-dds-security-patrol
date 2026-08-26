@@ -37,9 +37,15 @@ echo "  domain    : $DOMAIN"
 echo "  duration  : ${DURATION}s"
 echo "  workspace : $W"
 
+# 跨主機時攻擊機**不該**有防守方的 keystore——那台機器上有私鑰就違背了
+# 整個威脅模型。這裡只用它的 public CA 憑證做對照顯示，所以缺了就跳過顯示，
+# 不要中止：攻擊本身完全不需要防守方的任何檔案，它自己生 CA。
+HAVE_REAL_KEYSTORE=1
 if [ ! -d "$REAL_KEYSTORE/public" ]; then
-  echo "❌ 找不到防守方 keystore: $REAL_KEYSTORE" >&2
-  exit 2
+  HAVE_REAL_KEYSTORE=0
+  echo "ℹ️  找不到防守方 keystore（$REAL_KEYSTORE）。"
+  echo "    跨主機時這是正常的——攻擊機不該持有防守方的檔案。"
+  echo "    僅略過 CA 對照顯示，攻擊照常執行。"
 fi
 
 # 三道 preflight。本專案已出現過三次「攻擊回報成功但其實沒執行」，
@@ -63,7 +69,11 @@ openssl req -new -x509 -key private/ca.key.pem -out public/ca.cert.pem \
 cp public/ca.cert.pem public/identity_ca.cert.pem
 cp public/ca.cert.pem public/permissions_ca.cert.pem
 echo "      CA subject: $(openssl x509 -in public/ca.cert.pem -noout -subject 2>/dev/null)"
-echo "      防守方 CA : $(openssl x509 -in "$REAL_KEYSTORE/public/identity_ca.cert.pem" -noout -subject 2>/dev/null)"
+if [ "$HAVE_REAL_KEYSTORE" -eq 1 ]; then
+  echo "      防守方 CA : $(openssl x509 -in "$REAL_KEYSTORE/public/identity_ca.cert.pem" -noout -subject 2>/dev/null)"
+else
+  echo "      防守方 CA : （攻擊機無此檔，跨主機時屬正常）"
+fi
 echo "      → 兩者不同，憑證鏈驗證必定失敗，這正是本攻擊要觸發的路徑"
 
 # ── 2. 用這個 CA 簽一張身分憑證，CN 沿用 SROS2 的 /node_name 慣例 ──────────
