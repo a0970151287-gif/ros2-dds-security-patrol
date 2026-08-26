@@ -26,6 +26,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from firewall_lab.hierarchical_model import HierarchicalFirewallModel  # noqa: E402
+from firewall_lab.stream_replay import replay_in_order  # noqa: E402
 
 
 def main() -> int:
@@ -49,8 +50,11 @@ def main() -> int:
         action_policy_sha256=manifest["action_policy_sha256"],
     )
 
+    # ⚠️ 不可以先過濾再餵模型：550 場裡有 393 場同時含 normal 與攻擊列，
+    # 依標籤過濾會讓串流從 window 1 開始，該有歷史的列拿到 cold-start 特徵。
+    # 整份表逐列依序餵進模型，只在統計時挑 holdout 的列。
     with args.features.open(encoding="utf-8", newline="") as handle:
-        rows = [r for r in csv.DictReader(handle) if r["label"] in holdout_labels]
+        rows = list(csv.DictReader(handle))
     rows.sort(key=lambda r: (r["session_id"], r["source"], int(r["window"])))
 
     raw_features = list(model.bundle["raw_features"])
@@ -58,25 +62,28 @@ def main() -> int:
     per_label: dict[str, collections.Counter] = collections.defaultdict(
         collections.Counter
     )
-    last: dict[tuple[str, str], int] = {}
-    for row in rows:
-        key = (row["session_id"], row["source"])
-        window = int(row["window"])
-        # 特徵表有視窗斷點；跨斷點餵歷史等於宣稱兩個不相鄰的視窗相接。
-        if last.get(key) != window - 1:
-            model.reset_stream(session_id=key[0], source=key[1])
-        last[key] = window
-        verdict = model.predict(
+    # 與 evaluate_openset_holdout.py 共用 `replay_in_order`，不重抄迴圈。
+    pairs = replay_in_order(
+        rows,
+        predict=lambda row, window: model.predict(
             {name: float(row[name]) for name in raw_features},
             security_mode=security_mode,
             source_availability=availability,
             session_id=row["session_id"],
             source=row["source"],
             window=window,
-        )
+        ),
+        reset=lambda session, source: model.reset_stream(
+            session_id=session, source=source
+        ),
+    )
+    for row, verdict in pairs:
+        if row["label"] not in holdout_labels:
+            continue  # 只是為了維持歷史才跑，不計入統計
         binary_fired = verdict["attack_probability"] >= verdict["binary_threshold"]
         if verdict["predicted_class"] == "unknown_attack":
-            path = "flagged_unknown_via_ood" if binary_fired else "flagged_unknown_via_normality"
+            path = ("flagged_unknown_via_ood" if binary_fired
+                    else "flagged_unknown_via_normality")
         elif not binary_fired:
             path = "binary_missed"
         else:

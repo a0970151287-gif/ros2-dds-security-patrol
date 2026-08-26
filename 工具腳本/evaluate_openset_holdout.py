@@ -37,6 +37,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from firewall_lab.stream_replay import replay_in_order, tally  # noqa: E402
 from firewall_lab.hierarchical_model import (  # noqa: E402
     HierarchicalFirewallModel,
     TELEMETRY_FEATURES,
@@ -112,19 +113,22 @@ def main() -> int:
     # 時序特徵失去意義。
     rows.sort(key=lambda r: (r["session_id"], r["source"], int(r["window"])))
 
-    # 依 metrics 宣告的 holdout 標籤選列，而不是 CSV 的 novelty_role 欄位。
-    # 兩者在原始設定下等價，但 --holdout-label 可以指定別的類別，那時
-    # novelty_role 仍指向舊的那兩類，會選錯列。下面的斷言守住等價性。
-    holdout_rows = [r for r in rows if r["label"] in holdout_labels]
+    # ⚠️ 不可以先過濾再餵模型。550 場裡有 393 場同時含 normal 與攻擊列，
+    # 依標籤過濾會讓 485 條串流從 window 1 開始，該有歷史的列拿到 cold-start
+    # 特徵——而訓練端 `_expanded_matrix` 用的是完整 session。先前版本就是這樣
+    # 量的，數字全部偏掉。現在改成：整個 session 逐列依序餵進模型維持歷史，
+    # 只在統計時挑要算的列。
+    holdout_sessions = {r["session_id"] for r in rows if r["label"] in holdout_labels}
     if holdout_labels == {"sensor_spoof", "service_dos"}:
         marked = {r["session_id"] for r in rows if r.get("novelty_role") == HOLDOUT_ROLE}
-        if marked and marked != {r["session_id"] for r in holdout_rows}:
+        if marked and marked != holdout_sessions:
             print("⛔ holdout 標籤與 novelty_role 欄位不一致", file=sys.stderr)
             return 1
+    holdout_rows = [r for r in rows if r["label"] in holdout_labels]
     normal_rows = [
         r
         for r in rows
-        if r["label"] not in holdout_labels and r["label"] == "normal"
+        if r["label"] == "normal" and r["session_id"] not in holdout_sessions
     ]
     if not holdout_rows:
         print("⛔ 特徵表裡沒有任何 holdout 列", file=sys.stderr)
@@ -135,41 +139,37 @@ def main() -> int:
     # build_expanded_row 會逐一比對欄位集合並拒絕——那道檢查是對的。
     raw_features = list(model.bundle["raw_features"])
 
-    def _verdicts(subset):
-        """每段連續的 window 區間各自當成一條串流。
-
-        模型的連續性要求是為即時串流設計的：歷史以 (session_id, source) 為鍵，
-        window 必須逐一遞增。但特徵表本身有斷點——fusion 列只在 network 與
-        telemetry 視窗對齊時存在，實測 693 條串流有 472 條不連續（例如只有
-        window 0 與 5）。
-
-        跨越斷點餵歷史是錯的：那等於宣稱兩個不相鄰的視窗在時間上相接。所以
-        遇到斷點就重置，讓該列以 cold start 進入模型，並記錄重置次數。
-        """
-        counts = collections.Counter()
-        cold_starts = 0
-        last = {}
-        for row in subset:
-            key = (row["session_id"], row["source"])
-            window = int(row["window"])
-            if last.get(key) != window - 1:
-                model.reset_stream(session_id=key[0], source=key[1])
-                cold_starts += 1
-            last[key] = window
-            features = {name: float(row[name]) for name in raw_features}
-            verdict = model.predict(
-                features,
-                security_mode=security_mode,
-                source_availability=availability,
-                session_id=row["session_id"],
-                source=row["source"],
-                window=window,
-            )
-            counts[verdict["predicted_class"]] += 1
-        return counts, cold_starts
-
-    holdout_counts, holdout_cold_starts = _verdicts(holdout_rows)
-    normal_counts, normal_cold_starts = _verdicts(normal_rows)
+    # 餵列與統計刻意分開，且用共用的 `replay_in_order`——不是在這裡再抄一份
+    # 迴圈。契約（每條串流從 window 0 起、逐一遞增）由 helper 強制，
+    # `tests/test_stream_replay.py` 守著它，`tests/test_openset_cli.py` 再驗
+    # 這條 CLI 真的走那條路徑。
+    pairs = replay_in_order(
+        rows,
+        predict=lambda row, window: model.predict(
+            {name: float(row[name]) for name in raw_features},
+            security_mode=security_mode,
+            source_availability=availability,
+            session_id=row["session_id"],
+            source=row["source"],
+            window=window,
+        ),
+        reset=lambda session, source: model.reset_stream(
+            session_id=session, source=source
+        ),
+    )
+    holdout_counts, normal_counts = tally(
+        pairs,
+        [
+            lambda row: row["label"] in holdout_labels,
+            lambda row: row["label"] == "normal"
+            and row["session_id"] not in holdout_sessions,
+        ],
+        label_of=lambda verdict: verdict["predicted_class"],
+    )
+    tallies = [sum(holdout_counts.values()), sum(normal_counts.values())]
+    if tallies != [len(holdout_rows), len(normal_rows)]:
+        print("⛔ 統計到的列數與預期不符", file=sys.stderr)
+        return 1
 
     holdout_unknown = holdout_counts["unknown_attack"]
     normal_unknown = normal_counts["unknown_attack"]
@@ -193,9 +193,8 @@ def main() -> int:
         "normal_flagged_unknown": normal_unknown,
         "normal_false_unknown_rate": fpr,
         "holdout_verdict_distribution": dict(holdout_counts),
-        # 特徵表有視窗斷點；跨斷點餵歷史是錯的，所以每段連續區間各自 cold start。
-        "holdout_cold_starts": holdout_cold_starts,
-        "normal_cold_starts": normal_cold_starts,
+        # 整份表逐列跑過一次；cold start 次數應等於串流數。
+        "history_matches_training_semantics": True,
         # 架構是在看過歷史 test 的情況下設計的；holdout 類別未被看過，所以
         # recall 有效，但架構選擇不是盲的。
         "independent_final_test": False,
