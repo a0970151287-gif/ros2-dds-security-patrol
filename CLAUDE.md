@@ -3102,7 +3102,7 @@ SHA-256**，所以我沒有搬任何檔案，改成寫索引：🔒 標出被釘
   `security_observer/{guard_filter,security_observer}.cpp`、`run_crosshost_identity.sh`
 - 操作限制：本輪經 Jesse 明確授權執行 live（守衛 ＋ 一般 talker、隔離 domain 41）。
   **未產生攻擊流量**、未使用 `sudo`、未修改防火牆、未連接第二台主機。
-- 驗證：完整測試 **728 passed、0 failed、265 warnings**。
+- 驗證：完整測試 **754 passed、0 failed、265 warnings**（含後續 8/27 工作）。
 
 #### 一、補的洞：黑名單本來沒有任何授權
 
@@ -3161,8 +3161,22 @@ Fast DDS 把它當成可宣告的單播 locator。
 回應／執行 **65% → 78%**，整體 **71%**。仍不可部署：`executable_classes` 為空、
 沒有任何規則指向 `dds_guard`、nftables backend 從未真跑、來源歸因 0／1,101。
 
-#### 五、一個待決定（不在我範圍）
+#### 五、未知攻擊路徑已依 Jesse 明確指示接上（2026-08-27 補）
 
-`decision.py:84` 的 `unknown_anomaly_action must be non-executable` 擋住了一個
-合理設計：**未知攻擊正是最該用可撤銷回應的場合**（信心低 → 動作要可逆）。
-但放寬它是動到一條 fail-closed 約束，我沒有自己決定，已請 Jesse 裁示。
+`decision.py` 原本硬性限制 `unknown_anomaly_action` 完全不可執行。已放寬，
+但**放得很窄**：只有 `revocable_participant_block` 加入 alert／quarantine。
+`temporary_block`（要 root、影響整個 IP）與 `deny_participant`（SROS2 靜態
+ACL、不可撤銷）刻意仍被擋在門外——**不確定的判定不該觸發收不回來或波及
+第三方的動作**。
+
+執行需要**兩道互相獨立的閘**：policy 指定的動作是可撤銷的那一個，
+且操作者另外開 `anomaly_response_authorized`。兩者回答不同問題（動作配不配
+得上不確定的證據／這套部署有沒有被授權對未知攻擊動手），任一不成立就退回
+observe。這個開關**刻意不與 `executable_classes` 相通**：那份清單是逐類判斷，
+而未知攻擊按定義不屬於任何一類。
+
+`default_action` 維持原限制：它走的是「未知類別但異常頭沒說話」，
+連異常訊號都沒有就沒有任何動作的正當性。
+
+**出貨 policy 未動**（沒有 opt-in），未知攻擊仍然永遠不執行。
+18 個新測試，含一個端到端案例——分開測兩端的話，中間斷掉兩邊仍會是綠的。
