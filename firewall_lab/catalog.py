@@ -38,6 +38,10 @@ ALLOWED_ACTIONS = frozenset(
         # adapter for this legacy label; new catalogs use temporary_block.
         "rate_limit",
         "temporary_block",
+        # 第二層可撤銷守衛：阻斷單一 DDS participant，不碰網路層。
+        # 與 deny_participant 的差別是它**在 runtime 生效且可撤銷**，
+        # 而 deny_participant 走 SROS2 的靜態 ACL，只能在啟動前決定。
+        "revocable_participant_block",
         "quarantine",
         "alert",
     }

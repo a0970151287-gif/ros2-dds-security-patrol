@@ -35,8 +35,11 @@
 #include <chrono>
 #include <cstdio>
 #include <fstream>
+#include <cctype>
+#include <map>
 #include <memory>
-#include <set>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <sys/stat.h>
 
@@ -117,27 +120,76 @@ private:
         }
         last_mtime_ = info.st_mtime;
 
-        std::set<std::string> next;
+        // 格式：`<guid_prefix> <ticket_sha256> <expires_unix>`
+        //
+        // **只有三個欄位齊全的行才算數。** 舊格式的裸 GUID 一律忽略，因為
+        // 那種行沒有辦法證明它是授權器發的——任何能寫這個檔的東西都寫得出來。
+        // 拒絕它們是這一版的重點，不是相容性疏漏。
+        std::map<std::string, double> next;
         std::ifstream handle(blocklist_path_);
         std::string line;
+        size_t rejected = 0;
         while (std::getline(handle, line)) {
-            // 去空白，容忍註解行
-            line.erase(std::remove_if(line.begin(), line.end(),
-                                      [](unsigned char c) {
-                                          return std::isspace(c);
-                                      }),
-                       line.end());
             if (line.empty() || line[0] == '#') {
                 continue;
             }
-            std::transform(line.begin(), line.end(), line.begin(),
+            std::istringstream fields(line);
+            std::string prefix, ticket, expires_text;
+            if (!(fields >> prefix >> ticket >> expires_text)) {
+                // 全空白的行不算錯，直接略過；欄位不足才是被拒絕的項目。
+                if (line.find_first_not_of(" \t\r\n") != std::string::npos) {
+                    ++rejected;
+                }
+                continue;
+            }
+            std::string extra;
+            if (fields >> extra) {
+                ++rejected;
+                continue;
+            }
+            std::transform(prefix.begin(), prefix.end(), prefix.begin(),
                            [](unsigned char c) { return std::tolower(c); });
-            next.insert(line);
+            std::transform(ticket.begin(), ticket.end(), ticket.begin(),
+                           [](unsigned char c) { return std::tolower(c); });
+            if (!is_hex(prefix, 24) || !is_hex(ticket, 64)) {
+                ++rejected;
+                continue;
+            }
+            double expires = 0.0;
+            try {
+                size_t consumed = 0;
+                expires = std::stod(expires_text, &consumed);
+                if (consumed != expires_text.size()) {
+                    ++rejected;
+                    continue;
+                }
+            } catch (const std::exception&) {
+                ++rejected;
+                continue;
+            }
+            next.emplace(prefix, expires);
+        }
+        if (rejected > 0) {
+            decisions_ << "{\"event\":\"blocklist_rejected_entries\""
+                       << ",\"ts_unix_ns\":" << now_ns()
+                       << ",\"count\":" << rejected << "}" << std::endl;
         }
         if (next != blocked_) {
             blocked_ = next;
             write_reload(blocked_.size());
         }
+    }
+
+    static bool is_hex(const std::string& value, size_t length) {
+        if (value.size() != length) {
+            return false;
+        }
+        for (unsigned char c : value) {
+            if (!std::isxdigit(c)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     void write_reload(size_t count) {
@@ -154,21 +206,38 @@ private:
         // 前 12 個位元組是 participant 的 GUID prefix；後 4 個是 entity。
         // 黑名單以 participant 為單位，所以比對前綴。
         const std::string prefix = gid.substr(0, 24);
-        const bool blocked = blocked_.count(prefix) > 0 || blocked_.count(gid) > 0;
+
+        // 到期檢查在**判定當下**做，不是在重讀時做。
+        //
+        // 這一條是三道撤銷保證裡最重要的一道：到期不會改變檔案的 mtime，
+        // 所以靠重讀永遠不會發現它過期；而且它完全不依賴那個負責撤銷的
+        // Python 行程還活著。行程死掉、機器斷線、腳本被 kill——封鎖照樣解除。
+        const auto found = blocked_.find(prefix);
+        bool blocked = false;
+        bool expired = false;
+        if (found != blocked_.end()) {
+            const double now = now_ns() / 1e9;
+            if (now < found->second) {
+                blocked = true;
+            } else {
+                expired = true;
+            }
+        }
 
         // 允許與丟棄都要記：只記丟棄的話，無法分辨「沒有丟棄」與
-        // 「守衛根本沒在跑」。
+        // 「守衛根本沒在跑」。過期也單獨標記，否則放行看起來像沒有封鎖過。
         decisions_ << "{\"event\":\"decision\",\"ts_unix_ns\":" << now_ns()
                    << ",\"guid_prefix\":\"" << prefix
                    << "\",\"action\":\"" << (blocked ? "drop" : "allow")
-                   << "\"}" << std::endl;
+                   << "\",\"expired\":" << (expired ? "true" : "false")
+                   << "}" << std::endl;
     }
 
     std::string topic_;
     std::string blocklist_path_;
     std::string decisions_path_;
     std::ofstream decisions_;
-    std::set<std::string> blocked_;
+    std::map<std::string, double> blocked_;
     time_t last_mtime_ = 0;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
     rclcpp::TimerBase::SharedPtr timer_;

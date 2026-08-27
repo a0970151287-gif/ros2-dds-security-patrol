@@ -26,6 +26,10 @@ LIVE_SIGNAL_MIN = 0.75
 NETWORK_SIGNAL_MIN = 0.80
 ATTRIBUTION_MIN = 0.95
 MAX_NETWORK_TTL_SEC = 300
+# 第二層守衛的封鎖範圍只有一個 DDS participant，而且撤銷實測 0.0109 秒，
+# 所以 TTL 可以比網路層短得多。短 TTL 本身就是一道防線：即使撤銷路徑壞掉，
+# 封鎖也會自己到期。
+MAX_GUARD_TTL_SEC = 60
 MAX_SAFETY_HOLD_SEC = 30
 MAX_DYNAMIC_EVIDENCE_AGE_SEC = 10.0
 MAX_FUTURE_CLOCK_SKEW_SEC = 1.0
@@ -106,6 +110,9 @@ class ResponseAuthorizer:
         network_backend_capacity_ready: bool = False,
         network_backend_recovery_verified: bool = False,
         velocity_guard_recovery_verified: bool = False,
+        dds_guard_id: str = "",
+        dds_guard_present: bool = False,
+        dds_guard_revocation_verified: bool = False,
     ):
         for name, value in (
             ("model_deployment_eligible", model_deployment_eligible),
@@ -113,6 +120,8 @@ class ResponseAuthorizer:
             ("network_backend_capacity_ready", network_backend_capacity_ready),
             ("network_backend_recovery_verified", network_backend_recovery_verified),
             ("velocity_guard_recovery_verified", velocity_guard_recovery_verified),
+            ("dds_guard_present", dds_guard_present),
+            ("dds_guard_revocation_verified", dds_guard_revocation_verified),
         ):
             if not isinstance(value, bool):
                 raise SchemaError(f"{name} must be bool")
@@ -121,6 +130,7 @@ class ResponseAuthorizer:
         for name, value in (
             ("network_backend_kind", network_backend_kind),
             ("network_backend_id", network_backend_id),
+            ("dds_guard_id", dds_guard_id),
         ):
             if not isinstance(value, str):
                 raise SchemaError(f"{name} must be text")
@@ -146,6 +156,9 @@ class ResponseAuthorizer:
         self.network_backend_capacity_ready = network_backend_capacity_ready
         self.network_backend_recovery_verified = network_backend_recovery_verified
         self.velocity_guard_recovery_verified = velocity_guard_recovery_verified
+        self.dds_guard_id = dds_guard_id
+        self.dds_guard_present = dds_guard_present
+        self.dds_guard_revocation_verified = dds_guard_revocation_verified
 
     @staticmethod
     def _parse_networks(values: Iterable[str]) -> tuple[Any, ...]:
@@ -439,6 +452,108 @@ class ResponseAuthorizer:
                 blockers=blockers,
                 reason=(
                     "signed two-signal attributed temporary network response"
+                    if live_eligible
+                    else "live response denied; retain dry-run evidence"
+                ),
+                source=normalized_source,
+                evidence_id=evidence.evidence_id if evidence is not None else "",
+                authorization_ticket=ticket,
+            )
+
+        if decision.adapter == "dds_guard":
+            # 第二層可撤銷守衛：依 DDS publisher GUID 阻斷單一 participant。
+            #
+            # 它存在的理由不是門檻比較低——下面每一條都與 network_helper 相同。
+            # 它存在的理由是**在 IP 歸因拿不到時仍然可用**：1,101 場 session 裡
+            # 具可信 identity→IP attestation 的是 0 場，而 publisher GUID 是
+            # 守衛在訊息上直接讀到的，沒有推論步驟。
+            #
+            # 動作可撤銷（實測撤銷 0.0109 秒）也不是放寬理由，而是 TTL 可以更短
+            # 的理由：封鎖範圍只有一個 participant，而且會自己到期。
+            if decision.action != "revocable_participant_block":
+                blockers.append(
+                    "dds guard only accepts revocable_participant_block")
+            if context.source_kind != "dds_identity":
+                blockers.append("dds guard requires dds_identity attribution")
+            if context.requested_ttl_sec > MAX_GUARD_TTL_SEC:
+                blockers.append(
+                    f"dds guard ttl must not exceed {MAX_GUARD_TTL_SEC}s")
+            if not self.model_deployment_eligible:
+                blockers.append("model is not approved for live deployment")
+            if (
+                not self.model_artifact_sha256
+                or evidence is None
+                or evidence.model_sha256 != self.model_artifact_sha256
+            ):
+                blockers.append("signed evidence is not bound to the active model hash")
+            if not self.policy_verified:
+                blockers.append("action policy integrity is not verified")
+            if (
+                not self.policy_sha256
+                or evidence is None
+                or evidence.policy_sha256 != self.policy_sha256
+            ):
+                blockers.append("signed evidence is not bound to the active policy hash")
+            if not self.dds_guard_present:
+                blockers.append("dds guard is not attested as running")
+            if (
+                not self.dds_guard_id
+                or evidence is None
+                or evidence.backend_id != self.dds_guard_id
+            ):
+                blockers.append("signed evidence is not bound to the active dds guard")
+            if not self.dds_guard_revocation_verified:
+                blockers.append("dds guard revocation path is not verified")
+            if evidence is None or evidence.source_shared:
+                blockers.append(
+                    "publisher identity is shared or attribution is ambiguous")
+            if (
+                evidence is None
+                or evidence.confirmation_windows < MIN_NETWORK_CONFIRMATION_WINDOWS
+            ):
+                blockers.append("dds guard needs two signed consecutive windows")
+            if attribution < ATTRIBUTION_MIN:
+                blockers.append("source attribution confidence below 0.95")
+            # 身份範圍的動作要求身份層的證據。只靠流量形狀不足以指認一個
+            # participant——那正是 C2C-025 記下的「識別率由證據排他性決定」。
+            if signals.get("sros2", 0.0) < NETWORK_SIGNAL_MIN:
+                blockers.append("dds identity signal below 0.80")
+            corroborating = max(
+                signals.get("telemetry", 0.0),
+                signals.get("ros_behavior", 0.0),
+                signals.get("application_hmac", 0.0),
+                signals.get("host", 0.0),
+            )
+            if corroborating < LIVE_SIGNAL_MIN:
+                blockers.append("no independent corroborating signal at 0.75")
+            live_eligible = not blockers
+            effective_mode = (
+                "live"
+                if context.requested_mode == "live" and live_eligible
+                else "dry_run"
+                if context.requested_mode == "dry_run"
+                else "observe"
+            )
+            ticket = ""
+            if effective_mode == "live":
+                ticket = self._claim_ticket(
+                    evidence, decision, context.requested_ttl_sec, blockers
+                )
+                if not ticket:
+                    effective_mode = "observe"
+                    live_eligible = False
+            return self._base_response(
+                decision,
+                context,
+                effective_mode=effective_mode,
+                execute=effective_mode == "live",
+                live_eligible=live_eligible,
+                # 撤銷是這一層的存在理由，任何情況下都不可以是 False。
+                rollback_required=True,
+                ttl_sec=context.requested_ttl_sec,
+                blockers=blockers,
+                reason=(
+                    "signed identity-attributed revocable participant block"
                     if live_eligible
                     else "live response denied; retain dry-run evidence"
                 ),

@@ -22,6 +22,7 @@ ALLOWED_ADAPTERS = frozenset(
         "application_hmac",
         "input_validator",
         "network_helper",
+        "dds_guard",
     }
 )
 ACTION_ADAPTERS = {
@@ -32,6 +33,9 @@ ACTION_ADAPTERS = {
     "lock_velocity": frozenset({"velocity_guard"}),
     "drop_message": frozenset({"application_hmac", "input_validator"}),
     "temporary_block": frozenset({"network_helper"}),
+    # 一個 action 對一個 adapter：可撤銷的 participant 阻斷只能由第二層守衛
+    # 執行，不可以退回去用 SROS2 的靜態 ACL（那不可撤銷，也不在 runtime 生效）。
+    "revocable_participant_block": frozenset({"dds_guard"}),
 }
 
 
