@@ -50,6 +50,7 @@ source 工具腳本/load_ros_environment.sh
 | `calibrate_ood_threshold.py` | 用 leave-one-class-out 當模擬未知校準門檻 |
 | `calibrate_ood_transfer.py` | 量門檻的跨場次轉移 |
 | `evaluate_parallel_gate_loo.py` | family-LOO 平行閘門評估（Codex 的 P1） |
+| `compare_rule_vs_learned.py` | **規則式 vs 學習式的公平對照**，附場次層級 bootstrap 信賴區間 |
 | `diagnose_gate_veto.py` | **量 parallel gate 丟掉多少 OOD 頭已經認對的未知**，並掃 normality 預算看代價 |
 | `audit_conformal_readiness.py` | session-level conformal 樣本是否足夠 |
 
