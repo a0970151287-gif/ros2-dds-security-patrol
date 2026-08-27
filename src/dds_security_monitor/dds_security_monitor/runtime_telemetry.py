@@ -465,10 +465,23 @@ class RuntimeTelemetryProducer:
             },
         )
 
-    def emit_parameter_veto(self, *, count: int = 1) -> bool:
+    def emit_parameter_veto(
+        self, *, count: int = 1, layer: str = "application"
+    ) -> bool:
+        """一次「參數變更被拒絕」。
+
+        `layer` 記的是**哪一層拒絕的**：`application` 是本專案自己的
+        on_set_parameters veto，`rcl_read_only` 是 rcl 在 callback 之前就擋掉。
+        兩者結果相同（參數沒被改）但機制不同，分開記才能分辨防線在哪裡。
+        """
+        if layer not in {"application", "rcl_read_only"}:
+            raise ValueError("parameter veto layer is not recognised")
         return self._emit(
             "parameter_veto",
-            {"count": _require_counter(count, "parameter veto count")},
+            {
+                "count": _require_counter(count, "parameter veto count"),
+                "layer": layer,
+            },
         )
 
     def emit_outcome_marker(
@@ -528,3 +541,33 @@ __all__ = [
     "SROS2_DENY_KINDS",
     "TELEMETRY_SOCKET_ENV",
 ]
+
+
+def record_parameter_refusals(node, answer) -> int:
+    """Record every unsuccessful result in a parameter-service response.
+
+    Only set-style responses carry results; get_parameters and the rest have
+    nothing to refuse, so they contribute nothing rather than an empty count.
+    """
+    results = getattr(answer, "results", None)
+    if results is None:
+        result = getattr(answer, "result", None)
+        results = [result] if result is not None else []
+    refused = sum(
+        1 for item in results
+        if getattr(item, "successful", True) is False
+    )
+    if not refused:
+        return 0
+    telemetry = getattr(node, "_telemetry", None)
+    emit_veto = getattr(telemetry, "emit_parameter_veto", None)
+    if callable(emit_veto):
+        try:
+            emit_veto(count=refused, layer="rcl_read_only")
+        except Exception:
+            # Same rule as the attempt counter: evidence must never break or
+            # delay the node's own answer.
+            pass
+    return refused
+
+

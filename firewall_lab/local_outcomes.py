@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
+
 from .schema import SchemaError, atomic_write_json, require_identifier, sha256_file, utc_now
 
 
@@ -81,7 +82,14 @@ REQUIRED_FACT_KEYS: dict[tuple[str, str], frozenset[str]] = {
     ),
     ("oversized_input_dropped", "recovery"): frozenset({"next_valid_accepted"}),
     ("parameter_unchanged", "baseline"): frozenset({"parameter_sha256"}),
-    ("parameter_unchanged", "trigger"): frozenset({"set_rejected"}),
+    ("parameter_unchanged", "trigger"): frozenset(
+        {
+            "set_rejected",
+            "application_veto_observed",
+            "rcl_read_only_veto_observed",
+            "sros_deny_evaluable",
+        }
+    ),
     ("parameter_unchanged", "protected"): frozenset({"parameter_sha256"}),
     ("parameter_unchanged", "recovery"): frozenset({"node_healthy"}),
     ("velocity_guard_zeroed", "trigger"): frozenset(
@@ -340,7 +348,17 @@ def _assert_outcome(check_id: str, stages: dict[str, dict[str, Any]]) -> None:
         after = fact("protected", "parameter_sha256")
         _expect(before, lambda value: isinstance(value, str) and HEX64_RE.fullmatch(value) is not None, "parameter_sha256")
         _expect(after, lambda value: value == before, "parameter hash unchanged")
+        # The parameter staying unchanged is the security property and always
+        # binds. Which layer refused the change is recorded but does not gate
+        # the verdict: rcl's read-only rejection and the application veto reach
+        # the same outcome by different mechanisms, and demanding a particular
+        # one would be demanding a particular implementation rather than the
+        # property. The vendor permission deny binds only when a security audit
+        # sink produced records, which under rmw_fastrtps it cannot.
         _expect(fact("trigger", "set_rejected"), lambda value: value is True, "set_rejected")
+        for name in ("application_veto_observed", "rcl_read_only_veto_observed"):
+            _expect(fact("trigger", name), lambda value: isinstance(value, bool), name)
+        _expect(fact("trigger", "sros_deny_evaluable"), lambda value: isinstance(value, bool), "sros_deny_evaluable")
         _expect(fact("recovery", "node_healthy"), lambda value: value is True, "node_healthy")
     elif check_id == "velocity_guard_zeroed":
         _expect(fact("trigger", "authenticated_trigger"), lambda value: value is True, "authenticated_trigger")

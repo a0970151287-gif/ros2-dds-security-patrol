@@ -164,6 +164,25 @@ EVENT_DETAIL_KEYS: dict[str, frozenset[str]] = {
     "controlled_fault_injection": frozenset({"kind", "state"}),
 }
 
+# 選用欄位。必要欄位仍然必須到齊；這裡只是允許**額外**帶上的欄位。
+#
+# `parameter_veto` 的 `layer` 是後加的：1,100 場正式資料裡的 veto 事件沒有
+# 這個欄位，而那些檔案是不可變的證據。做成選用是為了讓舊資料仍然合法，
+# 不是為了寬鬆——新的發送端一律會帶。
+OPTIONAL_EVENT_DETAIL_KEYS: dict[str, frozenset[str]] = {
+    "parameter_veto": frozenset({"layer"}),
+}
+
+# 參數變更是在哪一層被拒絕的。
+#
+# `application`  ——  on_set_parameters callback 說不行（本專案自己的 veto）
+# `rcl_read_only` —— rcl 在 _apply_descriptors 就擋掉，callback 根本沒被呼叫
+#
+# 兩者的**結果**相同（參數沒有被改），但**機制**不同，而混在一起正是
+# governance／permission 那個錯誤的同一種形狀：不同的事件、不同的處置，
+# 卻共用一個計數。
+PARAMETER_VETO_LAYERS = frozenset({"application", "rcl_read_only"})
+
 
 def _require_session_id(value: Any) -> str:
     if not isinstance(value, str) or not SESSION_ID_RE.fullmatch(value):
@@ -191,10 +210,13 @@ def _validate_details(event_type: str, value: Any) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise SchemaError("telemetry details must be an object")
     expected = EVENT_DETAIL_KEYS[event_type]
-    if set(value) != expected:
+    optional = OPTIONAL_EVENT_DETAIL_KEYS.get(event_type, frozenset())
+    present = set(value)
+    if not expected <= present or not present <= (expected | optional):
         raise SchemaError(
             f"unexpected detail keys for {event_type}: "
             f"expected={sorted(expected)}"
+            + (f" optional={sorted(optional)}" if optional else "")
         )
     if event_type in {"heartbeat_observation", "authenticated_heartbeat_state"}:
         gap = value["gap_sec"]
@@ -380,9 +402,17 @@ def _validate_details(event_type: str, value: Any) -> dict[str, Any]:
         }
 
     if event_type == "parameter_veto":
-        return {
+        details = {
             "count": _require_counter(value["count"], "details.count")
         }
+        if "layer" in value:
+            layer = value["layer"]
+            if layer not in PARAMETER_VETO_LAYERS:
+                raise SchemaError(
+                    "details.layer must be one of "
+                    f"{sorted(PARAMETER_VETO_LAYERS)}")
+            details["layer"] = layer
+        return details
 
     if event_type == "outcome_marker":
         check_id = value["check_id"]

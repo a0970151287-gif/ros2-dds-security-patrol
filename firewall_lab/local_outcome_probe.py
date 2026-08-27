@@ -446,12 +446,32 @@ def derive_facts(
             source=SROS_SOURCE,
             kind="permission",
         )
-        if not vetoes and not denies:
-            raise SchemaError(
-                "missing semantic probe evidence: parameter veto or SROS2 permission deny"
-            )
+        # 完全沒有證據時記錄下來，不要拋例外。
+        #
+        # 拋例外會中止整批 outcome 組裝，於是「這一項拿不到」看起來像
+        # 「整個驅動壞了」——這個專案已經被同一類混淆咬過很多次。
+        # 記成不通過並寫明原因，判定一樣不會過（assemble 要求九項全齊），
+        # 但看得出來卡在哪。
+        #
+        # 為什麼以前必然拿不到：`whitelist` 宣告時帶 read_only=True，
+        # rcl 在 _apply_descriptors 就拒絕，application 層的 veto 從來沒被
+        # 呼叫過；而 sros2_deny kind=permission 在本技術棧是 source_unavailable。
+        # 2026-08-27 讓服務層記錄 rcl 的拒絕之後，Permissive 下的
+        # parameter_tamper 攻擊才第一次能產生這一項的證據。
+        layers = {
+            record["details"].get("layer", "application") for record in vetoes
+        }
         rejected = _sum_detail(vetoes, "count") + _sum_detail(denies, "count")
-        facts = {"set_rejected": rejected >= 1}
+        facts = {
+            "set_rejected": rejected >= 1,
+            # 分開記兩層而不是一個清單：事實值限定為純量以維持雜湊穩定，
+            # 而兩個布林本來就比清單更明確——它回答的是「這一層有沒有出手」。
+            "application_veto_observed": "application" in layers,
+            "rcl_read_only_veto_observed": "rcl_read_only" in layers,
+            # 廠商的 permission deny 記錄在本技術棧取不到。缺席既不算通過
+            # 也不算失敗，只算不可評估。
+            "sros_deny_evaluable": bool(denies),
+        }
     elif (check_id, stage) == ("parameter_unchanged", "recovery"):
         facts = {"node_healthy": _healthy(events, GRAPH_SOURCE)}
     elif (check_id, stage) == ("velocity_guard_zeroed", "trigger"):

@@ -31,7 +31,10 @@ from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
 
-from dds_security_monitor.runtime_telemetry import RuntimeTelemetryProducer
+from dds_security_monitor.runtime_telemetry import (
+    RuntimeTelemetryProducer,
+    record_parameter_refusals,
+)
 from dds_security_monitor.test_fault_seam import (
     ControlledGraphFaultSeam,
     ControlledHeartbeatSuppressSeam,
@@ -296,7 +299,15 @@ def count_parameter_service_calls(node):
                     # Evidence is best-effort and must never break or delay
                     # the node's own answer to the request.
                     pass
-            return original(request, response)
+            answer = original(request, response)
+            # Counting the attempt says a parameter change was tried; it does
+            # not say whether it was refused. rcl rejects a read-only parameter
+            # in _apply_descriptors, before on_set_parameters runs, so the
+            # application veto never fires for the whitelist and the refusal
+            # was invisible -- which is why parameter_unchanged could never be
+            # evidenced. The refusal is right here in the response.
+            record_parameter_refusals(node, answer)
+            return answer
 
         counted._counts_parameter_calls = True
         service.callback = counted
