@@ -108,16 +108,24 @@ P2 已建立 RTPS／DDS 身份歸因輸入契約，但既有 1,101 個 session �
 
 ## 目錄
 
+每個帶 📑 的目錄都有自己的索引，找東西從那裡進去。
+
 | 路徑 | 內容 |
 |---|---|
-| `firewall_lab/` | session 資料工廠、精確標籤、campaign、特徵、訓練與受限決策 |
+| [`文件/`](文件/README.md) 📑 | 報告、證據總帳、稽核、簡報。**86 個項目，先看索引** |
+| [`工具腳本/`](工具腳本/README.md) 📑 | 38 支腳本，依用途分類；標「需授權」的會產生 live 流量 |
+| [`紅隊測試/`](紅隊測試/README.md) 📑 | 27 支 PoC、威脅模型、攻擊報告與修補紀錄 |
+| [`firewall_lab/`](firewall_lab/README.md) 📑 | session 資料工廠、精確標籤、campaign、特徵、訓練與受限決策 |
+| [`展示指令/`](展示指令/README.md) 📑 | Gazebo、SROS2 與驗證流程 |
+| [`Zeek監控/`](Zeek監控/README.md) 📑 | DDS/RTPS 網路偵測與受控回應輔助程式 |
+| [`ML防禦/`](ML防禦/README.md) 📑 | 特徵抽取、模型訓練／評估與回應引擎 |
 | `src/dds_security_monitor/` | HMAC、巡邏、行為 IDS 與 ROS2 安全節點 |
-| `Zeek監控/` | DDS/RTPS 網路偵測與受控回應輔助程式 |
-| `ML防禦/` | 特徵抽取、模型訓練／評估與回應引擎 |
-| `紅隊測試/` | PoC、威脅模型、攻擊報告與修補紀錄 |
-| `展示指令/` | Gazebo、SROS2 與驗證流程 |
+| `firewall_lab/security_observer/` | 獨立的 Fast DDS 安全觀測者與第二層守衛（C++） |
 | `src/turtlebot3_dqn/` | TQC 訓練與評估（獨立未來工作軌） |
 | `tests/` | 可離線執行的安全回歸測試 |
+| `跨主機紅隊/`、`網路記錄/` | 跨主機攻擊設定、Zeek 輸出 |
+
+⚠️ `文件/` 底下的檔案被證據總帳以路徑＋SHA-256 釘住，**不要移動或改名**。
 
 ## 目前必須保留的限制
 
