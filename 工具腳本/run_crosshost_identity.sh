@@ -91,6 +91,21 @@ esac
 # 給（ATTACKER_IP），就直接拿它當 unicast initial peer，discovery 不再賭多播。
 PEERS="${OBSERVER_PEERS:-${ATTACKER_IP:-}}"
 
+# WSL 的 mirrored 模式會在 `lo` 上放一個 scope global 的 10.255.255.254/32。
+# Fast DDS 把它當成可宣告的單播 locator → **discovery 完全靜默失敗**：
+# 節點正常啟動、log 乾淨、事件檔是空的。2026-08-27 實測，見
+# 工具腳本/make_fastdds_profile.py 的對照表。
+#
+# 兩邊都要釘：ROS 節點吃 profile，觀測者自帶 QoS 所以要用環境變數。
+PIN_ADDRESS="${OBSERVER_INTERFACE_ADDRESS:-$IFACE_IPV4}"
+if [ -n "$PIN_ADDRESS" ]; then
+  FASTDDS_PROFILE="$OUT/fastdds_pinned.xml"
+  "$VENV_PYTHON" "$WORKSPACE/工具腳本/make_fastdds_profile.py" \
+    --interface "$IFACE" --output "$FASTDDS_PROFILE" >/dev/null \
+    || fail "無法產生 Fast DDS profile"
+  export FASTRTPS_DEFAULT_PROFILES_FILE="$FASTDDS_PROFILE"
+fi
+
 POLICY_SHA="$(sha256sum "$WORKSPACE/firewall_lab/action_policy.json" | cut -c1-64)"
 
 echo "=================================================================="
@@ -131,6 +146,7 @@ OBSERVER_AUDIT_LOG="$OUT/dds_security_audit.log" \
 OBSERVER_EVENTS_LOG="$OUT/observer_events.jsonl" \
 OBSERVER_LOG_LEVEL=DEBUG_LEVEL \
 OBSERVER_PEERS="$PEERS" \
+OBSERVER_INTERFACE_ADDRESS="$PIN_ADDRESS" \
 "$OBSERVER_BIN" "$DOMAIN" "$DURATION" > "$OUT/observer.log" 2>&1 &
 OBS=$!
 sleep 3

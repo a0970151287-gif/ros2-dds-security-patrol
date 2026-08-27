@@ -86,6 +86,70 @@ source /opt/ros/jazzy/setup.bash && ldd /opt/ros/jazzy/lib/libfastrtps.so.2.14 |
 **這一點特別重要**，因為它的失敗形態是「攻擊看起來成功執行了、但防守端什麼都
 沒收到」——會被誤讀成「防禦擋住了」或「防禦沒反應」，兩個結論都是錯的。
 
+## 四之二、⚠️ 如果你是 WSL ＋ mirrored，這一步不能省
+
+WSL 的 `networkingMode=mirrored` 會在 `lo` 上放一個 **scope global 的
+`10.255.255.254/32`**。Fast DDS 列舉介面時會把它當成可宣告的單播 locator，
+locator 選擇因此走錯，**discovery 完全靜默失敗**。
+
+2026-08-27 在防守機實測（同機 talker／listener，完全乾淨的環境）：
+
+| Fast DDS 的 interfaceWhiteList | 發 | 收 |
+|---|---:|---:|
+| 不設（預設） | 10 | **0** |
+| 只有 `127.0.0.1` | 10 | **0** |
+| 介面位址 ＋ `127.0.0.1` | 10 | **0** |
+| **只有真實介面位址** | 10 | **8** ✅ |
+
+**把 loopback 放進去就會壞。** 這件事花了防守端很久才查出來，因為它沒有任何
+錯誤訊息——節點正常啟動、log 乾淨、就是收不到。
+
+### 怎麼修
+
+把下面存成 `~/pin_fastdds.sh`，每次跑 N28 之前先 source 它：
+
+```bash
+#!/usr/bin/env bash
+# 找出真實介面位址（排除 lo、docker、以及 mirrored 塞的那個 /32）
+ADDR=$(ip -4 -o addr show \
+       | grep -vE ' lo | docker| br-| veth' \
+       | grep -v '/32 ' \
+       | awk '{print $4}' | cut -d/ -f1 | head -1)
+if [ -z "$ADDR" ]; then
+  echo "找不到可用介面位址" >&2
+  return 1 2>/dev/null || exit 1
+fi
+cat > ~/fastdds_pinned.xml <<XML
+<?xml version="1.0" encoding="UTF-8" ?>
+<dds xmlns="http://www.eprosima.com"><profiles>
+  <transport_descriptors><transport_descriptor>
+    <transport_id>udp_pinned</transport_id><type>UDPv4</type>
+    <interfaceWhiteList><address>${ADDR}</address></interfaceWhiteList>
+  </transport_descriptor></transport_descriptors>
+  <participant profile_name="pinned" is_default_profile="true"><rtps>
+    <userTransports><transport_id>udp_pinned</transport_id></userTransports>
+    <useBuiltinTransports>false</useBuiltinTransports>
+  </rtps></participant>
+</profiles></dds>
+XML
+export FASTRTPS_DEFAULT_PROFILES_FILE=~/fastdds_pinned.xml
+echo "Fast DDS 釘在 ${ADDR}"
+```
+
+**不要寫死位址**——它跟著網路走，而介面名在 mirrored 下也不固定
+（防守端實測看過 `eth1` 與 `eth2` 互換）。寫死的後果就是換個網路就靜默失效，
+與它要修的那個問題一模一樣。
+
+### 怎麼確認它有效
+
+跑之前先自己測一次同機 talker／listener：
+
+```bash
+source /opt/ros/jazzy/setup.bash && source ~/pin_fastdds.sh && export ROS_DOMAIN_ID=99 && (setsid ros2 run demo_nodes_cpp talker > /tmp/t.log 2>&1 &) && sleep 3 && timeout 8 ros2 run demo_nodes_cpp listener 2>&1 | grep -c "I heard"
+```
+
+**收到數必須大於 0。** 是 0 就不要往下走，先解決這個。
+
 ## 五、建立攻擊腳本
 
 把下面的內容存成 `N28_wrong_ca_participant.sh`（放哪都可以，例如 `~/`）：

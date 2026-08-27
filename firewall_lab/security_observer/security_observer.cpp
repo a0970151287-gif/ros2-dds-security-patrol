@@ -54,6 +54,7 @@
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 #include <fastdds/dds/domain/qos/DomainParticipantQos.hpp>
 #include <fastdds/rtps/common/Locator.h>
+#include <fastdds/rtps/transport/UDPv4TransportDescriptor.h>
 #include <fastrtps/utils/IPLocator.h>
 
 using eprosima::fastdds::dds::DomainParticipant;
@@ -468,6 +469,25 @@ int main(int argc, char** argv) {
         peer_count = add_initial_peers(qos, peers_env);
     }
 
+    // WSL 的 mirrored 模式會在 `lo` 上放一個 scope global 的 10.255.255.254/32。
+    // Fast DDS 把它當成可宣告的單播 locator，locator 選擇因此走錯，
+    // **discovery 完全靜默失敗**——節點正常啟動、log 乾淨、就是收不到對方。
+    // 2026-08-27 實測：把 loopback 放進 whitelist 就會壞，只釘真實介面位址才通。
+    //
+    // 這支程式用 Fast DDS API 直接建 participant 並自帶 QoS，
+    // 所以 `FASTRTPS_DEFAULT_PROFILES_FILE` 對它無效，只能在這裡設。
+    const char* pin_env = std::getenv("OBSERVER_INTERFACE_ADDRESS");
+    std::string pinned_address;
+    if (pin_env != nullptr && *pin_env != 0) {
+        pinned_address = pin_env;
+        auto descriptor = std::make_shared<
+            eprosima::fastdds::rtps::UDPv4TransportDescriptor>();
+        descriptor->interfaceWhiteList.emplace_back(pinned_address);
+        qos.transport().user_transports.push_back(descriptor);
+        // 保留 builtin 的話那個壞掉的 locator 還是會被宣告出去。
+        qos.transport().use_builtin_transports = false;
+    }
+
     std::signal(SIGINT, handle_signal);
     std::signal(SIGTERM, handle_signal);
 
@@ -503,6 +523,12 @@ int main(int argc, char** argv) {
     } else {
         std::cout << "discovery via multicast only "
                      "(set OBSERVER_PEERS for Wi-Fi links)\n";
+    }
+    if (!pinned_address.empty()) {
+        std::cout << "transport pinned to " << pinned_address << "\n";
+    } else {
+        std::cout << "transport not pinned "
+                     "(set OBSERVER_INTERFACE_ADDRESS under WSL mirrored)\n";
     }
     std::cout << std::flush;
 
