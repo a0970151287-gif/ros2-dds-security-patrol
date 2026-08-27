@@ -24,6 +24,20 @@ set -uo pipefail
 MODE="${1:-rehearse}"
 ENABLED="${2:-}"
 
+# 安全模式。預設 Enforce——既有五項 outcome 都是在 Enforce 下取得的。
+#
+# parameter_unchanged 必須用 Permissive，而且那不是為了讓它比較容易通過：
+# Enforce 下 ACL 直接擋掉每一個 set_parameters 呼叫，請求根本到不了節點，
+# 「參數沒有被改」因此是**空洞地成立**——它證明的是 ACL，不是應用層。
+# Permissive 下請求真的抵達，被 rcl 的 read_only 拒絕，那才是第二道防線
+# 實際出手的證據。
+STRATEGY="${SROS2_OUTCOME_STRATEGY:-Enforce}"
+case "$STRATEGY" in
+  Enforce|Permissive) ;;
+  *) echo "⛔ SROS2_OUTCOME_STRATEGY 只能是 Enforce 或 Permissive"; exit 2 ;;
+esac
+STACK_MODE="$(printf '%s' "$STRATEGY" | tr '[:upper:]' '[:lower:]')"
+
 WS="$HOME/ros2_ws"
 RUNTIME="/home/jesse/.local/share/sros2-firewall/live_runtime"
 SOCK="$RUNTIME/runtime_telemetry.sock"
@@ -43,7 +57,7 @@ setup_env() {
   source "$WS/工具腳本/load_ros_environment.sh" >/dev/null || return 1
   export ROS_SECURITY_KEYSTORE="$WS/sros2_keystore"
   export ROS_SECURITY_ENABLE=true
-  export ROS_SECURITY_STRATEGY=Enforce
+  export ROS_SECURITY_STRATEGY="$STRATEGY"
   export ROS_DOMAIN_ID=30
   export ROS_LOCALHOST_ONLY=1
   export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
@@ -210,23 +224,29 @@ rm -f "$FAULT_DIR"/monitor.arm "$FAULT_DIR"/ids.arm 2>/dev/null
     --graph-fault-ack "$FAULT_ACK" ) >>"$ROOT/driver.log" 2>&1 \
   || log "⛔ seam prepare 失敗（graph 項會取不到證據）"
 
-# ── 3. Enforce stack ────────────────────────────────────────
-log "啟動 SROS2 Enforce stack（readiness 最長 130 秒）"
-bash "$WS/firewall_lab/live_stack.sh" start enforce >>"$ROOT/driver.log" 2>&1 || {
-  log "⛔ stack 啟動失敗"; tail -n 40 "$RUNTIME/enforce.log"; exit 1; }
+# ── 3. stack ────────────────────────────────────────────────
+if [[ "$STRATEGY" == "Enforce" ]]; then
+  READY_TEXT="SROS2 Enforce readiness 通過"
+else
+  READY_TEXT="本機 Permissive readiness 通過"
+fi
+STACK_LOG="$RUNTIME/$STACK_MODE.log"
+log "啟動 SROS2 $STRATEGY stack（readiness 最長 130 秒）"
+bash "$WS/firewall_lab/live_stack.sh" start "$STACK_MODE" >>"$ROOT/driver.log" 2>&1 || {
+  log "⛔ stack 啟動失敗"; tail -n 40 "$STACK_LOG"; exit 1; }
 
 READY=0
 for _ in $(seq 1 150); do
-  if grep -q "SROS2 Enforce readiness 通過" "$RUNTIME/enforce.log" 2>/dev/null; then
+  if grep -q "$READY_TEXT" "$STACK_LOG" 2>/dev/null; then
     READY=1; break
   fi
-  if grep -q "readiness 失敗\|不宣告系統可用" "$RUNTIME/enforce.log" 2>/dev/null; then
+  if grep -q "readiness 失敗\|不宣告系統可用" "$STACK_LOG" 2>/dev/null; then
     break
   fi
   sleep 1
 done
-[[ "$READY" == 1 ]] || { log "⛔ Enforce readiness 未通過"; tail -n 40 "$RUNTIME/enforce.log"; exit 1; }
-log "✅ Enforce readiness 通過"
+[[ "$READY" == 1 ]] || { log "⛔ $STRATEGY readiness 未通過"; tail -n 40 "$STACK_LOG"; exit 1; }
+log "✅ $STRATEGY readiness 通過"
 
 # ── 3. bounded observer（/local_outcome_probe enclave）───────
 log "啟動 observer（duration 300s）"
@@ -330,6 +350,55 @@ if enabled oversized_input_dropped; then
   mark oversized_input_dropped recovery start
   sleep 8
   mark oversized_input_dropped recovery end
+fi
+
+if enabled parameter_unchanged; then
+  # 這一項**只在 Permissive 下有意義**。
+  #
+  # Enforce 下 ACL 擋掉每一個 set_parameters 呼叫，請求根本到不了節點，
+  # 「參數沒有被改」因此是空洞地成立——它證明的是 ACL，不是應用層。
+  # Permissive 下請求真的抵達，被 rcl 的 read_only 拒絕，那才是第二道防線
+  # 實際出手的證據。
+  if [[ "$STRATEGY" != "Permissive" ]]; then
+    log "⏭  parameter_unchanged 需要 Permissive（目前 $STRATEGY），跳過"
+  else
+  log "stage: parameter_unchanged（Permissive 下 set_parameters 抵達節點）"
+
+  mark parameter_unchanged baseline start
+  PBLINE="$(marker_line parameter_unchanged baseline start)"
+  wait_for "$PBLINE" parameter_digest local_outcome_probe 25 parameter=whitelist
+  sleep 2
+  mark parameter_unchanged baseline end
+
+  mark parameter_unchanged trigger start
+  PTLINE="$(marker_line parameter_unchanged trigger start)"
+  (
+    export ROS_SECURITY_ENABLE=false
+    unset ROS_SECURITY_STRATEGY ROS_SECURITY_KEYSTORE
+    exec python3 "$WS/紅隊測試/PoC腳本/N14_param_whitelist_hijack.py" 14
+  ) >"$ROOT/n14.stdout.log" 2>"$ROOT/n14.stderr.log" &
+  ATTACK_PID=$!
+  CLEAN_PIDS+=("$ATTACK_PID")
+  # 等的是 rcl 那一層的拒絕。等 application 層的 veto 會永遠等不到：
+  # whitelist 是 read_only，on_set_parameters 從來沒被呼叫過（C2C-022）。
+  wait_for "$PTLINE" parameter_veto dds_security_monitor 25 layer=rcl_read_only
+  sleep 2
+  mark parameter_unchanged trigger end
+  wait "$ATTACK_PID" 2>/dev/null
+  sleep 6
+
+  mark parameter_unchanged protected start
+  PPLINE="$(marker_line parameter_unchanged protected start)"
+  wait_for "$PPLINE" parameter_digest local_outcome_probe 25 parameter=whitelist
+  sleep 2
+  mark parameter_unchanged protected end
+
+  mark parameter_unchanged recovery start
+  PRLINE="$(marker_line parameter_unchanged recovery start)"
+  wait_for "$PRLINE" process_health local_outcome_probe 25 node=dds_security_monitor
+  sleep 2
+  mark parameter_unchanged recovery end
+  fi
 fi
 
 if enabled replay_dropped; then
