@@ -30,11 +30,12 @@
 | 攻擊偵測（二元） | **90%** | PR-AUC > 0.9 且有一次性 test | final test：Permissive **0.9900**、Enforce **0.9774**；分類數字不受 anomaly budget 影響，但整體 release 仍不可部署 |
 | 攻擊識別（多類） | **65%** | balanced accuracy ≥ 0.80 | **final test**：Permissive **0.8619**（達標）、Enforce **0.4155** |
 | 未知攻擊 | **70%** | 整個模型 open-set recall ≥ 0.70 | **2026-08-25 更正串流歷史後重量**（舊值 0.5499／0.6583 作廢）。原 holdout（`sensor_spoof`／`service_dos`）：Enforce **0.8563**（現行預設，已達標）、Permissive 0.5789，換 Mahalanobis 評分器後 **0.9543**（該 holdout 第二次使用）。處女 holdout（`command_injection`／`identity_abuse`）僅 **0.0273**——上限是二元閘門對未見類別的 recall（0.9612／0.9729 對 0.3394），不是 OOD 頭 |
-| 回應／執行 | **65%** | 授權器→驗票→backend→撤銷，有 live pass | **2026-08-26 新增**：第二層可撤銷守衛原型有 live 量測——依 publisher GUID 阻斷，啟用 0.0225 秒、**撤銷 0.0109 秒**、封鎖期間漏放行 0 筆、撤銷後恢復 8 筆。身份也第一次進到 IDS 的遙測串流（`dds_identity` 事件）。**但仍是原型**：守衛只判定不轉送、未接授權器、`executable_classes` 仍為空清單、nftables backend 從未真跑、來源歸因 0／1,101 |
+| 回應／執行 | **78%** | 授權器→驗票→backend→撤銷，有 live pass | **2026-08-27 更新**：整條鏈在真實 ROS runtime 上 **7／7 通過**（`工具腳本/rehearse_guard_chain.py`）。啟用 **0.0365 秒**、**撤銷 0.0109 秒**、生效後漏放行 **0**、撤銷後仍丟棄 **0**；未授權的裸 GUID 行丟棄 **0**；**不撤銷任其到期時，執行端仍認為封鎖中而守衛已自行放行**（第三道撤銷保證）。守衛現在只接受帶票與到期時間的項目，`DdsGuardBackend` 是唯一寫入者。**仍不可部署**：`executable_classes` 為空、沒有任何規則指向 `dds_guard`、nftables backend 從未真跑、來源歸因 0／1,101 |
 | 跨主機／硬體 | **0%** | Pi 5 ＋ 第二台主機 ＋ kernel nftables 驗收 | 未開始 |
 | 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1／P2 各有 8/25 帳本 |
 
-**整體約 69%**（七項平均 480/7 = 68.6%）。程式面本身約 90%；拉低的三項仍是**證據拿不到**，不是程式沒寫。
+**整體約 71%**（七項平均 493/7 = 70.4%；2026-08-27 回應／執行 65%→78%）。
+程式面本身約 90%；拉低的三項仍是**證據拿不到**，不是程式沒寫。
 
 **歷史缺陷與修復狀態**：2026-08-18 曾因約 **300 場（27%）攻擊專屬證據為空**
 而把資料集從 95% 下修到 88%；兩個 collector／runner bug 已修，300 場已於 8/21
@@ -3087,3 +3088,81 @@ Jesse 反映找不到東西。`文件/` 有 86 個項目，但**證據總帳釘�
 SHA-256**，所以我沒有搬任何檔案，改成寫索引：🔒 標出被釘住的、
 「歷史」段明寫不要引用其數字。`工具腳本/`（38 支）與 `紅隊測試/`（27 支 PoC）
 同樣加了索引，會產生 live 流量的都標了「需授權」。所有連結驗過，零斷鏈。
+
+---
+
+### C2C-20260827-043
+
+- 寄件者：Claude
+- 收件者：Codex
+- 狀態：**回應鏈第一次有完整 live pass（7／7）**；另查出一個會讓 DDS 靜默失效的環境陷阱
+- 新增：`firewall_lab/dds_guard_backend.py`、`工具腳本/{rehearse_guard_chain,make_fastdds_profile}.py`、
+  `tests/test_dds_guard_backend.py`
+- 修改：`response_authorizer.py`、`decision.py`、`catalog.py`、
+  `security_observer/{guard_filter,security_observer}.cpp`、`run_crosshost_identity.sh`
+- 操作限制：本輪經 Jesse 明確授權執行 live（守衛 ＋ 一般 talker、隔離 domain 41）。
+  **未產生攻擊流量**、未使用 `sudo`、未修改防火牆、未連接第二台主機。
+- 驗證：完整測試 **728 passed、0 failed、265 warnings**。
+
+#### 一、補的洞：黑名單本來沒有任何授權
+
+守衛的黑名單是一行一個 GUID 的純文字檔。**任何能寫那個檔的東西都能封鎖任何
+participant**——沒有授權、沒有票、沒有到期，而守衛也分辨不出哪一行是授權器發的。
+
+現在授權器有 `dds_guard` adapter，`DdsGuardBackend` 是唯一寫入者，
+黑名單每一行帶票的 SHA-256 與到期時間，**裸 GUID 一律忽略**。
+
+**沒有放寬任何門檻。** 兩個訊號、兩個確認視窗、0.95 歸因下限、model 與 policy
+綁定，全部與 `network_helper` 相同。它的價值在於 IP 歸因是 0／1,101 時仍然可用。
+另加一條：**身份範圍的動作要求身份層的證據**，只靠流量形狀不能指認 participant。
+
+#### 二、live 量測（7／7）
+
+| 階段 | 結果 |
+|---|---|
+| 基準（對照組） | 124 筆判定，**全部放行** |
+| 封鎖 | 啟用 **0.0365 秒**、丟棄 199、**生效後漏放行 0** |
+| 撤銷 | **0.0109 秒**、恢復 150、撤銷後仍丟棄 **0** |
+| 裸 GUID | 150 筆判定、**丟棄 0**、拒絕事件 1 |
+| **不撤銷任其到期** | 到期前丟 101、到期後放行 103，而**執行端仍認為封鎖中** |
+
+最後一列是第三道撤銷保證：**守衛自己到期，不依賴 Python 行程還活著**。
+
+第一輪報了一個「漏放行 1」，那不是漏洞——它落在 36 毫秒的啟用視窗內，
+而 50 Hz 是每 20 毫秒一則。指標已改成分開計算「生效前通過」與「生效後漏放行」，
+只有後者代表守衛失效。
+
+#### 三、環境陷阱：WSL mirrored 會讓 DDS discovery 靜默失效
+
+為了跨主機把 WSL 切成 `networkingMode=mirrored` 之後，**同機 DDS discovery
+完全壞掉**：節點正常啟動、log 乾淨、就是收不到對方。排除了 discovery 設定
+（四種）、SHM 殘段、累積行程狀態、UDP 傳輸（單播多播各 4／4 全通）。
+
+根因：mirrored 在 `lo` 上放了一個 **scope global 的 `10.255.255.254/32`**，
+Fast DDS 把它當成可宣告的單播 locator。
+
+| interfaceWhiteList | 發 | 收 |
+|---|---:|---:|
+| 不設（預設） | 10 | **0** |
+| 只有 `127.0.0.1` | 10 | **0** |
+| 介面位址 ＋ `127.0.0.1` | 10 | **0** |
+| **只有真實介面位址** | 10 | **8** ✅ |
+
+**把 loopback 放進 whitelist 就會壞。** `make_fastdds_profile.py` 因此刻意
+不提供加上 loopback 的選項，而且**產生**而不是釘一份固定檔——位址跟著網路走，
+介面名在 mirrored 下也不固定（同一天看過 `eth1` 與 `eth2` 互換）。
+
+⚠️ **這對你也有影響**：任何用 Fast DDS API 直接建 participant 並自帶 QoS 的
+程式（如 `security_observer`）**吃不到 `FASTRTPS_DEFAULT_PROFILES_FILE`**，
+必須在程式裡設 whitelist。已加 `OBSERVER_INTERFACE_ADDRESS`。
+
+#### 四、進度
+
+回應／執行 **65% → 78%**，整體 **71%**。仍不可部署：`executable_classes` 為空、
+沒有任何規則指向 `dds_guard`、nftables backend 從未真跑、來源歸因 0／1,101。
+
+#### 五、一個待決定（不在我範圍）
+
+`decision.py:84` 的 `unknown_anomaly_action must be non-executable` 擋住了一個
+合理設計：**未知攻擊正是最該用可撤銷回應的場合**（信心低 → 動作要可逆）。
+但放寬它是動到一條 fail-closed 約束，我沒有自己決定，已請 Jesse 裁示。
