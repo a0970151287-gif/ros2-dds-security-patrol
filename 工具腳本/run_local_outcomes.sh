@@ -139,6 +139,26 @@ telemetry_lines() {
   wc -l < "$ROOT/telemetry_events.jsonl" 2>/dev/null || echo 0
 }
 
+# 等某個事件真的出現才關窗。固定 sleep 對這批證據不管用：guard_state 與
+# detector_state 只在狀態「轉換」時發一次。
+#
+# ⚠️ 2026-08-19 的 commit 2644092 把這個函式**刪掉了**，而 16 個呼叫點全部留著。
+# bash 對未定義的函式回 127，所以從那天起每一次 wait_for 都是「立刻失敗」：
+# 不在條件式裡的呼叫變成完全不等（靠後面的 sleep 湊合，所以多數 stage 仍然
+# 過得去），而 `if ! wait_for ...` 那一個變成**無條件走失敗分支**——
+# velocity_guard_recovered 因此每一輪都被判「心跳抑制未被消費」，
+# 與接縫實際有沒有運作完全無關。九天內沒有人發現，因為
+# 「command not found」只出現在 stderr，而失敗訊息本身讀起來完全合理。
+wait_for() {  # since_line event_type source timeout [detail ...]
+  local since="$1" etype="$2" source="$3" timeout="$4"; shift 4
+  local args=()
+  for detail in "$@"; do args+=(--detail "$detail"); done
+  python3 "$WS/工具腳本/wait_for_telemetry.py" \
+    --telemetry "$ROOT/telemetry_events.jsonl" --event-type "$etype" \
+    ${source:+--source "$source"} --since-line "$since" \
+    --timeout-sec "$timeout" "${args[@]}" >>"$ROOT/driver.log" 2>&1
+}
+
 # 窗的起點就是那個 start marker 自己那一行——不是呼叫 mark 之前或之後的行數。
 # mark 要等 0.7 秒確認落地，取「之前」會讓等待器找到窗外的舊事件，取「之後」
 # 會漏掉這 0.7 秒內發生的轉換。兩種都踩過：前者讓 velocity_guard_recovered/
@@ -197,6 +217,18 @@ cleanup() {
   log "收尾完成，證據在 $ROOT"
 }
 trap cleanup EXIT INT TERM
+
+# ── 0. helper 完整性 ────────────────────────────────────────
+# bash 對未定義的函式只回 127，不會停下來。一個被刪掉的 helper 因此會安靜地
+# 把每一次等待變成立刻失敗，而失敗訊息讀起來仍然合理（見 wait_for 的註解）。
+# 這道檢查讓那種情況在**取得任何證據之前**就爆掉。
+for _helper in log enabled mark marker_landed marker_line telemetry_lines wait_for cleanup; do
+  declare -F "$_helper" >/dev/null || {
+    echo "⛔ driver helper 未定義：$_helper（呼叫它只會回 127，等待會變成立刻失敗）" >&2
+    exit 2
+  }
+done
+unset _helper
 
 # ── 1. collector ────────────────────────────────────────────
 log "啟動 collector（session=$SID）"
