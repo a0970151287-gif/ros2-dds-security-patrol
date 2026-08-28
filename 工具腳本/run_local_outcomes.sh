@@ -26,11 +26,13 @@ ENABLED="${2:-}"
 
 # 安全模式。預設 Enforce——既有五項 outcome 都是在 Enforce 下取得的。
 #
-# parameter_unchanged 必須用 Permissive，而且那不是為了讓它比較容易通過：
-# Enforce 下 ACL 直接擋掉每一個 set_parameters 呼叫，請求根本到不了節點，
-# 「參數沒有被改」因此是**空洞地成立**——它證明的是 ACL，不是應用層。
-# Permissive 下請求真的抵達，被 rcl 的 read_only 拒絕，那才是第二道防線
-# 實際出手的證據。
+# parameter_unchanged 也在 Enforce 下取得，做法見該段的註解：不是放寬安全模式，
+# 而是替它建一個**被授權**呼叫 set_parameters 的 enclave，讓請求真的抵達節點，
+# 再由 rcl 的 read_only 描述子拒絕它。
+#
+# （2026-08-28 更正：這裡原本寫「必須用 Permissive」。那條路走不通——outcome
+#   observer 拒絕在 Enforce 以外執行，而那道拒絕是對的：沒有強制執行時收的
+#   證據支撐不了部署宣稱。）
 STRATEGY="${SROS2_OUTCOME_STRATEGY:-Enforce}"
 case "$STRATEGY" in
   Enforce|Permissive) ;;
@@ -185,7 +187,10 @@ cleanup() {
   for pid in "${CLEAN_PIDS[@]:-}"; do
     [[ -n "$pid" ]] && kill -TERM "$pid" 2>/dev/null
   done
-  bash "$WS/firewall_lab/live_stack.sh" stop enforce >>"$ROOT/driver.log" 2>&1
+  # 停的必須是**這一輪啟動的那個模式**。寫死 enforce 會讓 Permissive 的 stack
+  # 留著不死，下一輪兩組節點同時在同一個 domain 上，readiness 就會以
+  # 「missing streams: /scan」失敗——症狀完全不像「上一輪沒收乾淨」。
+  bash "$WS/firewall_lab/live_stack.sh" stop "$STACK_MODE" >>"$ROOT/driver.log" 2>&1
   # collector 用 SIGINT，讓它寫完 clean shutdown 再退出。
   [[ -n "${COLLECTOR_PID:-}" ]] && kill -INT "$COLLECTOR_PID" 2>/dev/null
   [[ -n "${COLLECTOR_PID:-}" ]] && wait "$COLLECTOR_PID" 2>/dev/null
@@ -353,16 +358,20 @@ if enabled oversized_input_dropped; then
 fi
 
 if enabled parameter_unchanged; then
-  # 這一項**只在 Permissive 下有意義**。
+  # 這一項在 **Enforce** 下取得，而且必須如此。
   #
-  # Enforce 下 ACL 擋掉每一個 set_parameters 呼叫，請求根本到不了節點，
-  # 「參數沒有被改」因此是空洞地成立——它證明的是 ACL，不是應用層。
-  # Permissive 下請求真的抵達，被 rcl 的 read_only 拒絕，那才是第二道防線
-  # 實際出手的證據。
-  if [[ "$STRATEGY" != "Permissive" ]]; then
-    log "⏭  parameter_unchanged 需要 Permissive（目前 $STRATEGY），跳過"
+  # 要證明的是「請求真的抵達節點之後，安全敏感參數仍然改不了」。原本沒有
+  # 任何身分能呼叫 set_parameters，所以 Enforce 下請求到不了節點——那一項
+  # 空洞地成立，證明的是 ACL 不是應用層。改用 Permissive 讓請求抵達也不行：
+  # observer 拒絕在 Enforce 以外執行，而那道拒絕是對的。
+  #
+  # 所以改成讓請求**合法**：/parameter_write_probe enclave 只被授權一條
+  # dds_security_monitor/set_parameters，連 get_parameters 都沒有。
+  # 拒絕因此來自 rcl 的 read_only 描述子，不是來自 ACL。
+  if [[ "$STRATEGY" != "Enforce" ]]; then
+    log "⏭  parameter_unchanged 需要 Enforce（目前 $STRATEGY），跳過"
   else
-  log "stage: parameter_unchanged（Permissive 下 set_parameters 抵達節點）"
+  log "stage: parameter_unchanged（已授權的寫入 → rcl read_only 拒絕）"
 
   mark parameter_unchanged baseline start
   PBLINE="$(marker_line parameter_unchanged baseline start)"
@@ -373,10 +382,9 @@ if enabled parameter_unchanged; then
   mark parameter_unchanged trigger start
   PTLINE="$(marker_line parameter_unchanged trigger start)"
   (
-    export ROS_SECURITY_ENABLE=false
-    unset ROS_SECURITY_STRATEGY ROS_SECURITY_KEYSTORE
-    exec python3 "$WS/紅隊測試/PoC腳本/N14_param_whitelist_hijack.py" 14
-  ) >"$ROOT/n14.stdout.log" 2>"$ROOT/n14.stderr.log" &
+    export N30_DURATION_SEC=14
+    exec python3 "$WS/紅隊測試/PoC腳本/N30_authorized_parameter_write.py"       --ros-args --enclave /parameter_write_probe
+  ) >"$ROOT/n30.stdout.log" 2>"$ROOT/n30.stderr.log" &
   ATTACK_PID=$!
   CLEAN_PIDS+=("$ATTACK_PID")
   # 等的是 rcl 那一層的拒絕。等 application 層的 veto 會永遠等不到：

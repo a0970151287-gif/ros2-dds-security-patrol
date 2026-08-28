@@ -34,6 +34,11 @@
 | `N26b_setup_live_keystore.sh` | N26 的環境建置 | 用「偷來的」CA 私鑰在隔離 domain 建 keystore |
 | `N27_setup_real_governance.sh` | N26 的環境建置 | 在隔離 domain 99 重建等價 governance |
 | **`N29_insider_credentialed.py`** | **內部威脅**：有合法憑證、沒有 HMAC 金鑰 | 證明分層防禦——SROS2 放行，HMAC 仍擋下 |
+| **`N30_authorized_parameter_write.py`** | **合法憑證，而且 SROS2 已授權寫參數** | 三者中最深的一層：SROS2 過、ACL 過、請求真的抵達，擋住它的是 rcl 的 `read_only` 描述子 |
+
+三者是遞進的：N14 被憑證擋、N29 被金鑰擋、**N30 被應用層的參數宣告方式擋**。
+N30 用的 `/parameter_write_probe` enclave 只被授權一條 `set_parameters`，
+連 `get_parameters` 都沒有；它是證據工具，不是部署節點。
 
 `N29` 是 `hmac_forgery_dropped` 與 `oversized_input_dropped` 兩項 outcome 的來源。
 
