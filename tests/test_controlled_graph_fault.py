@@ -499,3 +499,66 @@ def test_a_rejected_arm_record_names_the_field_that_failed(tmp_path, monkeypatch
     assert seam.take_refusal() == "arm_not_json"
     # Rejecting an arm still consumes it: a bad record must not be retried.
     assert not target.exists()
+
+
+def test_emitter_and_collector_controlled_fault_vocabularies_match():
+    """The two sides must be widened together, never one alone.
+
+    heartbeat_suppression was added to the collector when the second seam was
+    written and not to the emitter.  The emitter then rejected its own event,
+    the seam swallowed the ValueError, and the suppression ran while emitting
+    nothing -- which was read for ten days as the seam never being consumed.
+    Nothing anywhere compared the two sets.
+    """
+    from dds_security_monitor import runtime_telemetry
+    from firewall_lab import live_telemetry_collector
+
+    assert (
+        runtime_telemetry.CONTROLLED_FAULT_KINDS
+        == live_telemetry_collector.CONTROLLED_FAULT_KINDS
+    )
+    assert (
+        runtime_telemetry.CONTROLLED_FAULT_STATES
+        == live_telemetry_collector.CONTROLLED_FAULT_STATES
+    )
+
+
+def test_every_seam_kind_is_emittable():
+    """A seam whose own KIND the emitter rejects can never report anything."""
+    from dds_security_monitor import runtime_telemetry
+    from dds_security_monitor.test_fault_seam import (
+        ControlledGraphFaultSeam,
+        ControlledHeartbeatSuppressSeam,
+    )
+
+    for seam in (ControlledGraphFaultSeam, ControlledHeartbeatSuppressSeam):
+        assert seam.KIND in runtime_telemetry.CONTROLLED_FAULT_KINDS, seam.KIND
+
+
+def test_a_failed_emit_is_recorded_rather_than_discarded():
+    """The seam survives a telemetry fault, but stops hiding it."""
+    from dds_security_monitor.test_fault_seam import ControlledGraphFaultSeam
+
+    class _Exploding:
+        def emit_controlled_fault_injection(self, kind, state):
+            raise ValueError("unsupported controlled fault kind")
+
+    seam = ControlledGraphFaultSeam(
+        role="monitor", telemetry=_Exploding(), directory=None, enabled=False
+    )
+    seam._emit("trigger")
+    error = seam.take_emit_error()
+    assert error is not None
+    assert "trigger" in error and "ValueError" in error
+    # Reported once, then cleared.
+    assert seam.take_emit_error() is None
+
+
+def test_a_missing_telemetry_callback_is_also_recorded():
+    from dds_security_monitor.test_fault_seam import ControlledGraphFaultSeam
+
+    seam = ControlledGraphFaultSeam(
+        role="monitor", telemetry=object(), directory=None, enabled=False
+    )
+    seam._emit("recovery")
+    assert "no telemetry callback" in (seam.take_emit_error() or "")

@@ -1148,6 +1148,14 @@ class DDSSecurityMonitor(Node):
                 self.get_logger().warning(
                     f"controlled heartbeat suppression refused an arm: {refusal}"
                 )
+            # A seam that consumed its arm but could not report it looks, to
+            # every downstream reader, exactly like a seam that was never
+            # consumed.  That is the actual history of this check.
+            emit_error = seam.take_emit_error()
+            if emit_error is not None:
+                self.get_logger().error(
+                    f"controlled heartbeat suppression telemetry failed: {emit_error}"
+                )
             seam.record_normal_heartbeat()
         payload = f'hb|{time.time():.3f}'
         msg = String()

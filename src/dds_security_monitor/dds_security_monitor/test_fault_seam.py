@@ -100,6 +100,7 @@ class ControlledFaultSeam:
         self._hold_until_ns: int | None = None
         self._last_refusal: str | None = None
         self._reported_refusal: str | None = None
+        self._last_emit_error: str | None = None
 
     @classmethod
     def from_environment(cls, role: str, telemetry):
@@ -139,14 +140,31 @@ class ControlledFaultSeam:
             return False
 
     def _emit(self, state_value: str) -> None:
+        """Report a seam transition, without ever letting telemetry break it.
+
+        Swallowing the failure is deliberate -- a telemetry fault must not stop
+        the seam -- but swallowing it *silently* is what hid the missing
+        heartbeat_suppression vocabulary for ten days: the suppression ran
+        correctly and emitted nothing, and every reader concluded the seam had
+        not been consumed.  The exception is now recorded so the caller can say
+        so out loud.
+        """
         callback = getattr(
             self.telemetry, "emit_controlled_fault_injection", None
         )
-        if callable(callback):
-            try:
-                callback(self.KIND, state_value)
-            except Exception:
-                pass
+        if not callable(callback):
+            self._last_emit_error = f"{state_value}: no telemetry callback"
+            return
+        try:
+            callback(self.KIND, state_value)
+        except Exception as exc:  # noqa: BLE001 - the seam must survive this
+            self._last_emit_error = f"{state_value}: {type(exc).__name__}: {exc}"
+
+    def take_emit_error(self) -> str | None:
+        """Return an unreported telemetry failure once, then forget it."""
+        error = self._last_emit_error
+        self._last_emit_error = None
+        return error
 
     def _sustaining(self) -> bool:
         """True while an already-consumed arm is still holding the fault open.

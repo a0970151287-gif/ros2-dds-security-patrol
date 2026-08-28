@@ -81,7 +81,14 @@ OUTCOME_MARKER_STAGES = {
     "velocity_guard_recovered": frozenset({"baseline", "trigger", "recovery"}),
     "graph_failure_fail_safe": frozenset({"trigger", "protected", "recovery"}),
 }
-CONTROLLED_FAULT_KINDS = frozenset({"graph_inspection"})
+# Must stay identical to the collector's vocabulary in live_telemetry_collector.
+# heartbeat_suppression was added there when the second seam was written but not
+# here, so the emitter rejected its own event, ControlledFaultSeam._emit swallowed
+# the ValueError, and the suppression ran while emitting nothing at all.  Five
+# velocity_guard_recovered attempts were read as "the seam was never consumed"
+# when the seam had in fact worked every time.  tests/test_runtime_telemetry pins
+# the two sides together so one can never be widened alone again.
+CONTROLLED_FAULT_KINDS = frozenset({"graph_inspection", "heartbeat_suppression"})
 CONTROLLED_FAULT_STATES = frozenset({"trigger", "recovery"})
 
 
