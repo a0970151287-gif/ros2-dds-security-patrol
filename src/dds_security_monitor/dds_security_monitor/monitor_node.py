@@ -1137,6 +1137,17 @@ class DDSSecurityMonitor(Node):
         if seam is not None and seam.suppress_if_armed():
             return
         if seam is not None:
+            # An arm that is written but never consumed looks exactly like a
+            # defence that did not react, and that ambiguity is what made five
+            # velocity_guard_recovered attempts inconclusive.  take_refusal
+            # reports only the causes that mean an arm was thrown away, and
+            # only on the edge where the cause changes, so this cannot become
+            # a per-heartbeat log flood.
+            refusal = seam.take_refusal()
+            if refusal is not None:
+                self.get_logger().warning(
+                    f"controlled heartbeat suppression refused an arm: {refusal}"
+                )
             seam.record_normal_heartbeat()
         payload = f'hb|{time.time():.3f}'
         msg = String()

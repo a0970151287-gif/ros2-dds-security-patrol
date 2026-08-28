@@ -41,6 +41,11 @@ ROLE_FILES = {
 HEARTBEAT_SUPPRESS_ACK = "I_CONFIRM_ONE_SHOT_CONTROLLED_HEARTBEAT_SUPPRESS"
 HEARTBEAT_SUPPRESS_ACK_ENV = "SROS2_FIREWALL_HEARTBEAT_SUPPRESS_ACK"
 HEARTBEAT_ROLE_FILES = {"monitor": "monitor.heartbeat.arm"}
+
+# Refusals that are the ordinary resting state rather than a lost arm.  A seam
+# whose gates are not met, and an enabled seam with nothing armed, both refuse
+# on every single poll; reporting those would drown the cases that matter.
+QUIET_REFUSALS = frozenset({"seam_disabled", "no_arm_file"})
 NONCE_RE = re.compile(r"[0-9a-f]{32}")
 
 
@@ -93,6 +98,8 @@ class ControlledFaultSeam:
         self._triggered = False
         self._recovery_pending = False
         self._hold_until_ns: int | None = None
+        self._last_refusal: str | None = None
+        self._reported_refusal: str | None = None
 
     @classmethod
     def from_environment(cls, role: str, telemetry):
@@ -156,23 +163,60 @@ class ControlledFaultSeam:
         self._hold_until_ns = None
         return False
 
+    def _refuse(self, reason: str) -> bool:
+        """Record why an arm was not consumed and refuse it.
+
+        Non-consumption used to be indistinguishable from a defence that did
+        not react, which cost five inconclusive velocity_guard_recovered runs.
+        The reason is recorded on every call; take_refusal decides what is
+        worth telling anyone about.
+        """
+        self._last_refusal = reason
+        return False
+
+    @property
+    def last_refusal(self) -> str | None:
+        return self._last_refusal
+
+    def take_refusal(self) -> str | None:
+        """Return a reportable refusal once, on the edge where it changes.
+
+        seam_disabled and no_arm_file are the ordinary resting states of any
+        process that is not currently armed, so they are recorded but never
+        reported; reporting them every heartbeat would bury the ones that mean
+        an arm was thrown away.
+        """
+        reason = self._last_refusal
+        if reason is None or reason in QUIET_REFUSALS:
+            return None
+        if reason == self._reported_refusal:
+            return None
+        self._reported_refusal = reason
+        return reason
+
     def consume_if_armed(self) -> bool:
         # Sustain first: while holding, report the fault without looking at the
         # directory at all, so the hold cannot consume a second arm record.
         if self._sustaining():
             return True
-        if not self.enabled or self._triggered or not self._directory_unchanged():
-            return False
+        if not self.enabled:
+            return self._refuse("seam_disabled")
+        if self._triggered:
+            # One-shot: a later arm is ignored and, because this returns before
+            # touching the directory, its file is left on disk.
+            return self._refuse("already_triggered")
+        if not self._directory_unchanged():
+            return self._refuse("directory_changed")
         assert self.directory is not None
         source = self.directory / self.ROLE_FILE_MAP[self.role]
         claim = self.directory / f".{self.role}.{os.getpid()}.{time.time_ns()}.claim"
         try:
             os.replace(source, claim)
         except FileNotFoundError:
-            return False
+            return self._refuse("no_arm_file")
         except OSError:
             self.enabled = False
-            return False
+            return self._refuse("claim_failed")
         try:
             flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
             descriptor = os.open(claim, flags)
@@ -184,16 +228,16 @@ class ControlledFaultSeam:
                     or stat.S_IMODE(metadata.st_mode) != 0o600
                     or not 0 < metadata.st_size <= MAX_ARM_BYTES
                 ):
-                    return False
+                    return self._refuse("arm_file_attributes")
                 raw = os.read(descriptor, MAX_ARM_BYTES + 1)
             finally:
                 os.close(descriptor)
             if len(raw) > MAX_ARM_BYTES:
-                return False
+                return self._refuse("arm_too_large")
             try:
                 value = json.loads(raw.decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
-                return False
+                return self._refuse("arm_not_json")
             if not isinstance(value, dict) or set(value) != {
                 "schema_version",
                 "kind",
@@ -202,7 +246,7 @@ class ControlledFaultSeam:
                 "hold_ns",
                 "nonce",
             }:
-                return False
+                return self._refuse("arm_schema_keys")
             created = value["created_unix_ns"]
             expires = value["expires_unix_ns"]
             hold = value["hold_ns"]
@@ -222,7 +266,7 @@ class ControlledFaultSeam:
                 or not isinstance(value["nonce"], str)
                 or NONCE_RE.fullmatch(value["nonce"]) is None
             ):
-                return False
+                return self._refuse("arm_field_invalid")
         finally:
             try:
                 claim.unlink()
@@ -278,6 +322,7 @@ __all__ = [
     "HEARTBEAT_ROLE_FILES",
     "HEARTBEAT_SUPPRESS_ACK",
     "HEARTBEAT_SUPPRESS_ACK_ENV",
+    "QUIET_REFUSALS",
     "GRAPH_FAULT_ACK",
     "GRAPH_FAULT_ACK_ENV",
     "GRAPH_FAULT_DIR_ENV",

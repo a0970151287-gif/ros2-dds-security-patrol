@@ -397,3 +397,105 @@ def test_heartbeat_seam_refuses_a_graph_arm_record(tmp_path, monkeypatch):
 
     assert seam.suppress_if_armed() is False
     assert telemetry.events == []
+
+
+def test_a_second_arm_after_the_hold_expires_names_why_it_was_refused(
+    tmp_path, monkeypatch
+):
+    """The one-shot refusal must be attributable, not silent.
+
+    This is the shape C2C-018 saw and could not diagnose: the arm file is
+    written, the seam never consumes it, and nothing anywhere says why. The
+    refusal reason has to survive to the caller.
+    """
+    runtime = _prepared_runtime(tmp_path, monkeypatch)
+    arm_once(
+        runtime,
+        ttl_sec=20.0,
+        hold_sec=5.0,
+        live_ack=LIVE_ACK,
+        graph_fault_ack=GRAPH_FAULT_ACK,
+    )
+    _gated_environment(monkeypatch, runtime)
+    seam = ControlledGraphFaultSeam.from_environment("monitor", _Telemetry())
+    assert seam.consume_if_armed() is True
+    assert seam.take_refusal() is None
+
+    # Retire the hold the way time would, without waiting for it.
+    seam._hold_until_ns = None
+
+    (runtime / "ids.arm").unlink()
+    arm_once(
+        runtime,
+        ttl_sec=20.0,
+        hold_sec=5.0,
+        live_ack=LIVE_ACK,
+        graph_fault_ack=GRAPH_FAULT_ACK,
+    )
+    assert seam.consume_if_armed() is False
+    assert seam.last_refusal == "already_triggered"
+    assert seam.take_refusal() == "already_triggered"
+    # The arm file is left on disk, which is exactly how the driver's rm -f
+    # erased the evidence that would have identified this.
+    assert (runtime / "monitor.arm").exists()
+
+
+def test_a_reportable_refusal_is_reported_once_not_every_poll(tmp_path, monkeypatch):
+    """Edge-triggered, so a per-heartbeat caller cannot flood the log."""
+    runtime = _prepared_runtime(tmp_path, monkeypatch)
+    arm_once(
+        runtime,
+        ttl_sec=20.0,
+        hold_sec=5.0,
+        live_ack=LIVE_ACK,
+        graph_fault_ack=GRAPH_FAULT_ACK,
+    )
+    _gated_environment(monkeypatch, runtime)
+    seam = ControlledGraphFaultSeam.from_environment("monitor", _Telemetry())
+    assert seam.consume_if_armed() is True
+    seam._hold_until_ns = None
+
+    assert seam.consume_if_armed() is False
+    assert seam.take_refusal() == "already_triggered"
+    for _ in range(5):
+        assert seam.consume_if_armed() is False
+        assert seam.take_refusal() is None
+
+
+def test_resting_refusals_are_recorded_but_never_reported(tmp_path, monkeypatch):
+    """An unarmed seam refuses on every poll; that must stay quiet.
+
+    Reporting the resting state would bury the refusals that mean an arm was
+    thrown away, which is the only thing this instrumentation exists to find.
+    """
+    runtime = _prepared_runtime(tmp_path, monkeypatch)
+    _gated_environment(monkeypatch, runtime)
+    seam = ControlledGraphFaultSeam.from_environment("monitor", _Telemetry())
+
+    assert seam.consume_if_armed() is False
+    assert seam.last_refusal == "no_arm_file"
+    assert seam.take_refusal() is None
+
+    disabled = ControlledGraphFaultSeam(
+        role="monitor", telemetry=_Telemetry(), directory=None, enabled=False
+    )
+    assert disabled.consume_if_armed() is False
+    assert disabled.last_refusal == "seam_disabled"
+    assert disabled.take_refusal() is None
+    assert test_fault_seam.QUIET_REFUSALS == {"seam_disabled", "no_arm_file"}
+
+
+def test_a_rejected_arm_record_names_the_field_that_failed(tmp_path, monkeypatch):
+    """A malformed arm must be distinguishable from an absent one."""
+    runtime = _prepared_runtime(tmp_path, monkeypatch)
+    _gated_environment(monkeypatch, runtime)
+    seam = ControlledGraphFaultSeam.from_environment("monitor", _Telemetry())
+
+    target = runtime / "monitor.arm"
+    target.write_text("{not json", encoding="utf-8")
+    target.chmod(0o600)
+    assert seam.consume_if_armed() is False
+    assert seam.last_refusal == "arm_not_json"
+    assert seam.take_refusal() == "arm_not_json"
+    # Rejecting an arm still consumes it: a bad record must not be retried.
+    assert not target.exists()

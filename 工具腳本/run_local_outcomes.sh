@@ -525,6 +525,13 @@ if ! enabled velocity_guard_recovered; then
   log "跳過 velocity_guard_recovered（未列入本次紀錄）"
 else
 log "stage: velocity_guard_recovered（受控心跳抑制 24 秒）"
+# 殘留的 arm 必須先講再刪。它代表**上一張 arm 從來沒有被消費**，而那正是
+# C2C-018 查不出根因的那個現象；先前這裡是無聲 rm -f，等於把唯一的證據
+# 抹掉，然後用「prepare 沒失敗」去排除 stale arm 這個假設——那個排除因此
+# 是不成立的（見 C2C-044）。
+if [[ -e "$FAULT_DIR/monitor.heartbeat.arm" ]]; then
+  log "⚠️ 發現殘留的心跳 arm：上一張從未被消費（seam 可能已是一次性用盡）"
+fi
 rm -f "$FAULT_DIR"/monitor.heartbeat.arm 2>/dev/null
 ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control prepare     --runtime-dir "$FAULT_DIR" --kind heartbeat_suppression     --live-loopback-ack "$ACK" --graph-fault-ack "$HB_ACK" )   >>"$ROOT/driver.log" 2>&1
 ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control arm     --runtime-dir "$FAULT_DIR" --kind heartbeat_suppression     --ttl-sec 20 --hold-sec 24     --live-loopback-ack "$ACK" --graph-fault-ack "$HB_ACK" )   >>"$ROOT/driver.log" 2>&1 || log "⛔ 心跳抑制 arm 失敗"
