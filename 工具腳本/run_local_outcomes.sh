@@ -121,15 +121,25 @@ PYEOF
 # 落地後才繼續；真的補不上就明講，不讓一個缺角的窗被當成有效觀測。
 mark() {
   enabled "$1" || return 0
-  local attempt
+  local attempt start
   for attempt in 1 2 3 4; do
     ( cd "$WS" && python3 -m firewall_lab.local_outcome_marker \
         --socket "$SOCK" --check-id "$1" --stage "$2" --boundary "$3" \
         --live-loopback-ack "$ACK" ) >>"$ROOT/markers.log" 2>&1
-    sleep 2.0
-    if marker_landed "$1" "$2" "$3"; then
-      return 0
-    fi
+    # 固定 sleep 2.0 讓 velocity_guard_recovered 漏掉 monitor_fault：那個轉換
+    # 落在窗開啟前 1.1 秒，而開窗的兩個 mark 就吃掉約 4 秒。marker 實際約
+    # 0.2 秒就落地，所以改成**落地即返回**。
+    #
+    # 上限用經過時間而不是次數：marker_landed 自己要起一個 python，單次成本
+    # 約 0.3 秒，用「跑 20 次」當上限反而會比原本的 sleep 2.0 更慢——把量測
+    # 工具的延遲加進窗的位置，正是這裡要修掉的東西。
+    start=$SECONDS
+    while (( SECONDS - start < 3 )); do
+      if marker_landed "$1" "$2" "$3"; then
+        return 0
+      fi
+      sleep 0.1
+    done
     log "marker 未落地，重送 $1/$2/$3（第 $attempt 次）"
   done
   log "⛔ marker 最終未落地 $1/$2/$3"
