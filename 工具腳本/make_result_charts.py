@@ -27,6 +27,7 @@ FINAL_ROOT = Path("/home/jesse/models_final")
 HIER_ROOT = Path("/home/jesse/models_hier")
 FEATURES = Path("/home/jesse/features_merged_split")
 LEGACY_FEATURES = Path("firewall_lab/features_per_mode")
+RULE_VS_LEARNED = Path("/home/jesse")
 
 CLASS_LABELS = {
     "normal": "正常",
@@ -362,6 +363,67 @@ def chart_openset(out: Path):
     plt.close(fig)
 
 
+
+def chart_rule_vs_learned(out: Path):
+    """規則式 vs 學習式，附場次層級信賴區間。
+
+    這張圖回答的是這個題目一定會被問的那個問題，而它的答案**不是**
+    「AI 全面勝出」——說成那樣比較好講，但那是錯的。真正的結論是兩個模式
+    下 AI 的貢獻是不同的東西，而且只有一邊的差距是統計上站得住的。
+
+    誤差線是**場次層級**重抽出來的。用視窗重抽會把區間壓得太窄，那會讓
+    Permissive 那組看起來也有顯著差異——而它沒有。
+    """
+    import json
+
+    import matplotlib.pyplot as plt
+
+    methods = [
+        ("rule_based", "規則式", WARM),
+        ("learned_network_only", "學習式：網路", ACCENT),
+        ("learned_telemetry_only", "學習式：遙測", GREEN),
+        ("learned_fusion", "學習式：融合", INK),
+    ]
+    fig, axes = plt.subplots(1, 2, figsize=(11.4, 4.8), sharey=True)
+    for ax, (mode, title) in zip(axes, [("permissive", "Permissive"),
+                                        ("enforce", "Enforce")]):
+        report = json.loads(
+            (RULE_VS_LEARNED / f"rule_vs_learned_{mode}.json").read_text(
+                encoding="utf-8"))
+        results = report["results"]
+        for index, (key, label, colour) in enumerate(methods):
+            point = results[key]["point"]["binary_f1"]
+            interval = results[key]["ci"]["binary_f1"]
+            low = point - interval["ci95_low"]
+            high = interval["ci95_high"] - point
+            ax.bar(index, point, width=0.62, color=colour)
+            ax.errorbar(index, point, yerr=[[max(low, 0)], [max(high, 0)]],
+                        fmt="none", ecolor=INK, capsize=5, lw=1.3)
+            ax.text(index, interval["ci95_high"] + 0.03, f"{point:.4f}",
+                    ha="center", fontsize=9.5, color=INK)
+        ax.set_xticks(range(len(methods)))
+        ax.set_xticklabels([label for _, label, _ in methods], fontsize=9.5)
+        ax.set_title(
+            f"{title}（validation {report['counts']['validation_sessions']} 場）",
+            fontsize=12, fontweight="bold", color=INK)
+        ax.set_ylim(0, 1.14)
+        ax.spines[["top", "right"]].set_visible(False)
+    axes[0].set_ylabel("二元偵測 F1")
+    # 用軸座標而不是資料座標：資料座標會讓文字被切在左邊界外。
+    axes[0].text(0.5, 0.955, "四者區間重疊——偵測上沒有顯著差異",
+                 transform=axes[0].transAxes, fontsize=9.5, color=GREY,
+                 ha="center")
+    axes[1].text(0.5, 0.955, "SROS2 擋在 handshake，應用層證據不存在",
+                 transform=axes[1].transAxes, fontsize=9.5, color=GREY,
+                 ha="center")
+    fig.suptitle("預防生效時，正是應用層規則失明時",
+                 fontsize=14.5, fontweight="bold", color=INK, y=1.02)
+    _source(fig, "來源：rule_vs_learned_{permissive,enforce}.json。誤差線為 95% CI，"
+                 "場次層級 bootstrap 1000 次（validation，非 test）")
+    fig.savefig(out / "09_規則式vs學習式.png")
+    plt.close(fig)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -391,6 +453,8 @@ def main() -> int:
     draw_provenance(out, ink=INK, accent=ACCENT, warm=WARM, green=GREEN,
                     grey=GREY, source=_source)
     print("  08 資料來源")
+    chart_rule_vs_learned(out)
+    print("  09 規則式 vs 學習式")
     print(f"→ {out}")
     return 0
 
