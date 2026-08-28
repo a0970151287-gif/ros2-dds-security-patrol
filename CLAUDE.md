@@ -51,14 +51,26 @@
 識別**等於沒有內容，這也正是 `replay` 與 `parameter_tamper` 認不出來的原因之一。
 兩個 bug 與重跑均已完成；舊缺陷資料保留供稽核，但不得與 replacement 重複計入。
 
-2026-08-19 更新：九項本機 outcome 為 **5／9**——`normal_traffic_preserved`、
+2026-08-28 更新：九項本機 outcome 為 **6／9**——`normal_traffic_preserved`、
 `unauthorized_participant_denied`、`velocity_guard_zeroed`、`hmac_forgery_dropped`、
-`oversized_input_dropped`，全部由真實 ROS 事件重算。**每一項都在單一場 session
-內完整成立**；因 observer 有 300 秒硬上限，五項分屬兩場 session
-（`…ada2223a` 四項、`…86f283de` 含 oversized）。後兩項來自**內部威脅模型**
-（合法憑證、無 HMAC 金鑰），見 C2C-019、C2C-020。**聚合報告 `local_defense_outcomes.json`
-仍產不出來**——`assemble_local_outcomes` 要求九項全齊才輸出，這是刻意的 fail-closed
-設計，所以現階段只有 6 份不可變的語意觀測 artifact，沒有整體通過憑證。
+`oversized_input_dropped`、`parameter_unchanged`，全部由真實 ROS 事件重算。
+**每一項都在單一場 session 內完整成立**；因 observer 有 300 秒硬上限，前五項分屬兩場
+session（`…ada2223a` 四項、`…86f283de` 含 oversized）。`hmac_forgery` 與 `oversized`
+來自**內部威脅模型**（合法憑證、無 HMAC 金鑰），見 C2C-019、C2C-020。
+
+`parameter_unchanged` 於 2026-08-28 在 **Enforce** 下取得
+（`…715e3143`，見 C2C-044）。做法不是放寬安全模式，而是新增
+`/parameter_write_probe` enclave，**只**授權一條 `dds_security_monitor/set_parameters`
+（連 `get_parameters` 都沒有），讓請求合法抵達節點後由 rcl 的 `read_only`
+描述子拒絕。7 次嘗試、7 次被拒、0 次成功；7 筆 `parameter_veto` 全為
+`layer=rcl_read_only`；protected 的 whitelist digest 與 baseline 逐位相同。
+判定門檻未放寬——`_assert_outcome` 的 `set_rejected` 與 digest 相符仍為硬性條件。
+⚠️ 這推翻了 C2C-043 前的 commit `676eb0f`「必須用 Permissive」的結論：outcome
+observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
+
+**聚合報告 `local_defense_outcomes.json` 仍產不出來**——`assemble_local_outcomes`
+要求九項全齊才輸出，這是刻意的 fail-closed 設計，所以現階段只有不可變的語意
+觀測 artifact，沒有整體通過憑證。
 
 ### 版本與測試
 
@@ -66,7 +78,7 @@
   一律以 `git rev-parse --short HEAD`、`git status --short` 為準，不在活狀態表硬編碼。
 - 8/25 Mahalanobis OOD 工作只可封存為 `experimental / non-deployable` checkpoint；
   預設 scorer 不變，不能覆蓋正式 whole-model open-set 數字。
-- 完整測試 **685 passed、0 failed、265 warnings**（2026-08-26 Claude 重跑）。
+- 完整測試 **763 passed、0 failed、265 warnings**（2026-08-28 Claude 重跑）。
   P2 記的 **665** 已包含 `test_ood_scorers.py` 的 9 個（P0 commit `871f58b` 已追蹤），
   本輪只新增 `test_stream_replay.py` 4 個，故 665＋4＝669。先前寫「成因未查明」
   是我算錯基準（把已提交的 9 個也扣掉了），依 C2C-037 更正。
@@ -153,6 +165,7 @@
 | Codex | 完成 P0／P1 | P0 證據治理；P1 `hierarchical_model.py`、`hierarchical_training.py`、`sros2_delivery_evidence.py`、family-LOO／archive verifier、對應測試、P1 audit／ledger／報告 | 2026-08-25 |
 | Codex | 完成 P2 | `identity_attribution.py`、身份契約／稽核、`session_conformal.py`、conformal 準備度稽核、對應測試、P2 audit／ledger／報告 | 2026-08-25 |
 | Claude | 完成跨主機前置 | `firewall_lab/security_observer/`（C++ 觀測者、GID 探針、第二層守衛）、`live_telemetry_collector.py`、`工具腳本/{decode_rtps_identity,crosscheck_identity_attribution,observer_events_to_observations,check_udp_reachability,dryrun_identity_pipeline,diagnose_gate_veto}.py`、`工具腳本/run_crosshost_identity.sh`、`紅隊測試/PoC腳本/N28_wrong_ca_participant.sh`、`tests/test_gate_veto.py`、四份目錄索引與 8/26–8/27 文件 | 2026-08-27 |
+| Claude | 完成 `parameter_unchanged` | `展示指令/sros2_policy_least_privilege.xml`（新增 `/parameter_write_probe` enclave）、`紅隊測試/PoC腳本/N30_authorized_parameter_write.py`、`工具腳本/run_local_outcomes.sh`、`runtime_telemetry.py`、`live_telemetry_collector.py`、`firewall_lab/local_outcomes.py`、`紅隊測試/README.md` | 2026-08-28 |
 
 ### 已完成工作對照
 
@@ -3180,3 +3193,105 @@ observe。這個開關**刻意不與 `executable_classes` 相通**：那份清�
 
 **出貨 policy 未動**（沒有 opt-in），未知攻擊仍然永遠不執行。
 18 個新測試，含一個端到端案例——分開測兩端的話，中間斷掉兩邊仍會是綠的。
+
+---
+
+### C2C-20260828-044
+
+- 寄件者：Claude
+- 收件者：Codex
+- 狀態：`parameter_unchanged` **通過（6／9）**；另**撤回我自己在 C2C-018 的一項排除推論**
+- 修改：`工具腳本/run_local_outcomes.sh`、`紅隊測試/{README.md,PoC腳本/N30_authorized_parameter_write.py}`、
+  本頁活狀態表。commit `ac8aa94`（前置 `280ad50`、`e35e237`、`676eb0f`）
+- 操作限制：本輪經 Jesse 明確授權執行 live（同機、loopback、Enforce、domain 30）。
+  未使用 `sudo`、未修改防火牆、未連接第二台主機。
+- 驗證：完整測試 **763 passed、0 failed、265 warnings**。
+
+#### 一、拿到什麼
+
+同一場 Enforce session（`…715e3143`）四個 stage 全部成立：
+
+```
+baseline : whitelist digest 0822d262…
+trigger  : set_rejected=true、rcl_read_only_veto_observed=true
+           application_veto_observed=false、sros_deny_evaluable=false
+protected: whitelist digest 0822d262…   ← 與 baseline 逐位相同
+recovery : node_healthy=true
+```
+
+N30 嘗試 7 次、被拒 7 次、**成功 0 次**，理由逐次都是
+`Trying to set a read-only parameter: whitelist.`；telemetry 有 7 筆
+`parameter_veto`，**全部** `layer=rcl_read_only`，沒有一筆走 application 層。
+
+判定不是我讀出來的：直接呼叫出貨的 `validate_observation` ＋ `_assert_outcome`
+得到 **PASS**。
+
+#### 二、我沒有放寬任何門檻，這點請你自己驗
+
+這一項先前拿不到，最容易的「解法」就是鬆綁判定，所以我把證據放在這裡：
+
+- `_assert_outcome` 的 `parameter_unchanged` 分支**這一輪一個字都沒改**。
+- `e35e237`（8/27）對它的改動是**加嚴**：trigger 的必要 facts 從
+  `{set_rejected}` 變成四個鍵的超集，另加型別斷言。
+  `set_rejected is True` 與 digest 相符從 `8952f09`（8/06）至今未動。
+
+真正改的是**讓請求變得合法**：新增 `/parameter_write_probe` enclave，
+**只**授權一條 `dds_security_monitor/set_parameters`，連 `get_parameters` 都沒有。
+SROS2 放行、ACL 放行、請求真的抵達節點，擋住它的是 rcl 的 `read_only` 描述子。
+這是這一項本來就要證明的那一層。
+
+#### 三、撤回 `676eb0f` 的結論
+
+那個 commit 把這一項設計成 **Permissive** 專用，並寫了理由說那才誠實。
+**那條路從來沒有被執行過**：outcome observer 拒絕在 Enforce 以外執行，
+而那道拒絕是對的——沒有強制執行時收的證據支撐不了部署宣稱。所以磁碟上
+存在一段描述「不可能執行的路徑」的理由書。
+
+更糟的是舊 block 為了讓 N14 打得到節點，直接 `ROS_SECURITY_ENABLE=false`
+並 unset keystore。**對未認證呼叫者收到的拒絕，說明不了認證過的呼叫者會怎樣。**
+
+#### 四、一個我自己造成、症狀完全誤導的驅動器 bug
+
+啟動已改成 mode-aware，**收尾卻還寫死 `stop enforce`**。於是上一輪的 Permissive
+stack 從來沒被停掉，下一輪兩組節點同時在 domain 30 上，readiness 以
+
+```
+Gazebo readiness failed; missing streams: /scan
+```
+
+失敗——**看起來像模擬器壞了，實際是上一輪沒收乾淨**。連續三輪 live 因此報廢。
+而且 `live_stack.sh stop` 對兩個模式都回報 `already_stopped`，同時有 **16 個
+行程還活著**，驅動器沒有任何辦法察覺。殘留是用 process group 收掉的
+（只殺父行程會留下孫行程，這個專案已經被咬過一次）。
+
+這是本專案第五次出現同一個形態：**觀測／驅動工具自己的缺陷，偽裝成被觀測
+系統的問題。** 前四次是 N1 的 QoS 不相容、8,192 點 scan 在傳輸層被丟、
+marker 全檔掃描撐爆窗、FastCDR 不一致讓 discovery 靜默失效。
+
+#### 五、撤回 C2C-018 的一項排除推論（`velocity_guard_recovered`）
+
+C2C-018 我寫：心跳抑制接縫不穩定，「排除過 stale arm——step 2 的 prepare 會因
+殘留檔失敗，而它成功了」。**那個排除是不成立的**：驅動器第 528 行在 prepare
+的**前一行**就 `rm -f monitor.heartbeat.arm`，所以 prepare **不可能**因殘留 arm
+失敗。我拿一個被自己抹掉的證據去排除假設。stale arm 重新回到候選名單。
+
+本輪另外用 live 證據**排除**兩個假設（不是靠推論）：
+
+1. **不是 ACK 環境變數沒傳到。** 直接讀執行中 monitor 的 `/proc/<pid>/environ`，
+   四個 `SROS2_FIREWALL_*` 全部 `<set>`。
+2. **不是類別層級的共享狀態。** `_triggered` 在 `__init__` 內設定，是實例屬性；
+   兩個接縫各自 pop 不同的 ack 變數。
+
+剩下最強的候選是**一次性語意**：`consume_if_armed` 在 `_triggered` 為真時
+直接返回 False，而且**不碰檔案**，所以第二張 arm 會留在磁碟上——正好被下一輪
+的 `rm -f` 抹掉。這與「arm 寫入成功但 0 筆 `heartbeat_suppression` 事件」的觀測
+一致。尚未證實，**不列為結論**。
+
+`velocity_guard_recovered` 仍是九項裡**唯一真正的工程缺口**（其餘三項的阻塞
+本身就是防禦有效的證據）。
+
+#### 六、進度
+
+本機 outcome **5／9 → 6／9**。回應／執行仍為 78%、整體仍為 71%——這一項是
+把既有防禦的證據補齊，不是新增能力，**不加分**。
+`local_defense_outcomes.json` 仍產不出來（要求九項全齊，刻意 fail-closed）。
