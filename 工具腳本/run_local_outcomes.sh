@@ -159,10 +159,21 @@ telemetry_lines() {
 # velocity_guard_recovered 因此每一輪都被判「心跳抑制未被消費」，
 # 與接縫實際有沒有運作完全無關。九天內沒有人發現，因為
 # 「command not found」只出現在 stderr，而失敗訊息本身讀起來完全合理。
-wait_for() {  # since_line event_type source timeout [detail ...]
+wait_for() {  # since_line event_type source timeout [detail | any-nonzero:k1,k2 ...]
   local since="$1" etype="$2" source="$3" timeout="$4"; shift 4
-  local args=()
-  for detail in "$@"; do args+=(--detail "$detail"); done
+  local args=() detail key
+  for detail in "$@"; do
+    # `any-nonzero:linear_x,angular_z` → 至少一個非零（OR）。等值比對表達不了
+    # 「機器人動了」——它可以只轉不進，所以兩個欄位是 OR 不是 AND。
+    if [[ "$detail" == any-nonzero:* ]]; then
+      local keys="${detail#any-nonzero:}"
+      for key in ${keys//,/ }; do
+        args+=(--detail-any-nonzero "$key")
+      done
+      continue
+    fi
+    args+=(--detail "$detail")
+  done
   python3 "$WS/工具腳本/wait_for_telemetry.py" \
     --telemetry "$ROOT/telemetry_events.jsonl" --event-type "$etype" \
     ${source:+--source "$source"} --since-line "$since" \
@@ -309,12 +320,27 @@ log "observer 執行中"
 
 # ── 4. 各 stage ─────────────────────────────────────────────
 
+# 沒有被列入本次紀錄的 stage 不要跑。marker 本來就會被 enabled 擋掉，但**動作
+# 還是會發生**，而動作有副作用。
+#
+# 2026-08-29 實測：`unauthorized_participant_denied` 會觸發一次已驗章安全警報，
+# 而 patrol_node 的 N21/N23 cascade-DoS 修補把「90 秒內兩次 pause」判定為攻擊者
+# 借力，進入 quiet window 並**維持停車、忽略恢復**。接著跑
+# `velocity_guard_recovered` 就是第二次 pause，於是 guard 解除封鎖之後
+# patrol 仍然不動（log：`⛔ cascade-DoS quiet 尚餘 102s，維持巡航停止`），
+# recovery 因此永遠等不到非零輸出。
+#
+# 這不是防禦壞掉，也不是判定太嚴——是驅動器自己製造的 stage 交互作用。
+# 這兩段各自的證據早就在別的 session 收齊了（6／9），沒有理由在這裡重跑。
+if enabled normal_traffic_preserved; then
 # 4b. 正常流量保留
 log "stage: normal_traffic_preserved/baseline"
 mark normal_traffic_preserved baseline start
 sleep 14
 mark normal_traffic_preserved baseline end
+fi
 
+if enabled unauthorized_participant_denied; then
 # 4c. 未授權 participant：無憑證節點對 /chatter 發話，observer 應收到 0
 log "stage: unauthorized_participant_denied"
 mark unauthorized_participant_denied trigger start
@@ -338,6 +364,7 @@ mark unauthorized_participant_denied protected end
 mark unauthorized_participant_denied recovery start
 sleep 5
 mark unauthorized_participant_denied recovery end
+fi
 
 # graph 整段只在它被列入本次紀錄時才跑。marker 停用時 arm 與等待仍會執行，
 # 白白吃掉 observer 的 300 秒預算，還會消耗掉一次性的 seam。
@@ -575,7 +602,35 @@ if [[ -e "$FAULT_DIR/monitor.heartbeat.arm" ]]; then
   log "⚠️ 發現殘留的心跳 arm：上一張從未被消費（seam 可能已是一次性用盡）"
 fi
 rm -f "$FAULT_DIR"/monitor.heartbeat.arm 2>/dev/null
+
+# 先讓 patrol 的 cascade-DoS 偵測窗清空，再注入故障。
+#
+# patrol_node 的 N21/N23 修補：**90 秒內 2 次 pause** 判定為攻擊者借監控之手
+# 按停車按鈕，於是維持停車 **120 秒**等人工介入，期間收到 authenticated clear
+# 也不恢復（log：`⛔ cascade-DoS quiet 尚餘 102s，維持巡航停止`）。
+#
+# observer 自己加入 graph 會被 monitor 判為未知節點而觸發第一次 pause，我們的
+# 受控故障就是第二次——recovery 因此永遠等不到「恢復非零輸出」，而 120 秒的
+# quiet 遠超過窗的 60 秒安全上限。
+#
+# 等 95 秒讓 pause_history 清空，我們的故障就成為窗內唯一一次 pause，patrol
+# 會照正常的 30 秒 resume timer 恢復巡航。**這不是放寬判定**，是不要用自己的
+# 觀測行為去觸發一個與受測性質無關的防禦機制。
+log "等待 patrol 的 cascade-DoS 偵測窗清空（95 秒）"
+sleep 95
+
+# prepare 只是把目錄準備好，不會造成任何故障；arm 才會，而 arm 已經移到
+# trigger 窗開啟之後（見下方）。
 ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control prepare     --runtime-dir "$FAULT_DIR" --kind heartbeat_suppression     --live-loopback-ack "$ACK" --graph-fault-ack "$HB_ACK" )   >>"$ROOT/driver.log" 2>&1
+
+# 故障在 baseline 開窗之前注入，這是這一項本來的設計：抑制開始 → 守衛因為
+# 心跳過期而鎖定（baseline 要看到的「已經鎖著」）→ 十秒後 D5 升級成
+# monitor_fault（trigger 要的）→ hold 期滿心跳回來 → guard_clear（recovery 要的）。
+# 三個窗各拿一個轉換。
+#
+# 這個順序先前失敗，是因為注入時守衛**已經鎖著**（observer 的警報），
+# lease_missing 那個轉換於是不存在，baseline 的等待就往後吃掉 monitor_fault。
+# 上面等掉 cascade 窗之後 patrol 已恢復巡航、守衛回到 released，這個前提才成立。
 ( cd "$WS" && python3 -m firewall_lab.local_graph_fault_control arm     --runtime-dir "$FAULT_DIR" --kind heartbeat_suppression     --ttl-sec 20 --hold-sec 24     --live-loopback-ack "$ACK" --graph-fault-ack "$HB_ACK" )   >>"$ROOT/driver.log" 2>&1 || log "⛔ 心跳抑制 arm 失敗"
 
 if ! wait_for 0 controlled_fault_injection dds_security_monitor 12 kind=heartbeat_suppression state=trigger; then
@@ -584,13 +639,15 @@ fi
 
 mark velocity_guard_recovered baseline start
 HLINE0="$(marker_line velocity_guard_recovered baseline start)"
-wait_for "$HLINE0" guard_state velocity_guard_node 14 state=locked
+# 任何 locked 轉換都算。守衛在注入前是 released，所以這裡拿到的會是
+# monitor_lease_missing，而 monitor_fault 要再等十秒——兩個窗不會搶同一個事件。
+wait_for "$HLINE0" guard_state velocity_guard_node 20 state=locked
 sleep 1
 mark velocity_guard_recovered baseline end
 
 mark velocity_guard_recovered trigger start
 HLINE1="$(marker_line velocity_guard_recovered trigger start)"
-wait_for "$HLINE1" guard_state velocity_guard_node 20 state=locked reason=monitor_fault
+wait_for "$HLINE1" guard_state velocity_guard_node 25 state=locked reason=monitor_fault
 sleep 1
 mark velocity_guard_recovered trigger end
 
@@ -598,7 +655,16 @@ mark velocity_guard_recovered trigger end
 mark velocity_guard_recovered recovery start
 HLINE2="$(marker_line velocity_guard_recovered recovery start)"
 wait_for "$HLINE2" authenticated_action velocity_guard_node 26 action=guard_clear
-sleep 6
+# 解除封鎖之後還要等到**真的有一筆非零且未封鎖的輸出**才關窗。
+#
+# 2026-08-29 實測：guard 在 guard_clear 後 0.01 秒就 blocked=False，之後 49 筆
+# 連續未封鎖、橫跨 7.26 秒——防禦完全恢復了。但巡邏機器人當時停著（它是間歇
+# 移動的，實測約 10–20 秒動、30 秒停），49 筆輸出全是 0.0/0.0，probe 因此以
+# 「沒有恢復非零輸出」拒絕。那量到的是模擬器當下有沒有在走，不是防禦。
+#
+# 判定門檻**沒有改**：probe 仍然要求未封鎖且非零。改的是窗要等到證據出現才關。
+wait_for "$HLINE2" guard_output velocity_guard_node 35 blocked=False any-nonzero:linear_x,angular_z
+sleep 2
 mark velocity_guard_recovered recovery end
 
 fi

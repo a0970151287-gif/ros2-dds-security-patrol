@@ -23,7 +23,13 @@ import time
 from pathlib import Path
 
 
-def matches(event: dict, event_type: str, source: str | None, details: list[str]) -> bool:
+def matches(
+    event: dict,
+    event_type: str,
+    source: str | None,
+    details: list[str],
+    any_nonzero: list[str] | None = None,
+) -> bool:
     if event.get("event_type") != event_type:
         return False
     if source and event.get("source") != source:
@@ -32,6 +38,20 @@ def matches(event: dict, event_type: str, source: str | None, details: list[str]
     for pair in details:
         key, _, value = pair.partition("=")
         if str(payload.get(key)) != value:
+            return False
+    # 至少一個指名的欄位非零。velocity_guard_recovered 的 recovery 需要
+    # 「未封鎖**而且**輸出非零」，而 linear_x 與 angular_z 是 OR 關係——
+    # 機器人可以只轉不進。用等值比對表達不了這件事，所以單獨一個述詞。
+    if any_nonzero:
+        found = False
+        for key in any_nonzero:
+            raw = payload.get(key)
+            if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+                continue
+            if abs(float(raw)) > 1e-6:
+                found = True
+                break
+        if not found:
             return False
     return True
 
@@ -42,6 +62,8 @@ def main() -> int:
     parser.add_argument("--event-type", required=True)
     parser.add_argument("--source", default=None)
     parser.add_argument("--detail", action="append", default=[])
+    parser.add_argument("--detail-any-nonzero", action="append", default=[],
+                        help="至少一個指名欄位非零（OR）")
     parser.add_argument("--since-line", type=int, default=0)
     parser.add_argument("--timeout-sec", type=float, default=20.0)
     parser.add_argument("--poll-sec", type=float, default=0.4)
@@ -70,7 +92,8 @@ def main() -> int:
                         event = json.loads(raw.decode("utf-8"))
                     except (ValueError, UnicodeDecodeError):
                         continue
-                    if matches(event, args.event_type, args.source, args.detail):
+                    if matches(event, args.event_type, args.source,
+                               args.detail, args.detail_any_nonzero):
                         print(f"found line={current}")
                         return 0
                     if time.monotonic() >= deadline:

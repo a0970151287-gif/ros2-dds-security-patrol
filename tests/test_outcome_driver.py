@@ -84,5 +84,10 @@ def test_the_consumption_check_is_the_only_conditional_wait(source: str):
         if not line.lstrip().startswith("#")
     ]
     conditional = [line.strip() for line in code if line.strip().startswith("if ! wait_for")]
-    assert len(conditional) == 1, conditional
-    assert "controlled_fault_injection" in conditional[0]
+    # Pinned by the event waited on, not just the count. Only the seam
+    # consumption check uses this form; it logs and continues, so a broken
+    # waiter yields a spurious warning rather than a false pass. A second
+    # would need the same review before being added here.
+    # if ! wait_for <since> <event_type> ...  -> event type is field 4
+    waited_on = sorted(line.split()[4] for line in conditional)
+    assert waited_on == ["controlled_fault_injection"], conditional
