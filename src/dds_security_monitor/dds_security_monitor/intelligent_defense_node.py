@@ -476,21 +476,36 @@ class IntelligentDefenseNode(Node):
             self._detector_runtime_state = states
         if states.get(detector, False) == active:
             return
-        states[detector] = active
         telemetry = getattr(self, "_telemetry", None)
         if telemetry is None:
             return
+        # 只有事件**確定送出去**才把狀態記成已宣告。
+        #
+        # 先前是先改狀態再發，而 emit 回傳的 bool 被忽略。telemetry 走 Unix
+        # datagram，尖峰時本來就會掉（marker 機制早就因為同一個理由改成「確認
+        # 落地才繼續」）。掉一次的後果不是少一筆：狀態已經記成「已宣告」，
+        # 偵測器**再也不會**重發那個 incident，於是留下一筆沒有 incident 的
+        # recovery——2026-08-29 的 d4 就是這樣，graph_failure_fail_safe 的
+        # trigger 因此永遠取不到證據，而 D4 其實命中了 51 次。
+        #
+        # 不提交狀態，下一輪偵測循環就會再試一次。例外仍然吞掉：遙測不該弄壞防禦。
         try:
-            telemetry.emit_detector_state(
+            delivered = telemetry.emit_detector_state(
                 detector.lower(), "incident" if active else "recovery"
             )
-            if detector == "D5":
+        except Exception:
+            return
+        if not delivered:
+            return
+        states[detector] = active
+        if detector == "D5":
+            try:
                 telemetry.emit_heartbeat_state(
                     "gap" if active else "recovery",
                     IntelligentDefenseNode._heartbeat_gap_sec(self),
                 )
-        except Exception:
-            pass
+            except Exception:
+                pass
 
     def _detector_recovery_observable(self, detector: str) -> bool:
         """Do not call missing/stale data a recovery from an incident."""

@@ -459,14 +459,27 @@ class _TransitionTelemetry:
         self.heartbeats = []
         self.graph = []
 
+    # The real producer returns whether the datagram went out, and the caller
+    # now only records a transition as announced when it did.
     def emit_detector_state(self, detector, state):
         self.detectors.append((detector, state))
+        return True
 
     def emit_heartbeat_state(self, state, gap_sec):
         self.heartbeats.append((state, gap_sec))
+        return True
 
     def emit_graph_state(self, state, node_count):
         self.graph.append((state, node_count))
+        return True
+
+
+class _DroppingTelemetry(_TransitionTelemetry):
+    """Reports every detector datagram as undelivered."""
+
+    def emit_detector_state(self, detector, state):
+        self.detectors.append((detector, state))
+        return False
 
 
 def test_d1_d6_and_authenticated_heartbeat_emit_only_transitions(monkeypatch):
@@ -780,3 +793,62 @@ def test_telemetry_failure_never_breaks_the_parameter_service():
     )
     assert getter.callback(object(), "response") == "response"
     assert len(handled) == 1
+
+
+def test_a_dropped_detector_datagram_is_retried_not_lost(monkeypatch):
+    """A lost transition must not be recorded as announced.
+
+    telemetry is a Unix datagram socket and drops under load -- the marker
+    mechanism was already changed to confirm landing for the same reason. The
+    caller used to set the state before emitting and ignore the returned bool,
+    so one dropped datagram silently cost the transition forever: the detector
+    would never re-announce it, leaving a recovery with no incident. That is
+    exactly what d4 did on 2026-08-29, blocking graph_failure_fail_safe's
+    trigger while D4 had in fact fired 51 times.
+    """
+    now = [100.0]
+    monkeypatch.setattr(intelligent_defense_node.time, "monotonic", lambda: now[0])
+    dropping = _DroppingTelemetry()
+    fake = SimpleNamespace(
+        _telemetry=dropping,
+        _detector_runtime_state={name: False for name in ("D1", "D2", "D3", "D4", "D5", "D6")},
+        _startup_wall=90.0,
+        _last_heartbeat_wall=0.0,
+    )
+    record = intelligent_defense_node.IntelligentDefenseNode._record_detector_transition
+    record(fake, "D4", True)
+    # The attempt happened, but nothing was recorded as announced.
+    assert dropping.detectors == [("d4", "incident")]
+    assert fake._detector_runtime_state["D4"] is False
+
+    # Next detector cycle: the socket recovers and the incident finally lands.
+    working = _TransitionTelemetry()
+    fake._telemetry = working
+    record(fake, "D4", True)
+    assert working.detectors == [("d4", "incident")]
+    assert fake._detector_runtime_state["D4"] is True
+
+    # And the matching recovery is still emitted exactly once afterwards.
+    record(fake, "D4", False)
+    assert working.detectors == [("d4", "incident"), ("d4", "recovery")]
+
+
+def test_a_recovery_is_never_emitted_without_its_incident(monkeypatch):
+    """The invariant the d4 failure violated, stated directly."""
+    now = [100.0]
+    monkeypatch.setattr(intelligent_defense_node.time, "monotonic", lambda: now[0])
+    dropping = _DroppingTelemetry()
+    fake = SimpleNamespace(
+        _telemetry=dropping,
+        _detector_runtime_state={name: False for name in ("D1", "D2", "D3", "D4", "D5", "D6")},
+        _startup_wall=90.0,
+        _last_heartbeat_wall=0.0,
+    )
+    record = intelligent_defense_node.IntelligentDefenseNode._record_detector_transition
+    record(fake, "D4", True)      # dropped
+    working = _TransitionTelemetry()
+    fake._telemetry = working
+    record(fake, "D4", False)     # detector cleared while never having announced
+
+    # Nothing at all, rather than a recovery with no incident before it.
+    assert working.detectors == []

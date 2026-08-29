@@ -579,7 +579,12 @@ if enabled graph_failure_fail_safe; then
   mark graph_failure_fail_safe recovery start
   GLINE2="$(marker_line graph_failure_fail_safe recovery start)"
   wait_for "$GLINE2" graph_state dds_security_monitor 34 state=recovery
-  sleep 4
+  # probe 的 recovery 還要一筆 **D4 的 recovery 轉換**，而那是 IDS 端的事：
+  # 兩個行程各自消費自己的 arm，hold 也各自計時，所以 monitor 的 graph_state
+  # 恢復不代表 IDS 的 D4 已經清除。2026-08-29 實測 monitor 在 74.86 秒恢復，
+  # 窗在 79.89 秒關閉，而 d4 的 recovery 整場都沒出現——窗又一次比證據早關。
+  wait_for "$GLINE2" detector_state intelligent_defense_node 30 detector=d4 state=recovery
+  sleep 3
   mark graph_failure_fail_safe recovery end
 else
   log "跳過 graph_failure_fail_safe（未列入本次紀錄）"
