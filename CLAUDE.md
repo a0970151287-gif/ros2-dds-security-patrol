@@ -31,11 +31,11 @@
 | 攻擊識別（多類） | **65%** | balanced accuracy ≥ 0.80 | **final test**：Permissive **0.8619**（達標）、Enforce **0.4155** |
 | 未知攻擊 | **70%** | 整個模型 open-set recall ≥ 0.70 | **2026-08-25 更正串流歷史後重量**（舊值 0.5499／0.6583 作廢）。原 holdout（`sensor_spoof`／`service_dos`）：Enforce **0.8563**（現行預設，已達標）、Permissive 0.5789，換 Mahalanobis 評分器後 **0.9543**（該 holdout 第二次使用）。處女 holdout（`command_injection`／`identity_abuse`）僅 **0.0273**——上限是二元閘門對未見類別的 recall（0.9612／0.9729 對 0.3394），不是 OOD 頭 |
 | 回應／執行 | **78%** | 授權器→驗票→backend→撤銷，有 live pass | **2026-08-27 更新**：整條鏈在真實 ROS runtime 上 **7／7 通過**（`工具腳本/rehearse_guard_chain.py`）。啟用 **0.0365 秒**、**撤銷 0.0109 秒**、生效後漏放行 **0**、撤銷後仍丟棄 **0**；未授權的裸 GUID 行丟棄 **0**；**不撤銷任其到期時，執行端仍認為封鎖中而守衛已自行放行**（第三道撤銷保證）。守衛現在只接受帶票與到期時間的項目，`DdsGuardBackend` 是唯一寫入者。**仍不可部署**：`executable_classes` 為空、沒有任何規則指向 `dds_guard`、nftables backend 從未真跑、來源歸因 0／1,101 |
-| 本機防禦驗證 | **67%** | 九項本機 outcome 全部有 live pass（9／9） | **6／9**（2026-08-28 `parameter_unchanged` 通過）。剩餘四項中三項的阻塞本身即防禦有效（ACL 擋死重放與參數寫入、guard 40 毫秒內鎖定使量測窗切不開）；只有 `velocity_guard_recovered` 是真工程缺口。聚合報告仍產不出來（fail-closed 要求九項全齊） |
+| 本機防禦驗證 | **78%** | 九項本機 outcome 全部有 live pass（9／9） | **7／9**（2026-08-29 `velocity_guard_recovered` 通過，恢復延遲 0.1517 秒／門檻 5 秒）。九項裡**唯一的真工程缺口已消除**；四個缺陷全在量測側，判定門檻未動。`graph_failure_fail_safe` 的 protected／recovery 已可推導，trigger 卡在 D4 已處於 incident 而不再產生轉換。`replay_dropped` 的阻塞本身即防禦有效（ACL 逼重放跨行程超過新鮮度窗），所以 **8／9 是本機天花板**。聚合報告仍產不出來（fail-closed 要求九項全齊） |
 | 跨主機／硬體 | **0%** | Pi 5 ＋ 第二台主機 ＋ kernel nftables 驗收 | 未開始 |
 | 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1／P2 各有 8/25 帳本 |
 
-**整體約 70%**（八項平均 560/8 = 70.0%）。
+**整體約 71%**（八項平均 571/8 = 71.4%；2026-08-29 本機防禦驗證 67%→78%）。
 
 ⚠️ 2026-08-28 新增「本機防禦驗證」一列。先前七列**沒有任何一列代表九項本機
 outcome**，所以 5／9→6／9 在百分比上完全看不見。加上這一列之後整體從 71% 變成
