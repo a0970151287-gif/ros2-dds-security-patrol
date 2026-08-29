@@ -118,21 +118,36 @@ def main() -> int:
     multi_ip_guids = {g: sorted(ips) for g, ips in guid_to_ips.items()
                       if len(ips) > 1}
 
-    # 攻擊機宣稱跑了，但它的位址在擷取檔裡一個封包都沒有——那是**網路路徑不通**
-    # （防火牆丟包、跨網段、多播沒穿過去），不是防禦把它擋住了。
+    # 擷取檔裡沒有來自攻擊機的 RTPS——這一輪沒有證據，**不可**解讀成防禦成功。
     #
-    # 這兩件事的產物完全一樣：一份沒有攻擊者的證據。這個專案已經被同一類混淆
-    # 咬過四次，所以在這裡把它變成報告裡一個明確的欄位，而不是少一列讓人自己看出來。
+    # 但這裡只陳述觀測，不斷定原因。至少三條路會走到同一個現象：
+    #   1. 攻擊根本沒有執行（沒有人按下去）
+    #   2. participant 起不來（攻擊端環境問題）
+    #   3. 網路路徑不通（防火牆、跨網段、多播沒穿過去）
+    # 前一版直接寫「封包根本沒到這台機器——網路路徑不通」，那是把第 3 條當成
+    # 唯一解釋。2026-08-29 的真因是第 1 條，而那句話會害人去查防火牆——正是
+    # 這個專案一再掉進去的坑：一句聽起來完全合理的失敗訊息。
+    #
+    # 注意這個欄位判斷的是 **RTPS 觀測**，不是原始封包：攻擊機可能有 mDNS 之類
+    # 的背景流量在擷取檔裡，卻沒有任何 RTPS。命名要如實反映這件事。
     reachability = None
     if args.expect_attacker_ip:
         seen = args.expect_attacker_ip in ip_to_guids
         reachability = {
             "expected_attacker_ip": args.expect_attacker_ip,
-            "attacker_ip_present_in_capture": seen,
-            "verdict": "ok" if seen else "path_blocked_evidence_void",
+            "attacker_rtps_present": seen,
+            "verdict": "ok" if seen else "no_attacker_rtps_evidence_void",
+            "possible_causes": None if seen else [
+                "attack_never_executed",
+                "attacker_participant_failed_to_start",
+                "network_path_blocked",
+            ],
+            "next_step": None if seen else
+                    "先向攻擊端索取 rc 與 Publishing 行數：rc 不是 124/0 就是"
+                    "participant 沒起來；有 Publishing 行卻仍無 RTPS 才需要查路徑。",
             "note": None if seen else
-                    "攻擊機的位址在擷取檔裡完全不存在。這一輪的證據無效，"
-                    "**不可**解讀成防禦成功——要先修好網路路徑再重跑。",
+                    "擷取檔中沒有來自攻擊機的 RTPS 封包。這一輪的證據無效，"
+                    "**不可**解讀成防禦成功；原因未定，見 possible_causes。",
         }
 
     report = {
@@ -175,13 +190,16 @@ def main() -> int:
         print("     ⚠️ 交集為零——兩半沒有對上，歸因無從談起。")
         print("        常見原因：擷取介面錯、觀測者與攻擊時間沒重疊、domain 不同、")
         print("        或 FastCDR 與 FastRTPS 不同源導致 discovery 靜默失效。")
-    if reachability and not reachability["attacker_ip_present_in_capture"]:
+    if reachability and not reachability["attacker_rtps_present"]:
         print()
-        print(f"  ⛔ **本輪證據無效**：攻擊機位址 "
-              f"{reachability['expected_attacker_ip']} 在擷取檔裡完全不存在。")
-        print("     封包根本沒到這台機器——網路路徑不通（防火牆、跨網段、")
-        print("     多播未穿透），**不是**防禦把它擋住了。")
-        print("     先修好路徑再重跑；這一輪不可寫成任何結論。")
+        print(f"  ⛔ **本輪證據無效**：擷取檔中沒有來自 "
+              f"{reachability['expected_attacker_ip']} 的 RTPS 封包。")
+        print("     這**不可**解讀成防禦成功，但原因也還沒確定。三種可能：")
+        print("       1. 攻擊根本沒有執行")
+        print("       2. 攻擊端 participant 起不來")
+        print("       3. 網路路徑不通")
+        print("     先向攻擊端索取 rc 與 Publishing 行數再判斷：")
+        print("     rc 不是 124/0 → 第 2 種；有 Publishing 行卻仍無 RTPS → 第 3 種。")
     print()
     print("  逐 IP 判定：")
     for address, verdict in verdicts.items():
