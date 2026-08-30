@@ -352,6 +352,21 @@ def _run_offline_zeek(session_dir: Path, env: dict[str, str]) -> dict[str, Any]:
     record = run_snapshot(
         argv=[
             zeek,
+            # -C：不要因為校驗和錯誤丟棄封包。
+            #
+            # loopback 與虛擬介面有 checksum offload——核心不計算校驗和，所以
+            # 擷取到的封包校驗和是無效的，Zeek 預設把它們當成損壞。2026-08-31
+            # 在同一份 pcap 上實測：
+            #
+            #   不加 -C : 582 conn 列，orig_bytes/orig_pkts/duration 全部未設定
+            #             或 0，history=CC（兩個方向都是校驗和錯誤）
+            #   加了 -C :  76 conn 列，orig_bytes=12840、orig_pkts=15、
+            #             duration=40.78，history=D
+            #
+            # 影響不只是「拿不到位元組」：**連線數本身差 7.6 倍**，因為流組不
+            # 起來就會碎成大量假紀錄。conn_count 與 conn_rate 是現用特徵，
+            # 它們先前量到的是校驗和造成的碎裂，不是連線行為。
+            "-C",
             "-r",
             str(pcap),
             "-e",

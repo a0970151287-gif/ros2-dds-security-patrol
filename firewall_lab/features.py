@@ -64,6 +64,18 @@ NETWORK_COLUMNS = [
     "window_start_unix",
     "conn_count",
     "conn_rate",
+    # 2026-08-31 新增的五個量體特徵。先前 14 個網路特徵**全部是連線數與比例**，
+    # 沒有一個看得見位元組量，所以「連線數不變、每個封包變大」的攻擊在網路層
+    # 完全隱形——oversized_scan 之所以被抓到，靠的是遙測層的
+    # oversized_message_ratio，網路層沒有備援。Zeek 的 conn.log 一直有這些欄位，
+    # 只是沒被讀。
+    "orig_bytes_rate",
+    "orig_pkts_rate",
+    "mean_bytes_per_packet",
+    "max_conn_bytes",
+    # 反射／放大（CWE-406）：攻擊者送很少、受害者回很多。這是唯一一個看
+    # **回應**方向的特徵，其餘都只看來源送出什麼。
+    "amplification_ratio",
     "uniq_dst_ports",
     "uniq_dst_hosts",
     "spdp_ratio",
@@ -499,6 +511,25 @@ def _load_zeek_conn(path: Path) -> list[dict[str, str]]:
     return rows
 
 
+def _zeek_count(raw: object) -> int:
+    """Zeek 的 count 欄位，未設定時是 '-' 而不是 0。
+
+    把 '-' 當成 0 是對的（那條連線沒有量到位元組），但把它當成缺值而丟掉整列
+    就會讓 UDP 連線大量消失——DDS 幾乎全是 UDP，而 Zeek 對某些 UDP 流不填
+    orig_bytes。所以這裡回 0 而不是拋例外。
+    """
+    if raw is None:
+        return 0
+    text = str(raw).strip()
+    if not text or text in {"-", "(empty)"}:
+        return 0
+    try:
+        value = int(text)
+    except (TypeError, ValueError):
+        return 0
+    return value if value >= 0 else 0
+
+
 def _label_at(
     midpoint_unix_ns: int,
     intervals: list[dict[str, Any]],
@@ -531,7 +562,15 @@ def build_network_rows(
             continue
         if not math.isfinite(timestamp) or not source:
             continue
-        parsed.append((timestamp, source, destination, port))
+        parsed.append((
+            timestamp,
+            source,
+            destination,
+            port,
+            _zeek_count(row.get("orig_bytes")),
+            _zeek_count(row.get("orig_pkts")),
+            _zeek_count(row.get("resp_bytes")),
+        ))
     if not parsed:
         return []
 
@@ -555,6 +594,10 @@ def build_network_rows(
         destinations = [item[2] for item in group]
         timestamps = [item[0] for item in group]
         count = len(group)
+        orig_bytes = sum(item[4] for item in group)
+        orig_pkts = sum(item[5] for item in group)
+        resp_bytes = sum(item[6] for item in group)
+        max_conn_bytes = max(item[4] for item in group)
         # Label the time window, not this source's traffic within it.
         #
         # Rows are grouped by (source, window), so a window that straddles the
@@ -593,6 +636,19 @@ def build_network_rows(
                 "window_start_unix": round(t0 + window * window_sec, 6),
                 "conn_count": count,
                 "conn_rate": round(count / window_sec, 6),
+                "orig_bytes_rate": round(orig_bytes / window_sec, 6),
+                "orig_pkts_rate": round(orig_pkts / window_sec, 6),
+                # 每封包平均位元組。這是「連線數不變但封包變大」唯一看得見的
+                # 特徵；沒有封包就是 0，不是未定義。
+                "mean_bytes_per_packet": round(
+                    orig_bytes / orig_pkts, 6
+                ) if orig_pkts else 0.0,
+                "max_conn_bytes": max_conn_bytes,
+                # 回應量 ÷ 送出量。反射攻擊的特徵是送得少、回得多。送出為 0
+                # 時比值無定義，記 0——那種情況下沒有「放大」可言。
+                "amplification_ratio": round(
+                    resp_bytes / orig_bytes, 6
+                ) if orig_bytes else 0.0,
                 "uniq_dst_ports": len(set(ports)),
                 "uniq_dst_hosts": len(set(destinations)),
                 "spdp_ratio": round(ports.count(spdp_port) / count, 6),
@@ -697,6 +753,12 @@ NON_FEATURE_TELEMETRY_EVENTS = frozenset(
     {
         "authenticated_action",
         "controlled_fault_injection",
+        # sidecar 觀測者的原始身份訊號（GUID＋認證判定）。它**不餵任何特徵**：
+        # 認證拒絕已經由 observer_deny_adapter 轉成 sros2_deny 進入
+        # sros_auth_fail_rate，identity→IP 歸因則由 P2 的 identity_attribution
+        # 另外處理。這裡列進來只是為了讓視窗不被整個丟掉——未知事件型別
+        # fail-closed 是刻意的，2026-08-30 第一次接觀測者就是被這道擋下。
+        "dds_identity",
         "delivery_probe",
         "guard_input",
         "guard_output",
