@@ -160,6 +160,30 @@ def test_both_halves_normalise_guids_the_same_way():
     assert verdicts["192.168.0.30"]["blockable"] is True
 
 
+def test_the_parser_reads_a_real_authorized_record():
+    """Condition 2's plumbing, against live evidence rather than a fixture.
+
+    The dual-observer run of 2026-08-26 (C2C-040) is the only place in this
+    project where the observer has ever emitted AUTHORIZED: two legitimate
+    observers each recorded the other as authenticated while both refused the
+    wrong-CA participant. This pins that the parser still classifies those real
+    records correctly, so a future change cannot quietly stop recognising a
+    legitimate identity -- which would turn every legitimate node blockable.
+    """
+    import json
+
+    base = ROOT / "文件" / "階段0_DDS認證證據_2026-08-26" / "雙觀測者"
+    for name in ("obsA_events.jsonl", "obsB_events.jsonl"):
+        path = base / name
+        assert path.exists(), f"live evidence missing: {path}"
+        events = [json.loads(line) for line in
+                  path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        authorized, rejected = cross.split_authentication(events)
+        assert len(authorized) == 1, (name, authorized)
+        assert rejected, (name, "the wrong-CA participant should be refused")
+        assert not (authorized & rejected), (name, "a GUID cannot be both")
+
+
 def test_an_empty_observer_half_blocks_nothing():
     """No observer events at all must yield no blockable address.
 
