@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import gzip
 import json
 import math
 import re
@@ -540,6 +541,30 @@ def _label_at(
     return "normal", "session_window"
 
 
+ZEEK_REBUILT_DIR = "zeek_checksum_fixed"
+
+
+def resolve_conn_log(session_dir: Path) -> tuple[Path | None, str]:
+    """挑要用哪一份 conn.log，並說出挑了哪一份。
+
+    原始的 `zeek/conn.log` 是在沒有 `-C` 的情況下產生的，checksum offloading
+    造成的無效校驗和讓 Zeek 把封包整批丟棄：位元組、封包數與 duration 全部
+    未設定，而且連線被碎裂成 8 倍的短流。`conn_count` 與 `conn_rate` 因此
+    一直在量校驗和的行為而不是連線的行為。
+
+    `工具腳本/rebuild_zeek_checksum.py` 用同一份 pcap 加 `-C` 重跑，結果寫在
+    平行目錄裡（不覆寫原始證據，那是 manifest 有雜湊的檔案）。有重建就用
+    重建的，沒有就退回原始的——但**整批只能有一種來源**，見 build_features。
+    """
+    rebuilt = session_dir / ZEEK_REBUILT_DIR / "conn.log"
+    if rebuilt.is_file():
+        return rebuilt, "checksum_rebuilt"
+    original = session_dir / "zeek" / "conn.log"
+    if original.is_file():
+        return original, "original"
+    return None, "missing"
+
+
 def build_network_rows(
     session_dir: Path,
     manifest: dict[str, Any],
@@ -547,8 +572,8 @@ def build_network_rows(
     *,
     window_sec: float,
 ) -> list[dict[str, Any]]:
-    conn_path = session_dir / "zeek" / "conn.log"
-    if not conn_path.is_file():
+    conn_path, _ = resolve_conn_log(session_dir)
+    if conn_path is None:
         return []
     rows = _load_zeek_conn(conn_path)
     parsed = []
@@ -588,114 +613,282 @@ def build_network_rows(
     meta_ports = {base_port + 10, base_port + 11, base_port + 12}
     userdata_low = base_port + 13
     userdata_high = base_port + 249
-    result = []
-    for (source, window), group in sorted(grouped.items()):
-        ports = [item[3] for item in group]
-        destinations = [item[2] for item in group]
-        timestamps = [item[0] for item in group]
-        count = len(group)
-        orig_bytes = sum(item[4] for item in group)
-        orig_pkts = sum(item[5] for item in group)
-        resp_bytes = sum(item[6] for item in group)
-        max_conn_bytes = max(item[4] for item in group)
-        # Label the time window, not this source's traffic within it.
-        #
-        # Rows are grouped by (source, window), so a window that straddles the
-        # start or end of the attack interval used to get one label per source:
-        # each group was labelled from the mean timestamp of its own conns, and
-        # those means differ. In session
-        # 20260807T082401902811Z_parameter_tamper_cedeb73f the attack began
-        # 3.6s into window 0 and the three sources' means landed 1 ms apart on
-        # opposite sides of it, so the window was simultaneously normal and
-        # parameter_tamper. build_telemetry_rows requires one label per window
-        # and refused the whole session, which would have blocked the feature
-        # build for the entire campaign.
-        #
-        # The window's own centre is deterministic and identical for every
-        # source, so the disagreement cannot recur by construction.
-        window_midpoint_seconds = t0 + window * window_sec + window_sec / 2.0
-        midpoint_ns = int(window_midpoint_seconds * 1_000_000_000)
-        label, label_scope = _label_at(midpoint_ns, labels)
-        port_counts = Counter(ports)
-        host_counts = Counter(destinations)
-        tuple_counts = Counter(
-            (item[2], item[3]) for item in group
+    return [
+        _network_row(
+            manifest,
+            labels,
+            source,
+            window,
+            group,
+            [item[0] for item in group],
+            resp_bytes=sum(item[6] for item in group),
+            t0=t0,
+            window_sec=window_sec,
+            domain=domain,
+            spdp_port=spdp_port,
+            meta_ports=meta_ports,
+            userdata_low=userdata_low,
+            userdata_high=userdata_high,
         )
-        interarrival_cv, burstiness = _temporal_shape(timestamps)
+        for (source, window), group in sorted(grouped.items())
+    ]
+def _network_row(
+    manifest: dict[str, Any],
+    labels: list[dict[str, Any]],
+    source: str,
+    window: int,
+    group: list[tuple],
+    shape_timestamps: list[float],
+    *,
+    resp_bytes: int,
+    t0: float,
+    window_sec: float,
+    domain: int,
+    spdp_port: int,
+    meta_ports: set[int],
+    userdata_low: int,
+    userdata_high: int,
+) -> dict[str, Any]:
+    """一個 (來源, 視窗) 的網路特徵。
+
+    `group` 的每個元素是一個計數單位
+    `(ts, source, destination, port, orig_bytes, orig_pkts, resp_bytes)`。
+    從 conn.log 來時它是一筆 Zeek 流；從封包來時它是這個視窗裡的一個
+    五元組聚合。`shape_timestamps` 是算爆發性要用的時間戳——封包版傳的是
+    逐封包時間，那才是流量形狀，流的起點不是。
+
+    `resp_bytes` 由呼叫端算好傳進來，因為兩種來源的正確算法不同：conn 版是
+    Zeek 對該流量到的反方向位元組；封包版是**這個視窗裡送到這台主機的總量**。
+    不能用「五元組反轉」去配對——RTPS 的回應來自對方的臨時埠，實測一場 462
+    個五元組裡存在嚴格反轉配對的是 0 個。
+    """
+    ports = [item[3] for item in group]
+    destinations = [item[2] for item in group]
+    count = len(group)
+    orig_bytes = sum(item[4] for item in group)
+    orig_pkts = sum(item[5] for item in group)
+    max_conn_bytes = max(item[4] for item in group)
+    # Label the time window, not this source's traffic within it.
+    #
+    # Rows are grouped by (source, window), so a window that straddles the
+    # start or end of the attack interval used to get one label per source:
+    # each group was labelled from the mean timestamp of its own conns, and
+    # those means differ. In session
+    # 20260807T082401902811Z_parameter_tamper_cedeb73f the attack began
+    # 3.6s into window 0 and the three sources' means landed 1 ms apart on
+    # opposite sides of it, so the window was simultaneously normal and
+    # parameter_tamper. build_telemetry_rows requires one label per window
+    # and refused the whole session, which would have blocked the feature
+    # build for the entire campaign.
+    #
+    # The window's own centre is deterministic and identical for every
+    # source, so the disagreement cannot recur by construction.
+    window_midpoint_seconds = t0 + window * window_sec + window_sec / 2.0
+    midpoint_ns = int(window_midpoint_seconds * 1_000_000_000)
+    label, label_scope = _label_at(midpoint_ns, labels)
+    port_counts = Counter(ports)
+    host_counts = Counter(destinations)
+    tuple_counts = Counter(
+        (item[2], item[3]) for item in group
+    )
+    interarrival_cv, burstiness = _temporal_shape(shape_timestamps)
+    return (
+        {
+            "session_id": manifest["session_id"],
+            "group_id": manifest["session_id"],
+            "capture_id": manifest["session_id"],
+            "scenario_id": manifest["scenario_id"],
+            "security_mode": manifest["security_mode"],
+            "ros_domain_id": domain,
+            "origin": manifest["origin"],
+            "source": source,
+            "window": window,
+            "window_start_unix": round(t0 + window * window_sec, 6),
+            "conn_count": count,
+            "conn_rate": round(count / window_sec, 6),
+            "orig_bytes_rate": round(orig_bytes / window_sec, 6),
+            "orig_pkts_rate": round(orig_pkts / window_sec, 6),
+            # 每封包平均位元組。這是「連線數不變但封包變大」唯一看得見的
+            # 特徵；沒有封包就是 0，不是未定義。
+            "mean_bytes_per_packet": round(
+                orig_bytes / orig_pkts, 6
+            ) if orig_pkts else 0.0,
+            "max_conn_bytes": max_conn_bytes,
+            # 回應量 ÷ 送出量。反射攻擊的特徵是送得少、回得多。送出為 0
+            # 時比值無定義，記 0——那種情況下沒有「放大」可言。
+            "amplification_ratio": round(
+                resp_bytes / orig_bytes, 6
+            ) if orig_bytes else 0.0,
+            "uniq_dst_ports": len(set(ports)),
+            "uniq_dst_hosts": len(set(destinations)),
+            "spdp_ratio": round(ports.count(spdp_port) / count, 6),
+            "meta_ratio": round(
+                sum(port in meta_ports for port in ports) / count, 6
+            ),
+            "userdata_ratio": round(
+                sum(
+                    userdata_low <= port <= userdata_high
+                    for port in ports
+                )
+                / count,
+                6,
+            ),
+            "mcast_ratio": round(
+                sum(_is_multicast(item) for item in destinations) / count,
+                6,
+            ),
+            "dst_port_entropy": round(
+                _entropy(port_counts.values()), 6
+            ),
+            "interarrival_cv": round(interarrival_cv, 6),
+            "burstiness": round(burstiness, 6),
+            "dominant_port_ratio": round(
+                max(port_counts.values()) / count, 6
+            ),
+            "dominant_host_ratio": round(
+                max(host_counts.values()) / count, 6
+            ),
+            "tuple_repeat_ratio": round(
+                sum(
+                    max(repetitions - 1, 0)
+                    for repetitions in tuple_counts.values()
+                )
+                / count,
+                6,
+            ),
+            "label": label,
+            "binary": "normal" if label == "normal" else "attack",
+            "label_scope": label_scope,
+            "training_eligible": bool(manifest["training_eligible"]),
+            "evaluation_eligible": bool(
+                manifest["training_eligible"]
+                and manifest["origin"] == "live_lab"
+            ),
+            "policy_sha256": manifest["policy_sha256"],
+        }
+    )
+
+
+PACKET_WINDOW_DIR = "packet_windows"
+
+
+def load_packet_records(session_dir: Path) -> list[tuple]:
+    """讀 `packet_windows/packets.tsv.gz` 的逐封包紀錄。
+
+    回傳 `(ts, src_ip, dst_ip, sport, dport, length)`；沒有這個 artifact 就
+    回傳空清單，由呼叫端決定要不要 fail-closed。
+    """
+    path = session_dir / PACKET_WINDOW_DIR / "packets.tsv.gz"
+    if not path.is_file():
+        return []
+    records: list[tuple] = []
+    with gzip.open(path, "rt", encoding="utf-8", errors="replace") as handle:
+        header = handle.readline().rstrip("\n").split("\t")
+        if header[:1] != ["frame.time_epoch"]:
+            raise SchemaError(f"{path} 的表頭不是逐封包格式：{header[:1]}")
+        for line in handle:
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) != 6:
+                continue
+            try:
+                timestamp = float(parts[0])
+                sport = int(parts[3]) if parts[3] else -1
+                dport = int(parts[4]) if parts[4] else -1
+                length = int(parts[5]) if parts[5] else 0
+            except ValueError:
+                continue
+            if not math.isfinite(timestamp) or not parts[1]:
+                continue
+            records.append(
+                (timestamp, parts[1], parts[2], sport, dport, length)
+            )
+    return records
+
+
+def build_network_rows_from_packets(
+    session_dir: Path,
+    manifest: dict[str, Any],
+    labels: list[dict[str, Any]],
+    *,
+    window_sec: float,
+) -> list[dict[str, Any]]:
+    """按封包時間分窗的網路特徵。
+
+    與 conn.log 版的差別只有一個，但那個差別是決定性的：**視窗歸屬用封包自己
+    的時間，不是流的起點。** Zeek 的 conn 紀錄一筆代表整條流，時間戳是起點，
+    所以一條 50 秒的 DDS 流只會落進一個 8 秒視窗——量到的是「這個視窗裡開始
+    了幾條流」，不是「這個視窗裡有多少流量」。
+
+    這裡的計數單位是**視窗內的五元組**：同一條流跨越 7 個視窗就在 7 個視窗
+    各出現一次，帶著它在那個視窗裡實際傳的位元組。所以
+
+    - `conn_count` = 這個視窗裡活躍的五元組數（不是流的起點數）
+    - `orig_bytes` = 來源在這個視窗裡實際送出的位元組
+    - `resp_bytes` = 這個視窗裡**送到這台主機**的總位元組（放大比的分子）
+    - `interarrival_cv`／`burstiness` 用逐封包時間戳，那才是流量形狀
+
+    `max_conn_bytes` 是視窗內單一五元組的最大量體。
+    """
+    packets = load_packet_records(session_dir)
+    if not packets:
+        return []
+
+    t0 = min(item[0] for item in packets)
+    # (來源, 視窗) -> 五元組 -> [送出位元組, 送出封包, 收到位元組, 最早時間]
+    sent: dict[tuple[str, int], dict[tuple, list]] = defaultdict(dict)
+    # 收到的量按**主機**累計。RTPS 的回應來自對方的臨時埠，五元組反轉配不
+    # 起來（實測一場 462 個五元組，嚴格反轉配對 0 個），而反射攻擊要問的
+    # 本來就是「這台送出多少、收回多少」。
+    received: dict[tuple[str, int], int] = defaultdict(int)
+    shape: dict[tuple[str, int], list[float]] = defaultdict(list)
+
+    for timestamp, src, dst, sport, dport, length in packets:
+        window = int((timestamp - t0) // window_sec)
+        key = (src, window)
+        tuple_key = (dst, sport, dport)
+        entry = sent[key].get(tuple_key)
+        if entry is None:
+            sent[key][tuple_key] = [length, 1, 0, timestamp]
+        else:
+            entry[0] += length
+            entry[1] += 1
+            entry[3] = min(entry[3], timestamp)
+        shape[key].append(timestamp)
+        # 反向：這個封包對目的端而言是「收到」。
+        received[(dst, window)] += length
+
+    domain = int(manifest["ros_domain_id"])
+    base_port = 7400 + 250 * domain
+    spdp_port = base_port
+    meta_ports = {base_port + 10, base_port + 11, base_port + 12}
+    userdata_low = base_port + 13
+    userdata_high = base_port + 249
+
+    result = []
+    for (source, window), tuples in sorted(sent.items()):
+        group = []
+        for (dst, sport, dport), (obytes, opkts, _, first) in sorted(
+            tuples.items()
+        ):
+            group.append((first, source, dst, dport, obytes, opkts, 0))
+        timestamps = sorted(shape[(source, window)])
         result.append(
-            {
-                "session_id": manifest["session_id"],
-                "group_id": manifest["session_id"],
-                "capture_id": manifest["session_id"],
-                "scenario_id": manifest["scenario_id"],
-                "security_mode": manifest["security_mode"],
-                "ros_domain_id": domain,
-                "origin": manifest["origin"],
-                "source": source,
-                "window": window,
-                "window_start_unix": round(t0 + window * window_sec, 6),
-                "conn_count": count,
-                "conn_rate": round(count / window_sec, 6),
-                "orig_bytes_rate": round(orig_bytes / window_sec, 6),
-                "orig_pkts_rate": round(orig_pkts / window_sec, 6),
-                # 每封包平均位元組。這是「連線數不變但封包變大」唯一看得見的
-                # 特徵；沒有封包就是 0，不是未定義。
-                "mean_bytes_per_packet": round(
-                    orig_bytes / orig_pkts, 6
-                ) if orig_pkts else 0.0,
-                "max_conn_bytes": max_conn_bytes,
-                # 回應量 ÷ 送出量。反射攻擊的特徵是送得少、回得多。送出為 0
-                # 時比值無定義，記 0——那種情況下沒有「放大」可言。
-                "amplification_ratio": round(
-                    resp_bytes / orig_bytes, 6
-                ) if orig_bytes else 0.0,
-                "uniq_dst_ports": len(set(ports)),
-                "uniq_dst_hosts": len(set(destinations)),
-                "spdp_ratio": round(ports.count(spdp_port) / count, 6),
-                "meta_ratio": round(
-                    sum(port in meta_ports for port in ports) / count, 6
-                ),
-                "userdata_ratio": round(
-                    sum(
-                        userdata_low <= port <= userdata_high
-                        for port in ports
-                    )
-                    / count,
-                    6,
-                ),
-                "mcast_ratio": round(
-                    sum(_is_multicast(item) for item in destinations) / count,
-                    6,
-                ),
-                "dst_port_entropy": round(
-                    _entropy(port_counts.values()), 6
-                ),
-                "interarrival_cv": round(interarrival_cv, 6),
-                "burstiness": round(burstiness, 6),
-                "dominant_port_ratio": round(
-                    max(port_counts.values()) / count, 6
-                ),
-                "dominant_host_ratio": round(
-                    max(host_counts.values()) / count, 6
-                ),
-                "tuple_repeat_ratio": round(
-                    sum(
-                        max(repetitions - 1, 0)
-                        for repetitions in tuple_counts.values()
-                    )
-                    / count,
-                    6,
-                ),
-                "label": label,
-                "binary": "normal" if label == "normal" else "attack",
-                "label_scope": label_scope,
-                "training_eligible": bool(manifest["training_eligible"]),
-                "evaluation_eligible": bool(
-                    manifest["training_eligible"]
-                    and manifest["origin"] == "live_lab"
-                ),
-                "policy_sha256": manifest["policy_sha256"],
-            }
+            _network_row(
+                manifest,
+                labels,
+                source,
+                window,
+                group,
+                timestamps,
+                resp_bytes=received.get((source, window), 0),
+                t0=t0,
+                window_sec=window_sec,
+                domain=domain,
+                spdp_port=spdp_port,
+                meta_ports=meta_ports,
+                userdata_low=userdata_low,
+                userdata_high=userdata_high,
+            )
         )
     return result
 
@@ -1201,6 +1394,7 @@ def build_features(
     require_multimodal: bool = False,
     verify_evidence_hashes: bool = False,
     exclusions_path: str | Path | None = None,
+    network_source: str = "conn",
 ) -> dict[str, int]:
     if (
         isinstance(window_sec, bool)
@@ -1218,6 +1412,11 @@ def build_features(
     fusion_rows = []
     observation_rows = []
     excluded_sessions: list[str] = []
+    if network_source not in ("conn", "packet"):
+        raise SchemaError(
+            f"network_source 只能是 conn 或 packet，收到 {network_source!r}"
+        )
+    conn_sources: dict[str, int] = {}
     skipped = 0
     missing_multimodal_sessions = 0
     for session_dir in discover_sessions(dataset_root):
@@ -1255,12 +1454,29 @@ def build_features(
         session_rows.append(
             build_session_row(session_dir, manifest, labels)
         )
-        session_network = build_network_rows(
-            session_dir,
-            manifest,
-            labels,
-            window_sec=float(window_sec),
-        )
+        _, conn_source = resolve_conn_log(session_dir)
+        conn_sources[conn_source] = conn_sources.get(conn_source, 0) + 1
+        if network_source == "packet":
+            session_network = build_network_rows_from_packets(
+                session_dir,
+                manifest,
+                labels,
+                window_sec=float(window_sec),
+            )
+            if not session_network and (session_dir / "traffic.pcapng").is_file():
+                # 有 pcap 卻沒有逐封包紀錄，代表抽取還沒跑或跑壞了。默默回傳
+                # 空清單會讓這一場從特徵表裡消失，看起來像「這場沒有流量」。
+                raise SchemaError(
+                    f"{session_dir.name} 缺少 packet_windows/packets.tsv.gz；"
+                    "請先跑 工具腳本/extract_packet_windows.py"
+                )
+        else:
+            session_network = build_network_rows(
+                session_dir,
+                manifest,
+                labels,
+                window_sec=float(window_sec),
+            )
         network_rows.extend(session_network)
         session_telemetry = build_telemetry_rows(
             session_dir,
@@ -1297,6 +1513,18 @@ def build_features(
                 build_observation_rows(session_dir, manifest)
             )
 
+    # 一半場次用重建後的位元組、一半用「校驗和丟包後的殘骸」，模型學到的會是
+    # 「哪些場次被重建過」而不是攻擊的性質——與 8/30 觀測者覆蓋不均等是同一種
+    # 假象。與其產出一張看起來變好的表，不如在這裡停下來。
+    present = {k: v for k, v in conn_sources.items() if k != "missing"}
+    if len(present) > 1:
+        detail = "、".join(f"{k}={v}" for k, v in sorted(present.items()))
+        raise SchemaError(
+            "conn.log 來源不一致，拒絕建表："
+            f"{detail}。請先對整個資料集跑 "
+            "工具腳本/rebuild_zeek_checksum.py，或把重建結果整批移走。"
+        )
+
     output = Path(output_dir)
     _write_csv(output / "session_features.csv", SESSION_COLUMNS, session_rows)
     _write_csv(output / "network_features.csv", NETWORK_COLUMNS, network_rows)
@@ -1327,6 +1555,10 @@ def build_features(
         "require_multimodal": require_multimodal,
         "window_sec": float(window_sec),
         "grouping": "session_id",
+        # 這張表的位元組／封包／duration 是從哪一份 conn.log 來的。
+        "zeek_conn_sources": dict(sorted(conn_sources.items())),
+        # 網路特徵的分窗依據：conn 是流起點，packet 是封包時間。
+        "network_source": network_source,
     }
     atomic_write_json(output / "feature_build.json", summary)
     return {
@@ -1387,6 +1619,15 @@ def build_parser() -> argparse.ArgumentParser:
             "always checked, hashing 1,100 sessions costs about 15 minutes"
         ),
     )
+    parser.add_argument(
+        "--network-source",
+        choices=("conn", "packet"),
+        default="conn",
+        help=(
+            "網路特徵的分窗依據。conn（預設）用 Zeek 流紀錄的起點；"
+            "packet 用逐封包時間，需要先跑 extract_packet_windows.py。"
+        ),
+    )
     return parser
 
 
@@ -1395,6 +1636,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     args = build_parser().parse_args(argv)
     result = build_features(
+        network_source=args.network_source,
         dataset_root=args.dataset,
         output_dir=args.output,
         include_nontrainable=args.include_nontrainable,

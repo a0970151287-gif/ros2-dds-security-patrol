@@ -1,0 +1,102 @@
+{
+  "conn_broken": {
+    "attack_sessions": 799,
+    "attack_windows_per_session_median": 5,
+    "labels": {
+      "command_injection": 972,
+      "identity_abuse": 916,
+      "message_dos": 930,
+      "normal": 6461,
+      "parameter_tamper": 927,
+      "replay": 904,
+      "replay_dos": 919,
+      "sensor_spoof": 912,
+      "service_dos": 913
+    },
+    "provenance": {
+      "network_source": null,
+      "window_sec": 8.0,
+      "zeek_conn_sources": null
+    },
+    "rows": 13854,
+    "sessions": 1099,
+    "volume_feature_nonzero_rate": {
+      "amplification_ratio": null,
+      "max_conn_bytes": null,
+      "mean_bytes_per_packet": null,
+      "orig_bytes_rate": null,
+      "orig_pkts_rate": null
+    },
+    "windows_per_session_max": 21,
+    "windows_per_session_median": 7,
+    "windows_per_session_min": 5
+  },
+  "conn_fixed": {
+    "attack_sessions": 537,
+    "attack_windows_per_session_median": 2,
+    "labels": {
+      "command_injection": 183,
+      "identity_abuse": 116,
+      "message_dos": 124,
+      "normal": 2041,
+      "parameter_tamper": 115,
+      "replay": 114,
+      "replay_dos": 117,
+      "sensor_spoof": 117,
+      "service_dos": 121
+    },
+    "provenance": {
+      "network_source": null,
+      "window_sec": 8.0,
+      "zeek_conn_sources": {
+        "checksum_rebuilt": 1099
+      }
+    },
+    "rows": 3048,
+    "sessions": 1099,
+    "volume_feature_nonzero_rate": {
+      "amplification_ratio": 0.0,
+      "max_conn_bytes": 1.0,
+      "mean_bytes_per_packet": 1.0,
+      "orig_bytes_rate": 1.0,
+      "orig_pkts_rate": 1.0
+    },
+    "windows_per_session_max": 6,
+    "windows_per_session_median": 3,
+    "windows_per_session_min": 1
+  },
+  "packet": {
+    "attack_sessions": 799,
+    "attack_windows_per_session_median": 5,
+    "labels": {
+      "command_injection": 972,
+      "identity_abuse": 916,
+      "message_dos": 930,
+      "normal": 6661,
+      "parameter_tamper": 927,
+      "replay": 904,
+      "replay_dos": 919,
+      "sensor_spoof": 912,
+      "service_dos": 913
+    },
+    "provenance": {
+      "network_source": "packet",
+      "window_sec": 8.0,
+      "zeek_conn_sources": {
+        "checksum_rebuilt": 1099
+      }
+    },
+    "rows": 14054,
+    "sessions": 1099,
+    "volume_feature_nonzero_rate": {
+      "amplification_ratio": 0.0,
+      "max_conn_bytes": 1.0,
+      "mean_bytes_per_packet": 1.0,
+      "orig_bytes_rate": 1.0,
+      "orig_pkts_rate": 1.0
+    },
+    "windows_per_session_max": 21,
+    "windows_per_session_median": 7,
+    "windows_per_session_min": 5
+  }
+}

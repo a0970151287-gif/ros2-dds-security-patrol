@@ -26,12 +26,53 @@ from __future__ import annotations
 import argparse
 import collections
 import csv
+import json
 import sys
 from pathlib import Path
 
 AFFECTED_SCENARIOS = frozenset(
     {"heartbeat_replay", "parameter_tamper", "parameter_flood"}
 )
+
+
+# 建表方式必須一致的欄位。欄位名相同但意義不同，是最難發現的一種污染。
+PROVENANCE_KEYS = ("network_source", "zeek_conn_sources", "window_sec")
+
+
+def _build_provenance(features_csv: Path) -> dict | None:
+    """讀特徵表旁邊的 feature_build.json。沒有就回 None。"""
+    manifest = features_csv.parent / "feature_build.json"
+    if not manifest.is_file():
+        return None
+    return json.loads(manifest.read_text(encoding="utf-8"))
+
+
+def _check_provenance(old_csv: Path, new_csv: Path) -> list[str]:
+    """回傳不一致的說明；空清單代表可以合併。"""
+    old = _build_provenance(old_csv)
+    new = _build_provenance(new_csv)
+    if old is None or new is None:
+        missing = [
+            str(p.parent / "feature_build.json")
+            for p, m in ((old_csv, old), (new_csv, new))
+            if m is None
+        ]
+        return [
+            "找不到 feature_build.json，無法確認兩張表的建表方式相同："
+            + "、".join(missing)
+        ]
+    problems = []
+    for key in PROVENANCE_KEYS:
+        # 舊的 build manifest 可能還沒有這些欄位（schema 早於它們）。缺欄位
+        # 不能當成相符——那正是「不知道」而不是「一樣」。
+        if key not in old or key not in new:
+            problems.append(
+                f"{key}：舊表 {old.get(key, '（無此欄位）')}，"
+                f"新表 {new.get(key, '（無此欄位）')}"
+            )
+        elif old[key] != new[key]:
+            problems.append(f"{key}：舊表 {old[key]}，新表 {new[key]}")
+    return problems
 
 
 def _read(path: Path) -> tuple[list[str], list[dict[str, str]]]:
@@ -47,7 +88,28 @@ def main() -> int:
     parser.add_argument("--old", type=Path, required=True)
     parser.add_argument("--new", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--allow-mixed-provenance",
+        action="store_true",
+        help=(
+            "略過建表方式一致性檢查。只在明確知道兩張表為何不同、且該差異"
+            "與特徵語意無關時使用。"
+        ),
+    )
     args = parser.parse_args()
+
+    if not args.allow_mixed_provenance:
+        problems = _check_provenance(args.old, args.new)
+        if problems:
+            print("⛔ 兩張表的建表方式不同，拒絕合併", file=sys.stderr)
+            for problem in problems:
+                print(f"   {problem}", file=sys.stderr)
+            print(
+                "   欄位名一樣但意義不同，合併後模型會學到「這列出自哪一次"
+                "建表」。請用同一組設定重抽兩邊。",
+                file=sys.stderr,
+            )
+            return 1
 
     old_columns, old_rows = _read(args.old)
     new_columns, new_rows = _read(args.new)
