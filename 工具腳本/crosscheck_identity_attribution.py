@@ -43,6 +43,72 @@ def _compact(dotted: str) -> str:
     return dotted.replace(".", "").replace(":", "").strip().lower()
 
 
+def split_authentication(events: list[dict]) -> tuple[set[str], set[str]]:
+    """觀測者事件 → (通過認證的 GUID, 被拒絕的 GUID)。
+
+    非 AUTHORIZED 一律歸入 rejected：認證結果只有「明確通過」才算通過，
+    任何其他狀態都不是。
+    """
+    authorized: set[str] = set()
+    rejected: set[str] = set()
+    for row in events:
+        if row.get("event") != "participant_authentication":
+            continue
+        prefix = _compact(str(row.get("guid", "")).split("|")[0])
+        if not prefix:
+            continue
+        if row.get("status") == "AUTHORIZED":
+            authorized.add(prefix)
+        else:
+            rejected.add(prefix)
+    return authorized, rejected
+
+
+def decide_blockable(
+    ip_to_guids: dict[str, set[str]],
+    authorized: set[str],
+    rejected: set[str],
+) -> dict[str, dict]:
+    """逐 IP 判定可否封鎖。三條**全部**成立才算，任一不成立就不封。
+
+    1. 該 IP 只掛一個 GUID——否則封鎖會波及同一位址上的其他人。
+    2. 該 GUID **沒有**通過認證的記錄。
+    3. 該 GUID **有**觀測者明確的拒絕記錄——不可用「查無記錄」推論，因為
+       觀測者靜默失效是真實會發生的事，那種情況下每個正常 participant 都會
+       看起來可封鎖（C2C-041）。
+
+    第 2 條在 2026-08-30 那批 80 輪跨主機資料裡**一次都沒有被走過**：那批
+    沒有任何成功認證的遠端身分，所以擋下防守方自己位址的是第 3 條而不是第 2 條。
+    這個函式被抽出來，就是為了讓第 2 條可以被測試覆蓋——它守的是自動封鎖最
+    危險的失效方向：誤封一個合法節點。
+    """
+    verdicts: dict[str, dict] = {}
+    for address, guids in sorted(ip_to_guids.items()):
+        unique = len(guids) == 1
+        only = next(iter(guids)) if unique else None
+        is_authorized = bool(guids & authorized)
+        is_rejected = bool(guids & rejected)
+        blockable = bool(unique and only in rejected and only not in authorized)
+
+        reasons: list[str] = []
+        if not unique:
+            reasons.append(f"{len(guids)} 個 GUID 共用此位址，封鎖會波及他人")
+        if is_authorized:
+            reasons.append("此位址上有通過認證的合法身分")
+        if unique and not is_rejected:
+            reasons.append("觀測者沒有對此 GUID 的拒絕記錄（不可用查無記錄推論）")
+
+        verdicts[address] = {
+            "guid_count": len(guids),
+            "unique_guid": unique,
+            "has_authorized_identity": is_authorized,
+            "has_rejection_record": is_rejected,
+            "blockable": blockable,
+            "reasons_not_blockable": reasons,
+        }
+    return verdicts
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--packet-observations", type=Path, required=True,
@@ -72,47 +138,12 @@ def main() -> int:
         guid_to_ips.setdefault(prefix, set()).add(address)
         ip_to_guids.setdefault(address, set()).add(prefix)
 
-    # 觀測者那一半：GUID → 認證判定
-    authorized: set[str] = set()
-    rejected: set[str] = set()
-    for row in events:
-        if row.get("event") != "participant_authentication":
-            continue
-        prefix = _compact(str(row.get("guid", "")).split("|")[0])
-        if not prefix:
-            continue
-        if row.get("status") == "AUTHORIZED":
-            authorized.add(prefix)
-        else:
-            rejected.add(prefix)
+    authorized, rejected = split_authentication(events)
 
     # 兩半共同看到的 GUID——這個交集本身就是歸因是否成立的指標。
     observed_both = set(guid_to_ips) & (authorized | rejected)
 
-    verdicts: dict[str, dict] = {}
-    for address, guids in sorted(ip_to_guids.items()):
-        unique = len(guids) == 1
-        only = next(iter(guids)) if unique else None
-        is_authorized = bool(guids & authorized)
-        is_rejected = bool(guids & rejected)
-        blockable = bool(unique and only in rejected and only not in authorized)
-
-        reasons: list[str] = []
-        if not unique:
-            reasons.append(f"{len(guids)} 個 GUID 共用此位址，封鎖會波及他人")
-        if is_authorized:
-            reasons.append("此位址上有通過認證的合法身分")
-        if unique and not is_rejected:
-            reasons.append("觀測者沒有對此 GUID 的拒絕記錄（不可用查無記錄推論）")
-
-        verdicts[address] = {
-            "guid_count": len(guids),
-            "unique_guid": unique,
-            "has_authorized_identity": is_authorized,
-            "has_rejection_record": is_rejected,
-            "blockable": blockable,
-            "reasons_not_blockable": reasons,
-        }
+    verdicts = decide_blockable(ip_to_guids, authorized, rejected)
 
     blockable = [a for a, v in verdicts.items() if v["blockable"]]
     multi_ip_guids = {g: sorted(ips) for g, ips in guid_to_ips.items()
