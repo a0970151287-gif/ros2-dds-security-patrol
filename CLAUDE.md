@@ -174,6 +174,7 @@ observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
 | Codex | 完成 P2 | `identity_attribution.py`、身份契約／稽核、`session_conformal.py`、conformal 準備度稽核、對應測試、P2 audit／ledger／報告 | 2026-08-25 |
 | Claude | 完成跨主機前置 | `firewall_lab/security_observer/`（C++ 觀測者、GID 探針、第二層守衛）、`live_telemetry_collector.py`、`工具腳本/{decode_rtps_identity,crosscheck_identity_attribution,observer_events_to_observations,check_udp_reachability,dryrun_identity_pipeline,diagnose_gate_veto}.py`、`工具腳本/run_crosshost_identity.sh`、`紅隊測試/PoC腳本/N28_wrong_ca_participant.sh`、`tests/test_gate_veto.py`、四份目錄索引與 8/26–8/27 文件 | 2026-08-27 |
 | Claude | 完成 `parameter_unchanged` | `展示指令/sros2_policy_least_privilege.xml`（新增 `/parameter_write_probe` enclave）、`紅隊測試/PoC腳本/N30_authorized_parameter_write.py`、`工具腳本/run_local_outcomes.sh`、`runtime_telemetry.py`、`live_telemetry_collector.py`、`firewall_lab/local_outcomes.py`、`紅隊測試/README.md` | 2026-08-28 |
+| Claude | 進行中：觀測者→`sros2_deny` 通道 | `firewall_lab/observer_deny_adapter.py`、`tests/test_observer_deny_adapter.py`、`工具腳本/crosscheck_identity_attribution.py`（抽出純函式）、`tests/test_identity_crosscheck.py`。**未修改 `sros2_deny_adapter.py`**（Codex 登記）。contract 尚未改——現有 1,100 場仍然沒有來源，要等新資料才動 | 2026-08-30 |
 | Claude | 完成接縫診斷與強 OOD 撤回 | `src/dds_security_monitor/dds_security_monitor/{test_fault_seam,monitor_node}.py`、`tests/{test_controlled_graph_fault,test_strong_ood}.py`、`工具腳本/diagnose_strong_ood.py`、`文件/強OOD單獨判定_不可行_2026-08-28.md`。**未修改 `hierarchical_model.py`**——量測結論是那條規則不該改 | 2026-08-28 |
 
 ### 已完成工作對照
