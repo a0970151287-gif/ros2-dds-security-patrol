@@ -641,6 +641,7 @@ def _network_row(
     shape_timestamps: list[float],
     *,
     resp_bytes: int,
+    ratio_items: list[tuple[str, int]] | None = None,
     t0: float,
     window_sec: float,
     domain: int,
@@ -661,10 +662,20 @@ def _network_row(
     Zeek 對該流量到的反方向位元組；封包版是**這個視窗裡送到這台主機的總量**。
     不能用「五元組反轉」去配對——RTPS 的回應來自對方的臨時埠，實測一場 462
     個五元組裡存在嚴格反轉配對的是 0 個。
+
+    `ratio_items` 是比例特徵的基底 `(目的, 埠)`，預設沿用 `group`。埠與主機
+    的**分布**問的是「流量長什麼樣」，所以封包版傳的是逐封包的清單而不是
+    去重過的五元組——後者會把「九成封包打在 SPDP 埠」抹成「用過 SPDP 埠」。
+    `conn_count` 仍按單位算，兩個分母因此分開。
     """
-    ports = [item[3] for item in group]
-    destinations = [item[2] for item in group]
+    if ratio_items is None:
+        ratio_items = [(item[2], item[3]) for item in group]
+    destinations = [item[0] for item in ratio_items]
+    ports = [item[1] for item in ratio_items]
+    # 計數單位（有幾條流）與比例基底（有多少流量）是兩回事。conn 來源兩者
+    # 相等，所以既有行為逐位不變。
     count = len(group)
+    basis = len(ratio_items) or 1
     orig_bytes = sum(item[4] for item in group)
     orig_pkts = sum(item[5] for item in group)
     max_conn_bytes = max(item[4] for item in group)
@@ -688,9 +699,7 @@ def _network_row(
     label, label_scope = _label_at(midpoint_ns, labels)
     port_counts = Counter(ports)
     host_counts = Counter(destinations)
-    tuple_counts = Counter(
-        (item[2], item[3]) for item in group
-    )
+    tuple_counts = Counter(ratio_items)
     interarrival_cv, burstiness = _temporal_shape(shape_timestamps)
     return (
         {
@@ -721,20 +730,20 @@ def _network_row(
             ) if orig_bytes else 0.0,
             "uniq_dst_ports": len(set(ports)),
             "uniq_dst_hosts": len(set(destinations)),
-            "spdp_ratio": round(ports.count(spdp_port) / count, 6),
+            "spdp_ratio": round(ports.count(spdp_port) / basis, 6),
             "meta_ratio": round(
-                sum(port in meta_ports for port in ports) / count, 6
+                sum(port in meta_ports for port in ports) / basis, 6
             ),
             "userdata_ratio": round(
                 sum(
                     userdata_low <= port <= userdata_high
                     for port in ports
                 )
-                / count,
+                / basis,
                 6,
             ),
             "mcast_ratio": round(
-                sum(_is_multicast(item) for item in destinations) / count,
+                sum(_is_multicast(item) for item in destinations) / basis,
                 6,
             ),
             "dst_port_entropy": round(
@@ -743,17 +752,17 @@ def _network_row(
             "interarrival_cv": round(interarrival_cv, 6),
             "burstiness": round(burstiness, 6),
             "dominant_port_ratio": round(
-                max(port_counts.values()) / count, 6
+                max(port_counts.values()) / basis, 6
             ),
             "dominant_host_ratio": round(
-                max(host_counts.values()) / count, 6
+                max(host_counts.values()) / basis, 6
             ),
             "tuple_repeat_ratio": round(
                 sum(
                     max(repetitions - 1, 0)
                     for repetitions in tuple_counts.values()
                 )
-                / count,
+                / basis,
                 6,
             ),
             "label": label,
@@ -841,6 +850,8 @@ def build_network_rows_from_packets(
     # 本來就是「這台送出多少、收回多少」。
     received: dict[tuple[str, int], int] = defaultdict(int)
     shape: dict[tuple[str, int], list[float]] = defaultdict(list)
+    # 比例特徵的基底：逐封包的 (目的, 目的埠)，不去重。
+    ratios: dict[tuple[str, int], list[tuple[str, int]]] = defaultdict(list)
 
     for timestamp, src, dst, sport, dport, length in packets:
         window = int((timestamp - t0) // window_sec)
@@ -854,6 +865,7 @@ def build_network_rows_from_packets(
             entry[1] += 1
             entry[3] = min(entry[3], timestamp)
         shape[key].append(timestamp)
+        ratios[key].append((dst, dport))
         # 反向：這個封包對目的端而言是「收到」。
         received[(dst, window)] += length
 
@@ -881,6 +893,7 @@ def build_network_rows_from_packets(
                 group,
                 timestamps,
                 resp_bytes=received.get((source, window), 0),
+                ratio_items=ratios[(source, window)],
                 t0=t0,
                 window_sec=window_sec,
                 domain=domain,

@@ -301,3 +301,42 @@ def test_amplification_works_when_ports_are_not_mirrored(tmp_path):
 
     sender = next(r for r in rows if r["source"] == "10.0.0.1")
     assert float(sender["amplification_ratio"]) == 9.0
+
+
+def test_port_ratios_are_weighted_by_packets_not_by_five_tuples(tmp_path):
+    """比例特徵問的是「流量分布」，不是「用過哪些埠」。
+
+    損壞版意外做對了這件事：校驗和把流打碎成幾千筆短紀錄，每筆約對應幾個
+    封包，所以那些比例實際上是按封包量加權的。第一版封包實作改成按五元組
+    加權，等於把「九成封包打在 SPDP 埠」去重成「我用過 SPDP 埠」。
+
+    實測後果：Enforce 的 command_injection validation recall 0.833 -> 0.150。
+    """
+    session, _ = _write_live_session(tmp_path)
+    # domain 30 -> SPDP 埠 14900。九成封包打在它上面，但只有兩個五元組。
+    packets = [
+        (BASE + i * 0.1, "10.0.0.1", "10.0.0.2", 40000, 14900, 100)
+        for i in range(9)
+    ] + [(BASE + 1.0, "10.0.0.1", "10.0.0.2", 40000, USERDATA_PORT, 100)]
+
+    rows = _rows_for(session, packets)
+
+    row = rows[0]
+    assert float(row["spdp_ratio"]) == 0.9, "按五元組加權會得到 0.5"
+    assert float(row["userdata_ratio"]) == 0.1
+    # 計數單位仍然是流：兩個五元組。
+    assert int(row["conn_count"]) == 2
+
+
+def test_dominant_host_ratio_follows_packet_volume(tmp_path):
+    """一台主機收九成封包，即使兩台各只有一個五元組。"""
+    session, _ = _write_live_session(tmp_path)
+    packets = [
+        (BASE + i * 0.1, "10.0.0.1", "10.0.0.2", 40000, USERDATA_PORT, 100)
+        for i in range(9)
+    ] + [(BASE + 1.0, "10.0.0.1", "10.0.0.3", 40000, USERDATA_PORT, 100)]
+
+    rows = _rows_for(session, packets)
+
+    assert float(rows[0]["dominant_host_ratio"]) == 0.9
+    assert int(rows[0]["uniq_dst_hosts"]) == 2
