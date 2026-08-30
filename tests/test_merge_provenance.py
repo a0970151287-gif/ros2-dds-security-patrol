@@ -167,3 +167,19 @@ def test_the_override_exists_but_must_be_asked_for_explicitly(tmp_path):
 
     assert _run(module, old, new, out) == 1
     assert _run(module, old, new, out, ["--allow-mixed-provenance"]) == 0
+
+
+def test_different_session_counts_are_not_a_provenance_mismatch(tmp_path):
+    """兩個資料集的場次數必然不同（1,100 對 305）。
+
+    拿計數去比會擋掉正確的合併。要擋的是「一邊重建過、一邊沒有」，
+    那是來源種類的差異，不是數量的差異。
+    """
+    module = _load_merger()
+    old = _table(tmp_path / "old", _old_rows(),
+                 {**CONN_BUILD, "zeek_conn_sources": {"checksum_rebuilt": 1100}})
+    new = _table(tmp_path / "new", _new_rows(),
+                 {**CONN_BUILD, "zeek_conn_sources": {"checksum_rebuilt": 305}})
+    out = tmp_path / "out" / "merged.csv"
+
+    assert _run(module, old, new, out) == 0

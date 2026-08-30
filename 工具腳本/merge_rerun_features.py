@@ -37,6 +37,7 @@ AFFECTED_SCENARIOS = frozenset(
 
 # 建表方式必須一致的欄位。欄位名相同但意義不同，是最難發現的一種污染。
 PROVENANCE_KEYS = ("network_source", "zeek_conn_sources", "window_sec")
+MISSING = "（無此欄位）"
 
 
 def _build_provenance(features_csv: Path) -> dict | None:
@@ -63,12 +64,27 @@ def _check_provenance(old_csv: Path, new_csv: Path) -> list[str]:
         ]
     problems = []
     for key in PROVENANCE_KEYS:
+        if key == "zeek_conn_sources":
+            # 只比**來源種類**，不比場次數：兩個資料集的場次數必然不同
+            # （1,100 對 305），拿計數去比會擋掉正確的合併。要擋的是
+            # 「一邊重建過、一邊沒有」，那是 key 的差異。
+            if key not in old or key not in new:
+                problems.append(
+                    f"{key}：舊表 {old.get(key, MISSING)}，"
+                    f"新表 {new.get(key, MISSING)}"
+                )
+            elif sorted(old[key]) != sorted(new[key]):
+                problems.append(
+                    f"{key} 的來源種類不同：舊表 {sorted(old[key])}，"
+                    f"新表 {sorted(new[key])}"
+                )
+            continue
         # 舊的 build manifest 可能還沒有這些欄位（schema 早於它們）。缺欄位
         # 不能當成相符——那正是「不知道」而不是「一樣」。
         if key not in old or key not in new:
             problems.append(
-                f"{key}：舊表 {old.get(key, '（無此欄位）')}，"
-                f"新表 {new.get(key, '（無此欄位）')}"
+                f"{key}：舊表 {old.get(key, MISSING)}，"
+                f"新表 {new.get(key, MISSING)}"
             )
         elif old[key] != new[key]:
             problems.append(f"{key}：舊表 {old[key]}，新表 {new[key]}")
@@ -153,6 +169,45 @@ def main() -> int:
         writer = csv.DictWriter(handle, fieldnames=old_columns)
         writer.writeheader()
         writer.writerows(merged)
+
+    # 合併後的表也要能被下一段檢查。少了這一環，鏈條在第二段就斷了：
+    # 拿合併結果去做下一次合併時，一致性檢查只會說「找不到
+    # feature_build.json」，而那和「兩邊不一樣」是完全不同的狀況。
+    old_build = _build_provenance(args.old) or {}
+    new_build = _build_provenance(args.new) or {}
+    inherited = {
+        key: old_build.get(key)
+        for key in PROVENANCE_KEYS
+        if key != "zeek_conn_sources"
+    }
+    sources: dict[str, int] = {}
+    for build in (old_build, new_build):
+        for kind, count in (build.get("zeek_conn_sources") or {}).items():
+            sources[kind] = sources.get(kind, 0) + count
+    (args.output.parent / "feature_build.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "sros2-firewall-feature-merge/v1",
+                **inherited,
+                "zeek_conn_sources": dict(sorted(sources.items())),
+                "merged_from": {
+                    "old": str(args.old),
+                    "new": str(args.new),
+                    "old_rows_kept": len(kept),
+                    "old_rows_dropped": dropped,
+                    "new_rows": len(new_rows),
+                },
+                "rows": len(merged),
+                "sessions": len({r["session_id"] for r in merged}),
+                "affected_scenarios": sorted(AFFECTED_SCENARIOS),
+                "allow_mixed_provenance": bool(args.allow_mixed_provenance),
+            },
+            indent=2,
+            sort_keys=True,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
 
     def _by_scenario(rows):
         counter = collections.Counter(r["scenario_id"] for r in rows)
