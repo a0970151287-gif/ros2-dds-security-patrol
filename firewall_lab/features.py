@@ -1635,10 +1635,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--network-source",
         choices=("conn", "packet"),
-        default="conn",
+        required=True,
         help=(
-            "網路特徵的分窗依據。conn（預設）用 Zeek 流紀錄的起點；"
-            "packet 用逐封包時間，需要先跑 extract_packet_windows.py。"
+            "網路特徵的分窗依據。conn 用 Zeek 流紀錄的起點；packet 用逐封包"
+            "時間，需要先跑 extract_packet_windows.py。刻意沒有預設值："
+            "兩者欄位相同、意義不同，選錯不會有任何徵兆。"
         ),
     )
     return parser

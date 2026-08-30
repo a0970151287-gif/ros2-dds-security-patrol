@@ -9,6 +9,7 @@ lab confirmation.  No runner is loaded from a command string in the catalog.
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import os
 import random
@@ -386,6 +387,86 @@ def _run_offline_zeek(session_dir: Path, env: dict[str, str]) -> dict[str, Any]:
     }
 
 
+PACKET_FIELDS = (
+    "frame.time_epoch",
+    "ip.src",
+    "ip.dst",
+    "udp.srcport",
+    "udp.dstport",
+    "frame.len",
+)
+
+
+def _extract_packet_windows(
+    session_dir: Path, env: dict[str, str]
+) -> dict[str, Any]:
+    """把 pcap 攤成逐封包 TSV，供按時間分窗的網路特徵使用。
+
+    `conn.log` 一筆代表整條流、時間戳是流的起點，所以按它分窗量到的是「這個
+    視窗裡開始了幾條流」而不是「這個視窗裡有多少流量」。2026-08-31 實測一場：
+    真實流量跨度 46 秒，但 462 條流的起點全擠在前 9 秒。
+
+    只抽取、不聚合——分窗與特徵怎麼算是下游的決定，逐封包紀錄留著才能重算。
+    """
+    pcap = session_dir / "traffic.pcapng"
+    if not pcap.is_file() or pcap.stat().st_size <= 128:
+        return {"status": "skipped", "reason": "missing_or_empty_pcap"}
+    tshark = shutil.which("tshark")
+    if tshark is None:
+        return {"status": "skipped", "reason": "tshark_not_found"}
+
+    out_dir = session_dir / "packet_windows"
+    out_dir.mkdir(exist_ok=True)
+    argv = [tshark, "-r", str(pcap), "-T", "fields"]
+    for field in PACKET_FIELDS:
+        argv += ["-e", field]
+    argv += ["-E", "header=n", "-E", "occurrence=f"]
+
+    # 不用 run_snapshot：它把 stdout 存進 JSON，而這裡的 stdout 是上萬行封包。
+    raw = out_dir / "packets.tsv"
+    try:
+        with raw.open("wb") as handle:
+            completed = subprocess.run(
+                argv,
+                cwd=out_dir,
+                env=env,
+                stdout=handle,
+                stderr=subprocess.PIPE,
+                timeout=300,
+                check=False,
+            )
+    except subprocess.TimeoutExpired:
+        raw.unlink(missing_ok=True)
+        return {"status": "failed", "reason": "timeout"}
+    if completed.returncode != 0:
+        raw.unlink(missing_ok=True)
+        return {
+            "status": "failed",
+            "return_code": completed.returncode,
+            "stderr": completed.stderr.decode("utf-8", "replace")[:2000],
+        }
+
+    kept = 0
+    with raw.open(encoding="utf-8", errors="replace") as src, gzip.open(
+        out_dir / "packets.tsv.gz", "wt", encoding="utf-8", newline="\n"
+    ) as dst:
+        dst.write("\t".join(PACKET_FIELDS) + "\n")
+        for line in src:
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) != len(PACKET_FIELDS):
+                continue
+            # 非 IP／非 UDP 的框沒有本專案要的欄位，跳過。
+            if not parts[0] or not parts[1] or not parts[4]:
+                continue
+            dst.write(line if line.endswith("\n") else line + "\n")
+            kept += 1
+    raw.unlink(missing_ok=True)
+    if kept == 0:
+        (out_dir / "packets.tsv.gz").unlink(missing_ok=True)
+        return {"status": "failed", "reason": "no_packets"}
+    return {"status": "complete", "return_code": 0, "packets": kept}
+
+
 def _ros_snapshots(
     *,
     prefix: str,
@@ -629,6 +710,11 @@ def run_session(
             if mode == "live"
             else {"status": "skipped", "reason": "smoke"}
         )
+        packet_result = (
+            _extract_packet_windows(session_dir, env)
+            if mode == "live"
+            else {"status": "skipped", "reason": "smoke"}
+        )
         pcap = session_dir / "traffic.pcapng"
         pcap_ok = (
             mode == "live"
@@ -669,6 +755,10 @@ def run_session(
             "telemetry_process": telemetry_result,
             "sros2_adapter_process": sros_adapter_result,
             "zeek": zeek_result,
+            # 刻意不列入 training gate：抽取失敗時 Zeek 證據仍然有效，只是
+            # 不能用封包分窗建表。讓一個後處理步驟否決掉一場真實 live 資料
+            # 是不成比例的。
+            "packet_windows": packet_result,
             "label_interval_written": True,
             "training_gate": (
                 "eligible"
