@@ -31,6 +31,7 @@
 |---|---|---|
 | **`N28_wrong_ca_participant.sh`** | 攻擊者**不需要任何秘密**，自己生一個 CA | 認證**必定失敗** → 產生拒絕證據。**目前跨主機收集用的就是它** |
 | `N26_sros2_ca_forge.sh` | CA 私鑰外洩（世界可讀） | 認證**通過** → 繞過 Enforce。與 N28 互補 |
+| **`N31_source_address_spoof.py`** | 偽造來源位址，**試圖讓防禦去封鎖一個無辜的位址** | 打的不是 SROS2 而是**歸因**：封鎖判定的前三條全部會成立。第四條（鏈路層綁定）擋它。**需 root ＋ 明確授權**，步驟見 `文件/N31偽造來源測試_執行步驟.md` |
 | `N26b_setup_live_keystore.sh` | N26 的環境建置 | 用「偷來的」CA 私鑰在隔離 domain 建 keystore |
 | `N27_setup_real_governance.sh` | N26 的環境建置 | 在隔離 domain 99 重建等價 governance |
 | **`N29_insider_credentialed.py`** | **內部威脅**：有合法憑證、沒有 HMAC 金鑰 | 證明分層防禦——SROS2 放行，HMAC 仍擋下 |
