@@ -28,6 +28,16 @@ ALLOWED_RUNNERS = frozenset(
         # 被動偵察：只聽不說。policy 早就有 discovery_recon 這條規則，
         # 缺的一直是產生資料的 runner。
         "discovery_recon",
+        # 2026-09-01 的候選。**尚未通過證據排他性 gate**，所以只出現在
+        # firewall_lab/scenarios_smoke_candidates.json，不在出貨 catalog。
+        "baseline_poisoning",
+        "confused_deputy",
+        "cross_channel_relay",
+        "health_spoof",
+        "mission_spoof",
+        "node_name_evasion",
+        "scan_drift",
+        "verify_flood",
     }
 )
 ALLOWED_ACTIONS = frozenset(

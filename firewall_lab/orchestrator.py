@@ -884,6 +884,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="capture ros2 node/topic CLI snapshots (best for Permissive)",
     )
     parser.add_argument(
+        "--catalog",
+        default=None,
+        help=(
+            "情境目錄檔，預設 firewall_lab/scenarios.json。候選情境用另一份"
+            "檔案跑 smoke，才不必為了驗證而先寫進出貨 catalog——那會讓未驗證"
+            "的情境進入預設 campaign，並改變 catalog 的 SHA-256，使既有"
+            "campaign 的來源憑證失效。"
+        ),
+    )
+    parser.add_argument(
         "--confirm-isolated-lab",
         action="store_true",
         help="required for live attack execution",
@@ -908,7 +918,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.capture_interface and args.mode != "live":
         raise SystemExit("--capture-interface is only valid in live mode")
 
-    catalog = load_catalog()
+    catalog = load_catalog(args.catalog)
     if args.scenario != "all" and args.scenario not in catalog:
         raise SystemExit(
             f"unknown scenario {args.scenario!r}; "
