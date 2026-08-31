@@ -536,3 +536,112 @@ def test_end_to_end_the_spoofed_address_is_refused_by_the_block_rule(tmp_path):
     assert verdict["has_authorized_identity"] is False
     assert verdict["blockable"] is False
     assert verdict["link_layer_verdict"] == "spoofing_evidence"
+
+
+# --------------------------------------------------------------------------
+# 一張 MAC 宣稱多個位址（2026-09-01 live 偽造測試發現）
+# --------------------------------------------------------------------------
+#
+# N31 的真實偽造流量拿到這份資料：
+#
+#     192.168.0.200   來源 MAC e8:65:…:2f   同 MAC 其他 IP: [192.168.0.30]
+#     192.168.0.30    來源 MAC e8:65:…:2f   同 MAC 其他 IP: [192.168.0.200]
+#
+# 攻擊者一邊用自己的位址、一邊偽造別人的，兩者共用同一張網卡。那是偽造的
+# **正面證據**，但當時的判定只給出「查不到解析 MAC」這種 absence of evidence。
+#
+# 合成測試想不到這件事——合成資料裡每個位址都只有一張網卡。這是 live 測試
+# 才會冒出來的東西。
+
+
+def test_a_mac_claiming_two_addresses_is_reported_as_positive_evidence():
+    """偽造的那一半：沒有回流可比對，但同 MAC 還宣稱了攻擊者自己的位址。"""
+    rows = [
+        # 偽造：宣稱來自 .200，框上是攻擊者的網卡
+        (ATTACKER_MAC, DEFENDER_MAC, "192.168.0.200", "192.168.0.129"),
+        # 同一張網卡也用自己的位址送東西
+        (ATTACKER_MAC, DEFENDER_MAC, "192.168.0.30", "192.168.0.129"),
+    ]
+
+    bindings = llb.build_bindings(rows)
+
+    spoofed = bindings["192.168.0.200"]
+    assert spoofed["mac_claims_multiple_addresses"] is True
+    assert spoofed["other_ips_on_same_mac"] == ["192.168.0.30"]
+    # 判定不變（仍然不可封鎖），但理由要是正面的而不是「查不到」。
+    assert spoofed["verdict"] == "unverifiable"
+    assert any("還宣稱了" in r for r in spoofed["reasons_inconsistent"])
+
+
+def test_a_consistent_address_keeps_the_shared_mac_note_out_of_its_reasons():
+    """ 自己是自洽的，同時在偽造別人。
+
+    資訊要留（notes），但不能寫進 ——那個欄位的意思是
+    「為什麼判定不自洽」，而它是自洽的。實測就是這一組。
+    """
+    rows = [
+        (ATTACKER_MAC, DEFENDER_MAC, "192.168.0.30", "192.168.0.129"),
+        (DEFENDER_MAC, ATTACKER_MAC, "192.168.0.129", "192.168.0.30"),
+        (ATTACKER_MAC, DEFENDER_MAC, "192.168.0.200", "192.168.0.129"),
+    ]
+
+    bindings = llb.build_bindings(rows)
+
+    real = bindings["192.168.0.30"]
+    assert real["verdict"] == "consistent"
+    assert real["mac_claims_multiple_addresses"] is True
+    assert real["notes"], "資訊不該被丟掉"
+    assert real["reasons_inconsistent"] == [], "自洽的位址不該有不自洽的理由"
+
+
+def test_a_single_address_per_mac_produces_no_note():
+    """正常情況不該冒出雜訊。"""
+    rows = [
+        (ATTACKER_MAC, DEFENDER_MAC, "192.168.0.30", "192.168.0.129"),
+        (DEFENDER_MAC, ATTACKER_MAC, "192.168.0.129", "192.168.0.30"),
+    ]
+
+    bindings = llb.build_bindings(rows)
+
+    assert bindings["192.168.0.30"]["mac_claims_multiple_addresses"] is False
+    assert bindings["192.168.0.30"]["notes"] == []
+
+
+def test_the_first_three_conditions_all_pass_for_the_spoofed_address():
+    """live 測到的核心事實：沒有第四條，一個無辜位址會被判可封鎖。
+
+    2026-09-01 的 N31 對 192.168.0.200 實測結果：
+        unique_guid              True
+        has_rejection_record     True    ← 觀測者真的記了 UNAUTHORIZED
+        has_authorized_identity  False
+    三條全過。擋下它的只有第四條。
+    """
+    rows = [
+        (ATTACKER_MAC, DEFENDER_MAC, "192.168.0.200", "192.168.0.129"),
+        (ATTACKER_MAC, DEFENDER_MAC, "192.168.0.30", "192.168.0.129"),
+    ]
+    bindings = llb.build_bindings(rows)
+
+    with_gate = cross.decide_blockable(
+        {"192.168.0.200": {ATTACKER}},
+        authorized=set(),
+        rejected={ATTACKER},
+        link_layer=bindings,
+    )["192.168.0.200"]
+
+    # 前三條全部成立⋯⋯
+    assert with_gate["unique_guid"] is True
+    assert with_gate["has_rejection_record"] is True
+    assert with_gate["has_authorized_identity"] is False
+    # ⋯⋯而且沒有第四條的話就會被判可封鎖。
+    without_gate = cross.decide_blockable(
+        {"192.168.0.200": {ATTACKER}},
+        authorized=set(),
+        rejected={ATTACKER},
+        link_layer={"192.168.0.200": {"verdict": "consistent",
+                                      "reasons_inconsistent": []}},
+    )["192.168.0.200"]
+    assert without_gate["blockable"] is True, "前三條確實會放行這個無辜位址"
+
+    # 有第四條就擋下來。
+    assert with_gate["blockable"] is False

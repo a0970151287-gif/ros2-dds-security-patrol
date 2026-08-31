@@ -34,6 +34,9 @@
 - 多播／廣播的目的 MAC 是從 IP 算出來的、不經 ARP，所以一律排除。
 - 這是**必要條件不是充分條件**。它擋掉的是「偽造來源」這一種失效，
   不代表通過的位址就一定該封鎖。
+- `other_ips_on_same_mac` 是**正面證據但不是定論**：路由器與 NAT 會用一張
+  MAC 送出許多來源位址。它不會讓 verdict 升級成 `spoofing_evidence`，
+  只讓理由從「查不到」變成「這張網卡還宣稱了別的位址」。
 
 ## 用法
 
@@ -164,11 +167,27 @@ def build_bindings(rows: list[tuple[str, ...]]) -> dict[str, dict]:
         consistent = (
             len(seen) == 1 and len(arp) == 1 and set(seen) == set(arp)
         )
-        # 同一個 MAC 帶著多個 IP：可能是路由器或 NAT，也可能是攻擊者一邊送
-        # 自己的流量一邊偽造別人的。如實記錄，不自行判定。
+        # 同一個 MAC 帶著多個 IP。路由器與 NAT 本來就會這樣，所以單獨不足以
+        # 斷定偽造——但它是**正面證據**，比「查不到」有力得多，要講出來。
+        #
+        # 2026-09-01 的 live 偽造測試實測到：
+        #   192.168.0.200  來源 MAC e8:65:…:2f  同 MAC 其他 IP: ['192.168.0.30']
+        # 攻擊者一邊用自己的位址、一邊偽造別人的，兩者共用同一張網卡。
         shared = sorted(
             mac_to_ips.get(seen[0], set()) - {address}
         ) if len(seen) == 1 else []
+        notes: list[str] = []
+        if shared:
+            notes.append(
+                f"此位址的來源 MAC {seen[0]} 還宣稱了 {shared}"
+                "——同一張網卡同時使用多個位址。路由器與 NAT 也會這樣，"
+                "所以不足以單獨斷定偽造；但封鎖此位址並不會擋住那個發送端，"
+                "它換另一個位址就繼續"
+            )
+            if not consistent:
+                # 判定不是 consistent 時，這是不可封鎖的一個**正面**理由，
+                # 比「查不到」有力。
+                reasons.extend(notes)
 
         result[address] = {
             "source_macs": seen,
@@ -187,6 +206,11 @@ def build_bindings(rows: list[tuple[str, ...]]) -> dict[str, dict]:
                 else "unverifiable"
             ),
             "other_ips_on_same_mac": shared,
+            # 讓下游不必自己重算。判定仍然保守，這只是把證據攤開。
+            "mac_claims_multiple_addresses": bool(shared),
+            # 與 reasons_inconsistent 分開：consistent 的位址也可能帶著這條
+            # 資訊（實測 192.168.0.30 就是——它自己合規，同時在偽造別人）。
+            "notes": notes,
             "reasons_inconsistent": reasons,
         }
     return result
