@@ -415,3 +415,124 @@ def test_two_source_macs_on_one_address_is_ambiguous_not_spoofing():
     verdict = bindings["192.168.0.129"]
     assert verdict["verdict"] == "unverifiable"
     assert not any("不相交" in r for r in verdict["reasons_inconsistent"])
+
+
+# --------------------------------------------------------------------------
+# 端到端：真的 pcap 檔，走完整條 tshark 解析路徑
+# --------------------------------------------------------------------------
+#
+# 上面那些測試餵的是記憶體裡的列，**tshark 的解析路徑一次都沒走過**。
+# 真實情況多的是會在那一段出事的東西：欄位名寫錯、多播 MAC 的格式、
+# 大小寫、空欄位。所以這裡直接組一份 pcap 檔跑完整流程。
+#
+# 這仍然**不是 live 攻擊**：封包是造出來的，沒有任何東西被送到網路上。
+# 它證明的是「檢查器對具備該特徵的擷取檔會判對」，不是「已在真實攻擊下驗證」。
+
+import shutil
+import struct
+import subprocess
+
+
+def _mac(text: str) -> bytes:
+    return bytes.fromhex(text.replace(":", ""))
+
+
+def _ipv4_udp_frame(
+    eth_src: str, eth_dst: str, ip_src: str, ip_dst: str,
+    sport: int = 40000, dport: int = 14910, payload: bytes = b"probe",
+) -> bytes:
+    import socket
+
+    def checksum(data: bytes) -> int:
+        if len(data) % 2:
+            data += b"\x00"
+        total = sum((data[i] << 8) + data[i + 1] for i in range(0, len(data), 2))
+        total = (total >> 16) + (total & 0xFFFF)
+        return ~(total + (total >> 16)) & 0xFFFF
+
+    udp = struct.pack("!HHHH", sport, dport, 8 + len(payload), 0) + payload
+    ip = struct.pack(
+        "!BBHHHBBH4s4s", 0x45, 0, 20 + len(udp), 0, 0, 64, 17, 0,
+        socket.inet_aton(ip_src), socket.inet_aton(ip_dst),
+    )
+    ip = ip[:10] + struct.pack("!H", checksum(ip)) + ip[12:]
+    return _mac(eth_dst) + _mac(eth_src) + b"\x08\x00" + ip + udp
+
+
+def _write_pcap(path: Path, frames: list[bytes]) -> None:
+    with path.open("wb") as handle:
+        # classic libpcap，link type 1 = Ethernet
+        handle.write(struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1))
+        for index, frame in enumerate(frames):
+            handle.write(
+                struct.pack("<IIII", 1800000000 + index, 0,
+                            len(frame), len(frame))
+            )
+            handle.write(frame)
+
+
+VICTIM_IP = "192.168.0.200"
+DEFENDER_IP = "192.168.0.129"
+ATTACKER_IP = "192.168.0.30"
+DEFENDER_MAC = "28:92:00:62:4e:bd"
+
+
+def test_end_to_end_pcap_shows_spoofing_and_clears_the_real_attacker(tmp_path):
+    """一份擷取檔裡同時有偽造與非偽造，兩者必須被分開。
+
+    偽造的那一半：宣稱來自受害者，但框上是攻擊者的 MAC；防守方依 ARP
+    回應到受害者真正的 MAC，所以兩者不相交。
+    非偽造的那一半：攻擊者用自己的位址，來源 MAC 與解析 MAC 一致。
+    """
+    if shutil.which("tshark") is None:
+        import pytest as _pytest
+        _pytest.skip("需要 tshark")
+
+    pcap = tmp_path / "spoof.pcap"
+    _write_pcap(pcap, [
+        # 偽造：ip.src 是受害者，eth.src 是攻擊者的網卡
+        _ipv4_udp_frame(ATTACKER_MAC, DEFENDER_MAC, VICTIM_IP, DEFENDER_IP),
+        # 防守方回應：ARP 解析受害者，得到受害者真正的 MAC
+        _ipv4_udp_frame(DEFENDER_MAC, VICTIM_MAC, DEFENDER_IP, VICTIM_IP),
+        # 對照：攻擊者用自己的位址，一切自洽
+        _ipv4_udp_frame(ATTACKER_MAC, DEFENDER_MAC, ATTACKER_IP, DEFENDER_IP),
+        _ipv4_udp_frame(DEFENDER_MAC, ATTACKER_MAC, DEFENDER_IP, ATTACKER_IP),
+    ])
+
+    rows = llb.run_tshark(pcap, "")
+    bindings = llb.build_bindings(rows)
+
+    assert bindings[VICTIM_IP]["verdict"] == "spoofing_evidence"
+    assert bindings[ATTACKER_IP]["verdict"] == "consistent"
+
+
+def test_end_to_end_the_spoofed_address_is_refused_by_the_block_rule(tmp_path):
+    """把 pcap 的結果餵進真正的封鎖判定：受害者必須不可封鎖。
+
+    前三條全部成立——唯一 GUID、沒有合法身分、有明確拒絕記錄——
+    只有第四條擋下來。這是這整條規則存在的理由。
+    """
+    if shutil.which("tshark") is None:
+        import pytest as _pytest
+        _pytest.skip("需要 tshark")
+
+    pcap = tmp_path / "spoof.pcap"
+    _write_pcap(pcap, [
+        _ipv4_udp_frame(ATTACKER_MAC, DEFENDER_MAC, VICTIM_IP, DEFENDER_IP),
+        _ipv4_udp_frame(DEFENDER_MAC, VICTIM_MAC, DEFENDER_IP, VICTIM_IP),
+    ])
+    bindings = llb.build_bindings(llb.run_tshark(pcap, ""))
+
+    verdicts = cross.decide_blockable(
+        {VICTIM_IP: {ATTACKER}},
+        authorized=set(),
+        rejected={ATTACKER},
+        link_layer=bindings,
+    )
+
+    verdict = verdicts[VICTIM_IP]
+    assert verdict["unique_guid"] is True
+    assert verdict["has_rejection_record"] is True
+    assert verdict["has_authorized_identity"] is False
+    assert verdict["blockable"] is False
+    assert verdict["link_layer_verdict"] == "spoofing_evidence"
