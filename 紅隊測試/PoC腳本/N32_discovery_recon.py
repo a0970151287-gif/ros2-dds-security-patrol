@@ -92,8 +92,13 @@ def _run_silent_participant(duration_sec: float, interval: float) -> int:
 
     deadline = time.monotonic() + duration_sec
     try:
-        while time.monotonic() < deadline:
-            rclpy.spin_once(node, timeout_sec=0.0)
+        while time.monotonic() < deadline and rclpy.ok():
+            # 收到 SIGTERM 時 rclpy 的 signal handler 已經 shutdown 了 context，
+            # 這裡的 spin_once 會拋 RCLError。那不是偵察失敗，是被要求停止。
+            try:
+                rclpy.spin_once(node, timeout_sec=0.0)
+            except Exception:
+                break
             samples += 1
 
             for name, namespace in node.get_node_names_and_namespaces():
@@ -118,8 +123,15 @@ def _run_silent_participant(duration_sec: float, interval: float) -> int:
 
             time.sleep(interval)
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        # 兩個都要防：被 SIGTERM 中斷時 context 已經關了，再關一次會拋
+        # 「rcl_shutdown already called」，於是退出碼變 1——而那會被判成
+        # 「攻擊沒有執行」，一場有效的偵察就這樣被記成作廢。
+        try:
+            node.destroy_node()
+        except Exception:
+            pass
+        if rclpy.ok():
+            rclpy.shutdown()
 
     report = {
         "mode": "silent-participant",

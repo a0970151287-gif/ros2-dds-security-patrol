@@ -84,6 +84,8 @@ def stubbed_rclpy(monkeypatch):
     rclpy.init = lambda *a, **k: None
     rclpy.shutdown = lambda *a, **k: None
     rclpy.spin_once = lambda *a, **k: None
+    # 腳本用 rclpy.ok() 判斷 context 還在不在（SIGTERM 之後就不在了）。
+    rclpy.ok = lambda *a, **k: True
 
     node_mod = types.ModuleType("rclpy.node")
     node_mod.Node = _FakeNode

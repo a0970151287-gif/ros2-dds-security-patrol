@@ -123,6 +123,13 @@ def build_attack_argv(
             _script(root, f"{poc}/N1_heartbeat_replay.py"),
             f"{duration:.3f}",
         ]
+    # 候選攻擊要在視窗邊界**之前**自己結束。持續時間等於視窗時，
+    # orchestrator 會在邊界送 SIGTERM，rclpy 的 signal handler 先 shutdown，
+    # 腳本的 finally 再 shutdown 一次就拋 RCLError → 退出碼 1 →
+    # `_attack_process_succeeded` 判定攻擊沒有執行，整場作廢。
+    # 既有七支 runner 不動：它們在 1,100 場裡是通過的。
+    candidate_duration = max(1.0, duration - 5.0)
+
     # ── 2026-09-01 的候選 ─────────────────────────────────────────────
     # 這八支尚未通過證據排他性 gate，只能經由
     # scenarios_smoke_candidates.json 觸發。argv 介面是從腳本讀出來的：
@@ -134,51 +141,51 @@ def build_attack_argv(
             python,
             _script(root, f"{poc}/N5_baseline_poison.py"),
             "smoke_candidate_probe",
-            f"{duration:.3f}",
+            f"{candidate_duration:.3f}",
         ]
     if scenario.runner == "confused_deputy":
         return [
             python,
             _script(root, f"{poc}/N13_health_reflection.py"),
-            f"{duration:.3f}",
+            f"{candidate_duration:.3f}",
         ]
     if scenario.runner == "cross_channel_relay":
         return [
             python,
             _script(root, f"{poc}/N4_channel_confusion.py"),
-            f"{duration:.3f}",
+            f"{candidate_duration:.3f}",
         ]
     if scenario.runner == "health_spoof":
         return [
             python,
             _script(root, f"{poc}/N8_system_health_spoof.py"),
-            f"{duration:.3f}",
+            f"{candidate_duration:.3f}",
         ]
     if scenario.runner == "mission_spoof":
         return [
             python,
             _script(root, f"{poc}/N7_mission_cmd_spoof.py"),
-            f"{duration:.3f}",
+            f"{candidate_duration:.3f}",
         ]
     if scenario.runner == "node_name_evasion":
         return [
             python,
             _script(root, f"{poc}/N2_ros2cli_regex_bypass.py"),
             "smoke_candidate_probe",
-            f"{duration:.3f}",
+            f"{candidate_duration:.3f}",
         ]
     if scenario.runner == "scan_drift":
         return [
             python,
             _script(root, f"{poc}/N24b_varlen_scan_regression.py"),
-            f"{duration:.3f}",
+            f"{candidate_duration:.3f}",
         ]
     if scenario.runner == "verify_flood":
         return [
             python,
             _script(root, f"{poc}/N20_verify_flood.py"),
             "/security/heartbeat",
-            f"{duration:.3f}",
+            f"{candidate_duration:.3f}",
             "be",
         ]
     if scenario.runner == "discovery_recon":
@@ -189,7 +196,7 @@ def build_attack_argv(
         return [
             python,
             _script(root, f"{poc}/N32_discovery_recon.py"),
-            f"{duration:.3f}",
+            f"{candidate_duration:.3f}",
             "--mode", "silent-participant",
             "--interval", f"{interval:.3f}",
         ]

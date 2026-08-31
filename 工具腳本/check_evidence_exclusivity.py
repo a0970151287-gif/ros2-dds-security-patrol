@@ -126,16 +126,97 @@ def telemetry_signals(session: Path) -> Counter:
     return counts
 
 
+def pairwise_separability(reports: list[dict]) -> dict:
+    """通過個別判定的類別，兩兩是否也分得開。
+
+    只比「候選 vs normal」會漏掉一整種失效：兩個類別的專屬訊號**相同**時，
+    它們對 normal 都排他，卻彼此分不開。C2C-013 的 parameter_tamper 與
+    replay 就是這樣——觸發同一組五個通用特徵，模型沒有資訊可以分開它們。
+
+    判準：每一個類別都必須有**至少一個別人沒有的**訊號。
+    """
+    from itertools import combinations
+
+    signals = {
+        r["scenario_id"]: set(r.get("exclusive_signals") or {})
+        for r in reports if r.get("verdict") == "pass"
+    }
+    pairs = []
+    inseparable = []
+    for a, b in combinations(sorted(signals), 2):
+        only_a = signals[a] - signals[b]
+        only_b = signals[b] - signals[a]
+        shared = signals[a] & signals[b]
+        separable = bool(only_a) and bool(only_b)
+        pairs.append({
+            "a": a, "b": b,
+            "shared": sorted(shared),
+            "only_a": sorted(only_a),
+            "only_b": sorted(only_b),
+            "separable": separable,
+        })
+        if not separable:
+            inseparable.append([a, b])
+    return {
+        "candidates_compared": sorted(signals),
+        "pairs": pairs,
+        "inseparable_pairs": inseparable,
+        "all_separable": not inseparable,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--candidate", type=Path, required=True,
+    parser.add_argument("--pairwise", type=Path, nargs="+", default=None,
+                        help="改為兩兩比對模式：吃多份 gate 報告 JSON，"
+                             "檢查通過的類別彼此是否分得開。只比「候選 vs "
+                             "normal」會漏掉「兩個類別訊號相同」這種失效。")
+    parser.add_argument("--candidate", type=Path, required=False,
                         help="候選攻擊的 session 目錄")
-    parser.add_argument("--baseline", type=Path, nargs="+", required=True,
+    parser.add_argument("--baseline", type=Path, nargs="+", required=False,
                         help="一個或多個 normal_patrol session 目錄")
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--min-count", type=int, default=3,
                         help="專屬事件至少要出現幾次才算數（防單筆雜訊）")
     args = parser.parse_args()
+
+    if args.pairwise:
+        reports = [
+            json.loads(p.read_text(encoding="utf-8")) for p in args.pairwise
+        ]
+        result = pairwise_separability(reports)
+        print("=== 兩兩可分性 ===")
+        print(f"  通過個別判定的類別：{result['candidates_compared']}")
+        print()
+        for pair in result["pairs"]:
+            mark = "✅" if pair["separable"] else "⛔"
+            print(f"  {mark} {pair['a']:<22}vs {pair['b']:<22}"
+                  f"共用 {len(pair['shared']):>2}")
+        print()
+        if result["inseparable_pairs"]:
+            print("  ⛔ 下列組合**彼此分不開**——對 normal 排他，對彼此不排他。")
+            for a, b in result["inseparable_pairs"]:
+                print(f"       {a} ←→ {b}")
+            print("     這正是 C2C-013 的 parameter_tamper／replay 失效。")
+            print("     把它們一起放進資料集，模型會認不出來，而那看起來會")
+            print("     像「類別太多所以變難」。要嘛合併成一類，要嘛先找出")
+            print("     能分開它們的證據。")
+        else:
+            print("  ✅ 每一個類別都有別人沒有的訊號，兩兩可分。")
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(result, indent=2, sort_keys=True,
+                           ensure_ascii=False),
+                encoding="utf-8",
+            )
+            print(f"\n  報告：{args.output}")
+        return 0 if result["all_separable"] else 1
+
+    if args.candidate is None or not args.baseline:
+        print("⛔ 需要 --candidate 與 --baseline（或用 --pairwise）",
+              file=sys.stderr)
+        return 2
 
     manifest = _load_manifest(args.candidate)
     ran, why = attack_actually_ran(manifest)

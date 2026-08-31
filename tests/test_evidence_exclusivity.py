@@ -160,3 +160,82 @@ def test_a_normal_session_needs_no_attack_process():
         {"attack_class": "normal", "result": {}}
     )
     assert ran is True
+
+
+# --------------------------------------------------------------------------
+# 兩兩可分性（2026-09-01 實跑發現 gate 有缺口）
+# --------------------------------------------------------------------------
+#
+# 九支候選跑完，五支通過個別判定——但其中三支彼此分不開：
+#
+#     mission_spoof 的訊號 ⊂ confused_deputy 的 ⊂ health_spoof 的
+#     三者共用 hmac_result.reason=malformed_envelope
+#
+# 它們對 normal 排他，卻對彼此不排他。**那正是這道 gate 本來要防的失效**
+# （C2C-013 的 parameter_tamper / replay）。只比「候選 vs normal」不夠。
+
+
+def _report(scenario: str, signals: dict, verdict: str = "pass") -> dict:
+    return {
+        "scenario_id": scenario,
+        "verdict": verdict,
+        "exclusive_signals": signals,
+    }
+
+
+def test_two_classes_with_identical_signals_are_not_separable():
+    """對 normal 排他不代表對彼此排他。"""
+    result = gate.pairwise_separability([
+        _report("health_spoof", {"hmac_result.reason=malformed_envelope": 113}),
+        _report("mission_spoof", {"hmac_result.reason=malformed_envelope": 246}),
+    ])
+
+    assert result["all_separable"] is False
+    assert ["health_spoof", "mission_spoof"] in result["inseparable_pairs"]
+
+
+def test_a_strict_subset_is_not_separable_either():
+    """實測就是這一種：一方的訊號完全包含另一方。
+
+    mission_spoof ⊂ confused_deputy。被包含的那一個沒有任何自己獨有的訊號，
+    所以分不開——即使包含它的那一個有。
+    """
+    result = gate.pairwise_separability([
+        _report("confused_deputy", {
+            "hmac_result.reason=malformed_envelope": 7,
+            "alert_observation.reflection_count>0": 7,
+        }),
+        _report("mission_spoof", {
+            "hmac_result.reason=malformed_envelope": 246,
+        }),
+    ])
+
+    assert result["all_separable"] is False
+
+
+def test_classes_each_holding_a_unique_signal_are_separable():
+    """共用一部分沒關係，只要每一邊都有別人沒有的。"""
+    result = gate.pairwise_separability([
+        _report("cross_channel_relay", {
+            "hmac_result.outcome=rejected": 51,
+            "hmac_result.reason=channel_mismatch": 51,
+        }),
+        _report("scan_drift", {
+            "log_reject": 15,
+            "authenticated_action.action=guard_lock": 4,
+        }),
+    ])
+
+    assert result["all_separable"] is True
+    assert result["inseparable_pairs"] == []
+
+
+def test_rejected_candidates_are_left_out_of_the_comparison():
+    """沒通過個別判定的不該進兩兩比對——它們根本沒有訊號可比。"""
+    result = gate.pairwise_separability([
+        _report("cross_channel_relay", {"a": 1}),
+        _report("verify_flood", {}, verdict="reject_no_exclusive_evidence"),
+    ])
+
+    assert result["candidates_compared"] == ["cross_channel_relay"]
+    assert result["pairs"] == []
