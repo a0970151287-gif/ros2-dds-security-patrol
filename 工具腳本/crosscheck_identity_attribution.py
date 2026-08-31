@@ -16,11 +16,27 @@
 
 1. 該 IP 只對應**一個** GUID——否則封鎖會波及合法 participant；
 2. 該 GUID **沒有** `authenticated_identity` 記錄——它不是合法身分；
-3. 該 GUID 有被觀測者**明確判定為 UNAUTHORIZED**——不是只靠「查無記錄」推論。
+3. 該 GUID 有被觀測者**明確判定為 UNAUTHORIZED**——不是只靠「查無記錄」推論；
+4. 該 IP 的**鏈路層綁定自洽**——從它收到的封包的來源 MAC，等於防守方送往它時
+   ARP 解析出的目的 MAC（2026-08-31 新增，見下）。
 
 第 3 條是刻意加的。初版規則只要求「沒有合法記錄」，那是 absence of evidence：
 觀測者漏記、啟動太晚、或根本沒跑，都會讓一個正常的 participant 看起來可封鎖。
 要求一筆**正面的拒絕記錄**，才不會把「沒看到」當成「不合法」。
+
+第 4 條擋的是前三條擋不住的一種攻擊。同一個 L2 網段上的攻擊者以**受害者的
+IP** 為來源送 RTPS：握手必然失敗（防守方的回應依 ARP 送到受害者那裡去了），
+觀測者記下 UNAUTHORIZED，封包層把 GUID 綁到受害者的 IP——**前三條全部成立，
+系統會宣告一個無辜主機可封鎖**，那是自動封鎖最糟的失效方向。2026-08-30 那批
+79／80 的陰性對照測不到它，因為對照組是防守方自己，不是被偽造的第三方。
+
+鑑別方式完全被動：`eth.dst`（送出）是防守方自己的 ARP 解析結果，
+`eth.src`（收到）是實際發送者。偽造來源時兩者必然不同。
+**沒有鏈路層證據時一律不可封鎖**——那是無法驗證，不是驗證通過。
+用 `工具腳本/check_link_layer_binding.py` 產生。
+
+2026-08-31 已用這條規則回頭驗證 2026-08-30 那批：**80／80 仍然成立，零撤回**
+（`文件/鏈路層綁定回驗_2026-08-31.json`）。
 
 ⚠️ 契約目前沒有承載「認證遭拒」的證據類型（已回報 Codex，C2C-040），
 所以第 3 條的資料來自觀測者的事件檔而不是契約觀測。
@@ -68,14 +84,23 @@ def decide_blockable(
     ip_to_guids: dict[str, set[str]],
     authorized: set[str],
     rejected: set[str],
+    link_layer: dict[str, dict] | None = None,
 ) -> dict[str, dict]:
-    """逐 IP 判定可否封鎖。三條**全部**成立才算，任一不成立就不封。
+    """逐 IP 判定可否封鎖。四條**全部**成立才算，任一不成立就不封。
 
     1. 該 IP 只掛一個 GUID——否則封鎖會波及同一位址上的其他人。
     2. 該 GUID **沒有**通過認證的記錄。
     3. 該 GUID **有**觀測者明確的拒絕記錄——不可用「查無記錄」推論，因為
        觀測者靜默失效是真實會發生的事，那種情況下每個正常 participant 都會
        看起來可封鎖（C2C-041）。
+
+    4. 該 IP 的**鏈路層綁定自洽**：從它收到的封包的來源 MAC，等於防守方送往
+       它時解析出的目的 MAC。偽造來源時這兩個必然不同——防守方的回應會被送到
+       真正持有那個 IP 的主機，攻擊者收不到。前三條擋不住這種攻擊：握手照樣
+       失敗、觀測者照樣記 UNAUTHORIZED、GUID 照樣綁到受害者的 IP，於是系統會
+       宣告一個**無辜主機**可封鎖。2026-08-30 那批的陰性對照測不到它，因為
+       對照組是防守方自己，不是被偽造的第三方。
+       **沒有鏈路層證據時一律不可封鎖**——那是無法驗證，不是驗證通過。
 
     第 2 條在 2026-08-30 那批 80 輪跨主機資料裡**一次都沒有被走過**：那批
     沒有任何成功認證的遠端身分，所以擋下防守方自己位址的是第 3 條而不是第 2 條。
@@ -88,7 +113,20 @@ def decide_blockable(
         only = next(iter(guids)) if unique else None
         is_authorized = bool(guids & authorized)
         is_rejected = bool(guids & rejected)
-        blockable = bool(unique and only in rejected and only not in authorized)
+
+        binding = (link_layer or {}).get(address)
+        link_verdict = (
+            binding.get("verdict", "unverifiable") if binding
+            else "no_evidence"
+        )
+        link_ok = link_verdict == "consistent"
+
+        blockable = bool(
+            unique
+            and only in rejected
+            and only not in authorized
+            and link_ok
+        )
 
         reasons: list[str] = []
         if not unique:
@@ -97,12 +135,28 @@ def decide_blockable(
             reasons.append("此位址上有通過認證的合法身分")
         if unique and not is_rejected:
             reasons.append("觀測者沒有對此 GUID 的拒絕記錄（不可用查無記錄推論）")
+        if link_verdict == "no_evidence":
+            reasons.append(
+                "沒有鏈路層綁定證據，無法排除來源位址偽造"
+                "（跑 工具腳本/check_link_layer_binding.py）"
+            )
+        elif link_verdict == "spoofing_evidence":
+            reasons.append(
+                "鏈路層顯示發送者不是此位址的持有者——**來源位址偽造**，"
+                "封鎖它等於封掉一個無辜主機"
+            )
+        elif link_verdict == "unverifiable":
+            reasons.extend(
+                binding.get("reasons_inconsistent")
+                or ["鏈路層綁定無法確認"]
+            )
 
         verdicts[address] = {
             "guid_count": len(guids),
             "unique_guid": unique,
             "has_authorized_identity": is_authorized,
             "has_rejection_record": is_rejected,
+            "link_layer_verdict": link_verdict,
             "blockable": blockable,
             "reasons_not_blockable": reasons,
         }
@@ -116,6 +170,11 @@ def main() -> int:
     parser.add_argument("--observer-events", type=Path, required=True,
                         help="security_observer 的事件檔（認證判定）")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--link-layer", type=Path, default=None,
+        help="check_link_layer_binding.py 的輸出。**沒有它就沒有任何位址"
+             "會被判為可封鎖**——來源位址偽造無法排除時，那是無法驗證而"
+             "不是驗證通過。")
     parser.add_argument("--expect-attacker-ip", default=None,
                         help="攻擊機回報的實際 IPv4。給了之後，若擷取檔裡"
                              "完全沒有這個位址，報告會明確標成「路徑不通」"
@@ -143,7 +202,17 @@ def main() -> int:
     # 兩半共同看到的 GUID——這個交集本身就是歸因是否成立的指標。
     observed_both = set(guid_to_ips) & (authorized | rejected)
 
-    verdicts = decide_blockable(ip_to_guids, authorized, rejected)
+    link_layer = None
+    if args.link_layer is not None:
+        if not args.link_layer.is_file():
+            print(f"⛔ 找不到鏈路層證據：{args.link_layer}", file=sys.stderr)
+            return 1
+        payload = json.loads(args.link_layer.read_text(encoding="utf-8"))
+        link_layer = payload.get("per_ip") or {}
+
+    verdicts = decide_blockable(
+        ip_to_guids, authorized, rejected, link_layer=link_layer
+    )
 
     blockable = [a for a, v in verdicts.items() if v["blockable"]]
     multi_ip_guids = {g: sorted(ips) for g, ips in guid_to_ips.items()
@@ -182,10 +251,13 @@ def main() -> int:
         }
 
     report = {
-        "schema_version": "sros2-firewall-identity-crosscheck/v1",
+        "schema_version": "sros2-firewall-identity-crosscheck/v2",
         "inputs": {
             "packet_observations": str(args.packet_observations),
             "observer_events": str(args.observer_events),
+            "link_layer_binding": (
+                str(args.link_layer) if args.link_layer else None
+            ),
         },
         "counts": {
             "packet_guids": len(guid_to_ips),
@@ -212,6 +284,11 @@ def main() -> int:
         encoding="utf-8")
 
     print("=== 身份歸因交叉比對 ===")
+    if link_layer is None:
+        print("  ⚠️ 未提供鏈路層綁定證據，**所有位址一律不可封鎖**。")
+        print("     來源位址偽造無法排除時那是無法驗證，不是驗證通過。")
+        print("     先跑：python3 工具腳本/check_link_layer_binding.py "
+              "--capture <pcap> --output <session>/link_layer_binding.json")
     print(f"  封包看到的 GUID   : {len(guid_to_ips)}")
     print(f"  來源位址          : {len(ip_to_guids)}")
     print(f"  觀測者判定 AUTHORIZED / UNAUTHORIZED : "

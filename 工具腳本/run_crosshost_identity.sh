@@ -187,6 +187,14 @@ cd "$WORKSPACE" || exit 1
   --policy-sha256 "$POLICY_SHA" || \
   echo "ℹ️  觀測者那一半沒有產出契約觀測（攻擊者無宣告位址時屬正常）"
 
+# 鏈路層綁定：擋「來源位址偽造」。攻擊者可以用受害者的 IP 送 RTPS，前三條
+# 判定全部會成立，於是系統宣告一個無辜主機可封鎖。防守方送出時的 eth.dst 是
+# 它自己的 ARP 解析結果，收到時的 eth.src 是實際發送者——偽造時兩者必然不同。
+"$VENV_PYTHON" 工具腳本/check_link_layer_binding.py \
+  --capture "$OUT/traffic.pcapng" \
+  --output "$OUT/link_layer_binding.json" || \
+  fail "鏈路層綁定檢查失敗"
+
 echo "[4/4] 交叉比對"
 echo
 # ATTACKER_IP 由攻擊機回報。給了之後，若它的封包一個都沒到，報告會明確標成
@@ -198,6 +206,7 @@ CROSSCHECK_ARGS=""
 "$VENV_PYTHON" 工具腳本/crosscheck_identity_attribution.py \
   --packet-observations "$OUT/rtps_identity_packets.jsonl" \
   --observer-events "$OUT/observer_events.jsonl" \
+  --link-layer "$OUT/link_layer_binding.json" \
   --output "$OUT/crosscheck.json" $CROSSCHECK_ARGS
 
 echo
