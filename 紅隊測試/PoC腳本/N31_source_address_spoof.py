@@ -121,7 +121,10 @@ def extract_template(
         "-T", "fields",
         "-e", "udp.srcport", "-e", "udp.dstport", "-e", "data.data",
         "-e", "udp.payload",
-        "-E", "separator=|", "-E", "occurrence=f", "-c", "40",
+        # 不要用 -c：它限制的是**讀取**的封包數，在 display filter
+        # 之前套用，所以會變成「只看前 N 個封包裡有沒有」。實測那份
+        # 擷取檔的攻擊者封包排在第 40 個之後，於是找不到樣板。
+        "-E", "separator=|", "-E", "occurrence=f",
     ]
     try:
         completed = subprocess.run(
