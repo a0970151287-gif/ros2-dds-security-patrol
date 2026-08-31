@@ -34,6 +34,9 @@
 set -uo pipefail
 
 PER_CLASS="${1:-50}"
+# 要跑哪些 attack_class。預設維持 2026-08-30 那批的兩類，既有行為不變。
+# 平衡試跑用：IDENTITY_CHANNEL_CLASSES="all"
+IDENTITY_CHANNEL_CLASSES="${IDENTITY_CHANNEL_CLASSES:-normal,identity_abuse}"
 OUT="${2:-/home/jesse/identity_channel_$(date -u +%Y%m%dT%H%M%SZ)}"
 WS="$HOME/ros2_ws"
 RUNTIME="/home/jesse/.local/share/sros2-firewall/live_runtime"
@@ -41,7 +44,10 @@ SOCK="$RUNTIME/runtime_telemetry.sock"
 E="$WS/sros2_keystore/enclaves/security_readiness_probe"
 OBSERVER_BIN="${OBSERVER_BIN:-$HOME/observer_build/security_observer}"
 # 觀測者要活過整批。每場約 65 秒，留兩倍餘裕。
-OBS_SECONDS=$(( PER_CLASS * 2 * 130 ))
+# 觀測者要活過整批。每場約 65 秒，留兩倍餘裕；類別數從過濾器推。
+_class_count=$(printf '%s' "$IDENTITY_CHANNEL_CLASSES" | tr ',' '\n' | grep -c .)
+[ "$IDENTITY_CHANNEL_CLASSES" = "all" ] && _class_count=9
+OBS_SECONDS=$(( PER_CLASS * _class_count * 130 ))
 
 mkdir -p "$OUT"
 [ -x "$OBSERVER_BIN" ] || { echo "⛔ 找不到觀測者：$OBSERVER_BIN" >&2; exit 2; }
@@ -70,7 +76,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "=================================================="
-echo " identity_abuse 證據通道重跑"
+echo " 身份通道證據重跑（類別：$IDENTITY_CHANNEL_CLASSES）"
 echo "=================================================="
 echo "  每類場次 : $PER_CLASS（Enforce）"
 echo "  觀測者   : 不釘傳輸，存活 ${OBS_SECONDS}s"
@@ -79,10 +85,11 @@ echo "  開始     : $(date -u +%H:%M:%SZ)"
 echo
 
 # ── 1. 計畫 ──────────────────────────────────────────────────────────
-python3 - "$OUT/plan.json" "$PER_CLASS" <<'PYEOF'
+python3 - "$OUT/plan.json" "$PER_CLASS" "$IDENTITY_CHANNEL_CLASSES" <<'PYEOF'
 import json, subprocess, sys, tempfile
 from pathlib import Path
 target = int(sys.argv[2])
+wanted = sys.argv[3] if len(sys.argv) > 3 else "normal,identity_abuse"
 tmp = Path(tempfile.mkdtemp()) / "full.json"
 # plan 會把場次平分到兩個 security_mode，所以要兩倍才拿得到 target 個 enforce。
 subprocess.run([sys.executable, "-m", "firewall_lab.campaign", "plan",
@@ -92,14 +99,20 @@ subprocess.run([sys.executable, "-m", "firewall_lab.campaign", "plan",
                cwd=str(Path.home() / "ros2_ws"), check=True,
                stdout=subprocess.DEVNULL)
 plan = json.loads(tmp.read_text(encoding="utf-8"))
-keep = [e for e in plan["entries"]
-        if e["security_mode"] == "enforce"
-        and e["attack_class"] in ("normal", "identity_abuse")]
-normal = [e for e in keep if e["attack_class"] == "normal"][:target]
-attack = [e for e in keep if e["attack_class"] != "normal"][:target]
+keep = [e for e in plan["entries"] if e["security_mode"] == "enforce"]
+if wanted != "all":
+    allowed = set(wanted.split(","))
+    keep = [e for e in keep if e["attack_class"] in allowed]
+
+# 每一類各取 target 場，然後**交錯**——把同一類集中在一段時間裡跑，會讓
+# 環境漂移（記憶體、快取、鄰居活動）與類別混在一起，之後分不出哪個是哪個。
+by_class = {}
+for entry in keep:
+    by_class.setdefault(entry["attack_class"], []).append(entry)
+buckets = [v[:target] for _, v in sorted(by_class.items())]
 ordered = []
-for pair in zip(normal, attack):      # 交錯，避免兩類落在不同的環境漂移段
-    ordered.extend(pair)
+for row in zip(*buckets):
+    ordered.extend(row)
 plan["entries"] = ordered
 counts = {}
 for entry in ordered:
@@ -109,9 +122,19 @@ for entry in ordered:
     per[entry["security_mode"]] += 1
 plan["requested_counts"] = counts
 Path(sys.argv[1]).write_text(json.dumps(plan, indent=2), encoding="utf-8")
-print(f"  計畫：{len(ordered)} 場（normal {len(normal)} / identity_abuse {len(attack)}），交錯")
+summary = ", ".join(
+    f"{name} {min(len(v), target)}" for name, v in sorted(by_class.items())
+)
+print(f"  計畫：{len(ordered)} 場（{summary}），交錯")
 PYEOF
 [ -s "$OUT/plan.json" ] || { echo "⛔ 計畫產生失敗"; exit 1; }
+
+# 觀測者存活時間依**實際**場次數重算，不要靠先前那個猜的類別數。低估會讓
+# 觀測者在後半批中途死掉，而那時後面的場次會安靜地沒有身份證據——與
+# 「這些類別本來就沒有訊號」在資料上長得一樣。
+_planned=$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["entries"]))' "$OUT/plan.json")
+OBS_SECONDS=$(( _planned * 130 ))
+echo "  觀測者存活 ${OBS_SECONDS}s（${_planned} 場 × 130 秒餘裕）"
 
 # ── 2. ROS stack ─────────────────────────────────────────────────────
 echo "  啟動 SROS2 Enforce stack…"
@@ -150,7 +173,7 @@ echo "  deny adapter 執行中"
 echo
 
 # ── 4. campaign ──────────────────────────────────────────────────────
-echo "  開始 campaign（$(( PER_CLASS * 2 )) 場）$(date -u +%H:%M:%SZ)"
+echo "  開始 campaign（$(( PER_CLASS * _class_count )) 場）$(date -u +%H:%M:%SZ)"
 ( cd "$WS" && python3 -m firewall_lab.campaign run \
     --plan "$OUT/plan.json" --dataset "$OUT/dataset" \
     --security-mode enforce --capture-interface lo \
