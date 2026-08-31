@@ -25,6 +25,9 @@ ALLOWED_RUNNERS = frozenset(
         "parameter_flood",
         "heartbeat_replay",
         "alert_replay",
+        # 被動偵察：只聽不說。policy 早就有 discovery_recon 這條規則，
+        # 缺的一直是產生資料的 runner。
+        "discovery_recon",
     }
 )
 ALLOWED_ACTIONS = frozenset(

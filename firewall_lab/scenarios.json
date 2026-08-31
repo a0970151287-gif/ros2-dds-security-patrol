@@ -126,6 +126,20 @@
       "intensity_max": 0.9,
       "expected_action": "drop_message",
       "requires_gazebo": false
+    },
+    {
+      "id": "discovery_recon",
+      "attack_class": "discovery_recon",
+      "runner": "discovery_recon",
+      "description": "被動 discovery 偵察：加入 domain 但只聽不說，把節點、topic 與端點拓撲畫出來。現有 14 個網路特徵全是速率／比例／連線數，看不見一個不說話的攻擊者；唯一的痕跡是 participant 的存在本身。",
+      "default_security_mode": "enforce",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "alert",
+      "requires_gazebo": true
     }
   ]
 }

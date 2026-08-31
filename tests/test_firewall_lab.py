@@ -15,6 +15,7 @@ import pytest
 
 from firewall_lab import campaign as campaign_module
 from firewall_lab.campaign import (
+    ARCHIVED_COMPLETED_CATALOGS,
     _ensure_minimum_free_space,
     _validate_minimum_free_gib,
     create_campaign_plan,
@@ -302,12 +303,28 @@ def test_live_cli_requires_explicit_isolated_lab_confirmation(tmp_path):
         )
 
 
-def test_default_campaign_is_1100_balanced_live_sessions():
+def test_default_campaign_is_balanced_live_sessions():
+    """驗的是平衡，不是總數。
+
+    總數 = 300（正常）＋ 100 × 攻擊情境數，會隨 catalog 成長而變——2026-09-01
+    加入 discovery_recon 之後就從 1100 變成 1200。釘死總數等於每次擴充攻擊面
+    都要改測試，而那個數字本身不是要保護的性質。
+
+    要保護的是：每個攻擊情境同量、正常 300、兩個安全模式各半、
+    entry_id 與 seed 不重複。
+    """
+    from firewall_lab.catalog import load_catalog
+
+    attack_scenarios = [
+        s for s in load_catalog().values() if s.attack_class != "normal"
+    ]
+    expected = 300 + 100 * len(attack_scenarios)
+
     plan = create_campaign_plan()
     assert plan["experiment_mode"] == "live"
-    assert len(plan["entries"]) == 1100
-    assert len({entry["entry_id"] for entry in plan["entries"]}) == 1100
-    assert len({entry["seed"] for entry in plan["entries"]}) == 1100
+    assert len(plan["entries"]) == expected
+    assert len({entry["entry_id"] for entry in plan["entries"]}) == expected
+    assert len({entry["seed"] for entry in plan["entries"]}) == expected
     assert {entry["status"] for entry in plan["entries"]} == {"pending"}
     assert {entry["domain_id"] for entry in plan["entries"]} == {30}
     for counts in plan["requested_counts"].values():
@@ -347,9 +364,21 @@ def test_completed_legacy_campaign_remains_verifiable_but_not_resumable():
         attack_sessions_per_scenario=2,
         seed=10,
     )
-    plan["catalog_sha256"] = (
+    legacy_hash = (
         "e1d376e2633e000183e0f1e644d9f9969c2f8dc5d91a0535c5cd6a98da6dfe9b"
     )
+    plan["catalog_sha256"] = legacy_hash
+    # 一份 2026-07 的 campaign 不可能含有當時還不存在的情境。把後來新增的
+    # 情境濾掉，否則測試驗的會變成「新情境有沒有被塞進舊 catalog」——
+    # 那不是這個測試要保護的性質。
+    legacy_scenarios = set(ARCHIVED_COMPLETED_CATALOGS[legacy_hash])
+    plan["entries"] = [
+        e for e in plan["entries"] if e["scenario_id"] in legacy_scenarios
+    ]
+    plan["requested_counts"] = {
+        k: v for k, v in plan["requested_counts"].items()
+        if k in legacy_scenarios
+    }
     for entry in plan["entries"]:
         entry["status"] = "complete"
         entry["session_id"] = f"legacy_{entry['entry_id']}"
@@ -684,13 +713,22 @@ def test_synthetic_pretraining_dataset_is_grouped_and_reproducible(tmp_path):
         split_seed=77,
         extra_sessions_per_scenario=2,
     )
-    assert result["sessions"] == 82
-    assert result["rows"] == 984
+    # 場次數 = plan 的 entry 數 ＋ 每個情境額外 2 場，兩者都隨 catalog 成長。
+    # 釘死 82 等於把「當時有幾個情境」寫進測試。
+    from firewall_lab.synthetic_dataset import load_synthetic_scenarios
+
+    expected_sessions = len(plan["entries"]) + 2 * len(
+        load_synthetic_scenarios()
+    )
+    assert result["sessions"] == expected_sessions
+    # 列數 = 場次數 x windows_per_session，同樣不該釘死。
+    expected_rows = expected_sessions * 12
+    assert result["rows"] == expected_rows
     assert result["classes"] == 23
     assert result["quality_passed"] is True
     verified = verify_synthetic_dataset(first)
     assert verified["valid"] is True
-    assert verified["rows"] == 984
+    assert verified["rows"] == expected_rows
     assert (first / "network_features.csv").read_bytes() == (
         second / "network_features.csv"
     ).read_bytes()
@@ -713,7 +751,7 @@ def test_synthetic_pretraining_dataset_is_grouped_and_reproducible(tmp_path):
         encoding="utf-8", newline=""
     ) as handle:
         fusion_rows = list(csv.DictReader(handle))
-    assert len(fusion_rows) == 984
+    assert len(fusion_rows) == expected_rows
     assert {
         row["scenario_origin"] for row in fusion_rows
     } == {"live_runner_backed", "synthetic_only"}
@@ -729,7 +767,7 @@ def test_synthetic_pretraining_dataset_is_grouped_and_reproducible(tmp_path):
         first / "network_features.csv",
         data_tier="synthetic-pretrain",
     )
-    assert len(frame) == 984
+    assert len(frame) == expected_rows
     with pytest.raises(ValueError, match="live training requires"):
         load_training_frame(
             first / "network_features.csv",
@@ -993,3 +1031,64 @@ def test_no_exclusions_path_means_no_exclusions(tmp_path):
     from firewall_lab.features import load_pinned_exclusions
 
     assert load_pinned_exclusions(None) == {}
+
+
+def test_synthetic_dataset_has_no_silently_empty_columns(tmp_path):
+    """往 features.py 加特徵不該讓合成資料集靜默地多一欄空字串。
+
+    2026-08-31 加了五個量體特徵（ 等），而合成產生器只填
+     那 14 個——於是 CSV 多了五欄空值，沒有任何東西發出聲音。
+    **沒有欄位比有一欄空字串誠實**，所以那五個直接不輸出，並由 import 時的
+    守衛強制下次加特徵要做決定。
+    """
+    from firewall_lab.synthetic_dataset import (
+        SYNTHETIC_UNMODELLED_NETWORK_FEATURES,
+    )
+
+    plan = create_campaign_plan(
+        normal_sessions=6, attack_sessions_per_scenario=6, seed=5,
+    )
+    plan_path = tmp_path / "plan.json"
+    atomic_write_json(plan_path, plan)
+    generate_synthetic_dataset(
+        plan_path=plan_path,
+        output_dir=tmp_path / "out",
+        windows_per_session=12,
+        split_seed=11,
+        extra_sessions_per_scenario=2,
+    )
+
+    with (tmp_path / "out" / "network_features.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        rows = list(csv.DictReader(handle))
+
+    assert rows
+    empty = {
+        name for row in rows for name, value in row.items()
+        if value is None or value == ""
+    }
+    assert not empty, f"這些欄位是空的：{sorted(empty)}"
+
+    # 不模擬的特徵應該是**沒有這一欄**，而不是有欄位但填空。
+    for name in SYNTHETIC_UNMODELLED_NETWORK_FEATURES:
+        assert name not in rows[0]
+
+
+def test_adding_a_network_feature_forces_a_synthetic_decision(monkeypatch):
+    """守衛要真的會咬人：加一個沒被歸類的網路特徵，import 就該失敗。"""
+    import importlib
+
+    import firewall_lab.features as features_mod
+    import firewall_lab.synthetic_dataset as synth
+
+    original = list(features_mod.NETWORK_COLUMNS)
+    monkeypatch.setattr(
+        features_mod, "NETWORK_COLUMNS", original + ["brand_new_feature"]
+    )
+    with pytest.raises(SchemaError, match="no decision"):
+        # 重新載入會重跑那道守衛。
+        importlib.reload(synth)
+
+    monkeypatch.setattr(features_mod, "NETWORK_COLUMNS", original)
+    importlib.reload(synth)

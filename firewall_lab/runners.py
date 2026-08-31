@@ -123,6 +123,18 @@ def build_attack_argv(
             _script(root, f"{poc}/N1_heartbeat_replay.py"),
             f"{duration:.3f}",
         ]
+    if scenario.runner == "discovery_recon":
+        # 被動偵察：加入 domain 但不建立任何 publisher／subscriber，
+        # 只讀 DDS 主動公告出來的拓撲。intensity 只影響輪詢密度，
+        # **不影響送出的流量**——這一類的定義就是不送東西。
+        interval = 2.0 - intensity * 1.5      # 0.5 .. 2.0 秒
+        return [
+            python,
+            _script(root, f"{poc}/N32_discovery_recon.py"),
+            f"{duration:.3f}",
+            "--mode", "silent-participant",
+            "--interval", f"{interval:.3f}",
+        ]
     if scenario.runner == "alert_replay":
         return [
             python,

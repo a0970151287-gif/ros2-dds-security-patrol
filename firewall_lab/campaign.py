@@ -55,7 +55,27 @@ ARCHIVED_COMPLETED_CATALOGS = {
         "parameter_flood": ("service_dos", "rate_limit"),
         "heartbeat_replay": ("replay", "drop_message"),
         "alert_replay": ("replay_dos", "drop_message"),
-    }
+    },
+    # 2026-08 的九情境 catalog。campaign_1100.json（1,100 場）與
+    # campaign_rerun_300.json（300 場受控重跑）都釘著這個雜湊。
+    #
+    # 2026-09-01 新增 discovery_recon 之後 catalog 的雜湊改變，這兩份完成的
+    # campaign 會變成「不符合現行也不符合任何封存的 catalog」——整個資料集的
+    # 來源憑證失效。登記於此讓它們保持可驗證。
+    #
+    # 表的來源：從 git 取出改動前的 scenarios.json，確認其 sha256 逐字元等於
+    # 下面這個鍵，再用它的內容產生；另從 1,100 場的 entries 反推一次，相符。
+    "c9caf5800ab6ccfd0e51799e63cb08b857d24c500d4a7ad81cf93345f8af0067": {
+        "normal_patrol": ("normal", "allow"),
+        "unauthorized_participant": ("identity_abuse", "deny_participant"),
+        "cmd_vel_injection": ("command_injection", "lock_velocity"),
+        "sensor_status_spoof": ("sensor_spoof", "drop_message"),
+        "parameter_tamper": ("parameter_tamper", "deny_participant"),
+        "oversized_scan": ("message_dos", "drop_message"),
+        "parameter_flood": ("service_dos", "temporary_block"),
+        "heartbeat_replay": ("replay", "drop_message"),
+        "alert_replay": ("replay_dos", "drop_message"),
+    },
 }
 PLAN_KEYS = frozenset(
     {

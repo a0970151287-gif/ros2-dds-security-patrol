@@ -66,7 +66,48 @@ SYNTHETIC_EXTRA_COLUMNS = [
     "generator_version",
     "scenario_origin",
 ]
-SYNTHETIC_COLUMNS = NETWORK_COLUMNS + SYNTHETIC_EXTRA_COLUMNS
+# 這個產生器**不模擬**的網路特徵。它合成的是連線數與比例，沒有位元組模型，
+# 所以 2026-08-31 加進 features.py 的五個量體特徵它產生不出來。
+#
+# 先前的行為是照 NETWORK_COLUMNS 開欄位、卻只填 train.FEATURES 那 14 個，
+# 於是這五欄是空字串——**沒有欄位比有一欄空字串誠實**，所以直接不輸出。
+SYNTHETIC_UNMODELLED_NETWORK_FEATURES = (
+    "orig_bytes_rate",
+    "orig_pkts_rate",
+    "mean_bytes_per_packet",
+    "max_conn_bytes",
+    "amplification_ratio",
+)
+
+# `NETWORK_COLUMNS` 裡不是特徵的欄位（識別、標籤、資格旗標）。明列出來，
+# 才能把「其餘每一個都必須是特徵」變成可檢查的條件。
+_NETWORK_METADATA_COLUMNS = frozenset({
+    "session_id", "group_id", "capture_id", "scenario_id", "security_mode",
+    "ros_domain_id", "origin", "source", "window", "window_start_unix",
+    "label", "binary", "label_scope", "training_eligible",
+    "evaluation_eligible", "policy_sha256",
+})
+
+# 守衛：每一個網路欄位必須是「中繼欄位」「有模擬的特徵」或「明列為不模擬的
+# 特徵」三者之一。往 features.py 加特徵而沒有在這裡做決定，會在 import 時
+# 就失敗——而不是安靜地在合成資料集多一欄空值。
+_accounted = (
+    _NETWORK_METADATA_COLUMNS
+    | set(FEATURES)
+    | set(SYNTHETIC_UNMODELLED_NETWORK_FEATURES)
+)
+_unaccounted = set(NETWORK_COLUMNS) - _accounted
+if _unaccounted:
+    raise SchemaError(
+        "synthetic generator has no decision for network columns: "
+        f"{sorted(_unaccounted)}——加進 FEATURES（要模擬）或 "
+        "SYNTHETIC_UNMODELLED_NETWORK_FEATURES（不模擬，不輸出該欄）"
+    )
+
+SYNTHETIC_COLUMNS = [
+    name for name in NETWORK_COLUMNS
+    if name not in SYNTHETIC_UNMODELLED_NETWORK_FEATURES
+] + SYNTHETIC_EXTRA_COLUMNS
 FUSION_FEATURES = FEATURES + TELEMETRY_FEATURES
 FUSION_COLUMNS = SYNTHETIC_COLUMNS + TELEMETRY_FEATURES
 SESSION_COLUMNS = [
