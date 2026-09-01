@@ -30,34 +30,6 @@
       "requires_gazebo": true
     },
     {
-      "id": "health_spoof",
-      "attack_class": "health_spoof",
-      "runner": "health_spoof",
-      "description": "候選：N8_system_health_spoof.py。尚未通過證據排他性 gate。",
-      "default_security_mode": "permissive",
-      "duration_sec": 30,
-      "warmup_sec": 10,
-      "cooldown_sec": 5,
-      "intensity_min": 0.1,
-      "intensity_max": 1.0,
-      "expected_action": "drop_message",
-      "requires_gazebo": true
-    },
-    {
-      "id": "mission_spoof",
-      "attack_class": "mission_spoof",
-      "runner": "mission_spoof",
-      "description": "候選：N7_mission_cmd_spoof.py。尚未通過證據排他性 gate。",
-      "default_security_mode": "permissive",
-      "duration_sec": 30,
-      "warmup_sec": 10,
-      "cooldown_sec": 5,
-      "intensity_min": 0.1,
-      "intensity_max": 1.0,
-      "expected_action": "drop_message",
-      "requires_gazebo": true
-    },
-    {
       "id": "node_name_evasion",
       "attack_class": "node_name_evasion",
       "runner": "node_name_evasion",

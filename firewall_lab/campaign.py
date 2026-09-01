@@ -45,6 +45,25 @@ MAX_CAMPAIGN_SESSIONS = 10_000
 # policy migration. Archived catalogs bind only the fields stored in a plan
 # and can never be used to execute pending work.
 ARCHIVED_COMPLETED_CATALOGS = {
+    # 2026-09-02 把 health_spoof 與 mission_spoof 升級到出貨之前的十四情境
+    # catalog。這個版本只存在數小時，期間沒有 campaign 釘著它；登記是因為
+    # 封存表的用途是「任何曾經出貨過的版本都要可驗證」，不是只登記有資料的。
+    "ea22bd154fa60f6c6503580403f0fc4bef69264f37845380a50822a22813562a": {
+        "normal_patrol": ("normal", "allow"),
+        "unauthorized_participant": ("identity_abuse", "deny_participant"),
+        "cmd_vel_injection": ("command_injection", "lock_velocity"),
+        "sensor_status_spoof": ("sensor_spoof", "drop_message"),
+        "parameter_tamper": ("parameter_tamper", "deny_participant"),
+        "oversized_scan": ("message_dos", "drop_message"),
+        "parameter_flood": ("service_dos", "temporary_block"),
+        "heartbeat_replay": ("replay", "drop_message"),
+        "alert_replay": ("replay_dos", "drop_message"),
+        "discovery_recon": ("discovery_recon", "alert"),
+        "insider_hmac_forgery": ("hmac_forgery", "drop_message"),
+        "insider_parameter_write": ("confused_deputy", "alert"),
+        "cross_channel_relay": ("cross_channel_relay", "drop_message"),
+        "scan_drift": ("scan_drift", "lock_velocity"),
+    },
     # 2026-09-01 把 cross_channel_relay 與 scan_drift 從候選升級到出貨之前的
     # 十二情境 catalog。80 場內鬼對照 campaign 釘著這個雜湊。
     #

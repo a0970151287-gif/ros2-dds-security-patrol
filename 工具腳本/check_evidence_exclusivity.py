@@ -113,16 +113,32 @@ def telemetry_signals(session: Path) -> Counter:
             details = event.get("details")
             if not isinstance(details, dict):
                 continue
+            tokens: list[str] = []
             for field, value in details.items():
                 if isinstance(value, bool):
-                    counts[f"{kind}.{field}={value}"] += 1
+                    tokens.append(f"{field}={value}")
                 elif isinstance(value, (int, float)):
                     # 數值欄位看的是**零與非零**，不是值本身：`count=7` 與
                     # `count=8` 是同一件事，而「計數器從恆零變成有值」才是
                     # 「這個攻擊讓系統產生了它專屬的東西」。
-                    counts[f"{kind}.{field}" + (">0" if value else "=0")] += 1
+                    tokens.append(f"{field}" + (">0" if value else "=0"))
                 elif isinstance(value, str) and value:
-                    counts[f"{kind}.{field}={value}"] += 1
+                    tokens.append(f"{field}={value}")
+            for token in tokens:
+                counts[f"{kind}.{token}"] += 1
+            # 同一則事件裡的**欄位組合**也算一個訊號。
+            #
+            # 為什麼需要：2026-09-02 加了 `hmac_result.channel` 之後，實測
+            # health_spoof 與 mission_spoof 仍然兩兩分不開——因為正常流量
+            # 本來就在那些頻道上驗章（基線 `channel=system/health` 22 次、
+            # `channel=mission/cmd` 44 次），所以 channel 單獨不排他。
+            # 有判別力的是**配對**：`reason=malformed_envelope` 且
+            # `channel=system/health`。逐欄位編碼會把這個資訊丟掉。
+            #
+            # 事件的 details 只有 2–4 個欄位，所以配對數 ≤6，不會爆炸。
+            for i in range(len(tokens)):
+                for j in range(i + 1, len(tokens)):
+                    counts[f"{kind}.{tokens[i]}&{tokens[j]}"] += 1
     return counts
 
 

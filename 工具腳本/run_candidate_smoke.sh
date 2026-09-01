@@ -41,17 +41,24 @@ WORKSPACE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 CATALOG="firewall_lab/scenarios_smoke_candidates.json"
 OUT="${SMOKE_OUT:-$HOME/candidate_smoke_$(date -u +%Y%m%dT%H%M%SZ)}"
 
-CANDIDATES=(
-  baseline_poisoning
-  confused_deputy
-  cross_channel_relay
-  health_spoof
-  mission_spoof
-  node_name_evasion
-  scan_drift
-  verify_flood
-  discovery_recon
+# 候選清單**從 catalog 讀**，不寫死。
+#
+# 2026-09-02 的教訓：寫死的陣列與檔案分岔之後，4 支已經升級或丟棄的候選
+# 仍留在陣列裡，每一支都印 `unknown scenario` 然後被跳過。腳本 rc 仍是 0，
+# 摘要仍寫「通過 N / 9」——分母是陣列長度而不是實際跑到的數量。
+CANDIDATES=()
+while IFS= read -r line; do
+  [ -n "$line" ] && CANDIDATES+=("$line")
+done < <(python3 - "$CATALOG" <<'PY_LIST'
+import json, sys
+from pathlib import Path
+doc = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+for s in doc["scenarios"]:
+    if s["id"] != "normal_patrol":
+        print(s["id"])
+PY_LIST
 )
+[ "${#CANDIDATES[@]}" -gt 0 ] || { echo "⛔ 候選 catalog 是空的"; exit 2; }
 
 cd "$WORKSPACE" || exit 1
 mkdir -p "$OUT" || exit 1

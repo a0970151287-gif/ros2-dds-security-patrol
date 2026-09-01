@@ -239,3 +239,70 @@ def test_rejected_candidates_are_left_out_of_the_comparison():
 
     assert result["candidates_compared"] == ["cross_channel_relay"]
     assert result["pairs"] == []
+
+# ---------------------------------------------------- 欄位組合（2026-09-02）
+
+def _ev(kind: str, **details):
+    return {"event_type": kind, "details": details}
+
+
+def test_field_pairs_are_counted_as_their_own_signal(tmp_path):
+    """逐欄位編碼會丟掉配對資訊，而判別力正好在配對上。"""
+    d = _session(tmp_path, "s", [
+        _ev("hmac_result", outcome="rejected", reason="malformed_envelope",
+            channel="system/health"),
+    ], attack=OK_ATTACK)
+    counts = gate.telemetry_signals(d)
+    assert counts["hmac_result.channel=system/health"] == 1
+    assert counts["hmac_result.outcome=rejected"] == 1
+    pairs = {k for k in counts if "&" in k}
+    assert any("channel=system/health" in k and "reason=malformed_envelope" in k
+               for k in pairs), sorted(pairs)
+
+
+def test_a_pair_can_be_exclusive_while_neither_field_is(tmp_path):
+    """這是加入配對編碼的**唯一理由**，直接寫成測試。
+
+    實測：正常流量本來就在 `system/health` 上驗章（基線 22 次），所以
+    `channel=X` 單獨不排他；有判別力的是「在那個頻道上被拒絕」。
+    """
+    base = _session(tmp_path, "base", [
+        _ev("hmac_result", outcome="accepted", reason="accepted",
+            channel="system/health"),
+        _ev("hmac_result", outcome="rejected", reason="invalid_signature",
+            channel="alerts"),
+    ])
+    cand = _session(tmp_path, "cand", [
+        _ev("hmac_result", outcome="rejected", reason="malformed_envelope",
+            channel="system/health"),
+    ], attack=OK_ATTACK)
+    b, c = gate.telemetry_signals(base), gate.telemetry_signals(cand)
+    assert b["hmac_result.channel=system/health"] > 0
+    assert b["hmac_result.outcome=rejected"] > 0
+    pair = next(k for k in c if "&" in k and "channel=system/health" in k
+                and "outcome=rejected" in k)
+    assert b[pair] == 0
+
+
+def test_pairs_do_not_explode(tmp_path):
+    """details 只有 2–4 個欄位，配對數必須是 O(n²) 而不是子集數 O(2ⁿ)。"""
+    d = _session(tmp_path, "s", [_ev("x", a="1", b="2", c="3", d="4")],
+                 attack=OK_ATTACK)
+    counts = gate.telemetry_signals(d)
+    singles = [k for k in counts if "&" not in k]
+    pairs = [k for k in counts if "&" in k]
+    # 事件種類本身也算一個訊號（"x"），所以是 1 + 4 個欄位
+    assert sorted(singles) == ["x", "x.a=1", "x.b=2", "x.c=3", "x.d=4"]
+    assert len(pairs) == 6          # C(4,2)，不是 2⁴
+    assert not any(k.count("&") > 1 for k in counts)
+
+
+def test_numeric_pairs_keep_the_zero_nonzero_encoding(tmp_path):
+    """配對必須沿用單欄位的語意，不可退回比較原始數值。"""
+    a = gate.telemetry_signals(
+        _session(tmp_path, "a", [_ev("m", count=7, oversized_count=3)],
+                 attack=OK_ATTACK))
+    b = gate.telemetry_signals(
+        _session(tmp_path, "b", [_ev("m", count=99, oversized_count=1)],
+                 attack=OK_ATTACK))
+    assert set(a) == set(b), "不同的非零值不該產生不同的訊號"

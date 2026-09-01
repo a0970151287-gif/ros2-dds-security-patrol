@@ -196,6 +196,34 @@
       "intensity_max": 1.0,
       "expected_action": "lock_velocity",
       "requires_gazebo": true
+    },
+    {
+      "id": "health_spoof",
+      "attack_class": "health_spoof",
+      "runner": "health_spoof",
+      "description": "偽裝為白名單節點，5Hz 對 /system/health publish 未簽章的假健康狀態。2026-09-02 通過證據排他性 gate：專屬訊號是「在 system/health 頻道上被判 malformed_envelope」116 筆，加 alert_observation.reflection_count>0。單看 channel 不排他——正常流量也在該頻道驗章，判別力在配對。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "drop_message",
+      "requires_gazebo": true
+    },
+    {
+      "id": "mission_spoof",
+      "attack_class": "mission_spoof",
+      "runner": "mission_spoof",
+      "description": "偽裝為白名單節點，10Hz 對 /mission/cmd publish 未簽章的假任務指令，蓋過真 mission_manager 的 1Hz 輸出。2026-09-02 通過證據排他性 gate：專屬訊號是「在 mission/cmd 頻道上被判 malformed_envelope」231 筆。與 health_spoof 只靠這個配對分開，逐欄位編碼分不出來。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "drop_message",
+      "requires_gazebo": true
     }
   ]
 }
