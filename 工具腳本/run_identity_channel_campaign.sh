@@ -71,7 +71,11 @@ cleanup() {
   [ -n "${ADAPTER:-}" ] && kill -TERM "$ADAPTER" 2>/dev/null
   bash "$WS/firewall_lab/live_stack.sh" stop enforce >/dev/null 2>&1
   pkill -f 'security_observer' 2>/dev/null
-  pkill -f 'dds_security_monitor|gazebo.launch|gzserver' 2>/dev/null
+  # `gzserver` 是 Gazebo Classic 的名字。這台跑的是 Gazebo Sim，行程叫
+  # `gz sim server`——舊樣式**從來沒有匹配過**，所以每一輪都會留下一個
+  # 模擬器。實測 B″ 之後那個留了 21 小時，而它會在同一個 domain 上發
+  # `/scan`，讓下一輪的 readiness 假性通過（C2C-044 的形態）。
+  pkill -f 'dds_security_monitor|gazebo.launch|gzserver|gz sim' 2>/dev/null
 }
 trap cleanup EXIT INT TERM
 
@@ -209,32 +213,71 @@ for d in sorted(root.glob("*/")):
             pass
     rows.append((d.name, klass, deny))
 
-atk = [(n, d) for n, k, d in rows if k != "normal"]
-nor = [(n, d) for n, k, d in rows if k == "normal"]
+# 哪些類別**預期**不會有認證拒絕，從 `CREDENTIALED_RUNNERS` 推導而不是寫死：
+# 持合法憑證的內鬼過得了 SROS2，被擋在 HMAC 或 rcl 那一層，所以身份層本來
+# 就該是零。把它當成「通道斷了」會把正確的結果讀成故障。
+sys.path.insert(0, str(Path.home() / "ros2_ws"))
+try:
+    from firewall_lab.catalog import load_catalog
+    from firewall_lab.runners import CREDENTIALED_RUNNERS
+    expect_silent = {
+        sc.attack_class for sc in load_catalog().values()
+        if sc.runner in CREDENTIALED_RUNNERS
+    }
+except Exception as exc:                      # noqa: BLE001
+    print(f"  ⚠ 無法載入 catalog（{type(exc).__name__}），保守地假設沒有內鬼類別")
+    expect_silent = set()
+
+by_class = {}
+for _n, k, d in rows:
+    by_class.setdefault(k, []).append(d)
+
 print(f"  session 總數        : {len(rows)}")
-print(f"  identity_abuse      : {len(atk)}")
-print(f"  normal              : {len(nor)}")
+for k in sorted(by_class):
+    v = by_class[k]
+    nz = sum(1 for x in v if x > 0)
+    tag = ""
+    if k == "normal":
+        tag = "（預期為零）"
+    elif k in expect_silent:
+        tag = "（持證內鬼，預期為零）"
+    print(f"  {k:<20}: {len(v):>3} 場  有訊號 {nz}/{len(v)}  {tag}")
 print()
+
 # 通道若中途斷掉，會表現為後半段的攻擊場 deny=0——那和「防禦擋下了」外觀相同，
-# 所以逐場列出而不是只報平均。
-dead = [n for n, d in atk if d == 0]
+# 所以逐場列出而不是只報平均。**但只對預期會開火的類別這樣判。**
+must_fire = [(n, d) for n, k, d in rows if k != "normal" and k not in expect_silent]
+nor = [(n, d) for n, k, d in rows if k == "normal"]
+silent_cls = [(n, k, d) for n, k, d in rows if k in expect_silent]
+
+dead = [n for n, d in must_fire if d == 0]
 noisy = [n for n, d in nor if d > 0]
-print(f"  攻擊場 deny=0（通道可能斷了）: {len(dead)}")
-print(f"  正常場 deny>0（不該發生）    : {len(noisy)}")
-if atk:
-    counts = sorted(d for _n, d in atk)
-    print(f"  攻擊場 deny 分布    : min {counts[0]}  中位數 {counts[len(counts)//2]}  max {counts[-1]}")
+loud = [(n, k) for n, k, d in silent_cls if d > 0]
+print(f"  應開火卻沒開火（通道可能斷了）: {len(dead)} / {len(must_fire)}")
+print(f"  正常場 deny>0（不該發生）      : {len(noisy)}")
+if expect_silent:
+    print(f"  內鬼場 deny>0（結論要改）      : {len(loud)} / {len(silent_cls)}")
+if must_fire:
+    counts = sorted(d for _n, d in must_fire)
+    print(f"  應開火類別的 deny 分布  : min {counts[0]}  中位數 {counts[len(counts)//2]}  max {counts[-1]}")
 for n in dead[:5]:
     print(f"      斷掉: {n}")
 for n in noisy[:5]:
     print(f"      污染: {n}")
+for n, k in loud[:5]:
+    print(f"      內鬼開火: {n} ({k})")
 print()
-if dead:
-    print("  ⛔ 有攻擊場拿不到認證證據——通道中途斷了，這批不可直接使用")
+if not must_fire:
+    print("  ⛔ 這一輪沒有任何預期會開火的類別——缺正向對照，")
+    print("     「內鬼沉默」與「觀測者壞掉」在資料上分不開，不可使用")
+elif dead:
+    print("  ⛔ 有應開火的攻擊場拿不到認證證據——通道中途斷了，這批不可直接使用")
 elif noisy:
     print("  ⛔ 正常場出現認證拒絕——來源不純，要查清楚才可用")
+elif loud:
+    print("  ⚠ 有持證內鬼觸發了認證拒絕——通道有效，但「對內鬼沉默」的說法要修正")
 else:
-    print("  ✅ 通道全程有效：每一場攻擊都有證據，每一場正常都乾淨")
+    print("  ✅ 通道全程有效：每一場應開火的攻擊都有證據，正常與內鬼場都乾淨")
 PYEOF
 echo "  產物在 $OUT"
 echo "  結束 $(date -u +%H:%M:%SZ)"
