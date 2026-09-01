@@ -45,6 +45,24 @@ MAX_CAMPAIGN_SESSIONS = 10_000
 # policy migration. Archived catalogs bind only the fields stored in a plan
 # and can never be used to execute pending work.
 ARCHIVED_COMPLETED_CATALOGS = {
+    # 2026-09-01 加入兩個內鬼 scenario 之前的十情境 catalog。
+    # 身份通道試跑 A（50 場）與 B″（200 場）都釘著這個雜湊。
+    #
+    # 表的來源：從 git 取改動前的 scenarios.json，確認其 sha256 逐字元等於
+    # 下面這個鍵，再用它的內容產生；另從那兩份 campaign 的 entries 反推
+    # 一次，10 個 scenario 全部相符。
+    "2561e18f01a01851f2917a8c3495c7b7192750fce500cadf7c074b94f7bbabba": {
+        "normal_patrol": ("normal", "allow"),
+        "unauthorized_participant": ("identity_abuse", "deny_participant"),
+        "cmd_vel_injection": ("command_injection", "lock_velocity"),
+        "sensor_status_spoof": ("sensor_spoof", "drop_message"),
+        "parameter_tamper": ("parameter_tamper", "deny_participant"),
+        "oversized_scan": ("message_dos", "drop_message"),
+        "parameter_flood": ("service_dos", "temporary_block"),
+        "heartbeat_replay": ("replay", "drop_message"),
+        "alert_replay": ("replay_dos", "drop_message"),
+        "discovery_recon": ("discovery_recon", "alert"),
+    },
     "e1d376e2633e000183e0f1e644d9f9969c2f8dc5d91a0535c5cd6a98da6dfe9b": {
         "normal_patrol": ("normal", "allow"),
         "unauthorized_participant": ("identity_abuse", "deny_participant"),

@@ -46,6 +46,108 @@ def attacker_environment(
     return env
 
 
+# runner → 被竊用的 enclave 名稱。
+#
+# 內部威脅模型（C2C-019）：攻擊者取得**某個既有節點**的身分憑證，因此只拿到
+# 那個節點的權限——這比新增一個權限很寬的紅隊 enclave 更貼近現實，也不會削弱
+# 最小權限論述本身。HMAC 共享金鑰不在 keystore 裡，所以 SROS2 放行之後仍會被
+# HMAC 或 rcl 擋下，而那正是這個模型要量的分層。
+CREDENTIALED_RUNNERS: dict[str, str] = {
+    "insider_hmac_forgery": "intelligent_defense_node",
+    "insider_parameter_write": "parameter_write_probe",
+}
+
+
+def _runner_env_extras(runner: str, duration_sec: float) -> dict[str, str]:
+    """個別 runner 需要、但不能走 argv 的環境變數。
+
+    N30 沒有 argparse——它用 `rclpy.init(args=sys.argv)` 直接吃掉 argv，位置全
+    留給 `--ros-args --enclave`，所以 duration 只能走環境變數。這是那支腳本的
+    既有介面，不是這裡發明的。
+    """
+    if runner == "insider_parameter_write":
+        return {"N30_DURATION_SEC": f"{duration_sec:.3f}"}
+    return {}
+
+
+def insider_environment(
+    *,
+    domain_id: int,
+    enclave: str,
+    keystore: str | Path,
+    duration_sec: float,
+    runner: str,
+    base: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """持有合法 SROS2 憑證、但**沒有** HMAC 金鑰的內部攻擊者環境。
+
+    與 `attacker_environment` 的唯一差別是保留 SROS2 憑證。**秘密仍然全部剝掉**
+    ——內部威脅模型的定義就是「SROS2 放行、應用層擋下」，把 `DDS_ALERT_SECRET`
+    留著會讓攻擊者簽得出有效訊息，量到的就不是分層防禦而是一次成功的入侵。
+    """
+    keystore_path = Path(keystore).resolve()
+    enclave_root = keystore_path / "enclaves"
+    enclave_dir = enclave_root / enclave.lstrip("/")
+    if not enclave_root.is_dir():
+        raise FileNotFoundError(f"keystore has no enclaves directory: {enclave_root}")
+    if not enclave_dir.is_dir():
+        raise FileNotFoundError(f"stolen enclave is not in the keystore: {enclave_dir}")
+
+    env = dict(os.environ if base is None else base)
+    for name in SECRET_ENV_NAMES:
+        env.pop(name, None)
+    env["ROS_DOMAIN_ID"] = str(domain_id)
+    env.setdefault("RMW_IMPLEMENTATION", "rmw_fastrtps_cpp")
+    env["PYTHONUNBUFFERED"] = "1"
+    env["ROS_SECURITY_KEYSTORE"] = str(keystore_path)
+    env["ROS_SECURITY_ENABLE"] = "true"
+    env["ROS_SECURITY_STRATEGY"] = "Enforce"
+    # enclave 走 argv 的 `--ros-args --enclave`；override 若同時存在會與它相爭。
+    env.pop("ROS_SECURITY_ENCLAVE_OVERRIDE", None)
+    # 攻擊者不得有寫入遙測的能力，否則它可以自己偽造「防禦有反應」的證據。
+    env.pop("SROS2_FIREWALL_TELEMETRY_SOCKET", None)
+    env.update(_runner_env_extras(runner, duration_sec))
+
+    # fail-closed：這個環境的定義就是「有憑證、沒有金鑰」。任何一個秘密漏進來，
+    # 這一場收到的證據就不再支持分層防禦的宣稱。
+    leaked = sorted(name for name in SECRET_ENV_NAMES if name in env)
+    if leaked:
+        raise RuntimeError(f"insider environment must not carry secrets: {leaked}")
+    return env
+
+
+def session_environment(
+    scenario: Scenario,
+    *,
+    domain_id: int,
+    duration_sec: float,
+    keystore: str | Path | None = None,
+    base: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """依 runner 決定這一場的攻擊者是外部者還是持證內鬼。
+
+    預設仍是**沒有憑證**的外部者。只有明確登記在 `CREDENTIALED_RUNNERS` 的
+    runner 才拿得到 keystore，而且拿不到 keystore 時直接拒絕執行，不會安靜地
+    退回成外部者——那會讓一場內鬼實驗變成第十一場外部者實驗而沒有人發現。
+    """
+    enclave = CREDENTIALED_RUNNERS.get(scenario.runner)
+    if enclave is None:
+        return attacker_environment(domain_id=domain_id, base=base)
+    if keystore is None:
+        raise ValueError(
+            f"runner {scenario.runner!r} is a credentialed insider and requires a "
+            "keystore; refusing to fall back to an uncredentialed outsider"
+        )
+    return insider_environment(
+        domain_id=domain_id,
+        enclave=enclave,
+        keystore=keystore,
+        duration_sec=duration_sec,
+        runner=scenario.runner,
+        base=base,
+    )
+
+
 def _script(root: Path, relative: str) -> str:
     path = root / relative
     if not path.is_file() or path.is_symlink():
@@ -205,5 +307,29 @@ def build_attack_argv(
             python,
             _script(root, f"{poc}/N3_alert_replay_dos.py"),
             f"{duration:.3f}",
+        ]
+    if scenario.runner == "insider_hmac_forgery":
+        # 內鬼：持 /intelligent_defense_node 的合法憑證，但沒有 HMAC 金鑰。
+        # SROS2 放行、訊息真的抵達節點，被 HMAC 檢查擋下（C2C-019 的 11/0）。
+        # N29 用 `remove_ros_args` 剝掉 --ros-args，所以兩者可以並存。
+        return [
+            python,
+            _script(root, f"{poc}/N29_insider_credentialed.py"),
+            "--mode", "hmac_forgery",
+            "--duration-sec", f"{candidate_duration:.3f}",
+            "--count", str(int(round(6 + intensity * 18))),
+            "--ros-args", "--enclave",
+            "/" + CREDENTIALED_RUNNERS["insider_hmac_forgery"],
+        ]
+    if scenario.runner == "insider_parameter_write":
+        # 內鬼：/parameter_write_probe 只被授權一條 set_parameters（連
+        # get_parameters 都沒有）。請求合法抵達，由 rcl 的 read_only 描述子拒絕
+        # （C2C-044 的 7 次嘗試、7 次被拒）。intensity 不影響——這一類的定義是
+        # 「合法呼叫者踢到 read-only」，次數多寡不改變語意。
+        return [
+            python,
+            _script(root, f"{poc}/N30_authorized_parameter_write.py"),
+            "--ros-args", "--enclave",
+            "/" + CREDENTIALED_RUNNERS["insider_parameter_write"],
         ]
     raise ValueError(f"runner has no fixed argv implementation: {scenario.runner}")

@@ -28,6 +28,15 @@ ALLOWED_RUNNERS = frozenset(
         # 被動偵察：只聽不說。policy 早就有 discovery_recon 這條規則，
         # 缺的一直是產生資料的 runner。
         "discovery_recon",
+        # 2026-09-01 的兩個**內鬼** runner。與上面九個的差別是它們持有合法
+        # SROS2 憑證（竊自既有節點），因此 `session_environment` 會給它們
+        # keystore——其餘 runner 一律拿不到。見 runners.CREDENTIALED_RUNNERS。
+        #
+        # ⚠️ `insider_parameter_write` 的 attack_class 是 `confused_deputy`，
+        # 與下面那個同名的**候選 runner**（N13 health reflection）不是同一件事：
+        # 候選是外部者、尚未通過證據排他性 gate、不在出貨 catalog。
+        "insider_hmac_forgery",
+        "insider_parameter_write",
         # 2026-09-01 的候選。**尚未通過證據排他性 gate**，所以只出現在
         # firewall_lab/scenarios_smoke_candidates.json，不在出貨 catalog。
         "baseline_poisoning",

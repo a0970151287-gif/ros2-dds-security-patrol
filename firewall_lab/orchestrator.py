@@ -29,7 +29,7 @@ from .evidence import (
     evidence_inventory,
     run_snapshot,
 )
-from .runners import attacker_environment, build_attack_argv
+from .runners import build_attack_argv, session_environment
 from .schema import (
     SessionManifest,
     atomic_write_json,
@@ -591,7 +591,18 @@ def run_session(
     capture_result = None
     telemetry_result = None
     sros_adapter_result = None
-    env = attacker_environment(domain_id=domain_id)
+    # 預設是沒有憑證的外部者；只有登記在 `CREDENTIALED_RUNNERS` 的內鬼 runner
+    # 拿得到 keystore。keystore 取自環境（live stack 會 export），沒有就用工作區
+    # 的正式 keystore——路徑與 enclave 都由 `insider_environment` 驗證存在。
+    env = session_environment(
+        scenario,
+        domain_id=domain_id,
+        duration_sec=duration,
+        keystore=(
+            os.environ.get("ROS_SECURITY_KEYSTORE")
+            or str(WORKSPACE_ROOT / "sros2_keystore")
+        ),
+    )
 
     try:
         manifest.status = "running"

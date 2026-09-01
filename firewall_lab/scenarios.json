@@ -140,6 +140,34 @@
       "intensity_max": 1.0,
       "expected_action": "alert",
       "requires_gazebo": true
+    },
+    {
+      "id": "insider_hmac_forgery",
+      "attack_class": "hmac_forgery",
+      "runner": "insider_hmac_forgery",
+      "description": "內部威脅：攻擊者竊得 /intelligent_defense_node 的身分憑證，因此只拿到那個節點的權限。SROS2 放行、訊息真的抵達，但 HMAC 共享金鑰不在 keystore 裡，所以偽造的信封被簽章檢查擋下。這是分層防禦的直接證據——身份層放行之後仍有第二道。",
+      "default_security_mode": "enforce",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "drop_message",
+      "requires_gazebo": true
+    },
+    {
+      "id": "insider_parameter_write",
+      "attack_class": "confused_deputy",
+      "runner": "insider_parameter_write",
+      "description": "內部威脅：/parameter_write_probe 只被授權一條 set_parameters（連 get_parameters 都沒有）。呼叫者完全通過 SROS2 授權，請求合法抵達節點，由 rcl 的 read_only 描述子拒絕。合法授權的主體被用來做未授權的事——confused deputy。",
+      "default_security_mode": "enforce",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "alert",
+      "requires_gazebo": true
     }
   ]
 }
