@@ -18,7 +18,20 @@ C2C-050（2026-08-31）發現網路特徵有四個缺陷，其中兩個讓既有
 
 這一份把那件事做完。
 
-## 分層模型：與舊表相當
+## ⚠️ Provenance 更正（2026-09-02 稍晚）
+
+本文原本讀起來像是「今天重訓了分層模型」。**不是。**
+
+`~/models_hier_pkt/` 的模型與 `training_metrics.json` 是 **2026-08-31 17:24
+（本地）** 產生的，屬於當天網路特徵修正工作的一部分。我 09-02 那次重訓指令
+撞到腳本自己的「輸出已存在，拒絕覆寫」保護，**什麼都沒做**——今天真正跑的
+只有 `loo_*.json`（03:48）。
+
+數字本身有效（確實是在封包分窗特徵上訓練的），但「這一份把那件事做完」
+只對 **family-LOO** 成立；分層模型那半 08-31 就做完了，我沒有查時間戳就寫成
+今天的。**fail-closed 保護做對了事，是我沒讀它的輸出。**
+
+## 分層模型：與舊表相當（訓練於 2026-08-31）
 
 以 `features_merged_split_pkt`（逐封包分窗、Zeek 已加 `-C`）重訓兩個模式：
 
@@ -62,10 +75,58 @@ C2C-050（2026-08-31）發現網路特徵有四個缺陷，其中兩個讓既有
 攻擊，應用層證據不存在，網路特徵修得再好也補不上缺席的證據。
 **修正網路特徵幫得到的是有應用層證據的那一邊。**
 
+## 一個先前沒有被報告的結果：官方 holdout 的 open-set recall
+
+`models_hier_pkt` 裡的 `openset_holdout.json` 是 08-31 產生的，**這份數字
+到今天為止沒有出現在任何文件或訊息裡**。
+
+| 官方 holdout 的整個模型 open-set recall | 舊（conn.log） | 新（封包分窗） |
+|---|---:|---:|
+| Permissive | **0.5789** | **0.2105** |
+| Enforce | **0.8562** | **0.9125** |
+
+（兩邊都用出貨預設的 `isolation_forest`，holdout 標籤同為
+`sensor_spoof`／`service_dos`，所以協定可比。）
+
+**Permissive 掉了超過一半。** 判定分佈說明了原因：
+
+```
+新版 722 列 holdout 的判定
+  parameter_tamper  344    ← 自信地填成已知類別
+  replay_dos        203    ←
+  unknown_attack    152
+  normal             23
+```
+
+**547 列被自信地指派給已知攻擊類別。** 舊版那個數字是 231
+（C2C-026 記過同一個失效形態）。合理的解釋是：**網路特徵變好 → 閉集分類器
+更有把握 → 對沒見過的類別更自信地給錯答案 → open-set 更差。**
+
+這與 family-LOO 的方向相反，而**兩者不矛盾**：family-LOO 量的是 OOD 頭在
+每折重擬門檻下的表現；官方 holdout 量的是整個模型在出貨門檻下的表現。
+改善 OOD 頭的可分性，不等於改善整條鏈。
+
+### ⚠️ 這個 holdout 已經被花掉第三次
+
+artifact 自己寫著：
+
+> `one_shot`: spending these holdout sessions again after any retuning
+> invalidates this figure
+
+C2C-035 已經是第二次使用（Mahalanobis 那次）。08-31 的重訓是第三次，
+而且**當時沒有記錄下來**。所以上表的兩個新數字**都不是獨立估計**，
+只能當診斷用。要拿到可引用的 open-set 數字，需要一批沒有被花過的 holdout。
+
+**未知攻擊那一格因此維持 70%，不因 Enforce 的 0.9125 上調。**
+
 ## 進度百分比不動
 
 未知攻擊那一格引用的是**整個模型在官方 holdout 上的 open-set recall**，
-不是 family-LOO 的 macro。本文沒有動官方 holdout，也沒有開 test。
+不是 family-LOO 的 macro。
+
+**我今天跑的 family-LOO 沒有動官方 holdout，也沒有開 test**——它的協定明文
+排除兩者。但上一節那批 08-31 的重訓**確實花掉了官方 holdout 一次**，
+所以那兩個新數字不是獨立估計，不可用來調整進度。
 
 family-LOO 是**開發期證據**，artifact 自己記著
 `development_only=true`、`independent_final_test=false`、
