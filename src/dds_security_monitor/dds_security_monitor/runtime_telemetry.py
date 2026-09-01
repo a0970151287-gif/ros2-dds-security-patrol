@@ -40,6 +40,23 @@ HMAC_REASONS = frozenset(
         "nonce_reuse_or_capacity",
     }
 )
+# HMAC 驗證失敗發生在哪個安全頻道。值必須與 monitor_node 的 CH_* 常數逐字
+# 相同；它們含 `/`，過不了 _IDENTIFIER_RE，所以用明列的詞彙表而不是正規式。
+#
+# 為什麼需要它：`malformed_envelope` 這個理由本身不足以分辨攻擊。實測 N7、N8
+# 都是「對受保護 topic publish 未簽章字串」，撞的是同一個分支；真正不同的是
+# **打哪一個頻道**。沒有這個欄位，兩者在遙測上完全相同。
+HMAC_CHANNELS = frozenset(
+    {
+        "alerts",
+        "heartbeat",
+        "patrol/goto",
+        "sensor/status",
+        "mission/cmd",
+        "system/health",
+    }
+)
+
 DETECTORS = frozenset({"d1", "d2", "d3", "d4", "d5", "d6"})
 DETECTOR_STATES = frozenset({"incident", "recovery"})
 HEARTBEAT_STATES = frozenset({"gap", "recovery"})
@@ -192,10 +209,19 @@ class RuntimeTelemetryProducer:
         self.sent = min(MAX_COUNTER, self.sent + 1)
         return True
 
-    def emit_hmac_result(self, *, accepted: bool, reason: str) -> bool:
+    def emit_hmac_result(
+        self, *, accepted: bool, reason: str, channel: str
+    ) -> bool:
+        """`channel` 刻意必填。
+
+        收集端把它列為**選填**，因為 1,100 場既有證據沒有這個欄位而那些檔案
+        不可變；但生產端必填，新資料就一定帶著它。少一邊都不行：收集端必填會
+        讓歷史資料讀不出來，生產端選填則會讓它悄悄消失（C2C-047 的形狀）。
+        """
         if not isinstance(accepted, bool):
             raise ValueError("accepted must be boolean")
         normalized = _require_choice(reason, HMAC_REASONS, "HMAC reason")
+        verified_channel = _require_choice(channel, HMAC_CHANNELS, "HMAC channel")
         if accepted != (normalized == "accepted"):
             raise ValueError("HMAC outcome and reason disagree")
         return self._emit(
@@ -203,6 +229,7 @@ class RuntimeTelemetryProducer:
             {
                 "outcome": "accepted" if accepted else "rejected",
                 "reason": normalized,
+                "channel": verified_channel,
             },
         )
 

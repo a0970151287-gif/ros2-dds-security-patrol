@@ -674,6 +674,7 @@ def verify_alert(
             telemetry.emit_hmac_result(
                 accepted=payload is not None,
                 reason=reason,
+                channel=expected_channel,
             )
         except Exception:
             # Evidence must never become a denial-of-service path inside a ROS

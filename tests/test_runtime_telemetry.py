@@ -52,7 +52,7 @@ def test_nonblocking_producer_emits_only_bounded_allowlisted_records(tmp_path):
     producer, fake = _producer_with_fake_socket()
     assert fake.blocking is False
     assert producer.emit_hmac_result(
-        accepted=False, reason="invalid_signature"
+        accepted=False, reason="invalid_signature", channel="alerts"
     )
     assert producer.emit_detector_state("D4", "incident")
     assert producer.emit_heartbeat_state("gap", 12.5)
@@ -156,7 +156,13 @@ def test_semantic_probe_and_guard_records_are_typed_and_bounded(tmp_path):
 @pytest.mark.parametrize(
     "operation",
     [
-        lambda p: p.emit_hmac_result(accepted=True, reason="invalid_signature"),
+        lambda p: p.emit_hmac_result(
+            accepted=True, reason="invalid_signature", channel="alerts"
+        ),
+        # channel 不在詞彙表 → 必須拒絕，不可放行成未知頻道
+        lambda p: p.emit_hmac_result(
+            accepted=False, reason="invalid_signature", channel="not_a_channel"
+        ),
         lambda p: p.emit_detector_state("d7", "incident"),
         lambda p: p.emit_heartbeat_state("gap", float("nan")),
         lambda p: p.emit_graph_state("fault", 0),
@@ -450,7 +456,7 @@ def test_hmac_reason_codes_cover_signature_channel_time_and_replay():
         expected_channel=monitor_node.CH_ALERTS,
         telemetry=telemetry,
     ) is None
-    assert observed == [{"accepted": False, "reason": "invalid_signature"}]
+    assert observed == [{"accepted": False, "reason": "invalid_signature", "channel": "alerts"}]
 
 
 class _TransitionTelemetry:

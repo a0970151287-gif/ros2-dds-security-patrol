@@ -171,7 +171,23 @@ EVENT_DETAIL_KEYS: dict[str, frozenset[str]] = {
 # 不是為了寬鬆——新的發送端一律會帶。
 OPTIONAL_EVENT_DETAIL_KEYS: dict[str, frozenset[str]] = {
     "parameter_veto": frozenset({"layer"}),
+    # 2026-09-02 新增。**選填**是因為 1,100 場既有證據沒有這個欄位，而那些
+    # 檔案不可變；`features.py` 會重新驗證它們，設成必填會讓整批讀不出來。
+    # 生產端（runtime_telemetry.emit_hmac_result）則是必填。
+    "hmac_result": frozenset({"channel"}),
 }
+
+# 與 runtime_telemetry.HMAC_CHANNELS 逐字相同，測試釘住兩者相等。
+HMAC_CHANNELS = frozenset(
+    {
+        "alerts",
+        "heartbeat",
+        "patrol/goto",
+        "sensor/status",
+        "mission/cmd",
+        "system/health",
+    }
+)
 
 # 參數變更是在哪一層被拒絕的。
 #
@@ -263,7 +279,13 @@ def _validate_details(event_type: str, value: Any) -> dict[str, Any]:
             raise SchemaError("unsupported HMAC outcome or reason")
         if (outcome == "accepted") != (reason == "accepted"):
             raise SchemaError("HMAC outcome and reason disagree")
-        return {"outcome": outcome, "reason": reason}
+        detail = {"outcome": outcome, "reason": reason}
+        if "channel" in value:
+            channel = value["channel"]
+            if channel not in HMAC_CHANNELS:
+                raise SchemaError("unsupported HMAC channel")
+            detail["channel"] = channel
+        return detail
 
     if event_type == "detector_state":
         detector = value["detector"]
