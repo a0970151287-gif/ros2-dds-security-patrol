@@ -187,6 +187,7 @@ observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
 | Claude | 完成來源位址偽造加固 | `工具腳本/{check_link_layer_binding,crosscheck_identity_attribution,run_crosshost_identity.sh}`、`tests/test_identity_crosscheck.py`、`文件/{來源位址偽造加固,鏈路層綁定回驗}_2026-08-31.*`。**未動既有 crosscheck.json** | 2026-08-31 |
 | Claude | 完成網路特徵四缺陷修正 | `firewall_lab/{features,orchestrator}.py`、`工具腳本/{rebuild_zeek_checksum,extract_packet_windows,compare_network_windowing,merge_rerun_features}.py`、`tests/{test_zeek_checksum_rebuild,test_packet_windows,test_merge_provenance}.py`、`文件/{網路特徵四個缺陷與修正_2026-08-31.md,工作筆記本.md}`。**未動任何 Codex artifact 或帳本** | 2026-08-31 |
 | Claude | 完成接縫診斷與強 OOD 撤回 | `src/dds_security_monitor/dds_security_monitor/{test_fault_seam,monitor_node}.py`、`tests/{test_controlled_graph_fault,test_strong_ood}.py`、`工具腳本/diagnose_strong_ood.py`、`文件/強OOD單獨判定_不可行_2026-08-28.md`。**未修改 `hierarchical_model.py`**——量測結論是那條規則不該改 | 2026-08-28 |
+| Claude | 完成內鬼 scenario 接線 | `firewall_lab/{runners,orchestrator,catalog,campaign}.py`、`scenarios.json`、`tests/test_insider_runners.py`。新增 `session_environment` 分派：只有登記在 `CREDENTIALED_RUNNERS` 的兩個 runner 拿得到 keystore，其餘逐項維持無憑證。**內鬼環境仍剝掉所有秘密**（無 HMAC 金鑰是這個威脅模型的定義）。catalog 雜湊改變，舊的 `2561e18f` 已登記進封存表。**尚未跑 live** | 2026-09-01 |
 
 ### 已完成工作對照
 
