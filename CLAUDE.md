@@ -216,12 +216,23 @@ observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
 
 | 項目 | 需要授權？ |
 |---|---|
-| 在隔離環境收可信 RTPS／DDS identity→IP attestation，再整合特徵並重做 family-LOO | **需 Jesse 授權 live／跨主機** |
-| `velocity_guard_recovered`（九項裡唯一真工程缺口；接縫已儀器化，失敗會說原因） | **需 Jesse 授權 live** |
-| 54 場成對小樣本驗證（驗 B、C 是否真的修好） | **需 Jesse 授權 live** |
+| **把身份特徵整合進正式特徵表**（attestation 本身已於 2026-08-30 取得，79／80；缺的是整合） | 需新 campaign 才有資料 |
 | 新 direct-delivery paired canary（獨立 pair／authorization attestation） | **需 Jesse 授權 live** |
-| 跨主機、kernel nftables、Raspberry Pi 驗收 | **需授權＋硬體** |
+| kernel nftables 與 Raspberry Pi 5 驗收（跨主機那半已達 40%） | **需授權＋硬體** |
 | 以現行資料另出新 revision evidence ledger（C2C-037 P3 第 3 項） | 否，但需 `project_evidence.py` 流程 |
+| `hmac_result.channel` 接成特徵（2026-09-02 已加遙測欄位，既有 1,100 場沒有它） | 需新 campaign 才有資料 |
+| **一批沒有被花過的 open-set holdout**——現有的已用第三次，數字不可引用 | 需新 campaign |
+
+**2026-09-02 清掉兩項死待辦**：
+
+- `velocity_guard_recovered` — **2026-08-29 已通過**（本機 outcome 8／9）。
+  卡了七次的原因是三個量測缺陷，不在防禦裡；見 C2C-047。
+- 54 場成對小樣本驗證 — **已被取代**。2026-08-21 的 300 場受控重跑
+  （C2C-024）用同一組 scenario／seed／mode 驗過 B 與 C，三個預測全部成立，
+  比 54 場強。
+
+另兩項改寫而不是刪除：identity attestation **本身**已取得（8/30，79／80），
+缺的是整合進特徵；跨主機那半已達 40%，剩 kernel nftables 與 Pi 5。
 
 **2026-08-28 清掉三項假待辦**（它們早就做完了，表沒更新）：
 
