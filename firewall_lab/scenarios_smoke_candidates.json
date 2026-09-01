@@ -16,20 +16,6 @@
       "requires_gazebo": true
     },
     {
-      "id": "discovery_recon",
-      "attack_class": "discovery_recon",
-      "runner": "discovery_recon",
-      "description": "被動偵察：只聽不說。已在出貨 catalog，一併跑以取得基準",
-      "default_security_mode": "permissive",
-      "duration_sec": 30,
-      "warmup_sec": 10,
-      "cooldown_sec": 5,
-      "intensity_min": 0.1,
-      "intensity_max": 1.0,
-      "expected_action": "alert",
-      "requires_gazebo": true
-    },
-    {
       "id": "baseline_poisoning",
       "attack_class": "baseline_poisoning",
       "runner": "baseline_poisoning",
@@ -55,20 +41,6 @@
       "intensity_min": 0.1,
       "intensity_max": 1.0,
       "expected_action": "alert",
-      "requires_gazebo": true
-    },
-    {
-      "id": "cross_channel_relay",
-      "attack_class": "cross_channel_relay",
-      "runner": "cross_channel_relay",
-      "description": "候選：N4_channel_confusion.py。尚未通過證據排他性 gate。",
-      "default_security_mode": "permissive",
-      "duration_sec": 30,
-      "warmup_sec": 10,
-      "cooldown_sec": 5,
-      "intensity_min": 0.1,
-      "intensity_max": 1.0,
-      "expected_action": "drop_message",
       "requires_gazebo": true
     },
     {
@@ -111,20 +83,6 @@
       "intensity_min": 0.1,
       "intensity_max": 1.0,
       "expected_action": "deny_participant",
-      "requires_gazebo": true
-    },
-    {
-      "id": "scan_drift",
-      "attack_class": "scan_drift",
-      "runner": "scan_drift",
-      "description": "候選：N24b_varlen_scan_regression.py。尚未通過證據排他性 gate。",
-      "default_security_mode": "permissive",
-      "duration_sec": 30,
-      "warmup_sec": 10,
-      "cooldown_sec": 5,
-      "intensity_min": 0.1,
-      "intensity_max": 1.0,
-      "expected_action": "lock_velocity",
       "requires_gazebo": true
     },
     {
