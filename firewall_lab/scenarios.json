@@ -224,6 +224,20 @@
       "intensity_max": 1.0,
       "expected_action": "drop_message",
       "requires_gazebo": true
+    },
+    {
+      "id": "node_churn",
+      "attack_class": "node_churn",
+      "runner": "node_churn",
+      "description": "快速反覆加入離開 DDS domain，成本落在 discovery 的端點建立與清除。2026-09-02 通過證據排他性 gate，而且是同輪五支通過者中**唯一**兩兩可分的：它有自己的足跡（participant_change、unknown_node），其餘四支只留下防禦的通用反應（守衛零速＋一則 alert），因此彼此無法分辨。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "temporary_block",
+      "requires_gazebo": true
     }
   ]
 }
