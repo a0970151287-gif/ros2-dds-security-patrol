@@ -175,6 +175,11 @@ OPTIONAL_EVENT_DETAIL_KEYS: dict[str, frozenset[str]] = {
     # 檔案不可變；`features.py` 會重新驗證它們，設成必填會讓整批讀不出來。
     # 生產端（runtime_telemetry.emit_hmac_result）則是必填。
     "hmac_result": frozenset({"channel"}),
+    # 2026-09-02 新增。守衛**收到**的速度指令——偵測器 d1（物理上限）與
+    # d6 case (b)（cmd 持續正向但 odom 靜止）用的都是這個量值，而先前只記
+    # 了數量，導致證據無法診斷偵測器為什麼沒 fire。
+    # 選填的理由同上：既有 1,100 場沒有這兩個欄位。
+    "guard_input": frozenset({"linear_x", "angular_z"}),
 }
 
 # 與 runtime_telemetry.HMAC_CHANNELS 逐字相同，測試釘住兩者相等。
@@ -271,6 +276,21 @@ def _validate_details(event_type: str, value: Any) -> dict[str, Any]:
             "verdict": value["verdict"],
             "subject_sha256": subject,
         }
+
+    if event_type == "guard_input":
+        detail = {"accepted_count": value["accepted_count"]}
+        for name in ("linear_x", "angular_z"):
+            if name in value:
+                raw = value[name]
+                if (
+                    isinstance(raw, bool)
+                    or not isinstance(raw, (int, float))
+                    or not math.isfinite(float(raw))
+                    or abs(float(raw)) > 1_000.0
+                ):
+                    raise SchemaError("guard input value is not bounded finite")
+                detail[name] = float(raw)
+        return detail
 
     if event_type == "hmac_result":
         outcome = value["outcome"]

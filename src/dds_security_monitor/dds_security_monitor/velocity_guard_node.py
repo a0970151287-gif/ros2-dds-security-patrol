@@ -223,7 +223,11 @@ class VelocityGuardNode(Node):
         self._latest = command
         self._latest_wall = time.monotonic()
         VelocityGuardNode._emit_runtime(
-            self, "emit_guard_input", accepted_count=1
+            self,
+            "emit_guard_input",
+            command.linear_x,
+            command.angular_z,
+            accepted_count=1,
         )
 
     def _on_alert(self, msg: String) -> None:

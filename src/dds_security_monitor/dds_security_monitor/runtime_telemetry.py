@@ -467,13 +467,36 @@ class RuntimeTelemetryProducer:
             },
         )
 
-    def emit_guard_input(self, *, accepted_count: int = 1) -> bool:
+    def emit_guard_input(
+        self, linear_x: float, angular_z: float, *, accepted_count: int = 1
+    ) -> bool:
+        """守衛**收到**的速度指令。
+
+        `guard_output` 一直記著守衛**輸出**什麼，`guard_input` 卻只記數量。
+        那個不對稱讓證據無法診斷偵測器：d1（物理上限）與 d6 case (b)
+        （cmd 持續正向但 odom 靜止）用的都是**輸入**的量值，而錄下來的證據
+        裡沒有它。2026-09-02 因此無法判斷 N34 為什麼沒觸發 d6——
+        **證據不足以診斷證據本身。**
+
+        值必填，收集端則列為選填：既有 1,100 場只有 `accepted_count`，
+        而 `features.py` 會重新驗證那些不可變的檔案。
+        """
+        if any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            or abs(float(value)) > 1_000.0
+            for value in (linear_x, angular_z)
+        ):
+            raise ValueError("guard input must contain bounded finite values")
         return self._emit(
             "guard_input",
             {
                 "accepted_count": _require_counter(
                     accepted_count, "accepted_count"
-                )
+                ),
+                "linear_x": float(linear_x),
+                "angular_z": float(angular_z),
             },
         )
 

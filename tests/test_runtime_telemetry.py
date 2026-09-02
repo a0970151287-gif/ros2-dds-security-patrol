@@ -122,7 +122,7 @@ def test_semantic_probe_and_guard_records_are_typed_and_bounded(tmp_path):
     guard, guard_socket = _producer_with_fake_socket("velocity_guard_node")
     assert guard.emit_guard_state("locked", "monitor_fault")
     assert guard.emit_authenticated_action("guard_clear")
-    assert guard.emit_guard_input(accepted_count=1)
+    assert guard.emit_guard_input(0.11, -0.22, accepted_count=1)
     assert guard.emit_guard_output(0.0, 0.0, blocked=True)
     assert guard.emit_parameter_veto(count=1)
     assert guard.emit_message_validation(count=1, oversized_count=1)
