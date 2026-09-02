@@ -37,6 +37,12 @@ ALLOWED_RUNNERS = frozenset(
         # 候選是外部者、尚未通過證據排他性 gate、不在出貨 catalog。
         "insider_hmac_forgery",
         "insider_parameter_write",
+        # 2026-09-02 的三個新候選，補 policy 裡從未有 runner 的類別。
+        # `cmd_vel_race` 刻意沒有寫：N9 已經是 `cmd_vel_injection` 的 runner，
+        # 另寫一支會與它同機制而不可分——那正是 gate 要拒絕的東西。
+        "node_churn",
+        "odom_spoof",
+        "spdp_flood",
         # 2026-09-01 的候選。**尚未通過證據排他性 gate**，所以只出現在
         # firewall_lab/scenarios_smoke_candidates.json，不在出貨 catalog。
         "baseline_poisoning",

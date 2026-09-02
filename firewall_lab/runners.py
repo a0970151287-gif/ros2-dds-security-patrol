@@ -308,6 +308,30 @@ def build_attack_argv(
             _script(root, f"{poc}/N3_alert_replay_dos.py"),
             f"{duration:.3f}",
         ]
+    if scenario.runner == "node_churn":
+        # cycle 由 intensity 決定：0.25 秒（最兇）到 2.0 秒。
+        cycle = 2.0 - intensity * 1.75
+        return [
+            python,
+            _script(root, f"{poc}/N33_node_churn.py"),
+            f"{candidate_duration:.3f}",
+            "--cycle-sec", f"{cycle:.3f}",
+        ]
+    if scenario.runner == "odom_spoof":
+        # 必須蓋過真 odometry 的頻率才有效，所以下限已經高於典型的 30Hz。
+        return [
+            python,
+            _script(root, f"{poc}/N34_odom_spoof.py"),
+            f"{candidate_duration:.3f}",
+            "--rate-hz", f"{40.0 + intensity * 40.0:.1f}",
+        ]
+    if scenario.runner == "spdp_flood":
+        return [
+            python,
+            _script(root, f"{poc}/N35_spdp_flood.py"),
+            f"{candidate_duration:.3f}",
+            "--participants", str(int(round(10 + intensity * 50))),
+        ]
     if scenario.runner == "insider_hmac_forgery":
         # 內鬼：持 /intelligent_defense_node 的合法憑證，但沒有 HMAC 金鑰。
         # SROS2 放行、訊息真的抵達節點，被 HMAC 檢查擋下（C2C-019 的 11/0）。
