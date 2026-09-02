@@ -114,7 +114,21 @@ def main() -> int:
     try:
         deadline = time.monotonic() + duration
         while not _STOP and time.monotonic() < deadline:
-            changed, reason = node.attempt()
+            try:
+                changed, reason = node.attempt()
+            except Exception as exc:                    # noqa: BLE001
+                # 收到 SIGTERM 時 rclpy 的 signal handler 已經關掉 context，
+                # 而 `wait_for_service` 正在進行中就會拋
+                # `RCLError: rcl node's context is invalid`。
+                #
+                # 讓它逃出去會讓退出碼變 1，而 campaign 的 training gate 會把
+                # **整批**中止——2026-09-02 的 680 場就是在第 263 場這樣停掉的，
+                # 前 15 場同一支都是 rc=0。收尾時的 shutdown 不是攻擊失敗。
+                if not rclpy.ok():
+                    print(f"  （收到終止訊號，提前結束：{type(exc).__name__}）",
+                          flush=True)
+                    break
+                raise
             attempts += 1
             if changed:
                 succeeded += 1

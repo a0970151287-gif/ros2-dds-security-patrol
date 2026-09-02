@@ -77,6 +77,7 @@ def insider_environment(
     keystore: str | Path,
     duration_sec: float,
     runner: str,
+    security_mode: str,
     base: dict[str, str] | None = None,
 ) -> dict[str, str]:
     """持有合法 SROS2 憑證、但**沒有** HMAC 金鑰的內部攻擊者環境。
@@ -99,9 +100,23 @@ def insider_environment(
     env["ROS_DOMAIN_ID"] = str(domain_id)
     env.setdefault("RMW_IMPLEMENTATION", "rmw_fastrtps_cpp")
     env["PYTHONUNBUFFERED"] = "1"
-    env["ROS_SECURITY_KEYSTORE"] = str(keystore_path)
-    env["ROS_SECURITY_ENABLE"] = "true"
-    env["ROS_SECURITY_STRATEGY"] = "Enforce"
+    # 安全設定**跟隨場次的模式**，不可寫死。
+    #
+    # 2026-09-02：這裡原本無條件設 Enforce，於是在 Permissive 場次中，內鬼是
+    # 安全 participant 而防守方不是——兩者無法通訊，16 場的攻擊全部回報
+    # `service-unreachable`，等於沒有攻擊。Enforce 對照組同時是 14–15 次
+    # 成功抵達並被 rcl 擋下，兩相對比才看得出來。
+    #
+    # Permissive 下「竊得憑證」本來就不帶來額外能力（防守方不檢查），
+    # 但攻擊仍然有意義：它測的是 rcl 的 read-only 那一層。
+    if security_mode == "enforce":
+        env["ROS_SECURITY_KEYSTORE"] = str(keystore_path)
+        env["ROS_SECURITY_ENABLE"] = "true"
+        env["ROS_SECURITY_STRATEGY"] = "Enforce"
+    else:
+        for name in ("ROS_SECURITY_KEYSTORE", "ROS_SECURITY_ENABLE",
+                     "ROS_SECURITY_STRATEGY"):
+            env.pop(name, None)
     # enclave 走 argv 的 `--ros-args --enclave`；override 若同時存在會與它相爭。
     env.pop("ROS_SECURITY_ENCLAVE_OVERRIDE", None)
     # 攻擊者不得有寫入遙測的能力，否則它可以自己偽造「防禦有反應」的證據。
@@ -121,6 +136,7 @@ def session_environment(
     *,
     domain_id: int,
     duration_sec: float,
+    security_mode: str,
     keystore: str | Path | None = None,
     base: dict[str, str] | None = None,
 ) -> dict[str, str]:
@@ -144,6 +160,7 @@ def session_environment(
         keystore=keystore,
         duration_sec=duration_sec,
         runner=scenario.runner,
+        security_mode=security_mode,
         base=base,
     )
 

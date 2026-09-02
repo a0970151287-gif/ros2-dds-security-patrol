@@ -605,6 +605,7 @@ def run_session(
         scenario,
         domain_id=domain_id,
         duration_sec=duration,
+        security_mode=security_mode,
         keystore=str(WORKSPACE_ROOT / "sros2_keystore"),
     )
 

@@ -74,6 +74,7 @@ def test_non_insider_scenarios_never_receive_credentials(scenario_id):
         scenario,
         domain_id=30,
         duration_sec=20.0,
+        security_mode="enforce",
         keystore=str(KEYSTORE),
         base=_base_env(),
     )
@@ -110,6 +111,7 @@ def test_insider_gets_credentials_but_never_secrets(scenario_id):
         scenario,
         domain_id=30,
         duration_sec=20.0,
+        security_mode="enforce",
         keystore=str(KEYSTORE),
         base=_base_env(),
     )
@@ -132,7 +134,8 @@ def test_insider_without_keystore_refuses_instead_of_silently_downgrading():
     scenario = load_catalog()["insider_hmac_forgery"]
     with pytest.raises(ValueError, match="requires a keystore"):
         session_environment(
-            scenario, domain_id=30, duration_sec=20.0, keystore=None
+            scenario, domain_id=30, duration_sec=20.0,
+            security_mode="enforce", keystore=None
         )
 
 
@@ -145,6 +148,7 @@ def test_insider_with_missing_enclave_refuses(tmp_path):
             scenario,
             domain_id=30,
             duration_sec=20.0,
+            security_mode="enforce",
             keystore=str(tmp_path),
             base=_base_env(),
         )
@@ -157,6 +161,7 @@ def test_keystore_without_enclaves_directory_refuses(tmp_path):
             scenario,
             domain_id=30,
             duration_sec=20.0,
+            security_mode="enforce",
             keystore=str(tmp_path),
             base=_base_env(),
         )
@@ -174,6 +179,7 @@ def test_parameter_write_duration_travels_by_environment():
         scenario,
         domain_id=30,
         duration_sec=17.5,
+        security_mode="enforce",
         keystore=str(KEYSTORE),
         base=_base_env(),
     )
@@ -195,6 +201,7 @@ def test_hmac_forgery_duration_travels_by_argv_not_environment():
         scenario,
         domain_id=30,
         duration_sec=17.5,
+        security_mode="enforce",
         keystore=str(KEYSTORE),
         base=_base_env(),
     )
@@ -260,3 +267,29 @@ def test_orchestrator_does_not_take_the_keystore_from_the_environment(monkeypatc
         "run_session 不可從環境變數取 keystore：那是執行者的值，不是防守方的"
     )
     assert "sros2_keystore" in call
+
+def test_insider_security_settings_follow_the_session_mode():
+    """安全設定**不可寫死 Enforce**。
+
+    2026-09-02：原本無條件設 Enforce，於是在 Permissive 場次中內鬼是安全
+    participant 而防守方不是——兩者無法通訊，16 場的攻擊全部回報
+    `service-unreachable`，等於沒有攻擊。同一批的 Enforce 對照組是 14–15 次
+    成功抵達並被 rcl 的 read-only 擋下，兩相對比才看得出來。
+    """
+    scenario = load_catalog()["insider_parameter_write"]
+    enforce = session_environment(
+        scenario, domain_id=30, duration_sec=20.0,
+        security_mode="enforce", keystore=str(KEYSTORE), base=_base_env(),
+    )
+    permissive = session_environment(
+        scenario, domain_id=30, duration_sec=20.0,
+        security_mode="permissive", keystore=str(KEYSTORE), base=_base_env(),
+    )
+    assert enforce["ROS_SECURITY_ENABLE"] == "true"
+    assert enforce["ROS_SECURITY_STRATEGY"] == "Enforce"
+    for name in ("ROS_SECURITY_ENABLE", "ROS_SECURITY_STRATEGY",
+                 "ROS_SECURITY_KEYSTORE"):
+        assert name not in permissive, "Permissive 場次不得帶 " + name
+    for env in (enforce, permissive):
+        for name in SECRET_ENV_NAMES:
+            assert name not in env
