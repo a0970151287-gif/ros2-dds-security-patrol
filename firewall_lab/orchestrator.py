@@ -592,16 +592,20 @@ def run_session(
     telemetry_result = None
     sros_adapter_result = None
     # 預設是沒有憑證的外部者；只有登記在 `CREDENTIALED_RUNNERS` 的內鬼 runner
-    # 拿得到 keystore。keystore 取自環境（live stack 會 export），沒有就用工作區
-    # 的正式 keystore——路徑與 enclave 都由 `insider_environment` 驗證存在。
+    # 拿得到 keystore。
+    #
+    # keystore **不讀環境變數**。內鬼竊的是**防守方**的憑證，而防守方用哪一個
+    # 由啟動腳本決定（`展示指令/01c_啟動系統_enforce.sh` 寫死
+    # `$HOME/ros2_ws/sros2_keystore`）。`ROS_SECURITY_KEYSTORE` 只是 campaign
+    # 執行者當下 shell 裡的值，與防守方無關——2026-09-02 就是因為讀了它而指到
+    # `/home/jesse/ros2_security_keystore`（沒有那些 enclave），整批在第 8 場中止。
+    #
+    # 路徑或 enclave 不存在時 `insider_environment` 會直接拒絕，不會安靜降級。
     env = session_environment(
         scenario,
         domain_id=domain_id,
         duration_sec=duration,
-        keystore=(
-            os.environ.get("ROS_SECURITY_KEYSTORE")
-            or str(WORKSPACE_ROOT / "sros2_keystore")
-        ),
+        keystore=str(WORKSPACE_ROOT / "sros2_keystore"),
     )
 
     try:

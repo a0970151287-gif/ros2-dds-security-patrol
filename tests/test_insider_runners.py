@@ -239,3 +239,24 @@ def test_insider_scenarios_declare_classes_the_policy_already_knows():
     assert catalog["insider_parameter_write"].attack_class == "confused_deputy"
     for name in ("hmac_forgery", "confused_deputy"):
         assert name in policy["rules"]
+
+def test_orchestrator_does_not_take_the_keystore_from_the_environment(monkeypatch):
+    """內鬼竊的是**防守方**的憑證，不是 campaign 執行者 shell 裡那個。
+
+    2026-09-02：orchestrator 原本讀 `ROS_SECURITY_KEYSTORE`，而執行環境裡那個
+    指向 `/home/jesse/ros2_security_keystore`（沒有那些 enclave），整批 680 場
+    在第 8 場中止。防守方用哪一個由啟動腳本決定，是工作區的 `sros2_keystore`。
+    """
+    import inspect
+
+    from firewall_lab import orchestrator
+
+    source = inspect.getsource(orchestrator.run_session)
+    call = source[source.index("session_environment("):]
+    call = call[: call.index(")")]
+    # ⚠️ 不可以只找 "environ"——`session_environment` 這個名字本身就含它。
+    # 第一版就是這樣誤判成失敗的。要找的是 `os.environ` 這個取值動作。
+    assert "os.environ" not in call and "getenv" not in call, (
+        "run_session 不可從環境變數取 keystore：那是執行者的值，不是防守方的"
+    )
+    assert "sros2_keystore" in call
