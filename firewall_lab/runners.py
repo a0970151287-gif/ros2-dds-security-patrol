@@ -58,6 +58,20 @@ CREDENTIALED_RUNNERS: dict[str, str] = {
 }
 
 
+def runner_requires_enforce(runner: str) -> bool:
+    """這個 runner 是否只在 Enforce 下有意義。
+
+    持證內鬼的威脅模型是「SROS2 放行、應用層擋下」。Permissive 下 SROS2 對
+    誰都放行，「竊得憑證」不帶來任何額外能力——場景失去意義，而收到的資料
+    會是一個與外部者無法區分的類別。
+
+    N29 自己也有同一道守衛（`N29 只在 SROS2 Enforce 下有意義`，退出碼 2），
+    2026-09-02 的 Permissive 重跑就是在第 8 場撞上它。與其讓每個計畫產生器
+    各自記得，不如在這裡宣告一次。
+    """
+    return runner in CREDENTIALED_RUNNERS
+
+
 def _runner_env_extras(runner: str, duration_sec: float) -> dict[str, str]:
     """個別 runner 需要、但不能走 argv 的環境變數。
 
@@ -149,6 +163,13 @@ def session_environment(
     enclave = CREDENTIALED_RUNNERS.get(scenario.runner)
     if enclave is None:
         return attacker_environment(domain_id=domain_id, base=base)
+    if security_mode != "enforce":
+        raise ValueError(
+            f"runner {scenario.runner!r} is a credentialed insider and is only "
+            f"meaningful under Enforce; got security_mode={security_mode!r}. "
+            "Under Permissive, SROS2 admits everyone, so stolen credentials "
+            "grant nothing and the class is indistinguishable from an outsider."
+        )
     if keystore is None:
         raise ValueError(
             f"runner {scenario.runner!r} is a credentialed insider and requires a "

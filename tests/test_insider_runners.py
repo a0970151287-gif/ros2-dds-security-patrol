@@ -268,6 +268,30 @@ def test_orchestrator_does_not_take_the_keystore_from_the_environment(monkeypatc
     )
     assert "sros2_keystore" in call
 
+def test_insider_refuses_outside_enforce():
+    """持證內鬼在 Permissive 下沒有意義，必須直接拒絕而不是產生無法區分的資料。
+
+    2026-09-02：我先讓安全設定「跟隨場次模式」，於是 Permissive 場次的內鬼
+    變成沒有憑證的一般節點——但那樣它與外部者無法區分。N29 自己有同一道
+    守衛（退出碼 2），Permissive 重跑在第 8 場撞上它。
+    """
+    for sid in ("insider_hmac_forgery", "insider_parameter_write"):
+        with pytest.raises(ValueError, match="only meaningful under Enforce"):
+            session_environment(
+                load_catalog()[sid], domain_id=30, duration_sec=20.0,
+                security_mode="permissive", keystore=str(KEYSTORE),
+                base=_base_env(),
+            )
+
+
+def test_enforce_only_declaration_matches_the_credentialed_set():
+    from firewall_lab.runners import runner_requires_enforce
+    catalog = load_catalog()
+    declared = {sid for sid, sc in catalog.items()
+                if runner_requires_enforce(sc.runner)}
+    assert declared == {"insider_hmac_forgery", "insider_parameter_write"}
+
+
 def test_insider_security_settings_follow_the_session_mode():
     """安全設定**不可寫死 Enforce**。
 
@@ -281,15 +305,8 @@ def test_insider_security_settings_follow_the_session_mode():
         scenario, domain_id=30, duration_sec=20.0,
         security_mode="enforce", keystore=str(KEYSTORE), base=_base_env(),
     )
-    permissive = session_environment(
-        scenario, domain_id=30, duration_sec=20.0,
-        security_mode="permissive", keystore=str(KEYSTORE), base=_base_env(),
-    )
     assert enforce["ROS_SECURITY_ENABLE"] == "true"
     assert enforce["ROS_SECURITY_STRATEGY"] == "Enforce"
-    for name in ("ROS_SECURITY_ENABLE", "ROS_SECURITY_STRATEGY",
-                 "ROS_SECURITY_KEYSTORE"):
-        assert name not in permissive, "Permissive 場次不得帶 " + name
-    for env in (enforce, permissive):
-        for name in SECRET_ENV_NAMES:
-            assert name not in env
+    assert enforce["ROS_SECURITY_KEYSTORE"] == str(KEYSTORE.resolve())
+    for name in SECRET_ENV_NAMES:
+        assert name not in enforce
