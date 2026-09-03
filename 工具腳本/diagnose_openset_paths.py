@@ -76,6 +76,9 @@ def main() -> int:
         reset=lambda session, source: model.reset_stream(
             session_id=session, source=source
         ),
+        # 完整性只能由呼叫端提供：守衛無法從 rows 自己推導，
+        # 因為過濾發生在傳進來之前。見 stream_replay 的 docstring。
+        expected_row_count=len(rows),
     )
     for row, verdict in pairs:
         if row["label"] not in holdout_labels:

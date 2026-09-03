@@ -1438,6 +1438,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--exclusions", type=Path, default=DEFAULT_EXCLUSIONS)
     parser.add_argument("--dataset-root", type=Path, default=DEFAULT_DATASET_ROOT)
     parser.add_argument("--holdout-label", action="append", default=None)
+    parser.add_argument(
+        "--source-available",
+        action="append",
+        default=None,
+        metavar="FEATURE",
+        help=(
+            "宣告某個預設列為「來源不可用」的 telemetry 特徵，在**這份資料**上"
+            "已經有來源。必須明示——直接改預設常數會弄丟 fail-closed 的價值"
+            "（它本來就是要在特徵意外非零時咬人）。宣告之後仍會驗證："
+            "資料裡若該特徵全為零，代表宣稱與證據不符，一樣拒絕。"
+        ),
+    )
     parser.add_argument("--seed", type=int, default=20260817)
     parser.add_argument("--n-estimators", type=int, default=160)
     parser.add_argument("--maximum-normal-fpr", type=float, default=0.02)
@@ -1457,10 +1469,48 @@ def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     args = build_parser().parse_args(argv)
+    availability = dict(DEFAULT_LIVE_SOURCE_AVAILABILITY)
+    declared = list(args.source_available or [])
+    if declared:
+        import csv as _csv
+
+        unknown = [n for n in declared if n not in availability]
+        if unknown:
+            raise SystemExit(f"unknown telemetry feature(s): {sorted(unknown)}")
+        already = [n for n in declared if availability[n]]
+        if already:
+            raise SystemExit(
+                f"these features are already marked available: {sorted(already)}"
+            )
+        # 宣稱必須有證據：資料裡該特徵要真的非零，否則宣稱與證據不符。
+        with open(args.features, encoding="utf-8", newline="") as handle:
+            rows = list(_csv.DictReader(handle))
+        empty = []
+        for name in declared:
+            nonzero = sum(
+                1 for row in rows
+                if (row.get(name) or "").strip() not in ("", "0", "0.0")
+            )
+            if nonzero == 0:
+                empty.append(name)
+            else:
+                availability[name] = True
+                print(
+                    f"  來源已宣告可用：{name}"
+                    f"（{nonzero}/{len(rows)} 列非零）",
+                    flush=True,
+                )
+        if empty:
+            raise SystemExit(
+                "declared --source-available but the data is all zero for: "
+                f"{sorted(empty)}"
+            )
+
     result = train_hierarchical_candidate(
         args.features,
         args.output,
         security_mode=args.security_mode,
+        source_availability=availability,
         exclusions=args.exclusions,
         dataset_root=args.dataset_root,
         holdout_labels=args.holdout_label,
