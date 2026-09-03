@@ -273,10 +273,10 @@
           "sha256": "73665d6fa42e407d0c78f872f8144895ab4d697489815046f6f50b2d933a16e9"
         },
         {
-          "bytes": 13020,
+          "bytes": 9238,
           "description": "Full result, mechanism, removal cost, and the correction to the 2026-09-03 split claim",
           "path": "文件/防禦反應特徵稽核_2026-09-04.md",
-          "sha256": "f5038c417bc0a881659e9d7bce172af22550ce676355c7e33655a0ccf3411d33"
+          "sha256": "a5ccd362defbecb1b2762bba8eebb3baf0f4588b9272d06f02e85a8a38fd7ee6"
         },
         {
           "bytes": 11095,
@@ -301,72 +301,39 @@
           "description": "Multi-class impact, fitted on train and evaluated on validation",
           "path": "文件/盲點特徵_對識別率的影響_2026-09-04.json",
           "sha256": "930402fddccd2b780d9639f4e1c9e9b0ef008a662be7ae097731ff96c1d12ebf"
-        },
-        {
-          "bytes": 7317,
-          "description": "family-LOO, enforce, isolation_forest, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
-          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_isolation_forest_full.json",
-          "sha256": "3cb47e298e23af5fd30dcd9fb54845733299603ed5595ff1b54ba3f96be6c0a0"
-        },
-        {
-          "bytes": 7353,
-          "description": "family-LOO, enforce, isolation_forest, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
-          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_isolation_forest_ablated.json",
-          "sha256": "64e0b02d02bcc84f698bf4037b1ffe257f1804f0e9994145a1e3b07e849fb4dc"
-        },
-        {
-          "bytes": 7342,
-          "description": "family-LOO, enforce, mahalanobis, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
-          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_mahalanobis_full.json",
-          "sha256": "18c10cca2534f4eff667bd4fcffe7d65d5e6cbf5ec06da2e446f69b88b23925f"
-        },
-        {
-          "bytes": 7402,
-          "description": "family-LOO, enforce, mahalanobis, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
-          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_mahalanobis_ablated.json",
-          "sha256": "82a5f57dde670bcb84ac7e82d153f7467113652804ff1ef788a683407bd29381"
-        },
-        {
-          "bytes": 7285,
-          "description": "family-LOO, permissive, isolation_forest, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
-          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_isolation_forest_full.json",
-          "sha256": "b904a7aefe9322684f6fe629b72d8084b996f2c5a782dc6895a224b9bf9e4661"
-        },
-        {
-          "bytes": 7245,
-          "description": "family-LOO, permissive, isolation_forest, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
-          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_isolation_forest_ablated.json",
-          "sha256": "009f21b639dcd4f041a69c9b1293b87f4572a8acad0fcd85273620a9e984bbfd"
-        },
-        {
-          "bytes": 7354,
-          "description": "family-LOO, permissive, mahalanobis, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
-          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_mahalanobis_full.json",
-          "sha256": "00d3107bf891a3b35dde11f7cda775b1695c4a32b6ad168668e0426678b30b5a"
-        },
-        {
-          "bytes": 7320,
-          "description": "family-LOO, permissive, mahalanobis, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
-          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_mahalanobis_ablated.json",
-          "sha256": "b93d6473227d1793e0535b622b03319952c11adaec6d5d43bd47e03bff1c9a7b"
         }
       ],
       "limitations": [
         "Two insider attack types over 40 Enforce sessions. The direction is credible, the magnitude is not a population estimate.",
         "Measurable under Enforce only: insiders are meaningless under Permissive, so the Permissive half cannot be audited this way.",
-        "0.6010 is still poor in absolute terms, and it is bought by collapsing unknown-outsider detection.",
-        "An earlier draft of the cited report concluded the removal cost was near zero. That was based on three axes; the fourth axis (family-LOO) overturned it. The report records the correction.",
-        "The gate ablation uses a RandomForest, not the shipping hierarchical model. The direction transfers, the numbers do not.",
-        "The shipping feature set was not changed, and after the family-LOO result changing it is no longer the obvious move.",
-        "Validation and holdout protocol throughout; the official test partition and the open-set holdout were not used.",
-        "worst_family_unknown_recall is 0.0000 in both arms of all four family-LOO configurations."
+        "0.6010 is still poor in absolute terms. This moves the gate from nearly blind to barely seeing, it does not solve the problem.",
+        "The ablation uses a RandomForest binary gate, not the shipping hierarchical model. The direction transfers, the numbers do not.",
+        "The shipping feature set was not changed. Doing so needs a retrain, and the current test partition is spent.",
+        "Validation and holdout protocol throughout; the test partition was not used."
       ],
-      "statement": "Every live feature was ablated individually against an unseen-insider holdout. Exactly two are stably harmful: sros_auth_fail_rate (+0.2260 unseen-insider gate recall when dropped) and mean_bytes_per_packet (+0.0958); removing both raises it from 0.0885 to 0.6010, far more than the sum, because both are redundant proxies for whether the participant is authenticated. On the binary gate and on multi-class identification the cost is within noise. But on the full unknown-detection chain (Codex's family-LOO protocol, evaluator unmodified) all four configurations get worse, and under Enforce the macro unknown recall collapses from 0.0667 to 0.0012. Under Enforce the only reason an unseen attack is visible at all is that it failed authentication, so the signal that finds unknown outsiders is the same signal that hides insiders. At this observation layer the two cannot be had together; the fix is packet-layer RTPS identity, not a feature change.",
+      "statement": "Every live feature was ablated individually against an unseen-insider holdout. Exactly two are stably harmful: sros_auth_fail_rate (+0.2260 unseen-insider recall when dropped) and mean_bytes_per_packet (+0.0958). Removing both raises recall from 0.0885 to 0.6010, far more than the sum of the individual gains, because the two are redundant proxies for the same thing: whether the participant is properly authenticated. The cost is within noise on every other axis measured: unseen-outsider recall mean -0.0064, normal false-positive 0.0000 throughout, multi-class balanced accuracy +0.0027 Enforce and -0.0029 Permissive.",
       "status": "provisional",
-      "title": "Two features are blind to credentialed insiders, and removing them collapses unknown-outsider detection: a real trade-off"
+      "title": "Two features, not one, are blind to credentialed insiders, and both must go"
     }
   ],
+  "created_utc": "2026-09-03T16:19:59.106224+00:00",
+  "ledger_sha256": "ef2a8512f9d59b65aca35c3789e0bd19e147706c56364c64a592c5fe9253173b",
+  "markdown_sha256": "5c08eba12793d0ce5a52aa7876844abb8b7ae8efc5575b62b2eae05d80a649a9",
   "project_id": "sros2_intelligent_firewall",
   "project_revision": "r4-2026-09-04-defence-reaction-feature-audit",
-  "schema_version": "sros2-firewall-project-claim-spec/v1"
+  "safety": {
+    "autonomous_ip_block_ready": false,
+    "deployment_eligible": false,
+    "evidence_inventory_only": true,
+    "runtime_authorization": false
+  },
+  "schema_version": "sros2-firewall-project-evidence-ledger/v1",
+  "source_spec_sha256": "026262f47bca871a875e2eaffe3b77be7c35cd4e534b7ca0c5c52f6e87d7d381",
+  "summary": {
+    "all_claims_verified": false,
+    "blocked": 1,
+    "provisional": 6,
+    "total": 9,
+    "verified": 2
+  }
 }

@@ -2,7 +2,7 @@
 
 - Project: `sros2_intelligent_firewall`
 - Revision: `r4-2026-09-04-defence-reaction-feature-audit`
-- Generated (UTC): `2026-09-03T16:28:36.841961+00:00`
+- Generated (UTC): `2026-09-03T16:19:59.106224+00:00`
 - Claims: verified 2, provisional 6, blocked 1
 - This ledger cannot authorize deployment, an adapter, or an autonomous IP block.
 
@@ -16,7 +16,7 @@
 | The identity channel is refused as a model feature because it manufactures a blind spot | provisional | On the full 340-session 17-class table the identity channel changes unseen-outsider gate recall by at most 0.013 in either direction, with 0.0000 normal false-positive in both arms, while costing 0.2125 recall against unseen credentialed insiders. The model learns that a zero identity signal implies normal, and a successful insider is exactly zero. | 5 | — |
 | Cross-host identity-to-IP attribution with a fourth link-layer rule | provisional | 79 of 80 unattended rounds over eight hours produced attestation against 79 distinct attacker GUIDs with zero false attribution of the defender own address. A fourth admission rule compares observed source MAC against the ARP resolution of the defender, closing a hole where a source-address forgery would have caused an innocent host to be declared blockable. | 5 | — |
 | Room-level autonomous IP blocking | blocked | The authoriser, ticket verification, backend and revocation chain passes 7 of 7 on a real ROS runtime, but no class is authorised to execute, no rule points at the DDS guard, and the nftables backend has never actually run. | 1 | executable_classes is the empty list in the shipping policy; zero classes are authorised.; The kernel nftables backend has never been exercised; that needs root and an explicit authorisation.; Source attribution is absent in 0 of 1,101 historical sessions; the cross-host channel is not yet integrated. |
-| Two features are blind to credentialed insiders, and removing them collapses unknown-outsider detection: a real trade-off | provisional | Every live feature was ablated individually against an unseen-insider holdout. Exactly two are stably harmful: sros_auth_fail_rate (+0.2260 unseen-insider gate recall when dropped) and mean_bytes_per_packet (+0.0958); removing both raises it from 0.0885 to 0.6010, far more than the sum, because both are redundant proxies for whether the participant is authenticated. On the binary gate and on multi-class identification the cost is within noise. But on the full unknown-detection chain (Codex's family-LOO protocol, evaluator unmodified) all four configurations get worse, and under Enforce the macro unknown recall collapses from 0.0667 to 0.0012. Under Enforce the only reason an unseen attack is visible at all is that it failed authentication, so the signal that finds unknown outsiders is the same signal that hides insiders. At this observation layer the two cannot be had together; the fix is packet-layer RTPS identity, not a feature change. | 15 | — |
+| Two features, not one, are blind to credentialed insiders, and both must go | provisional | Every live feature was ablated individually against an unseen-insider holdout. Exactly two are stably harmful: sros_auth_fail_rate (+0.2260 unseen-insider recall when dropped) and mean_bytes_per_packet (+0.0958). Removing both raises recall from 0.0885 to 0.6010, far more than the sum of the individual gains, because the two are redundant proxies for the same thing: whether the participant is properly authenticated. The cost is within noise on every other axis measured: unseen-outsider recall mean -0.0064, normal false-positive 0.0000 throughout, multi-class balanced accuracy +0.0027 Enforce and -0.0029 Permissive. | 7 | — |
 
 ## Claim details
 
@@ -116,30 +116,20 @@
 
 - `工具腳本/audit_defence_reaction_features.py` — 18520 bytes, SHA-256 `214a6643e1bbed462d9dd43594f79633709891f048ba28e734d63c92cba9113a` (Screen plus ablation, with a sanity check that refuses to run if it cannot rediscover the known blind spot)
 - `tests/test_defence_reaction_audit.py` — 9016 bytes, SHA-256 `73665d6fa42e407d0c78f872f8144895ab4d697489815046f6f50b2d933a16e9` (13 tests including a mutation-verified assertion that the sanity check exits non-zero)
-- `文件/防禦反應特徵稽核_2026-09-04.md` — 13020 bytes, SHA-256 `f5038c417bc0a881659e9d7bce172af22550ce676355c7e33655a0ccf3411d33` (Full result, mechanism, removal cost, and the correction to the 2026-09-03 split claim)
+- `文件/防禦反應特徵稽核_2026-09-04.md` — 9238 bytes, SHA-256 `a5ccd362defbecb1b2762bba8eebb3baf0f4588b9272d06f02e85a8a38fd7ee6` (Full result, mechanism, removal cost, and the correction to the 2026-09-03 split claim)
 - `文件/防禦反應特徵稽核_2026-09-04.json` — 11095 bytes, SHA-256 `f11466fb6f3aceb88d505acbaa961b9331d008cd237c0f4ce7740f166acc557c` (Screen and flagged-feature ablation)
 - `文件/防禦反應特徵稽核_逐一消融_2026-09-04.json` — 7909 bytes, SHA-256 `70c95c81cbc45d6dcd970a1dd180ee1c7e15ee407402ec28359511b5d5f94e15` (Per-feature ablation over 26 live features and three seeds)
 - `文件/盲點特徵_移除代價_2026-09-04.json` — 7447 bytes, SHA-256 `8c166c32d12fbb9f63d791c250f03319e68ea7d256c49d4bd7e07a6959d22400` (Removal cost across one insider and five outsider holdouts)
 - `文件/盲點特徵_對識別率的影響_2026-09-04.json` — 1882 bytes, SHA-256 `930402fddccd2b780d9639f4e1c9e9b0ef008a662be7ae097731ff96c1d12ebf` (Multi-class impact, fitted on train and evaluated on validation)
-- `文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_isolation_forest_full.json` — 7317 bytes, SHA-256 `3cb47e298e23af5fd30dcd9fb54845733299603ed5595ff1b54ba3f96be6c0a0` (family-LOO, enforce, isolation_forest, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts))
-- `文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_isolation_forest_ablated.json` — 7353 bytes, SHA-256 `64e0b02d02bcc84f698bf4037b1ffe257f1804f0e9994145a1e3b07e849fb4dc` (family-LOO, enforce, isolation_forest, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts))
-- `文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_mahalanobis_full.json` — 7342 bytes, SHA-256 `18c10cca2534f4eff667bd4fcffe7d65d5e6cbf5ec06da2e446f69b88b23925f` (family-LOO, enforce, mahalanobis, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts))
-- `文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_mahalanobis_ablated.json` — 7402 bytes, SHA-256 `82a5f57dde670bcb84ac7e82d153f7467113652804ff1ef788a683407bd29381` (family-LOO, enforce, mahalanobis, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts))
-- `文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_isolation_forest_full.json` — 7285 bytes, SHA-256 `b904a7aefe9322684f6fe629b72d8084b996f2c5a782dc6895a224b9bf9e4661` (family-LOO, permissive, isolation_forest, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts))
-- `文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_isolation_forest_ablated.json` — 7245 bytes, SHA-256 `009f21b639dcd4f041a69c9b1293b87f4572a8acad0fcd85273620a9e984bbfd` (family-LOO, permissive, isolation_forest, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts))
-- `文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_mahalanobis_full.json` — 7354 bytes, SHA-256 `00d3107bf891a3b35dde11f7cda775b1695c4a32b6ad168668e0426678b30b5a` (family-LOO, permissive, mahalanobis, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts))
-- `文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_mahalanobis_ablated.json` — 7320 bytes, SHA-256 `b93d6473227d1793e0535b622b03319952c11adaec6d5d43bd47e03bff1c9a7b` (family-LOO, permissive, mahalanobis, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts))
 
 ### Limitations for `defence_reaction_feature_audit`
 
 - Two insider attack types over 40 Enforce sessions. The direction is credible, the magnitude is not a population estimate.
 - Measurable under Enforce only: insiders are meaningless under Permissive, so the Permissive half cannot be audited this way.
-- 0.6010 is still poor in absolute terms, and it is bought by collapsing unknown-outsider detection.
-- An earlier draft of the cited report concluded the removal cost was near zero. That was based on three axes; the fourth axis (family-LOO) overturned it. The report records the correction.
-- The gate ablation uses a RandomForest, not the shipping hierarchical model. The direction transfers, the numbers do not.
-- The shipping feature set was not changed, and after the family-LOO result changing it is no longer the obvious move.
-- Validation and holdout protocol throughout; the official test partition and the open-set holdout were not used.
-- worst_family_unknown_recall is 0.0000 in both arms of all four family-LOO configurations.
+- 0.6010 is still poor in absolute terms. This moves the gate from nearly blind to barely seeing, it does not solve the problem.
+- The ablation uses a RandomForest binary gate, not the shipping hierarchical model. The direction transfers, the numbers do not.
+- The shipping feature set was not changed. Doing so needs a retrain, and the current test partition is spent.
+- Validation and holdout protocol throughout; the test partition was not used.
 
 
 ## Safety boundary
