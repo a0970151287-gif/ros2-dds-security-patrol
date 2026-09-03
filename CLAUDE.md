@@ -218,11 +218,11 @@ observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
 
 | 項目 | 需要授權？ |
 |---|---|
-| **把身份特徵整合進正式特徵表**（attestation 本身已於 2026-08-30 取得，79／80；缺的是整合） | 需新 campaign 才有資料 |
+| ~~把身份特徵整合進正式特徵表~~ **2026-09-03 決定不做**——正式表上對外部者增益 ≈ 0（五組 holdout 全部 ±0.01 內，兩臂正常誤報都是 0.0000），而對內鬼 **−0.2125**：模型學到「身份訊號 = 0 ⇒ 正常」，而持證內鬼正好是 0。見 `身份特徵是盲點製造機_2026-09-03.md` | — |
 | 新 direct-delivery paired canary（獨立 pair／authorization attestation） | **需 Jesse 授權 live** |
 | kernel nftables 與 Raspberry Pi 5 驗收（跨主機那半已達 40%） | **需授權＋硬體** |
 | 以現行資料另出新 revision evidence ledger（C2C-037 P3 第 3 項） | 否，但需 `project_evidence.py` 流程 |
-| `hmac_result.channel` 接成特徵（2026-09-02 已加遙測欄位，既有 1,100 場沒有它） | 需新 campaign 才有資料 |
+| `hmac_result.channel` 接成特徵——**先確認它不會重蹈身份特徵的覆轍**（以防禦反應為特徵會對繞過者盲目） | 需先量 |
 | **一批沒有被花過的 open-set holdout**——現有的已用第三次，數字不可引用 | 需新 campaign |
 
 **2026-09-02 清掉兩項死待辦**：
