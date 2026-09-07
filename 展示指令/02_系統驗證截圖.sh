@@ -4,7 +4,7 @@
 # 執行前確認系統已依照 01_啟動系統.sh 全部開好
 # ============================================================
 
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 
 # 截圖 1：確認所有節點正在運行（應出現 7 個節點）
 ros2 node list

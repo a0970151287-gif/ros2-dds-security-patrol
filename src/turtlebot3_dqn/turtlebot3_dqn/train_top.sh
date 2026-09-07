@@ -14,10 +14,14 @@ set -eo pipefail
 
 cd "$(dirname "$0")"
 
+# Load only allow-listed, non-secret ROS/DDS settings.  HMAC and LINE secrets
+# stay in their chmod-600 files and are never exported to child processes.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/../../.." && pwd -P)"
+source "${PROJECT_ROOT}/工具腳本/load_ros_environment.sh" || exit 1
+
 # Idempotent sources — safe even if already active.
-source ~/.config/dds-monitor/credentials 2>/dev/null || true
 source ~/dqn_env/bin/activate
-source ~/ros2_ws/install/setup.bash 2>/dev/null || true
 export TURTLEBOT3_MODEL=burger
 
 echo "▶ Sanity check: /scan publishing?"

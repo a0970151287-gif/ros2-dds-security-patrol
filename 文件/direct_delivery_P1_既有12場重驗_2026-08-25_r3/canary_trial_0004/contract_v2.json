@@ -1,0 +1,44 @@
+{
+  "archives": {
+    "attempted": {
+      "bytes": 21068,
+      "path": "attempted.jsonl",
+      "sha256": "6a7048e3fa3e5a640a2fb312a1b8665701cdf6136624ef4dcebec580f08f4901"
+    },
+    "protected_received": {
+      "bytes": 30965,
+      "path": "protected_received.jsonl",
+      "sha256": "0eb5e038e2fd41339291d8dc410b2d8c06d090833f3a223f5a41d18eb63c5b6a"
+    }
+  },
+  "canary_topic": "/chatter",
+  "collector_requirements": {
+    "maximum_heartbeat_gap_ms": 60000,
+    "minimum_heartbeats": 2
+  },
+  "expected_attempt_count": 10,
+  "expected_first_sequence": 0,
+  "pair_id": "authorized_seed_01",
+  "pairing_attested": false,
+  "policy_sha256": "0ed41ad00639e77f45be4df367f3c9efb5fdcf756a10c07820e4e6380d7c2a49",
+  "protected_enclave": "/listener",
+  "protected_sink_id": "canary_listener",
+  "publisher_authorization": {
+    "authorization_case": "authorized_publisher",
+    "context_attested": false,
+    "credential_state": "security_disabled",
+    "permission_state": "not_enforced",
+    "subject_enclave": "/credentialed_source",
+    "topic": "/chatter"
+  },
+  "schema_version": "sros2-firewall-direct-delivery-contract/v2",
+  "security_mode": "permissive",
+  "session_id": "20260818T071451437721Z_delivery_canary_ed6b512a",
+  "source_enclave": "/credentialed_source",
+  "source_id": "credentialed_source",
+  "trial_id": "canary_trial_0004",
+  "window": {
+    "end_utc": "2026-08-18T07:15:14.311117+00:00",
+    "start_utc": "2026-08-18T07:14:58.308147+00:00"
+  }
+}

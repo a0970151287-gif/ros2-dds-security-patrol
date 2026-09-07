@@ -1,6 +1,6 @@
 #!/bin/bash
 # Gazebo 開啟後立刻停止機器人（清除初始速度）
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 echo "等待 Gazebo 和 bridge 就緒..."
 sleep 5
 ros2 topic pub --times 10 /cmd_vel geometry_msgs/msg/TwistStamped \

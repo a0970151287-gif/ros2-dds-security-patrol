@@ -61,7 +61,9 @@ class TurtleBot3Env(gym.Env, Node):
         self._scan_sub  = self.create_subscription(LaserScan, '/scan',            self._scan_cb,  qos)
         self._odom_sub  = self.create_subscription(Odometry,  '/odom',            self._odom_cb,  qos)
         self._alert_sub = self.create_subscription(String,    '/security/alerts', self._alert_cb, qos)
-        self._cmd_pub   = self.create_publisher(TwistStamped, '/cmd_vel', 10)
+        # Legacy controller input; final /cmd_vel is owned by velocity_guard_node.
+        self._cmd_pub   = self.create_publisher(
+            TwistStamped, '/cmd_vel/tqc', 10)
 
         self.observation_space = gym.spaces.Box(
             low=0.0, high=1.0, shape=(STATE_SIZE,), dtype=np.float32

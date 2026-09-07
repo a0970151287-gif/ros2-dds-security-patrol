@@ -1,0 +1,89 @@
+{
+  "schema_version": "sros2-firewall-catalog/v1",
+  "scenarios": [
+    {
+      "id": "normal_patrol",
+      "attack_class": "normal",
+      "runner": "normal",
+      "description": "smoke 的基線場次，與出貨 catalog 相同設定",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "allow",
+      "requires_gazebo": true
+    },
+    {
+      "id": "baseline_poisoning",
+      "attack_class": "baseline_poisoning",
+      "runner": "baseline_poisoning",
+      "description": "候選：N5_baseline_poison.py。尚未通過證據排他性 gate。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "quarantine",
+      "requires_gazebo": true
+    },
+    {
+      "id": "node_name_evasion",
+      "attack_class": "node_name_evasion",
+      "runner": "node_name_evasion",
+      "description": "候選：N2_ros2cli_regex_bypass.py。尚未通過證據排他性 gate。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "deny_participant",
+      "requires_gazebo": true
+    },
+    {
+      "id": "verify_flood",
+      "attack_class": "verify_flood",
+      "runner": "verify_flood",
+      "description": "候選：N20_verify_flood.py。尚未通過證據排他性 gate。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "temporary_block",
+      "requires_gazebo": true
+    },
+    {
+      "id": "odom_spoof",
+      "attack_class": "odom_spoof",
+      "runner": "odom_spoof",
+      "description": "候選：N34_odom_spoof.py。持續 publish「靜止」的 /odom，破壞機器人對自己的認知；刻意不偽造高速，那會與 cmd_vel_injection 的訊號重疊。尚未通過證據排他性 gate。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "lock_velocity",
+      "requires_gazebo": true
+    },
+    {
+      "id": "spdp_flood",
+      "attack_class": "spdp_flood",
+      "runner": "spdp_flood",
+      "description": "候選：N35_spdp_flood.py。同時存在大量 participant，用 SPDP 公告淹沒 discovery——那在安全握手之前就要處理，所以 Enforce 下仍有效。尚未通過證據排他性 gate。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "temporary_block",
+      "requires_gazebo": true
+    }
+  ]
+}

@@ -1,0 +1,203 @@
+{"kind":"deck","id":"pr/e3m2w5","name":"Deck"}
+{"kind":"layout","layoutId":"bab84f00-7c37-4894-8e79-8909f5954512","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"40e1a321-f552-4b11-9b00-a3212da02586","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/7m8vjh","slide":1,"title":"SROS2 智慧防火牆","textShapes":5}
+{"kind":"textbox","id":"sh/i5o7q58z","slide":1,"name":"Title-3-1","text":"SROS2 智慧防火牆\nSROS2 Intelligent Firewall","textPreview":"SROS2 智慧防火牆 | SROS2 Intelligent Firewall","textChars":38,"textLines":2,"bbox":[41.33,182.55,992,261.57]}
+{"kind":"textbox","id":"sh/58z610rq","slide":1,"name":"Subtitle-4-2","text":"以多模態 AI 偵測 ROS2 已知與未知攻擊\nJesse｜Raspberry Pi 5 部署目標｜2027.05","textPreview":"以多模態 AI 偵測 ROS2 已知與未知攻擊 | Jesse｜Raspberry Pi 5 部署目標｜2027.05","textChars":57,"textLines":2,"bbox":[41.33,497.87,598.67,113.41]}
+{"kind":"textbox","id":"sh/k7qpsvq5","slide":1,"name":"Subtitle-4-3","text":"人工智慧系｜個人專題｜研究架構與目前進度","textPreview":"人工智慧系｜個人專題｜研究架構與目前進度","textChars":20,"textLines":1,"bbox":[41.33,41.18,598.67,68.15]}
+{"kind":"textbox","id":"sh/7ah83a9w","slide":1,"name":"cover-accent","text":"PREVENT\nDETECT\nRESPOND","textPreview":"PREVENT | DETECT | RESPOND","textChars":22,"textLines":3,"bbox":[1090,0,190,720]}
+{"kind":"textbox","id":"sh/6987u58b","slide":1,"name":"pill-全新主簡報 v0.1","text":"全新主簡報 v0.1","textPreview":"全新主簡報 v0.1","textChars":10,"textLines":1,"bbox":[790,72,210,38]}
+{"kind":"notes","id":"nt/7m8vjh","slide":1,"text":"開場只講一句：這是一個把 SROS2 預防、ROS2 行為、DDS 網路與 AI 回應整合成可驗證防火牆的個人專題。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\專題執行基準_2026-07-29.md\n[/Sources]"}
+{"kind":"slide","id":"sl/om8xc2","slide":2,"title":"02","textShapes":6}
+{"kind":"textbox","id":"sh/pwryt0rm","slide":2,"name":"Google-Shape-532-p58-2","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1184.18,659.24,54.48,25.33]}
+{"kind":"textbox","id":"sh/2t0zi58b","slide":2,"name":"Google-Shape-533-p58-3","text":"問題不是只有「封包能不能進來」","textPreview":"問題不是只有「封包能不能進來」","textChars":15,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"textbox","id":"sh/3u9gra9g","slide":2,"name":"Google-Shape-534-p58-4","text":"傳統網路視角\nIP、port 與流量模式能看見掃描與洪水，卻不知道一個 ROS2 publisher 是否有權發布 /cmd_vel，也不知道機器人動作是否違反物理。","textPreview":"傳統網路視角 | IP、port 與流量模式能看見掃描與洪水，卻不知道一個 ROS2 publisher 是否有權發布 /cmd_vel，也不知道機器人動作是否違反物理。","textChars":83,"textLines":2,"bbox":[41.33,213.33,581.33,371.11]}
+{"kind":"textbox","id":"sh/gryhgvq5","slide":2,"name":"Content-Placeholder-3-5","text":"ROS2／DDS 視角\n真正的風險同時跨越身分與權限、訊息完整性、DDS discovery、感測／控制一致性，以及 AI 回應是否會造成誤封或失控。","textPreview":"ROS2／DDS 視角 | 真正的風險同時跨越身分與權限、訊息完整性、DDS discovery、感測／控制一致性，以及 AI 回應是否會造成誤封或失控。","textChars":75,"textLines":2,"bbox":[656.86,213.33,581.33,371.11]}
+{"kind":"shape","id":"sh/hs7yp0rq","slide":2,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/upgfel8z","slide":2,"name":"problem-left-tag","text":"一般防火牆","textPreview":"一般防火牆","textChars":5,"textLines":1,"bbox":[41,164,210,38]}
+{"kind":"textbox","id":"sh/fqpgnq9k","slide":2,"name":"problem-right-tag","text":"本專題的防火牆","textPreview":"本專題的防火牆","textChars":7,"textLines":1,"bbox":[657,164,250,38]}
+{"kind":"notes","id":"nt/om8xc2","slide":2,"text":"評審要先理解：本題不是把 nmap 或 Metasploit 接到 ROS2，而是處理一般 perimeter firewall 看不到的 DDS 身分與機器人行為風險。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\智慧防火牆完整計畫與進度_2026-07-27.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\系統文件\\系統架構規格書.md\n[/Sources]"}
+{"kind":"slide","id":"sl/w3dr4h","slide":3,"title":"03","textShapes":7}
+{"kind":"textbox","id":"sh/ehkja1cz","slide":3,"name":"Slide-Number-Placeholder-1-2","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1184.17,659.17,54.5,25.33]}
+{"kind":"textbox","id":"sh/14vilgvq","slide":3,"name":"Title-2-3","text":"四個研究問題，決定 AI 是否真的有價值","textPreview":"四個研究問題，決定 AI 是否真的有價值","textChars":20,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"textbox","id":"sh/0j21cbu5","slide":3,"name":"Content-Placeholder-9-4","text":"RQ1｜融合有效嗎？\nnetwork-only、telemetry-only、fusion 在相同 split 上比較 macro-F1、FPR 與重要攻擊 recall。","textPreview":"RQ1｜融合有效嗎？ | network-only、telemetry-only、fusion 在相同 split 上比較 macro-F1、FPR 與重要攻擊 recall。","textChars":86,"textLines":2,"bbox":[41.33,213.33,581.33,172.5]}
+{"kind":"textbox","id":"sh/ret0f6do","slide":3,"name":"Content-Placeholder-10-5","text":"RQ2｜未知攻擊呢？\n把攻擊類別完全排除於訓練，量測 anomaly detector 的 unknown recall 與 AUPRC。","textPreview":"RQ2｜未知攻擊呢？ | 把攻擊類別完全排除於訓練，量測 anomaly detector 的 unknown recall 與 AUPRC。","textChars":69,"textLines":2,"bbox":[656.86,213.33,581.33,172.5]}
+{"kind":"textbox","id":"sh/qdkz61c3","slide":3,"name":"Content-Placeholder-9-6","text":"RQ3｜SROS2 改變了什麼？\n配對比較 Permissive／Enforce，避免模型只記住安全模式而不是攻擊行為。","textPreview":"RQ3｜SROS2 改變了什麼？ | 配對比較 Permissive／Enforce，避免模型只記住安全模式而不是攻擊行為。","textChars":60,"textLines":2,"bbox":[41.33,421.73,581.33,172.51]}
+{"kind":"textbox","id":"sh/dgbihwve","slide":3,"name":"Content-Placeholder-10-7","text":"RQ4｜回應安全嗎？\n量測信心門檻、cooldown、白名單與 dry-run 對誤封、延遲和可復原性的影響。","textPreview":"RQ4｜回應安全嗎？ | 量測信心門檻、cooldown、白名單與 dry-run 對誤封、延遲和可復原性的影響。","textChars":55,"textLines":2,"bbox":[656.86,421.73,581.33,172.51]}
+{"kind":"shape","id":"sh/cf218rut","slide":3,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/vad0rqts","slide":3,"name":"pill-研究問題 > 功能數量","text":"研究問題 > 功能數量","textPreview":"研究問題 > 功能數量","textChars":11,"textLines":1,"bbox":[938,87,280,38]}
+{"kind":"notes","id":"nt/w3dr4h","slide":3,"text":"這頁是整份報告的骨架。後面每個資料、模型與驗收項目都要能回到 RQ1–RQ4。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\智慧防火牆完整計畫與進度_2026-07-27.md\n[/Sources]"}
+{"kind":"slide","id":"sl/imr7d9","slide":4,"title":"04","textShapes":9}
+{"kind":"textbox","id":"sh/w3yhkni5","slide":4,"name":"Google-Shape-532-p58-2","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1184.18,659.24,54.48,25.33]}
+{"kind":"textbox","id":"sh/bip0ri1k","slide":4,"name":"Google-Shape-533-p58-3","text":"整體架構：從機器人到受約束回應","textPreview":"整體架構：從機器人到受約束回應","textChars":15,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"shape","id":"sh/ahgzid0z","slide":4,"name":"Google-Shape-534-p58-4","bbox":[41.33,213.33,581.33,371.11]}
+{"kind":"shape","id":"sh/l8rixsjm","slide":4,"name":"Content-Placeholder-3-5","bbox":[656.86,213.33,581.33,371.11]}
+{"kind":"shape","id":"sh/k7ihonih","slide":4,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/j690vi1w","slide":4,"name":"architecture-subtitle","text":"目標部署：Raspberry Pi 5；校方其餘硬體待補。現階段以 Gazebo／TurtleBot3 建立可重現測試平台。","textPreview":"目標部署：Raspberry Pi 5；校方其餘硬體待補。現階段以 Gazebo／TurtleBot3 建立可重現測試平台。","textChars":62,"textLines":1,"bbox":[42,152,1120,46]}
+{"kind":"textbox","id":"sh/y50zmx0b","slide":4,"name":"architecture-01\n機器人","text":"01\n機器人\n\nGazebo / TB3\nscan · odom · imu\ncmd_vel","textPreview":"01 | 機器人 |  | Gazebo / TB3 | scan · odom · imu | cmd_vel","textChars":46,"textLines":6,"bbox":[42,236,205,250]}
+{"kind":"textbox","id":"sh/1cnyl8ji","slide":4,"name":"architecture-02\n預防","text":"02\n預防\n\nSROS2 Enforce\n雙 CA · ACL\nHMAC v3","textPreview":"02 | 預防 |  | SROS2 Enforce | 雙 CA · ACL | HMAC v3","textChars":39,"textLines":6,"bbox":[280,236,205,250]}
+{"kind":"textbox","id":"sh/0behc3ix","slide":4,"name":"architecture-03\n觀測","text":"03\n觀測\n\nZeek / DDS\nD1–D6\n事件與流量","textPreview":"03 | 觀測 |  | Zeek / DDS | D1–D6 | 事件與流量","textChars":29,"textLines":6,"bbox":[518,236,205,250]}
+{"kind":"textbox","id":"sh/2lo7mhwr","slide":4,"name":"architecture-04\nAI 融合","text":"04\nAI 融合\n\nnetwork branch\ntelemetry branch\nanomaly score","textPreview":"04 | AI 融合 |  | network branch | telemetry branch | anomaly score","textChars":55,"textLines":6,"bbox":[756,236,205,250]}
+{"kind":"textbox","id":"sh/3mxofmdc","slide":4,"name":"architecture-05\n回應","text":"05\n回應\n\nconfidence\nallowlist · cooldown\ndry-run","textPreview":"05 | 回應 |  | confidence | allowlist · cooldown | dry-run","textChars":46,"textLines":6,"bbox":[994,236,205,250]}
+{"kind":"shape","id":"sh/on6porex","slide":4,"name":"arrow-246-346","bbox":[246,346,28,32]}
+{"kind":"shape","id":"sh/pof6hwvi","slide":4,"name":"arrow-484-346","bbox":[484,346,28,32]}
+{"kind":"shape","id":"sh/q9o7qhw3","slide":4,"name":"arrow-722-346","bbox":[722,346,28,32]}
+{"kind":"shape","id":"sh/baxojmdo","slide":4,"name":"arrow-960-346","bbox":[960,346,28,32]}
+{"kind":"textbox","id":"sh/cb6psre9","slide":4,"name":"architecture-evidence-band","text":"每次實驗都保留 session manifest、PCAP、Zeek、telemetry、features、版本與 SHA-256，讓結果能回放、能重現、能被質疑。","textPreview":"每次實驗都保留 session manifest、PCAP、Zeek、telemetry、features、版本與 SHA-256，讓結果能回放、能重現、能被質疑。","textChars":82,"textLines":1,"bbox":[42,524,1157,78]}
+{"kind":"notes","id":"nt/imr7d9","slide":4,"text":"講解順序由左到右。特別說明 Pi 5 是目標硬體，不要讓評審誤以為已完成實機部署。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\專題執行基準_2026-07-29.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\系統文件\\系統架構規格書.md\n[/Sources]"}
+{"kind":"slide","id":"sl/lfdhaf","slide":5,"title":"05","textShapes":9}
+{"kind":"textbox","id":"sh/9wratcf2","slide":5,"name":"Google-Shape-532-p58-2","text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1184.18,659.24,54.48,25.33]}
+{"kind":"textbox","id":"sh/mt0ryxwr","slide":5,"name":"Google-Shape-533-p58-3","text":"五層防禦互補：AI 不是唯一防線","textPreview":"五層防禦互補：AI 不是唯一防線","textChars":16,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"textbox","id":"sh/7u9sr2xc","slide":5,"name":"Google-Shape-534-p58-4","text":"預防與完整性\nSROS2 雙 CA、逐節點最小權限與 DDS 加密；HMAC envelope v3 綁定 channel、timestamp、nonce，降低偽造、重放及跨頻道轉貼。","textPreview":"預防與完整性 | SROS2 雙 CA、逐節點最小權限與 DDS 加密；HMAC envelope v3 綁定 channel、timestamp、nonce，降低偽造、重放及跨頻道轉貼。","textChars":92,"textLines":2,"bbox":[41.33,353.33,374.67,276]}
+{"kind":"textbox","id":"sh/wz2947et","slide":5,"name":"Content-Placeholder-1-5","text":"AI 與安全回應\n分類器與 anomaly score 共同評估；所有動作受 confidence、allowlist、cooldown、容量限制與預設 dry-run 約束。","textPreview":"AI 與安全回應 | 分類器與 anomaly score 共同評估；所有動作受 confidence、allowlist、cooldown、容量限制與預設 dry-run 約束。","textChars":88,"textLines":2,"bbox":[864,353.33,374.67,276]}
+{"kind":"textbox","id":"sh/h0baxcfe","slide":5,"name":"Content-Placeholder-2-6","text":"行為與網路偵測\nD1–D6 檢查超物理速度、方向衝突、雷射重複、非法 publisher、心跳與控制不一致；網路層另檢查 DDS 異常。","textPreview":"行為與網路偵測 | D1–D6 檢查超物理速度、方向衝突、雷射重複、非法 publisher、心跳與控制不一致；網路層另檢查 DDS 異常。","textChars":68,"textLines":2,"bbox":[452.67,353.33,374.67,276]}
+{"kind":"shape","id":"sh/uxkr2hwn","slide":5,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/vytsvmx8","slide":5,"name":"defense-message","text":"先用密碼學與權限減少可攻擊面，再用規則與 AI 找到剩餘異常，最後讓回應可撤銷。","textPreview":"先用密碼學與權限減少可攻擊面，再用規則與 AI 找到剩餘異常，最後讓回應可撤銷。","textChars":40,"textLines":1,"bbox":[42,163,1110,62]}
+{"kind":"textbox","id":"sh/4n2t8rep","slide":5,"name":"layer-badge-1–2","text":"1–2","textPreview":"1–2","textChars":3,"textLines":1,"bbox":[42,279,72,50]}
+{"kind":"textbox","id":"sh/5oba1wfa","slide":5,"name":"layer-badge-3–4","text":"3–4","textPreview":"3–4","textChars":3,"textLines":1,"bbox":[453,279,72,50]}
+{"kind":"textbox","id":"sh/hs3qp8zm","slide":5,"name":"layer-badge-5","text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[864,279,72,50]}
+{"kind":"notes","id":"nt/lfdhaf","slide":5,"text":"不要把 AI 說成萬能。這個設計的強點是 defense in depth：SROS2 先預防、規則提供可解釋證據、AI 補未知模式、回應層保護機器人。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\防禦對照_預防優於反應.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\專題完整總報告.md\n[/Sources]"}
+{"kind":"slide","id":"sl/ezv5e0","slide":6,"title":"06","textShapes":7}
+{"kind":"textbox","id":"sh/3e1wvuhc","slide":6,"name":"Google-Shape-532-p58-2","text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1184.18,659.24,54.48,25.33]}
+{"kind":"textbox","id":"sh/4fax4zyx","slide":6,"name":"Google-Shape-533-p58-3","text":"威脅模型清楚，滲透測試才有證據價值","textPreview":"威脅模型清楚，滲透測試才有證據價值","textChars":17,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"textbox","id":"sh/pgjex4zi","slide":6,"name":"Google-Shape-534-p58-4","text":"本專題要驗證\n偽造／非法 publisher、replay 與 cross-channel、DDS discovery 異常、命令注入、參數竄改、來源偽造、心跳失效，以及感測／控制不一致。","textPreview":"本專題要驗證 | 偽造／非法 publisher、replay 與 cross-channel、DDS discovery 異常、命令注入、參數竄改、來源偽造、心跳失效，以及感測／控制不一致。","textChars":94,"textLines":2,"bbox":[41.33,213.33,581.33,371.11]}
+{"kind":"textbox","id":"sh/qhsf69g3","slide":6,"name":"Content-Placeholder-3-5","text":"本專題明確不做\n不在校園或辦公室共享網段主動掃描；不碰憑證、私鑰與密碼；不做 DoS、持久化、提權、shell、破壞性修改或不可復原操作。","textPreview":"本專題明確不做 | 不在校園或辦公室共享網段主動掃描；不碰憑證、私鑰與密碼；不做 DoS、持久化、提權、shell、破壞性修改或不可復原操作。","textChars":69,"textLines":2,"bbox":[656.86,213.33,581.33,371.11]}
+{"kind":"shape","id":"sh/ri1wzeho","slide":6,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/c3ux8jy9","slide":6,"name":"pill-IN SCOPE","text":"IN SCOPE","textPreview":"IN SCOPE","textChars":8,"textLines":1,"bbox":[42,164,180,38]}
+{"kind":"textbox","id":"sh/d43e14zu","slide":6,"name":"pill-OUT OF SCOPE","text":"OUT OF SCOPE","textPreview":"OUT OF SCOPE","textChars":12,"textLines":1,"bbox":[657,164,210,38]}
+{"kind":"textbox","id":"sh/6l8vu5gz","slide":6,"name":"pentest-boundary","text":"後期滲透驗收：自有隔離／host-only 網路＋書面範圍＋快照＋逐案 PCAP 與雜湊","textPreview":"後期滲透驗收：自有隔離／host-only 網路＋書面範圍＋快照＋逐案 PCAP 與雜湊","textChars":44,"textLines":1,"bbox":[280,588,720,52]}
+{"kind":"notes","id":"nt/ezv5e0","slide":6,"text":"滲透測試會做，但現在的共享 10.1.0.0/16 不能當作實驗室。評審會更重視範圍、可復原性與證據鏈，而不是攻擊工具數量。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\專題執行基準_2026-07-29.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\紅隊測試\\12_紅隊攻擊報告.md\n[/Sources]"}
+{"kind":"slide","id":"sl/vs0hjs","slide":7,"title":"07","textShapes":16}
+{"kind":"textbox","id":"sh/2tc3mx4j","slide":7,"name":"Google-Shape-532-p58-2","text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1184.18,659.24,54.48,25.33]}
+{"kind":"textbox","id":"sh/pw32hcnu","slide":7,"name":"Google-Shape-533-p58-3","text":"資料工廠：每一筆資料都要能追溯","textPreview":"資料工廠：每一筆資料都要能追溯","textChars":15,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"shape","id":"sh/ovulo7m9","slide":7,"name":"Google-Shape-534-p58-4","bbox":[41.33,213.33,581.33,371.11]}
+{"kind":"shape","id":"sh/by5kjm50","slide":7,"name":"Content-Placeholder-3-5","bbox":[656.86,213.33,581.33,371.11]}
+{"kind":"shape","id":"sh/axw3qh4f","slide":7,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/x0n2lcn6","slide":7,"name":"data-stat-2,500","text":"2,500","textPreview":"2,500","textChars":5,"textLines":1,"bbox":[42,160,330,64]}
+{"kind":"textbox","id":"sh/czels7ml","slide":7,"name":"data-label-2,500","text":"synthetic sessions","textPreview":"synthetic sessions","textChars":18,"textLines":1,"bbox":[42,224,330,34]}
+{"kind":"textbox","id":"sh/r21k7i5w","slide":7,"name":"data-stat-90,000","text":"90,000","textPreview":"90,000","textChars":6,"textLines":1,"bbox":[452,160,330,64]}
+{"kind":"textbox","id":"sh/61sjedob","slide":7,"name":"data-label-90,000","text":"synthetic windows","textPreview":"synthetic windows","textChars":17,"textLines":1,"bbox":[452,224,330,34]}
+{"kind":"textbox","id":"sh/c3epwfud","slide":7,"name":"data-stat-23","text":"23","textPreview":"23","textChars":2,"textLines":1,"bbox":[862,160,330,64]}
+{"kind":"textbox","id":"sh/d4nqpkvy","slide":7,"name":"data-label-23","text":"類別（normal＋22 attacks）","textPreview":"類別（normal＋22 attacks）","textChars":21,"textLines":1,"bbox":[862,224,330,34]}
+{"kind":"textbox","id":"sh/q1w7upcn","slide":7,"name":"data-stage-1","text":"manifest\nseed · mode · label","textPreview":"manifest | seed · mode · label","textChars":28,"textLines":2,"bbox":[42,342,145,150]}
+{"kind":"shape","id":"sh/b258nads","slide":7,"name":"arrow-189-402","bbox":[189,402,20,28]}
+{"kind":"textbox","id":"sh/07yp0zup","slide":7,"name":"data-stage-2","text":"capture\nPCAP + telemetry","textPreview":"capture | PCAP + telemetry","textChars":24,"textLines":2,"bbox":[211,342,145,150]}
+{"kind":"shape","id":"sh/l87qt4ba","slide":7,"name":"arrow-358-402","bbox":[358,402,20,28]}
+{"kind":"textbox","id":"sh/y5w7ypcj","slide":7,"name":"data-stage-3","text":"Zeek\nnetwork events","textPreview":"Zeek | network events","textChars":19,"textLines":2,"bbox":[380,342,145,150]}
+{"kind":"shape","id":"sh/z6p8rud4","slide":7,"name":"arrow-527-402","bbox":[527,402,20,28]}
+{"kind":"textbox","id":"sh/gbupovu5","slide":7,"name":"data-stage-4","text":"align\nsession + window","textPreview":"align | session + window","textChars":22,"textLines":2,"bbox":[549,342,145,150]}
+{"kind":"shape","id":"sh/1c36h0vq","slide":7,"name":"arrow-696-402","bbox":[696,402,20,28]}
+{"kind":"textbox","id":"sh/xwbe5sji","slide":7,"name":"data-stage-5","text":"features\nnetwork / telemetry / fusion","textPreview":"features | network / telemetry / fusion","textChars":37,"textLines":2,"bbox":[718,342,145,150]}
+{"kind":"shape","id":"sh/wv2dw7ix","slide":7,"name":"arrow-865-402","bbox":[865,402,20,28]}
+{"kind":"textbox","id":"sh/vutw321c","slide":7,"name":"data-stage-6","text":"verify\nquality gates","textPreview":"verify | quality gates","textChars":20,"textLines":2,"bbox":[887,342,145,150]}
+{"kind":"shape","id":"sh/atkvux0r","slide":7,"name":"arrow-1034-402","bbox":[1034,402,20,28]}
+{"kind":"textbox","id":"sh/5kve9cje","slide":7,"name":"data-stage-7","text":"release\nhash / quarantine","textPreview":"release | hash / quarantine","textChars":25,"textLines":2,"bbox":[1056,342,145,150]}
+{"kind":"textbox","id":"sh/kjmx07it","slide":7,"name":"synthetic-warning","text":"90,000 windows 只用於預訓練與管線開發；最終成效必須由 untouched live test 決定。","textPreview":"90,000 windows 只用於預訓練與管線開發；最終成效必須由 untouched live test 決定。","textChars":58,"textLines":1,"bbox":[227,528,824,62]}
+{"kind":"notes","id":"nt/vs0hjs","slide":7,"text":"這頁先展示規模，再主動揭露 synthetic 邊界。資料量大不代表真實攻防成效，品質 gate 與 live test 才是重點。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\firewall_lab\\pretrain_dataset\\DATASET_CARD.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\firewall_lab\\pretrain_dataset\\quality_report.json\n[/Sources]"}
+{"kind":"slide","id":"sl/djgdlt","slide":8,"title":"08","textShapes":10}
+{"kind":"shape","id":"sh/h8rm1cje","slide":8,"name":"Rounded-Rectangle-5-1","bbox":[41.33,317.33,374.67,312]}
+{"kind":"shape","id":"sh/ulgnqxk3","slide":8,"name":"Rounded-Rectangle-6-2","bbox":[452.67,317.33,374.67,312]}
+{"kind":"shape","id":"sh/fmp4z21o","slide":8,"name":"Rounded-Rectangle-7-3","bbox":[864.28,317.33,374.67,312]}
+{"kind":"textbox","id":"sh/sjy5on2x","slide":8,"name":"Slide-Number-Placeholder-1-4","text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1184.18,659.24,54.48,25.33]}
+{"kind":"textbox","id":"sh/tk7mxsji","slide":8,"name":"Title-2-5","text":"Live pilot 證明收集鏈能跑，但還不是最終成績","textPreview":"Live pilot 證明收集鏈能跑，但還不是最終成績","textChars":27,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"textbox","id":"sh/6hgnmdkr","slide":8,"name":"Content-Placeholder-9-6","text":"packets","textPreview":"packets","textChars":7,"textLines":1,"bbox":[73.74,514.5,309.67,86]}
+{"kind":"textbox","id":"sh/7ip4vi1c","slide":8,"name":"Content-Placeholder-10-7","text":"Zeek rows","textPreview":"Zeek rows","textChars":9,"textLines":1,"bbox":[896.78,514.5,309.67,86]}
+{"kind":"textbox","id":"sh/cf250r21","slide":8,"name":"Content-Placeholder-11-8","text":"captured bytes","textPreview":"captured bytes","textChars":14,"textLines":1,"bbox":[485.17,514.5,309.67,86]}
+{"kind":"textbox","id":"sh/dgb69wjm","slide":8,"name":"Content-Placeholder-9-9","text":"168,507","textPreview":"168,507","textChars":7,"textLines":1,"bbox":[73.74,360,308.67,142.71]}
+{"kind":"textbox","id":"sh/d0f21o76","slide":8,"name":"Content-Placeholder-9-10","text":"69.0 MB","textPreview":"69.0 MB","textChars":7,"textLines":1,"bbox":[484.3,360,308.67,142.71]}
+{"kind":"textbox","id":"sh/cz61sj61","slide":8,"name":"Content-Placeholder-9-11","text":"3,036","textPreview":"3,036","textChars":5,"textLines":1,"bbox":[898.94,360,308.67,142.71]}
+{"kind":"textbox","id":"sh/byd0zepg","slide":8,"name":"Content-Placeholder-15-12","text":"20 sessions｜Permissive 10＋Enforce 10\n20/20 training eligible、capture drops = 0；資料可訓練，但樣本仍不足以外推企業環境防護率。","textPreview":"20 sessions｜Permissive 10＋Enforce 10 | 20/20 training eligible、capture drops = 0；資料可訓練，但樣本仍不足以外推企業環境防護率。","textChars":102,"textLines":2,"bbox":[41.33,119.51,1197.33,167.92]}
+{"kind":"shape","id":"sh/qx4jqtov","slide":8,"name":"accent-rule-106-41.33","bbox":[41.33,106,1197.33,4]}
+{"kind":"textbox","id":"sh/pwvixo7a","slide":8,"name":"pill-0 drops","text":"0 drops","textPreview":"0 drops","textChars":7,"textLines":1,"bbox":[1010,164,160,38]}
+{"kind":"notes","id":"nt/djgdlt","slide":8,"text":"這是目前最扎實的 live 數字。不要把 20 sessions 說成模型準確率，也不要把 pilot 外推成企業成熟度。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\firewall_lab\\features_pilot\\live_quality_report.json\n[/Sources]"}
+{"kind":"slide","id":"sl/s4xmqk","slide":9,"title":"09","textShapes":8}
+{"kind":"textbox","id":"sh/yxkbax03","slide":9,"name":"Google-Shape-532-p58-2","text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1184.18,659.24,54.48,25.33]}
+{"kind":"textbox","id":"sh/l0vulszu","slide":9,"name":"Google-Shape-533-p58-3","text":"AI 核心：32 維融合仍差最後一段 live 管線","textPreview":"AI 核心：32 維融合仍差最後一段 live 管線","textChars":26,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"textbox","id":"sh/kzmtcni9","slide":9,"name":"Google-Shape-534-p58-4","text":"14 維｜DDS network\n封包率、位元組率、來源／目的、埠與 protocol 統計、Zeek 事件等。正式 live 已可產生 network features。","textPreview":"14 維｜DDS network | 封包率、位元組率、來源／目的、埠與 protocol 統計、Zeek 事件等。正式 live 已可產生 network features。","textChars":86,"textLines":2,"bbox":[41.33,213.33,581.33,371.11]}
+{"kind":"textbox","id":"sh/72dcn2hk","slide":9,"name":"Content-Placeholder-3-5","text":"18 維｜ROS／SROS2 telemetry\nHMAC、nonce／channel、publisher、heartbeat、scan、odom、cmd 一致性等。schema 已有；live collector 與同窗對齊未完成。","textPreview":"18 維｜ROS／SROS2 telemetry | HMAC、nonce／channel、publisher、heartbeat、scan、odom、cmd 一致性等。schema 已有；live collector 與同窗對齊未完成。","textChars":117,"textLines":2,"bbox":[656.86,213.33,581.33,371.11]}
+{"kind":"shape","id":"sh/614bex0z","slide":9,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/t4vupczq","slide":9,"name":"pill-NETWORK BRANCH","text":"NETWORK BRANCH","textPreview":"NETWORK BRANCH","textChars":14,"textLines":1,"bbox":[42,164,230,38]}
+{"kind":"textbox","id":"sh/83mdg7i5","slide":9,"name":"pill-TELEMETRY BRANCH","text":"TELEMETRY BRANCH","textPreview":"TELEMETRY BRANCH","textChars":16,"textLines":1,"bbox":[657,164,250,38]}
+{"kind":"textbox","id":"sh/vqdcrmhw","slide":9,"name":"fusion-equation","text":"14 + 18 = 32 維 FUSION","textPreview":"14 + 18 = 32 維 FUSION","textChars":21,"textLines":1,"bbox":[422,516,436,56]}
+{"kind":"textbox","id":"sh/u54vih0b","slide":9,"name":"contract-blocker","text":"Preflight 正確地 BLOCKED：live_multimodal_contract＋source_snapshot_clean 未通過前，正式 1,100 場不得啟動。","textPreview":"Preflight 正確地 BLOCKED：live_multimodal_contract＋source_snapshot_clean 未通過前，正式 1,100 場不得啟動。","textChars":89,"textLines":1,"bbox":[42,591,1157,48]}
+{"kind":"notes","id":"nt/s4xmqk","slide":9,"text":"這不是失敗，而是研究誠信：若先收 1,100 場只有 network features，之後無法回答 RQ1。現在的 fail-closed gate 避免昂貴返工。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\firewall_lab\\live_multimodal_contract.json\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\firewall_lab\\readiness_evidence\\formal_dataset_preflight_2026-07-28_after_plan_audit.json\n[/Sources]"}
+{"kind":"slide","id":"sl/ceb6h4","slide":10,"title":"10","textShapes":2}
+{"kind":"textbox","id":"sh/6l0fa50n","slide":10,"name":"Slide-Number-Placeholder-1-2","text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1184.17,659.17,54.5,25.33]}
+{"kind":"textbox","id":"sh/t8rylkze","slide":10,"name":"Title-2-3","text":"正式實驗：同一份 live test，公平比較六組問題","textPreview":"正式實驗：同一份 live test，公平比較六組問題","textChars":27,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"shape","id":"sh/s7ixcfit","slide":10,"name":"Content-Placeholder-9-4","bbox":[41.33,213.33,581.33,172.5]}
+{"kind":"shape","id":"sh/fatgnuh4","slide":10,"name":"Content-Placeholder-10-5","bbox":[656.86,213.33,581.33,172.5]}
+{"kind":"shape","id":"sh/u90fep0j","slide":10,"name":"Content-Placeholder-9-6","bbox":[41.33,421.73,581.33,172.51]}
+{"kind":"shape","id":"sh/hcbyp4za","slide":10,"name":"Content-Placeholder-10-7","bbox":[656.86,421.73,581.33,172.51]}
+{"kind":"shape","id":"sh/gb2xgzip","slide":10,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"table","id":"tb/ql4z2d43","slide":10,"name":"","rows":7,"cols":4,"preview":"實驗 | 比較 | 主要指標 | 回答","bbox":[42,164,1157,445]}
+{"kind":"notes","id":"nt/ceb6h4","slide":10,"text":"所有模型必須共用 session-grouped split，untouched test 只能最後開一次。若融合沒有贏 RF，也要誠實把貢獻定位為資料與安全實驗。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\智慧防火牆完整計畫與進度_2026-07-27.md\n[/Sources]"}
+{"kind":"slide","id":"sl/9c3d2r","slide":11,"title":"11","textShapes":7}
+{"kind":"textbox","id":"sh/vqhgbm1s","slide":11,"name":"Google-Shape-532-p58-2","text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1184.18,659.24,54.48,25.33]}
+{"kind":"textbox","id":"sh/wrqh472d","slide":11,"name":"Google-Shape-533-p58-3","text":"安全回應與滲透驗收：先可控，再談能擋","textPreview":"安全回應與滲透驗收：先可控，再談能擋","textChars":18,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"textbox","id":"sh/hszydcjy","slide":11,"name":"Google-Shape-534-p58-4","text":"回應引擎的五道閘門\n1 信心門檻\n2 白名單／保護來源\n3 per-source cooldown\n4 全域容量限制\n5 預設 dry-run、可撤銷、可稽核","textPreview":"回應引擎的五道閘門 | 1 信心門檻 | 2 白名單／保護來源 | 3 per-source cooldown | 4 全域容量限制 | 5 預設 dry-run、可撤銷、可稽核","textChars":79,"textLines":6,"bbox":[41.33,213.33,581.33,371.11]}
+{"kind":"textbox","id":"sh/it8z6hkj","slide":11,"name":"Content-Placeholder-3-5","text":"滲透測試的四階段\nA 離線 PCAP／replay\nB 同機 host-only 測試\nC 兩台自有隔離設備\nD 受限且非破壞的 Metasploit／DDS／ROS2 驗收","textPreview":"滲透測試的四階段 | A 離線 PCAP／replay | B 同機 host-only 測試 | C 兩台自有隔離設備 | D 受限且非破壞的 Metasploit／DDS／ROS2 驗收","textChars":87,"textLines":5,"bbox":[656.86,213.33,581.33,371.11]}
+{"kind":"shape","id":"sh/juhgfm1o","slide":11,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/4vah8r29","slide":11,"name":"pill-SAFE RESPONSE","text":"SAFE RESPONSE","textPreview":"SAFE RESPONSE","textChars":13,"textLines":1,"bbox":[42,164,220,38]}
+{"kind":"textbox","id":"sh/5wjyhwju","slide":11,"name":"pill-ISOLATED PENTEST","text":"ISOLATED PENTEST","textPreview":"ISOLATED PENTEST","textChars":16,"textLines":1,"bbox":[657,164,240,38]}
+{"kind":"textbox","id":"sh/yxofuxkz","slide":11,"name":"pentest-artifacts","text":"每案交付：scope + commands + stdout/stderr + PCAP + SHA-256 + observations + rollback evidence","textPreview":"每案交付：scope + commands + stdout/stderr + PCAP + SHA-256 + observations + rollback evidence","textChars":89,"textLines":1,"bbox":[190,584,900,56]}
+{"kind":"notes","id":"nt/9c3d2r","slide":11,"text":"只說會做滲透測試不夠；要說明升級階梯、停止條件、證據與復原。Metasploit 只是主機入口層工具，DDS／SROS2 仍需各自的協定驗證。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\專題執行基準_2026-07-29.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\防禦對照_預防優於反應.md\n[/Sources]"}
+{"kind":"slide","id":"sl/gci1te","slide":12,"title":"12","textShapes":11}
+{"kind":"textbox","id":"sh/72t0zqhc","slide":12,"name":"Google-Shape-532-p58-2","text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1184.18,659.24,54.48,25.33]}
+{"kind":"textbox","id":"sh/832h8vyh","slide":12,"name":"Google-Shape-533-p58-3","text":"工程品質已成形；AI 研究證據仍在中段","textPreview":"工程品質已成形；AI 研究證據仍在中段","textChars":19,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"shape","id":"sh/94bi10z2","slide":12,"name":"Google-Shape-534-p58-4","bbox":[41.33,213.33,581.33,371.11]}
+{"kind":"shape","id":"sh/yx0z21gf","slide":12,"name":"Content-Placeholder-3-5","bbox":[656.86,213.33,581.33,371.11]}
+{"kind":"shape","id":"sh/zyt0v6h0","slide":12,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/kz2h4byl","slide":12,"name":"engineering-progress-label","text":"工程實作進度","textPreview":"工程實作進度","textChars":6,"textLines":1,"bbox":[42,168,300,34]}
+{"kind":"shape","id":"sh/l0bixgz6","slide":12,"name":"engineering-progress-track","bbox":[42,208,520,34]}
+{"kind":"textbox","id":"sh/a90zy1gj","slide":12,"name":"engineering-progress-value","text":"68.5%","textPreview":"68.5%","textChars":5,"textLines":1,"bbox":[42,208,356,34]}
+{"kind":"textbox","id":"sh/bu9gr6h4","slide":12,"name":"ai-progress-label","text":"AI 過關成熟度","textPreview":"AI 過關成熟度","textChars":8,"textLines":1,"bbox":[42,274,300,34]}
+{"kind":"shape","id":"sh/b2lgzu14","slide":12,"name":"ai-progress-track","bbox":[42,314,520,34]}
+{"kind":"textbox","id":"sh/a1szqp0j","slide":12,"name":"ai-progress-value","text":"55.3%","textPreview":"55.3%","textChars":5,"textLines":1,"bbox":[42,314,288,34]}
+{"kind":"textbox","id":"sh/x43y14ju","slide":12,"name":"progress-explanation","text":"兩個百分比不是模型準確率：前者衡量系統與測試，後者衡量資料、模型、消融、未知攻擊與統計證據。","textPreview":"兩個百分比不是模型準確率：前者衡量系統與測試，後者衡量資料、模型、消融、未知攻擊與統計證據。","textChars":46,"textLines":1,"bbox":[42,386,520,120]}
+{"kind":"textbox","id":"sh/w3uhszi9","slide":12,"name":"quality-0","text":"256 / 0 / 0\n\npassed / skipped / failed","textPreview":"256 / 0 / 0 |  | passed / skipped / failed","textChars":38,"textLines":3,"bbox":[650,166,250,172]}
+{"kind":"textbox","id":"sh/j6lg3e10","slide":12,"name":"quality-1","text":"47 / 47\n\n最新 SROS2 稽核通過","textPreview":"47 / 47 |  | 最新 SROS2 稽核通過","textChars":22,"textLines":3,"bbox":[930,166,250,172]}
+{"kind":"textbox","id":"sh/y5czu90f","slide":12,"name":"quality-2","text":"13 / 15\n\nformal preflight","textPreview":"13 / 15 |  | formal preflight","textChars":25,"textLines":3,"bbox":[650,371,250,172]}
+{"kind":"textbox","id":"sh/ls3i54j6","slide":12,"name":"quality-3","text":"0 / 1,100\n\n正式 live sessions","textPreview":"0 / 1,100 |  | 正式 live sessions","textChars":27,"textLines":3,"bbox":[930,371,250,172]}
+{"kind":"notes","id":"nt/gci1te","slide":12,"text":"強調 68.5% 與 55.3% 是工作包加權進度，不是模型準確率。47/47 是最新工程紀錄，但正式答辯前要重跑並保存原始 log，且清理舊文件 28/47 的衝突。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\智慧防火牆工程進度_2026-07-27.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\智慧防火牆完整計畫與進度_2026-07-27.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\正式資料集啟動紀錄_2026-07-28.md\n[/Sources]"}
+{"kind":"slide","id":"sl/ojtpbb","slide":13,"title":"13","textShapes":9}
+{"kind":"textbox","id":"sh/lwv618re","slide":13,"name":"Slide-Number-Placeholder-3-2","text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1184.18,659.24,54.48,25.33]}
+{"kind":"textbox","id":"sh/ytkn6ts3","slide":13,"name":"Title-10-3","text":"執行路線：2026.08 到 2027.05","textPreview":"執行路線：2026.08 到 2027.05","textChars":22,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"shape","id":"sh/zutozy9o","slide":13,"name":"Google-Shape-2259-p159-4","bbox":[35.46,354.2,1285.61,0.03]}
+{"kind":"shape","id":"sh/cr254jax","slide":13,"name":"Google-Shape-2260-p159-5","bbox":[35.46,348.58,11.24,11.24]}
+{"kind":"shape","id":"sh/dsb6xori","slide":13,"name":"Google-Shape-2261-p159-6","bbox":[446.38,348.58,11.24,11.24]}
+{"kind":"shape","id":"sh/qpkn29sr","slide":13,"name":"Google-Shape-2262-p159-7","bbox":[858.38,348.58,11.24,11.24]}
+{"kind":"textbox","id":"sh/bqtove9c","slide":13,"name":"Content-Placeholder-15-8","text":"2026.08–12","textPreview":"2026.08–12","textChars":10,"textLines":1,"bbox":[41.33,298.51,169.33,27.55]}
+{"kind":"textbox","id":"sh/o3i50ja1","slide":13,"name":"Content-Placeholder-15-9","text":"2027.01–03","textPreview":"2027.01–03","textChars":10,"textLines":1,"bbox":[450.83,298.51,169.33,27.55]}
+{"kind":"textbox","id":"sh/pob6t4rm","slide":13,"name":"Content-Placeholder-15-10","text":"2027.04–05","textPreview":"2027.04–05","textChars":10,"textLines":1,"bbox":[863.33,298.51,169.33,27.55]}
+{"kind":"textbox","id":"sh/9knu9wj2","slide":13,"name":"Text-Placeholder-16-11","text":"模型與驗收\n完成 baseline、消融、未知攻擊、95% CI 與 P95；在隔離環境完成 Pi5 與非破壞驗收。","textPreview":"模型與驗收 | 完成 baseline、消融、未知攻擊、95% CI 與 P95；在隔離環境完成 Pi5 與非破壞驗收。","textChars":58,"textLines":2,"bbox":[453.24,401.33,331.35,166.54]}
+{"kind":"textbox","id":"sh/ojedgrih","slide":13,"name":"Text-Placeholder-16-12","text":"資料與契約\n完成 telemetry、fusion、source freeze 與第一批正式資料；缺件到貨後建立 Pi5 資源基線。","textPreview":"資料與契約 | 完成 telemetry、fusion、source freeze 與第一批正式資料；缺件到貨後建立 Pi5 資源基線。","textChars":66,"textLines":2,"bbox":[41.98,401.33,331.35,166.54]}
+{"kind":"textbox","id":"sh/ni5c7m1w","slide":13,"name":"Text-Placeholder-16-13","text":"交付與答辯\n凍結資料與模型；完成報告、簡報。\n完成海報與影片；參加作品展、兩輪答辯。\n5 月底提交。","textPreview":"交付與答辯 | 凍結資料與模型；完成報告、簡報。 | 完成海報與影片；參加作品展、兩輪答辯。 | 5 月底提交。","textChars":50,"textLines":4,"bbox":[858.57,401.33,331.35,166.54]}
+{"kind":"shape","id":"sh/mhwveh0b","slide":13,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/1gnu5cjq","slide":13,"name":"pill-內部目標日：2027-05-31","text":"內部目標日：2027-05-31","textPreview":"內部目標日：2027-05-31","textChars":16,"textLines":1,"bbox":[910,82,300,38]}
+{"kind":"notes","id":"nt/ojtpbb","slide":13,"text":"截止日先作為內部控制日，仍要取得系辦正式公告。若缺件延遲，先完成模擬與 Pi 5 資源量測，不讓整個研究停住。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\專題執行基準_2026-07-29.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\智慧防火牆正式評分對齊_2026-07-28.md\n[/Sources]"}
+{"kind":"slide","id":"sl/qqjij8","slide":14,"title":"14","textShapes":12}
+{"kind":"textbox","id":"sh/5wbehk7m","slide":14,"name":"Slide-Number-Placeholder-1-2","text":"14","textPreview":"14","textChars":2,"textLines":1,"bbox":[1184.17,659.17,54.5,25.33]}
+{"kind":"textbox","id":"sh/i90v658v","slide":14,"name":"Title-2-3","text":"五項評分能力，都要有可查驗的作品證據","textPreview":"五項評分能力，都要有可查驗的作品證據","textChars":18,"textLines":1,"bbox":[41.33,36.12,1197.33,109.97]}
+{"kind":"shape","id":"sh/jatcfapg","slide":14,"name":"Content-Placeholder-9-4","bbox":[41.33,213.33,581.33,172.5]}
+{"kind":"shape","id":"sh/sz2dczqx","slide":14,"name":"Content-Placeholder-10-5","bbox":[656.86,213.33,581.33,172.5]}
+{"kind":"shape","id":"sh/t0bel47i","slide":14,"name":"Content-Placeholder-9-6","bbox":[41.33,421.73,581.33,172.51]}
+{"kind":"shape","id":"sh/6xkvap87","slide":14,"name":"Content-Placeholder-10-7","bbox":[656.86,421.73,581.33,172.51]}
+{"kind":"shape","id":"sh/7ytwjups","slide":14,"name":"accent-rule-133-41.33","bbox":[41.33,133,1197.33,4]}
+{"kind":"textbox","id":"sh/83id0vqt","slide":14,"name":"rubric-label-0","text":"AI 工程軟硬體","textPreview":"AI 工程軟硬體","textChars":8,"textLines":1,"bbox":[42,158,250,70]}
+{"kind":"textbox","id":"sh/94ru90re","slide":14,"name":"rubric-evidence-0","text":"融合模型＋SROS2 系統＋Raspberry Pi 5 資源與即時量測","textPreview":"融合模型＋SROS2 系統＋Raspberry Pi 5 資源與即時量測","textChars":36,"textLines":1,"bbox":[314,158,885,70]}
+{"kind":"textbox","id":"sh/dkfi1sn2","slide":14,"name":"rubric-label-1","text":"數據分析與數理","textPreview":"數據分析與數理","textChars":7,"textLines":1,"bbox":[42,252,250,70]}
+{"kind":"textbox","id":"sh/cj6187mx","slide":14,"name":"rubric-evidence-1","text":"session-grouped split、消融、未知攻擊、PR-AUC、95% CI","textPreview":"session-grouped split、消融、未知攻擊、PR-AUC、95% CI","textChars":43,"textLines":1,"bbox":[314,252,885,70]}
+{"kind":"textbox","id":"sh/bid0z25c","slide":14,"name":"rubric-label-2","text":"專案執行與報告","textPreview":"專案執行與報告","textChars":7,"textLines":1,"bbox":[42,346,250,70]}
+{"kind":"textbox","id":"sh/qh4j6x4r","slide":14,"name":"rubric-evidence-2","text":"單人 WBS、版本凍結、evidence ledger、可重現 release","textPreview":"單人 WBS、版本凍結、evidence ledger、可重現 release","textChars":39,"textLines":1,"bbox":[314,346,885,70]}
+{"kind":"textbox","id":"sh/lof25cne","slide":14,"name":"rubric-label-3","text":"溝通與跨領域","textPreview":"溝通與跨領域","textChars":6,"textLines":1,"bbox":[42,440,250,70]}
+{"kind":"textbox","id":"sh/0n61w7mt","slide":14,"name":"rubric-evidence-3","text":"30 秒／3 分鐘／10 分鐘說法、術語表、教授回饋與決策紀錄","textPreview":"30 秒／3 分鐘／10 分鐘說法、術語表、教授回饋與決策紀錄","textChars":31,"textLines":1,"bbox":[314,440,885,70]}
+{"kind":"textbox","id":"sh/zmx03258","slide":14,"name":"rubric-label-4","text":"國際與社會關懷","textPreview":"國際與社會關懷","textChars":7,"textLines":1,"bbox":[42,534,250,70]}
+{"kind":"textbox","id":"sh/ylojax4n","slide":14,"name":"rubric-evidence-4","text":"DDS Security／ROS2／NIST／IEC 概念對照、人身安全與誤封治理","textPreview":"DDS Security／ROS2／NIST／IEC 概念對照、人身安全與誤封治理","textChars":41,"textLines":1,"bbox":[314,534,885,70]}
+{"kind":"notes","id":"nt/qqjij8","slide":14,"text":"這頁直接對齊系上評分。個人專題的溝通協調證據改為需求訪談、教授回饋、決策紀錄、公開展示與多層次說明，不假裝有團隊分工。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\智慧防火牆正式評分對齊_2026-07-28.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\專題執行基準_2026-07-29.md\n[/Sources]"}
+{"kind":"slide","id":"sl/sbt450","slide":15,"title":"不是「擋住所有攻擊」","textShapes":5}
+{"kind":"textbox","id":"sh/yp4vapo7","slide":15,"name":"Title-3-1","text":"不是「擋住所有攻擊」\n而是「證明風險如何下降」","textPreview":"不是「擋住所有攻擊」 | 而是「證明風險如何下降」","textChars":23,"textLines":2,"bbox":[41.33,182.55,992,261.57]}
+{"kind":"textbox","id":"sh/lsve547i","slide":15,"name":"Subtitle-4-2","text":"證據 > 宣稱\n安全 > 激進\n可重現 > 一次展示","textPreview":"證據 > 宣稱 | 安全 > 激進 | 可重現 > 一次展示","textChars":26,"textLines":3,"bbox":[41.33,522.13,374.67,113.41]}
+{"kind":"textbox","id":"sh/0rmdcz6d","slide":15,"name":"Subtitle-4-3","text":"專題主張","textPreview":"專題主張","textChars":4,"textLines":1,"bbox":[41.33,41.18,169.33,68.15]}
+{"kind":"textbox","id":"sh/b2tczupg","slide":15,"name":"close-accent","text":"SROS2\n＋\nMULTIMODAL AI\n＋\nSAFE RESPONSE","textPreview":"SROS2 | ＋ | MULTIMODAL AI | ＋ | SAFE RESPONSE","textChars":37,"textLines":5,"bbox":[776,182,422,420]}
+{"kind":"textbox","id":"sh/q1kv6pov","slide":15,"name":"pill-下一個關鍵交付：live telemetry + fusion contract","text":"下一個關鍵交付：live telemetry + fusion contract","textPreview":"下一個關鍵交付：live telemetry + fusion contract","textChars":40,"textLines":1,"bbox":[710,632,488,38]}
+{"kind":"notes","id":"nt/sbt450","slide":15,"text":"收尾不要承諾防住所有攻擊。承諾一條可重現的研究證據鏈，以及一個不會因 AI 誤判就讓機器人失控的安全回應系統。\n\n[Sources]\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\智慧防火牆完整計畫與進度_2026-07-27.md\n- C:\\Users\\Jesse\\Documents\\專題ROS2\\文件\\專題執行基準_2026-07-29.md\n[/Sources]"}

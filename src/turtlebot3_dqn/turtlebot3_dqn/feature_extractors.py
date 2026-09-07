@@ -54,10 +54,12 @@ class LiDARConvExtractor(BaseFeaturesExtractor):
         self.n_state = state_dim
         per_frame = lidar_beams + state_dim
         expected = frame_stack * per_frame
-        assert observation_space.shape[0] == expected, (
-            f"obs dim {observation_space.shape[0]} != "
-            f"K({frame_stack}) * per_frame({per_frame}) = {expected}"
-        )
+        actual = observation_space.shape[0]
+        if actual != expected:
+            raise ValueError(
+                f"obs dim {actual} != "
+                f"K({frame_stack}) * per_frame({per_frame}) = {expected}"
+            )
 
         # LiDAR encoder: per-frame Conv1D, frames treated as channels
         self.lidar_conv = nn.Sequential(

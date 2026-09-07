@@ -11,11 +11,21 @@
 #   source 展示指令/10_SROS2啟用.sh enforce  # 在本 shell 開啟 Enforce 環境變數
 # ============================================================================
 set -euo pipefail
+umask 077
 
 WS="$HOME/ros2_ws"
 KEYSTORE="$WS/sros2_keystore"
-POLICY="$WS/展示指令/sros2_policy.xml"   # 存取控制政策（放行合法節點的 topic）
+POLICY="$WS/展示指令/sros2_policy_least_privilege.xml"   # G2 加固：最小權限 ACL
+# 舊的全 wildcard 政策保留為 fallback：$WS/展示指令/sros2_policy.xml
 DOMAIN="${ROS_DOMAIN_ID:-30}"            # 實驗室 domain（governance + permissions 必須一致！）
+if [[ ! -f "$POLICY" || -L "$POLICY" ]]; then
+  echo "⛔ canonical SROS2 policy missing or unsafe symlink: $POLICY" >&2
+  return 2 2>/dev/null || exit 2
+fi
+if [[ ! "$DOMAIN" =~ ^[0-9]+$ ]] || (( DOMAIN < 0 || DOMAIN > 232 )); then
+  echo "⛔ ROS_DOMAIN_ID 必須是 0..232 的整數，目前為：$DOMAIN" >&2
+  return 2 2>/dev/null || exit 2
+fi
 
 # legit 節點（要跑安全的）——依實際 demo 節點調整
 ENCLAVES=(
@@ -23,9 +33,12 @@ ENCLAVES=(
   "/listener"
   "/burger_env_top"
   "/dds_security_monitor"
-  # ── 實際系統的 6 個節點 + Gazebo stack（全系統 Enforce 用）──
+  # ── 實際系統節點 + Gazebo stack（全系統 Enforce 用）──
   "/sensor_hub_node"
   "/patrol_node"
+  "/velocity_guard_node"
+  "/security_readiness_probe"
+  "/local_outcome_probe"
   "/mission_manager"
   "/system_status_node"
   "/intelligent_defense_node"
@@ -50,9 +63,12 @@ if [[ "${1:-}" == "enforce" ]]; then
   return 0 2>/dev/null || exit 0
 fi
 
+# 此腳本可能在尚未 build overlay 時執行，因此直接載入 underlay；仍先清掉舊秘密。
+unset DDS_ALERT_SECRET LINE_CHANNEL_TOKEN
 set +u   # ROS setup.bash 會引用未定義變數，sourcing 時暫關 nounset
 source /opt/ros/jazzy/setup.bash
 [[ -f "$WS/install/setup.bash" ]] && source "$WS/install/setup.bash"
+unset DDS_ALERT_SECRET LINE_CHANNEL_TOKEN
 set -u
 
 if ! ros2 security -h >/dev/null 2>&1; then
@@ -69,6 +85,28 @@ else
   echo "→ keystore 已存在，沿用：$KEYSTORE"
 fi
 
+# ── 1b) G1 加固：分離 permissions CA（與 identity CA 不同把）────────────
+# 教訓（紅隊 N26）：identity 與 permissions 共用一把 CA → 一把淪陷可同時偽造
+# 身分「和」權限。分離後：identity 由 sros2CA 簽、permissions 由 sros2permissionsCA 簽，
+# 攻陷其一不足以同時偽造兩者。idempotent：已分離則跳過。
+split_permissions_ca() {
+  local pub="$KEYSTORE/public" priv="$KEYSTORE/private"
+  if [[ -f "$priv/permissions_ca.key.pem" && ! -L "$priv/permissions_ca.key.pem" ]]; then
+    echo "→ permissions CA 已與 identity CA 分離，跳過"
+    return 0
+  fi
+  echo "→ G1：分離 permissions CA（新生一把 sros2permissionsCA）"
+  rm -f "$pub/permissions_ca.cert.pem" "$priv/permissions_ca.key.pem"
+  openssl ecparam -name prime256v1 -genkey -noout -out "$priv/permissions_ca.key.pem" 2>/dev/null
+  openssl req -new -x509 -key "$priv/permissions_ca.key.pem" \
+    -out "$pub/permissions_ca.cert.pem" -days 3650 \
+    -subj "/CN=sros2permissionsCA" \
+    -addext "basicConstraints=critical,CA:TRUE" \
+    -addext "keyUsage=critical,keyCertSign,cRLSign,digitalSignature" 2>/dev/null
+  chmod 600 "$priv/permissions_ca.key.pem"
+}
+split_permissions_ca
+
 # ── 2) 為每個 legit 節點建 enclave（身分憑證 + 預設權限）────────────────
 for e in "${ENCLAVES[@]}"; do
   if [[ ! -d "$KEYSTORE/enclaves$e" ]]; then
@@ -82,23 +120,23 @@ done
 # ── 2b) 用政策簽存取控制權限（domain 必須 = DOMAIN）─────────────────────
 # create_enclave 的預設權限太窄（連 ros_discovery_info 都沒放行）→ 合法節點也跑不起來。
 # 改用政策檔簽 permissions，並指定 ROS_DOMAIN_ID 讓 permissions 綁到實驗室 domain。
-if [[ -f "$POLICY" ]]; then
-  for e in "${ENCLAVES[@]}"; do
-    echo "→ 簽存取控制權限: $e (domain $DOMAIN)"
-    ROS_DOMAIN_ID="$DOMAIN" ros2 security create_permission "$KEYSTORE" "$e" "$POLICY" >/dev/null
-  done
-else
-  echo "⚠️ 找不到政策檔 $POLICY，沿用預設權限（可能連 ros_discovery_info 都沒放行）"
-fi
+for e in "${ENCLAVES[@]}"; do
+  echo "→ 簽存取控制權限: $e (domain $DOMAIN)"
+  ROS_DOMAIN_ID="$DOMAIN" ros2 security create_permission "$KEYSTORE" "$e" "$POLICY" >/dev/null
+done
 
 # ── 2c) 把 governance 的 domain 改成 DOMAIN 並重簽（關鍵！）──────────────
 # create_keystore 產的 governance 綁 domain 0；若實驗室跑非 0 domain，
 # governance 規則對不上 → discovery 保護判定異常、合法節點被自己擋下。
 GOV_XML="$KEYSTORE/enclaves/governance.xml"
 GOV_P7S="$KEYSTORE/enclaves/governance.p7s"
-if [[ -f "$GOV_XML" ]] && [[ "$DOMAIN" != "0" ]]; then
+if [[ -f "$GOV_XML" ]]; then
   echo "→ governance domain 改為 $DOMAIN 並重簽"
-  sed -i "s#<id>0</id>#<id>$DOMAIN</id>#" "$GOV_XML"
+  sed -E -i "0,/<id>[0-9]+<\\/id>/s//<id>$DOMAIN<\\/id>/" "$GOV_XML"
+  grep -q "<id>$DOMAIN</id>" "$GOV_XML" || {
+    echo "⛔ governance.xml domain 更新失敗" >&2
+    exit 3
+  }
   openssl smime -sign -in "$GOV_XML" -text -out "$GOV_P7S" \
     -signer "$KEYSTORE/public/permissions_ca.cert.pem" \
     -inkey "$KEYSTORE/private/permissions_ca.key.pem" >/dev/null 2>&1
@@ -122,5 +160,6 @@ echo "再用對應 enclave 跑節點，例如："
 echo "   ros2 run demo_nodes_cpp listener --ros-args --enclave /listener"
 echo
 echo "攻防驗證：攻擊機沒有本 CA 簽的憑證 → Enforce 下無法加入 →"
-echo "   偵察/注入/參數竄改全部在 DDS 認證層就被擋（根治 F1–F6）。"
+echo "   未授權 discovery/data 注入會在 DDS 認證層被擋；"
+echo "   資源耗盡型 DoS 仍需 Zeek、限速與網路層控制。"
 echo "========================================================"

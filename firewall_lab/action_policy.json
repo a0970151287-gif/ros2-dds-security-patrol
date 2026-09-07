@@ -1,0 +1,123 @@
+{
+  "schema_version": "sros2-firewall-action-policy/v1",
+  "default_action": "alert",
+  "unknown_anomaly_action": "quarantine",
+  "executable_classes": [],
+  "rules": {
+    "normal": {
+      "action": "allow",
+      "min_confidence": 0.6,
+      "adapter": "none"
+    },
+    "identity_abuse": {
+      "action": "deny_participant",
+      "min_confidence": 0.75,
+      "adapter": "sros2_identity"
+    },
+    "command_injection": {
+      "action": "lock_velocity",
+      "min_confidence": 0.7,
+      "adapter": "velocity_guard"
+    },
+    "sensor_spoof": {
+      "action": "drop_message",
+      "min_confidence": 0.75,
+      "adapter": "application_hmac"
+    },
+    "parameter_tamper": {
+      "action": "deny_participant",
+      "min_confidence": 0.8,
+      "adapter": "sros2_acl"
+    },
+    "message_dos": {
+      "action": "drop_message",
+      "min_confidence": 0.8,
+      "adapter": "input_validator"
+    },
+    "service_dos": {
+      "action": "temporary_block",
+      "min_confidence": 0.8,
+      "adapter": "network_helper"
+    },
+    "replay": {
+      "action": "drop_message",
+      "min_confidence": 0.7,
+      "adapter": "application_hmac"
+    },
+    "replay_dos": {
+      "action": "drop_message",
+      "min_confidence": 0.75,
+      "adapter": "application_hmac"
+    },
+    "discovery_recon": {
+      "action": "alert",
+      "min_confidence": 0.8,
+      "adapter": "none"
+    },
+    "spdp_flood": {
+      "action": "temporary_block",
+      "min_confidence": 0.9,
+      "adapter": "network_helper"
+    },
+    "node_name_evasion": {
+      "action": "deny_participant",
+      "min_confidence": 0.85,
+      "adapter": "sros2_identity"
+    },
+    "baseline_poisoning": {
+      "action": "quarantine",
+      "min_confidence": 0.85,
+      "adapter": "none"
+    },
+    "mission_spoof": {
+      "action": "drop_message",
+      "min_confidence": 0.8,
+      "adapter": "application_hmac"
+    },
+    "health_spoof": {
+      "action": "drop_message",
+      "min_confidence": 0.8,
+      "adapter": "application_hmac"
+    },
+    "cmd_vel_race": {
+      "action": "lock_velocity",
+      "min_confidence": 0.8,
+      "adapter": "velocity_guard"
+    },
+    "scan_drift": {
+      "action": "lock_velocity",
+      "min_confidence": 0.85,
+      "adapter": "velocity_guard"
+    },
+    "odom_spoof": {
+      "action": "lock_velocity",
+      "min_confidence": 0.85,
+      "adapter": "velocity_guard"
+    },
+    "node_churn": {
+      "action": "temporary_block",
+      "min_confidence": 0.9,
+      "adapter": "network_helper"
+    },
+    "verify_flood": {
+      "action": "temporary_block",
+      "min_confidence": 0.9,
+      "adapter": "network_helper"
+    },
+    "cross_channel_relay": {
+      "action": "drop_message",
+      "min_confidence": 0.8,
+      "adapter": "application_hmac"
+    },
+    "hmac_forgery": {
+      "action": "drop_message",
+      "min_confidence": 0.8,
+      "adapter": "application_hmac"
+    },
+    "confused_deputy": {
+      "action": "alert",
+      "min_confidence": 0.85,
+      "adapter": "none"
+    }
+  }
+}

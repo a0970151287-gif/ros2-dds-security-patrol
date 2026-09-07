@@ -3,10 +3,12 @@
 # 訓練意外中斷時自動 resume from latest checkpoint，最多 retry RETRY_MAX 次。
 #
 # Usage:
-#     source ~/.config/dds-monitor/credentials   (optional, for LINE alerts)
+#     source ~/ros2_ws/工具腳本/load_ros_environment.sh
 #     source ~/dqn_env/bin/activate
-#     source ~/ros2_ws/install/setup.bash
 #     bash train_sac_auto.sh
+#
+# The loader accepts only allow-listed, non-secret ROS/DDS settings.  HMAC and
+# LINE secrets remain in chmod-600 files and are not exported to this process.
 #
 # 中斷類型與處理：
 #   - Ctrl+C            → 不 retry，直接退出（exit code 130）
