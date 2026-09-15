@@ -321,12 +321,19 @@ def build_attack_argv(
             f"{candidate_duration:.3f}",
         ]
     if scenario.runner == "verify_flood":
+        # RELIABLE 不是效能選擇，是**能不能送達**的問題。防守端的
+        # `/security/heartbeat` 是 RELIABLE，而 BEST_EFFORT publisher 對
+        # RELIABLE subscriber 在 DDS 是 QoS 不相容——「No messages will be
+        # sent to it」。2026-09-02 那一場因此回報送出 12,231,436 筆而封包層
+        # 只多了 15 個；2026-09-15 重跑時 N20 的配對檢查直接以 rc=2 拒絕執行。
+        # 這一支的前提是「每則訊息都逼 receiver 做一次 HMAC verify」，
+        # 訊息送不到就沒有攻擊可言。
         return [
             python,
             _script(root, f"{poc}/N20_verify_flood.py"),
             "/security/heartbeat",
             f"{candidate_duration:.3f}",
-            "be",
+            "reliable",
         ]
     if scenario.runner == "discovery_recon":
         # 被動偵察：加入 domain 但不建立任何 publisher／subscriber，

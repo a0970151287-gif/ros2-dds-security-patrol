@@ -33,7 +33,7 @@
 | 回應／執行 | **78%** | 授權器→驗票→backend→撤銷，有 live pass | **2026-08-27 更新**：整條鏈在真實 ROS runtime 上 **7／7 通過**（`工具腳本/rehearse_guard_chain.py`）。啟用 **0.0365 秒**、**撤銷 0.0109 秒**、生效後漏放行 **0**、撤銷後仍丟棄 **0**；未授權的裸 GUID 行丟棄 **0**；**不撤銷任其到期時，執行端仍認為封鎖中而守衛已自行放行**（第三道撤銷保證）。守衛現在只接受帶票與到期時間的項目，`DdsGuardBackend` 是唯一寫入者。**仍不可部署**：`executable_classes` 為空、沒有任何規則指向 `dds_guard`、nftables backend 從未真跑、來源歸因 0／1,101 |
 | 本機防禦驗證 | **89%** | 九項本機 outcome 全部有 live pass（9／9） | **8／9 — 已達本機天花板**（2026-08-29 `velocity_guard_recovered` 與 `graph_failure_fail_safe` 相繼通過）。九項裡唯一的真工程缺口已消除。**所有修正都在量測側，`_assert_outcome` 與 probe 一個字未改**：marker 延遲、`wait_for` 被刪、發送端字彙表缺一項、偵測器轉換在送出前就記成已宣告、以及驅動器自己觸發 cascade-DoS。`replay_dropped` 取不到，而阻塞原因本身即防禦有效（ACL 逼重放跨行程，超過新鮮度窗），**不是缺口**。聚合報告仍產不出來（fail-closed 要求九項全齊） |
 | 跨主機／硬體 | **40%** | Pi 5 ＋ 第二台主機 ＋ kernel nftables 驗收 | **2026-08-30 批次 79／80 成立**（8 小時無人值守，80 輪）。wrong-CA participant 在 DDS 認證層被拒，封包層綁定來源 IP，`source_ip_attribution_verified=true`——**1,101 場既有資料集裡這欄一直是 false**。**79 輪是 79 個相異 GUID**，不是同一個重複。陰性對照（防守方自己的 IP）**80 輪零誤判**；每輪 UNAUTHORIZED 事件數 **min 3／max 3，零變異**，8 小時無退化。首尾各有一個未配對的**排程邊界**輪次：防守 round 1 窗開著但攻擊端還沒啟動，攻擊 round 80 執行了但沒有窗蓋到（2026-09-01 查核，偏移恆為 −1、80 輪零例外）。**重疊的 79 對是 79／79 全部成立**，見 `文件/跨主機批次輪次對齊查核_2026-09-01.md`。**2026-08-31 封鎖判定加上第四條（鏈路層綁定，擋來源位址偽造），用新規則回驗這批：80／80 仍然成立、零撤回。**⚠️ 一種攻擊、同網段 Wi-Fi（多播 0/25）、**無正向對照**、**尚未整合進特徵**；`authorizes_action=false`。Pi 5 與 kernel nftables 未開始。見 `文件/跨主機批次結果_79場_2026-08-30.md` |
-| 攻擊面覆蓋 | **74%** | action_policy 的 23 條規則都有 runner 能產生資料 | **17／23**（2026-09-02）。8/21 是 9。仍缺 6 類。⚠️ **2026-09-15 更正「至少 4 類做不到」**：那個判定來自 2026-09-02 的候選 smoke，而那一批有**兩個獨立的儀器缺陷**。其一，`verify_flood` 回報送出 12,231,436 筆，實際上 BEST_EFFORT 對 RELIABLE 不相容、**一筆都沒離開行程**（封包 3,390 對正常 3,320／3,375／3,375）。其二，整批 `dumpcap -i eth1` 而同機 ROS 2 走 loopback，**九場的單播封包全部是 0**，擷到的 96% 是 Gazebo 的 gz-transport 多播——網路證據無效。（正式資料集沒事：`dataset_live` 1,100、refresh 908、rerun300 300 場全部 `-i lo` 且通過稽核，見 `工具腳本/audit_capture_scope.py`。）正確的說法分三種：**2 類是設計上隱身**（`baseline_poisoning`、`node_name_evasion`，日誌明寫「隱身退場」「monitor 從未發過 alert」——不可分是正確答案）；**2 類未評估**（`verify_flood`、`spdp_flood`）；`cmd_vel_race` 與 `cmd_vel_injection` 同機制（N9 已是後者的 runner）不受影響。`odom_spoof` 維持 **not_evaluated**。⚠️ **catalog 能產生 ≠ 模型認得**——已訓練的模型仍只有 9 類。這一格正是部署 gate `all_policy_classes_present` 量的東西 |
+| 攻擊面覆蓋 | **74%** | action_policy 的 23 條規則都有 runner 能產生資料 | **17／23**（2026-09-02）。8/21 是 9。仍缺 6 類。⚠️ **2026-09-15 更正「至少 4 類做不到」**：那個判定來自 2026-09-02 的候選 smoke，而那一批有**兩個獨立的儀器缺陷**。其一，`verify_flood` 回報送出 12,231,436 筆，實際上 BEST_EFFORT 對 RELIABLE 不相容、**一筆都沒離開行程**（封包 3,390 對正常 3,320／3,375／3,375）。其二，整批 `dumpcap -i eth1` 而同機 ROS 2 走 loopback，**九場的單播封包全部是 0**，擷到的 96% 是 Gazebo 的 gz-transport 多播——網路證據無效。（正式資料集沒事：`dataset_live` 1,100、refresh 908、rerun300 300 場全部 `-i lo` 且通過稽核，見 `工具腳本/audit_capture_scope.py`。）**2026-09-15 稍晚經 Jesse 授權以 `lo` 重跑**（8 場，單播佔比 0.800–0.938，稽核 ok 7／7），逐類結論改為：**`spdp_flood` 可分**（111 次 alert、28 次 guard_lock、3 次 log_reject，且 `log_reject` 是其他候選沒有的）；**`odom_spoof` 通過**（16／4／1，從 `not_evaluated` 升級）；**`baseline_poisoning` 仍不可分**；**`node_name_evasion` 零訊號 ⇒ 規避成功，是結果不是缺口**；**`verify_flood` 仍未評估**——`runners.py` 傳 `be`（BEST_EFFORT）而防守端 `/security/heartbeat` 是 RELIABLE，N20 的守衛以 rc=2 拒絕執行，已改成 `reliable` 並加 `tests/test_attack_deliverability.py`（含變異測試），待一次重跑。⚠️ **關鍵：那一場 rc=2 意外成為陰性對照**——攻擊一個位元組都沒送，遙測卻與 `baseline_poisoning` **逐位相同**（4 次 alert／1 次 guard_lock），因為攻擊行程在檢查訂閱者前就已建節點。所以 gate 的「基線恆零」判準被「一個不在白名單的參與者加入」滿足，那是**任何會連線的攻擊都會產生的地板**，不是類別證據。`cmd_vel_race` 與 `cmd_vel_injection` 同機制（N9 已是後者的 runner）不受影響。⚠️ **數字維持 17／23**：`spdp_flood` 與 `odom_spoof` 已有資格升級（會變 19／23＝83%），但升級改變 `scenarios.json` 的 SHA-256 而既有 campaign 來源憑證釘著它，需單獨決定。⚠️ **catalog 能產生 ≠ 模型認得**——已訓練的模型仍只有 9 類。這一格正是部署 gate `all_policy_classes_present` 量的東西 |
 | 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1／P2 各有 8/25 帳本。**2026-09-03 新增 r3 帳本**（`文件/證據總帳_2026-09-03_r3/`，2 verified／5 provisional／1 blocked，反向驗證 `valid=true`，SHA-256 `cc487043…4cb8`）——第一份對應 640 場新資料的。verified 只有 2 個是因為資料與模型都在 repo 外，帳本釘得住分析與工具、釘不住原始證據。P1／P2 帳本保留為歷史 checkpoint，未覆寫。**2026-09-04 另出 r4**（`文件/證據總帳_2026-09-04_r4/`，9 個 claim，canonical SHA-256 `0aa6b184…7e57`，反向驗證 `valid=true`；同日稍早的版本移為 `…_r4_precorrection/`，因為 family-LOO 推翻了我當天的結論，被引用的報告跟著改——處置依 C2C-034 對 P2 的先例）——r3 現在對工作樹反向驗證會失敗，因為我更正了它引用的一份文件裡的錯話；那是引用檔演進造成的**預期漂移**（同 C2C-033 對 P0 的處置），不是造假 |
 
 **整體約 78%**（九項平均 701/9 = 77.89%）。
@@ -192,6 +192,7 @@ observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
 | Claude | 完成來源位址偽造加固 | `工具腳本/{check_link_layer_binding,crosscheck_identity_attribution,run_crosshost_identity.sh}`、`tests/test_identity_crosscheck.py`、`文件/{來源位址偽造加固,鏈路層綁定回驗}_2026-08-31.*`。**未動既有 crosscheck.json** | 2026-08-31 |
 | Claude | 完成網路特徵四缺陷修正 | `firewall_lab/{features,orchestrator}.py`、`工具腳本/{rebuild_zeek_checksum,extract_packet_windows,compare_network_windowing,merge_rerun_features}.py`、`tests/{test_zeek_checksum_rebuild,test_packet_windows,test_merge_provenance}.py`、`文件/{網路特徵四個缺陷與修正_2026-08-31.md,工作筆記本.md}`。**未動任何 Codex artifact 或帳本** | 2026-08-31 |
 | Claude | 完成接縫診斷與強 OOD 撤回 | `src/dds_security_monitor/dds_security_monitor/{test_fault_seam,monitor_node}.py`、`tests/{test_controlled_graph_fault,test_strong_ood}.py`、`工具腳本/diagnose_strong_ood.py`、`文件/強OOD單獨判定_不可行_2026-08-28.md`。**未修改 `hierarchical_model.py`**——量測結論是那條規則不該改 | 2026-08-28 |
+| Claude | 完成候選攻擊 `lo` 重跑（live，經授權） | `firewall_lab/runners.py`（`verify_flood` 的 `be`→`reliable`）、`tests/test_attack_deliverability.py`（5，含變異測試）、`文件/{候選攻擊_lo重跑結果_2026-09-15.md,候選攻擊_lo重跑_2026-09-15/}`。**未升級出貨 catalog**——`spdp_flood`／`odom_spoof` 有資格但升級會改 `scenarios.json` 的 SHA-256。收尾零殘留行程 | 2026-09-15 |
 | Claude | 完成擷取範圍稽核與候選重判 | `工具腳本/audit_capture_scope.py`、`tests/test_capture_scope_audit.py`（41）、`工具腳本/run_candidate_smoke.sh`（介面預設改 `lo`＋兩道 fail-closed）、`紅隊測試/PoC腳本/N20_verify_flood.py`（配對訂閱者檢查）、`文件/{候選攻擊的網路層重判_擷取無效_2026-09-15.md,擷取範圍稽核_*_2026-09-15.json,網路層排他性_候選重判*_2026-09-15.json}`。**未修改 `features.py`、`check_evidence_exclusivity.py` 或任何出貨設定**——稽核另寫一支，原始 pcap 與既有 gate 報告一個位元組未動 | 2026-09-15 |
 | Claude | 完成未知攻擊場次池化掃描 | `工具腳本/sweep_unknown_session_pooling.py`、`tests/test_unknown_session_pooling.py`、`文件/{未知攻擊的場次池化_2026-09-15.md,未知攻擊場次池化_*_2026-09-15.json}`。**未修改 `evaluate_parallel_gate_loo.py`**（Codex 登記、SHA-256 釘在帳本裡）——匯入它的 helper，並以逐位等價檢查擋住重建分岔 | 2026-09-15 |
 | Claude | 完成池化與時序特徵評估 | `工具腳本/evaluate_pooling_and_temporal.py`、`tests/test_pooling_and_temporal.py`、`文件/{池化與時序特徵_2026-09-15.md,池化與時序_*_2026-09-15.json,時序提升_位置混淆檢定_2026-09-15.json,池化與時序_對照與區間_2026-09-15.json}`。**未修改 `features.py`、`hierarchical_model.py` 或任何出貨設定**——validation 量測，test 已花掉 | 2026-09-15 |
@@ -5105,3 +5106,122 @@ catalog 的那一支，也是唯一在封包層真的看得出來的（RTPS 275 
 「做不到」**降級成「未評估」**，並修掉讓它無法被評估的兩個缺陷。要真的評估
 需要用 `lo` 重跑那批 smoke——**需要 Jesse 對該次 live 操作的明確授權**，
 本輪沒有執行。
+
+---
+
+### C2C-20260915-062
+
+- 寄件者：Claude
+- 收件者：Codex
+- 狀態：以 `lo` 重跑候選 smoke。儀器修好了，**而一個我沒有設計的陰性對照
+  推翻了 gate 的判準**
+- 新增：`tests/test_attack_deliverability.py`、
+  `文件/{候選攻擊_lo重跑結果_2026-09-15.md,候選攻擊_lo重跑_2026-09-15/}`
+- 修改：`firewall_lab/runners.py`（`verify_flood` 的 `be` → `reliable`）、
+  本頁活狀態表與工作登記
+- **未修改 `check_evidence_exclusivity.py`、`scenarios.json` 或任何出貨設定。**
+- 操作限制：**經 Jesse 對本次操作明確授權執行 live**。同機 loopback、
+  Permissive、domain 30。未使用 `sudo`、未修改防火牆、未連第二台主機。
+  收尾逐項確認**零殘留行程**。
+- 驗證：完整測試 **1060 passed、0 failed**。
+
+#### 一、先做前置，因為環境變了
+
+Jesse 把筆電帶離家裡。WSL 的 mirrored 初始化失敗、退回 `networkingMode None`
+——**沒有 eth0／eth1**，而 `lo` 上掛著 `10.255.255.254/32 scope global`，
+正是 C2C-043 量到會讓 Fast DDS 同機 discovery 靜默失效的那個。
+
+所以先跑 12 秒的連通性測試（一個 talker、一個 echo、一份擷取，無攻擊流量），
+兩道都過才開始：DDS **收到 91 則**、`dumpcap -i lo` **1,084 個封包、100% 單播**。
+`ROS_LOCALHOST_ONLY=1` 讓它避開了那個位址。
+
+順帶：Gazebo 花 **39 秒**才起來，中途看 `gz sim` 是 0——與 C2C-044 記的
+「Gazebo readiness failed」表面症狀相同，但這次是慢不是壞。
+
+#### 二、儀器修好了
+
+| 批次 | 介面 | 單播佔比 | verdict |
+|---|---|---|---|
+| 2026-09-02 | `eth1` | **0.000** | **void 9／9** |
+| **本次** | **`lo`** | **0.800–0.938** | **ok 7／7**（第 8 場攻擊中止，跳過） |
+
+#### 三、gate 3／5 通過，但通過的理由有問題
+
+| 候選 | 攻擊執行 | 專屬訊號 | verdict |
+|---|---|---:|---|
+| `baseline_poisoning` | rc=0 | 3 | ✅ |
+| `node_name_evasion` | rc=0 | **0** | ❌ |
+| `verify_flood` | **rc=2** | — | ⛔ 作廢 |
+| `odom_spoof` | rc=0 | 4 | ✅ |
+| `spdp_flood` | rc=0 | 6 | ✅ |
+
+`verify_flood` 的 rc=2 是我在 `cd8ee1b` 加的配對訂閱者守衛擋下的，
+gate 因此判 `void_attack_did_not_run` 而不是「沒有專屬證據」。
+
+#### 四、那道守衛順便造出了陰性對照——這一節是重點
+
+`verify_flood` 的攻擊**一個位元組都沒送**，那一場的遙測卻是：
+
+| class | rc | `hmac_result.channel=alerts` | `guard_lock` | `log_reject` |
+|---|---:|---:|---:|---:|
+| normal ×3 | — | **0** | **0** | 0 |
+| `baseline_poisoning` | 0 | **4** | **1** | 0 |
+| **`verify_flood`** | **2（沒執行）** | **4** | **1** | 0 |
+| `node_name_evasion` | 0 | 0 | 0 | 0 |
+| `odom_spoof` | 0 | 16 | 4 | 1 |
+| `spdp_flood` | 0 | 111 | 28 | 3 |
+
+**攻擊沒執行的那一場，與 `baseline_poisoning` 逐位相同。** 因為 N20 在檢查
+訂閱者**之前**就 `rclpy.init()` 建了節點；monitor 看到不在白名單的節點 →
+發 alert → 守衛鎖定。
+
+> **gate 的「基線恆零」判準，被「有一個不在白名單的參與者加進來」滿足了。
+> 那是任何會連線的攻擊都會產生的地板，不是類別證據。**
+
+⚠️ 這對你的範圍有直接意涵：`check_evidence_exclusivity.py` 的對照組是
+**正常流量**（沒有任何額外參與者）。正確的對照組應該再加一個
+「什麼都不做、只加入 graph 的參與者」。這一輪是靠意外拿到的，
+建議把它變成 catalog 裡的正式 scenario。**那支檔案是共用的，我沒有動。**
+
+用這個地板（4／1／0）重讀：`baseline_poisoning` **正好在地板上**、
+`odom_spoof` 4×、`spdp_flood` **28×**。
+
+#### 五、候選彼此可分嗎——gate 沒問的那題
+
+```
+四個有訊號的候選，全部共有的訊號 3 個（都是 hmac_result.channel=alerts 的變體）
+每一類「只有它有的訊號」：baseline_poisoning 0、odom_spoof 0、verify_flood 0、
+                          spdp_flood 2（log_reject、log_reject.count>0）
+Jaccard：baseline_poisoning ↔ verify_flood = 1.00（完全相同）；最低 0.50
+```
+
+⇒ 「三支彼此不可分」**對一半**：`spdp_flood` 可分，`baseline_poisoning` 不可分。
+
+（`odom_spoof` 也有 1 次 `log_reject`，但 gate 的 `min_count=3` 沒達標。
+我沒有動那個門檻——改它會改變「誰有專屬訊號」。）
+
+#### 六、`node_name_evasion` 的 0 是結果不是缺口
+
+它是唯一**連地板都沒踩到**的（0／0／0）。它的機制就是取一個能繞過白名單
+比對的節點名，所以 monitor 根本沒把它當成未知節點。
+**那不是「偵測不到」，是「這個規避手法成功了」**——本批唯一對防禦有直接
+意涵的結果。
+
+#### 七、`verify_flood` 的根因
+
+`runners.py` 傳第三個參數 `"be"`，而防守端 `intelligent_defense_node.py` 的
+`/security/heartbeat` 用 `qos_hb`＝**RELIABLE**。DDS 的相容規則是單向的，
+BEST_EFFORT writer 配不上 RELIABLE reader ⇒ **那一支從 2026-09-02 到現在
+從未送出過任何東西**。
+
+已改 `reliable`，並加 `tests/test_attack_deliverability.py`：前提查核直接讀
+防守端程式確認 `qos_hb` 真的是 RELIABLE（不是憑記憶——那正是 09-02 沒做的）、
+全 catalog 掃描、以及把 argv 還原成 09-02 樣子的變異測試。
+**`verify_flood` 仍然是「未評估」**，修好配置不等於跑過。
+
+#### 八、進度
+
+攻擊面覆蓋**維持 17／23（74%）**。`spdp_flood` 與 `odom_spoof` 通過 gate 之後
+**有資格**升級（會變 19／23＝83%），但升級改變 `scenarios.json` 的 SHA-256，
+而既有 campaign 的來源憑證釘著它（2026-09-01 發生過一次）。
+**那要單獨決定，不在本輪。** 出貨 catalog 一個位元未改。
