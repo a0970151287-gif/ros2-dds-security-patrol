@@ -1,0 +1,273 @@
+{
+  "attack_ood_scorer": "mahalanobis",
+  "changes_shipped_defaults": false,
+  "equivalence_verified": true,
+  "features_table": "/home/jesse/features_refresh_split/fusion_features_permissive.csv",
+  "folds": [
+    {
+      "any": {
+        "normal_false_unknown_rate": 0.08333333333333333,
+        "unknown_recall": 0.0
+      },
+      "fraction": {
+        "0.25": {
+          "normal_false_unknown_rate": 0.08333333333333333,
+          "unknown_recall": 0.0
+        },
+        "0.5": {
+          "normal_false_unknown_rate": 0.08333333333333333,
+          "unknown_recall": 0.0
+        },
+        "0.75": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 0.0
+        }
+      },
+      "held_family": "alert_only",
+      "k_of_n": {
+        "1": {
+          "normal_false_unknown_rate": 0.08333333333333333,
+          "unknown_recall": 0.0
+        },
+        "2": {
+          "normal_false_unknown_rate": 0.08333333333333333,
+          "unknown_recall": 0.0
+        },
+        "3": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 0.0
+        },
+        "4": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 0.0
+        }
+      },
+      "normal_sessions": 12,
+      "row": {
+        "normal_false_unknown_rate": 0.041666666666666664,
+        "unknown_recall": 0.0
+      },
+      "unknown_sessions": 3
+    },
+    {
+      "any": {
+        "normal_false_unknown_rate": 0.14285714285714285,
+        "unknown_recall": 1.0
+      },
+      "fraction": {
+        "0.25": {
+          "normal_false_unknown_rate": 0.14285714285714285,
+          "unknown_recall": 1.0
+        },
+        "0.5": {
+          "normal_false_unknown_rate": 0.14285714285714285,
+          "unknown_recall": 1.0
+        },
+        "0.75": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 0.8333333333333334
+        }
+      },
+      "held_family": "application_drop",
+      "k_of_n": {
+        "1": {
+          "normal_false_unknown_rate": 0.14285714285714285,
+          "unknown_recall": 1.0
+        },
+        "2": {
+          "normal_false_unknown_rate": 0.14285714285714285,
+          "unknown_recall": 1.0
+        },
+        "3": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        },
+        "4": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        }
+      },
+      "normal_sessions": 7,
+      "row": {
+        "normal_false_unknown_rate": 0.07142857142857144,
+        "unknown_recall": 0.8874999999999998
+      },
+      "unknown_sessions": 18
+    },
+    {
+      "any": {
+        "normal_false_unknown_rate": 0.0,
+        "unknown_recall": 1.0
+      },
+      "fraction": {
+        "0.25": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        },
+        "0.5": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        },
+        "0.75": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 0.5
+        }
+      },
+      "held_family": "control_lock",
+      "k_of_n": {
+        "1": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        },
+        "2": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        },
+        "3": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        },
+        "4": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        }
+      },
+      "normal_sessions": 11,
+      "row": {
+        "normal_false_unknown_rate": 0.0,
+        "unknown_recall": 0.6749999999999998
+      },
+      "unknown_sessions": 6
+    },
+    {
+      "any": {
+        "normal_false_unknown_rate": 0.16666666666666666,
+        "unknown_recall": 1.0
+      },
+      "fraction": {
+        "0.25": {
+          "normal_false_unknown_rate": 0.16666666666666666,
+          "unknown_recall": 1.0
+        },
+        "0.5": {
+          "normal_false_unknown_rate": 0.08333333333333333,
+          "unknown_recall": 1.0
+        },
+        "0.75": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        }
+      },
+      "held_family": "network_block",
+      "k_of_n": {
+        "1": {
+          "normal_false_unknown_rate": 0.16666666666666666,
+          "unknown_recall": 1.0
+        },
+        "2": {
+          "normal_false_unknown_rate": 0.08333333333333333,
+          "unknown_recall": 1.0
+        },
+        "3": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        },
+        "4": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 1.0
+        }
+      },
+      "normal_sessions": 12,
+      "row": {
+        "normal_false_unknown_rate": 0.0625,
+        "unknown_recall": 0.8333333333333334
+      },
+      "unknown_sessions": 3
+    },
+    {
+      "any": {
+        "normal_false_unknown_rate": 0.18181818181818182,
+        "unknown_recall": 0.5
+      },
+      "fraction": {
+        "0.25": {
+          "normal_false_unknown_rate": 0.18181818181818182,
+          "unknown_recall": 0.5
+        },
+        "0.5": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 0.5
+        },
+        "0.75": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 0.3333333333333333
+        }
+      },
+      "held_family": "participant_deny",
+      "k_of_n": {
+        "1": {
+          "normal_false_unknown_rate": 0.18181818181818182,
+          "unknown_recall": 0.5
+        },
+        "2": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 0.5
+        },
+        "3": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 0.5
+        },
+        "4": {
+          "normal_false_unknown_rate": 0.0,
+          "unknown_recall": 0.5
+        }
+      },
+      "normal_sessions": 11,
+      "row": {
+        "normal_false_unknown_rate": 0.045454545454545456,
+        "unknown_recall": 0.4
+      },
+      "unknown_sessions": 6
+    }
+  ],
+  "maximum_normal_fpr": 0.02,
+  "minimum_unknown_recall": 0.7,
+  "official_holdout_rows_used": 0,
+  "reference_artifact": "文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_mahalanobis_full.json",
+  "schema_version": "sros2-firewall-unknown-session-pooling/v1",
+  "summary": {
+    "k-of-n  k=1   ← any()": {
+      "macro_unknown_recall": 0.7,
+      "worst_normal_false_unknown_rate": 0.1818
+    },
+    "k-of-n  k=2": {
+      "macro_unknown_recall": 0.7,
+      "worst_normal_false_unknown_rate": 0.1429
+    },
+    "k-of-n  k=3": {
+      "macro_unknown_recall": 0.7,
+      "worst_normal_false_unknown_rate": 0.0
+    },
+    "k-of-n  k=4": {
+      "macro_unknown_recall": 0.7,
+      "worst_normal_false_unknown_rate": 0.0
+    },
+    "列層級（現行報的）": {
+      "macro_unknown_recall": 0.5592,
+      "worst_normal_false_unknown_rate": 0.0714
+    },
+    "比例 ≥25%": {
+      "macro_unknown_recall": 0.7,
+      "worst_normal_false_unknown_rate": 0.1818
+    },
+    "比例 ≥50%": {
+      "macro_unknown_recall": 0.7,
+      "worst_normal_false_unknown_rate": 0.1429
+    },
+    "比例 ≥75%": {
+      "macro_unknown_recall": 0.5333,
+      "worst_normal_false_unknown_rate": 0.0
+    }
+  },
+  "test_rows_used": 0
+}
