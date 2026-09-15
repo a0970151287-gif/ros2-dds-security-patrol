@@ -1,0 +1,215 @@
+{
+  "ceiling": {
+    "arithmetic_ceiling": 1.0,
+    "classes": 17,
+    "note": "balanced accuracy 是逐類 recall 的平均；恆零的類別鎖死上限。",
+    "zero_recall_classes": []
+  },
+  "changes_shipped_defaults": false,
+  "class_weight": "balanced_subsample",
+  "control": {
+    "chance": 0.0588,
+    "share_of_real": 0.1366,
+    "shuffled_balanced_accuracy": 0.0761
+  },
+  "eval_split": "train_validation",
+  "features_table": "/home/jesse/features_refresh_split/fusion_features_enforce.csv",
+  "folds": 5,
+  "per_class": {
+    "command_injection": {
+      "correct": 17,
+      "recall": 1.0,
+      "sessions": 17
+    },
+    "confused_deputy": {
+      "correct": 17,
+      "recall": 1.0,
+      "sessions": 17
+    },
+    "cross_channel_relay": {
+      "correct": 4,
+      "recall": 0.2353,
+      "sessions": 17
+    },
+    "discovery_recon": {
+      "correct": 15,
+      "recall": 0.8824,
+      "sessions": 17
+    },
+    "health_spoof": {
+      "correct": 3,
+      "recall": 0.1765,
+      "sessions": 17
+    },
+    "hmac_forgery": {
+      "correct": 17,
+      "recall": 1.0,
+      "sessions": 17
+    },
+    "identity_abuse": {
+      "correct": 8,
+      "recall": 0.4706,
+      "sessions": 17
+    },
+    "message_dos": {
+      "correct": 5,
+      "recall": 0.2941,
+      "sessions": 17
+    },
+    "mission_spoof": {
+      "correct": 10,
+      "recall": 0.5882,
+      "sessions": 17
+    },
+    "node_churn": {
+      "correct": 17,
+      "recall": 1.0,
+      "sessions": 17
+    },
+    "normal": {
+      "correct": 17,
+      "recall": 1.0,
+      "sessions": 17
+    },
+    "parameter_tamper": {
+      "correct": 1,
+      "recall": 0.0588,
+      "sessions": 17
+    },
+    "replay": {
+      "correct": 1,
+      "recall": 0.0588,
+      "sessions": 17
+    },
+    "replay_dos": {
+      "correct": 8,
+      "recall": 0.4706,
+      "sessions": 17
+    },
+    "scan_drift": {
+      "correct": 3,
+      "recall": 0.1765,
+      "sessions": 17
+    },
+    "sensor_spoof": {
+      "correct": 1,
+      "recall": 0.0588,
+      "sessions": 17
+    },
+    "service_dos": {
+      "correct": 17,
+      "recall": 1.0,
+      "sessions": 17
+    }
+  },
+  "pooling_rule": "session_attack_only",
+  "rows": 3529,
+  "schema_version": "sros2-firewall-identification-cv/v1",
+  "seeds": 3,
+  "session_balanced_accuracy": 0.5571,
+  "session_confusion": {
+    "command_injection": {
+      "command_injection": 17
+    },
+    "confused_deputy": {
+      "confused_deputy": 17
+    },
+    "cross_channel_relay": {
+      "cross_channel_relay": 4,
+      "discovery_recon": 1,
+      "health_spoof": 6,
+      "mission_spoof": 2,
+      "scan_drift": 4
+    },
+    "discovery_recon": {
+      "cross_channel_relay": 1,
+      "discovery_recon": 15,
+      "health_spoof": 1
+    },
+    "health_spoof": {
+      "cross_channel_relay": 9,
+      "discovery_recon": 2,
+      "health_spoof": 3,
+      "mission_spoof": 1,
+      "scan_drift": 2
+    },
+    "hmac_forgery": {
+      "hmac_forgery": 17
+    },
+    "identity_abuse": {
+      "command_injection": 1,
+      "identity_abuse": 8,
+      "message_dos": 3,
+      "replay": 1,
+      "replay_dos": 1,
+      "sensor_spoof": 1,
+      "service_dos": 2
+    },
+    "message_dos": {
+      "identity_abuse": 3,
+      "message_dos": 5,
+      "replay": 3,
+      "replay_dos": 4,
+      "sensor_spoof": 1,
+      "service_dos": 1
+    },
+    "mission_spoof": {
+      "command_injection": 1,
+      "cross_channel_relay": 1,
+      "health_spoof": 4,
+      "mission_spoof": 10,
+      "scan_drift": 1
+    },
+    "node_churn": {
+      "node_churn": 17
+    },
+    "normal": {
+      "normal": 17
+    },
+    "parameter_tamper": {
+      "identity_abuse": 2,
+      "message_dos": 3,
+      "parameter_tamper": 1,
+      "replay": 4,
+      "replay_dos": 2,
+      "sensor_spoof": 5
+    },
+    "replay": {
+      "identity_abuse": 3,
+      "message_dos": 4,
+      "parameter_tamper": 5,
+      "replay": 1,
+      "replay_dos": 1,
+      "sensor_spoof": 2,
+      "service_dos": 1
+    },
+    "replay_dos": {
+      "message_dos": 2,
+      "parameter_tamper": 3,
+      "replay": 1,
+      "replay_dos": 8,
+      "sensor_spoof": 3
+    },
+    "scan_drift": {
+      "cross_channel_relay": 10,
+      "discovery_recon": 3,
+      "mission_spoof": 1,
+      "scan_drift": 3
+    },
+    "sensor_spoof": {
+      "identity_abuse": 2,
+      "message_dos": 2,
+      "parameter_tamper": 6,
+      "replay": 2,
+      "replay_dos": 4,
+      "sensor_spoof": 1
+    },
+    "service_dos": {
+      "service_dos": 17
+    }
+  },
+  "sessions": 289,
+  "temporal": "d1_m3_x3_m5_x5",
+  "test_rows_used": 0,
+  "trees": 300
+}

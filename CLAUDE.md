@@ -28,7 +28,7 @@
 |---|---:|---|---|
 | 資料集 | **95%** | 完整、可驗證、可重現的 live 成對資料 | 1,100 場完成；300 場已受控重跑並在特徵層替換，候選 1,099 場；P2 稽核確認 0／1,101 場有完整 DDS identity→IP attestation。**2026-09-03 另收 640 場全新資料**（Enforce 340／17 類、Permissive 300／15 類，`~/refresh_20260902T111358Z/`），與既有 1,100 場**零重疊**；四項品質檢查 640／640 全過（`hmac_result.channel`、帶速度值的 `guard_input`、Zeek 帶 `-C`、逐封包分窗）。campaign 因 fail-closed 中止四次，其中一次擋下 **673 場「內鬼其實沒有憑證」的假資料**。**百分比不動**——新資料修的是類別數與獨立性，既有 1,101 場的 identity attestation 缺口沒有因此消失 |
 | 攻擊偵測（二元） | **90%** | PR-AUC > 0.9 且有一次性 test | final test：Permissive **0.9900**、Enforce **0.9774**；分類數字不受 anomaly budget 影響，但整體 release 仍不可部署 |
-| 攻擊識別（多類） | **70%** | balanced accuracy ≥ 0.80 | **2026-09-03 全新 640 場、第一次開的 test**：Permissive **0.8502（15 類）**、Enforce 0.2819（17 類）。Permissive 在**更難的問題**上仍過 0.80，而且 test 從未被看過——舊的 0.8619 是 9 類且 test 已被設計流程看過。對等比較（同資料只取原 9 類，validation）：Permissive 0.8880（舊資料 0.8823）、Enforce 0.2557（舊資料 0.4674）。⚠️ 新資料每類 20 場、舊資料約 61 場，**訊號弱的 Enforce 對樣本數更敏感**，跨資料集不可直接比。Enforce 的 17 類（0.3231）反而高於 9 類（0.2557），因為兩個持證內鬼在身份層是 **0** 而外部者是 59–417，那個零本身就是判別訊號 |
+| 攻擊識別（多類） | **70%** | balanced accuracy ≥ 0.80 | **2026-09-03 全新 640 場、第一次開的 test**：Permissive **0.8502（15 類）**、Enforce 0.2819（17 類）。Permissive 在**更難的問題**上仍過 0.80，而且 test 從未被看過——舊的 0.8619 是 9 類且 test 已被設計流程看過。對等比較（同資料只取原 9 類，validation）：Permissive 0.8880（舊資料 0.8823）、Enforce 0.2557（舊資料 0.4674）。⚠️ 新資料每類 20 場、舊資料約 61 場，**訊號弱的 Enforce 對樣本數更敏感**，跨資料集不可直接比。Enforce 的 17 類（0.3231）反而高於 9 類（0.2557），因為兩個持證內鬼在身份層是 **0** 而外部者是 59–417，那個零本身就是判別訊號。⚠️ **2026-09-15 更正量測解析度**：先前逐類結論建立在 **validation 每類 3 場**上，而在那個解析度下「3 場全錯」就顯示成 0.000。改用 GroupKFold 依場次切 5 折、跨 train＋validation（每類 **17 場**，test 完全排除）之後：**Enforce 真正恆零的只有 `replay` 一類，不是 5 類，算術上限是 0.9412 不是 0.7059——門檻沒有被算術擋住**（`replay_dos` 實際是 0.412、`cross_channel_relay` 0.176、`scan_drift` 0.118）。CV 場次層級基準：**Permissive 0.9961**（255 場錯 1 場）、**Enforce 0.5190**；打亂對照 0.0784／0.0761（佔真實 7.9%／13.7%）。36 組預先宣告的超參數網格顯示**只有時序深度有用**（邊際平均 none 0.2993 → `d1_m3_x3` 0.4028 → `+m5_x5` 0.4541），class_weight 與樹數都是雜訊；加深後 Enforce **0.5190 → 0.5571（+0.038）、恆零類別 1 → 0**，9 類改善 0 類退步，Permissive 已飽和不改。⚠️ **這些是 CV 不是 held-out test，百分比不動**；場次層級也不可與逐視窗的 0.8502／0.2819 相比。**超參數這條路走完了**——剩下的缺口在底部 7 類，它們在 Enforce 下沒有應用層證據 |
 | 未知攻擊 | **70%** | 整個模型 open-set recall ≥ 0.70 | **2026-09-03 第一次把協定完整走對**：640 場全新資料 → family-LOO 只用 validation 選評分器（Mahalanobis 兩模式皆勝，Permissive 0.5592 對 0.0833）→ holdout **第一次使用**。結果：**Enforce 0.8475 ✅**（正常誤判 0.0103）、Permissive 0.5479 ❌（140 列被自信填成 `mission_spoof`）。數字與舊值接近（0.8563／0.5789）但**證據等級完全不同**——舊 holdout 已花第三次。⚠️ 三個限制：用的是 **Mahalanobis 而非出貨預設**（出貨設定在這個 holdout 上沒被評估，也補評不了）；Permissive 未達門檻；四組 LOO 的 `worst_family_unknown_recall` **全部是 0.0000**。⚠️ **2026-09-15 更正「沒有已知解法」**：`evaluate_parallel_gate_loo.py` 一直都有輸出場次層級的 `parallel_unknown_session_recall`，只是從未被報出來。它用的是 `any()`，而 `any()` 是壞交易（recall ×1.25、誤報 ×2.55）。改成 **k-of-n（k=3，一場要 ≥3 個視窗喊未知）**：**四組的正常誤報全部降到 0.0000**（那個約束從 P1 起沒有一組通過過），Permissive／Maha 的 macro 到 **0.7000**。但 **worst_family 仍是 0.0000**、只有非出貨的 Mahalanobis 過門檻、macro 0.7000 是三折滿分一折掛零的脆平均。**誤報那一半修好了，recall 那一半沒有** |
 | 回應／執行 | **78%** | 授權器→驗票→backend→撤銷，有 live pass | **2026-08-27 更新**：整條鏈在真實 ROS runtime 上 **7／7 通過**（`工具腳本/rehearse_guard_chain.py`）。啟用 **0.0365 秒**、**撤銷 0.0109 秒**、生效後漏放行 **0**、撤銷後仍丟棄 **0**；未授權的裸 GUID 行丟棄 **0**；**不撤銷任其到期時，執行端仍認為封鎖中而守衛已自行放行**（第三道撤銷保證）。守衛現在只接受帶票與到期時間的項目，`DdsGuardBackend` 是唯一寫入者。**仍不可部署**：`executable_classes` 為空、沒有任何規則指向 `dds_guard`、nftables backend 從未真跑、來源歸因 0／1,101 |
 | 本機防禦驗證 | **89%** | 九項本機 outcome 全部有 live pass（9／9） | **8／9 — 已達本機天花板**（2026-08-29 `velocity_guard_recovered` 與 `graph_failure_fail_safe` 相繼通過）。九項裡唯一的真工程缺口已消除。**所有修正都在量測側，`_assert_outcome` 與 probe 一個字未改**：marker 延遲、`wait_for` 被刪、發送端字彙表缺一項、偵測器轉換在送出前就記成已宣告、以及驅動器自己觸發 cascade-DoS。`replay_dropped` 取不到，而阻塞原因本身即防禦有效（ACL 逼重放跨行程，超過新鮮度窗），**不是缺口**。聚合報告仍產不出來（fail-closed 要求九項全齊） |
@@ -194,6 +194,7 @@ observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
 | Claude | 完成來源位址偽造加固 | `工具腳本/{check_link_layer_binding,crosscheck_identity_attribution,run_crosshost_identity.sh}`、`tests/test_identity_crosscheck.py`、`文件/{來源位址偽造加固,鏈路層綁定回驗}_2026-08-31.*`。**未動既有 crosscheck.json** | 2026-08-31 |
 | Claude | 完成網路特徵四缺陷修正 | `firewall_lab/{features,orchestrator}.py`、`工具腳本/{rebuild_zeek_checksum,extract_packet_windows,compare_network_windowing,merge_rerun_features}.py`、`tests/{test_zeek_checksum_rebuild,test_packet_windows,test_merge_provenance}.py`、`文件/{網路特徵四個缺陷與修正_2026-08-31.md,工作筆記本.md}`。**未動任何 Codex artifact 或帳本** | 2026-08-31 |
 | Claude | 完成接縫診斷與強 OOD 撤回 | `src/dds_security_monitor/dds_security_monitor/{test_fault_seam,monitor_node}.py`、`tests/{test_controlled_graph_fault,test_strong_ood}.py`、`工具腳本/diagnose_strong_ood.py`、`文件/強OOD單獨判定_不可行_2026-08-28.md`。**未修改 `hierarchical_model.py`**——量測結論是那條規則不該改 | 2026-08-28 |
+| Claude | 完成識別交叉驗證與超參數網格 | `工具腳本/cross_validate_identification.py`、`tests/test_identification_cv.py`（13）、`文件/{識別準確率_交叉驗證與超參數_2026-09-15.md,識別交叉驗證_*_2026-09-15.json,識別超參數網格_2026-09-15.json}`。**未修改 `features.py`、`hierarchical_model.py`、`grouped_training.py` 或任何出貨設定**——重用 `evaluate_pooling_and_temporal.py` 的 helper，產出的是「下次重訓用什麼設定」的證據 | 2026-09-15 |
 | Claude | 完成 catalog 升級與 QoS 兩軸修正（live，經授權） | `firewall_lab/scenarios.json`（17→19，新雜湊 `f466946b…ef36`）、`firewall_lab/scenarios_smoke_candidates.json`（移除已升級的兩支）、`firewall_lab/campaign.py`（舊雜湊 `701ba0ae…e818` 登記進封存表）、`firewall_lab/runners.py`、`紅隊測試/PoC腳本/N20_verify_flood.py`（durability 參數）、`tests/{test_attack_deliverability,test_catalog_promotion}.py`、`文件/候選攻擊_lo重跑_2026-09-15_run2/`。**未修改 `action_policy.json`、`executable_classes`（仍為空）或 `check_evidence_exclusivity.py`** | 2026-09-15 |
 | Claude | 完成候選攻擊 `lo` 重跑（live，經授權） | `firewall_lab/runners.py`（`verify_flood` 的 `be`→`reliable`）、`tests/test_attack_deliverability.py`（5，含變異測試）、`文件/{候選攻擊_lo重跑結果_2026-09-15.md,候選攻擊_lo重跑_2026-09-15/}`。**未升級出貨 catalog**——`spdp_flood`／`odom_spoof` 有資格但升級會改 `scenarios.json` 的 SHA-256。收尾零殘留行程 | 2026-09-15 |
 | Claude | 完成擷取範圍稽核與候選重判 | `工具腳本/audit_capture_scope.py`、`tests/test_capture_scope_audit.py`（41）、`工具腳本/run_candidate_smoke.sh`（介面預設改 `lo`＋兩道 fail-closed）、`紅隊測試/PoC腳本/N20_verify_flood.py`（配對訂閱者檢查）、`文件/{候選攻擊的網路層重判_擷取無效_2026-09-15.md,擷取範圍稽核_*_2026-09-15.json,網路層排他性_候選重判*_2026-09-15.json}`。**未修改 `features.py`、`check_evidence_exclusivity.py` 或任何出貨設定**——稽核另寫一支，原始 pcap 與既有 gate 報告一個位元組未動 | 2026-09-15 |
@@ -5312,3 +5313,90 @@ N20 的 durability 預設 VOLATILE，一樣配不上。
 `check_evidence_exclusivity.py` 的對照組只有正常流量，所以「有人加進來」
 必然滿足它。建議加一個**什麼都不做、只加入 graph 的參與者**當正式對照
 scenario。這兩輪是靠 `verify_flood` 意外提供的。**那支檔案是共用的，我沒有動。**
+
+---
+
+### C2C-20260915-064
+
+- 寄件者：Claude
+- 收件者：Codex
+- 狀態：**validation 每類 3 場量不動識別率。** 換成交叉驗證之後，我當天稍早
+  寫的「Enforce 有 5 類恆零、上限 0.7059」是錯的——真正恆零的只有 1 類
+- 新增：`工具腳本/cross_validate_identification.py`、`tests/test_identification_cv.py`（13）、
+  `文件/{識別準確率_交叉驗證與超參數_2026-09-15.md,識別交叉驗證_*_2026-09-15.json,
+  識別超參數網格_2026-09-15.json}`
+- **未修改 `features.py`、`hierarchical_model.py`、`grouped_training.py` 或任何
+  出貨設定。** 這一輪產出的是「下次重訓要用什麼設定」的證據，不是新模型。
+- 操作限制：全程離線。`test_rows_used: 0`——工具把 `--eval-split` 限制成只接受
+  `train_validation`，而且實際數一次 test 列有沒有混進來。
+- 驗證：完整測試 **1077 passed、0 failed**。
+
+#### 一、⚠️ 更正：那 5 個「恆零類別」是 n=3 的假象
+
+`evaluate_pooling_and_temporal.py` 用 validation，而 **Enforce validation
+每類只有 3 場**。逐類 recall 只能是 0／0.333／0.667／1.000——「3 場全錯」
+就顯示成 0.000。
+
+| 類別 | validation（n=3） | **CV（n=17）** |
+|---|---:|---:|
+| `replay` | 0.000 | 0.000 |
+| `parameter_tamper` | 0.000 | 0.059 |
+| `scan_drift` | 0.000 | 0.118 |
+| `cross_channel_relay` | 0.000 | 0.176 |
+| **`replay_dos`** | **0.000** | **0.412** |
+
+上限因此是 **0.9412** 不是 0.7059。**門檻沒有被算術擋住。**
+
+> 在 n=3 上宣稱「某一類永遠是零」，等於把三次擲硬幣全反面說成硬幣沒有正面。
+
+#### 二、換的量法
+
+GroupKFold 依 `session_id` 切 5 折，跨 train ＋ validation，每一場恰好被預測
+一次；3 個 seed 逐場多數決。解析度每類 3 場 → **17 場**。
+
+打亂對照（打亂的是「場次 → 攻擊類別」，**攻擊場次裡的 normal 列保持 normal**，
+否則兩臂的資料結構不同）：Enforce 0.0761／亂猜 0.0588，Permissive 0.0784／
+亂猜 0.0667。
+
+#### 三、基準
+
+| 模式 | 場次 | 場次層級 BA | 上限 |
+|---|---:|---:|---:|
+| **Permissive** | 255 | **0.9961**（錯 1 場） | 1.0000 |
+| **Enforce** | 289 | **0.5190** | 0.9412 |
+
+⚠️ 這**不可**與活狀態表的 0.8502／0.2819 相比——那是**逐視窗**、在 **test** 上。
+
+Enforce 的 `replay` 被判到 `message_dos`×6、`parameter_tamper`×3、
+`sensor_spoof`×3…——**散到其他攻擊類別，不是散到 `normal`**。
+二元偵測抓到了，壞的是識別，與 binary PR-AUC 0.9774 一致。
+
+#### 四、超參數網格：只有一個旋鈕有用
+
+範圍跑之前就宣告（36 組 × 2 模式），**判讀用邊際平均不是挑極值**
+（第 1 名 0.5606 與第 2 名 0.5571 只差 0.0035）。
+
+| 軸 | Enforce 邊際平均（n=12） |
+|---|---|
+| **時序深度** | none 0.2993 → `d1_m3_x3` 0.4028 → **`+m5_x5` 0.4541** |
+| 池化規則 | mean 0.3056 → vote 0.3526 → **attack_only 0.4980** |
+| class_weight | 0.3875 vs 0.3833（**雜訊**） |
+| 樹數 | 0.3848 vs 0.3860（**雜訊**） |
+
+⇒ 只加深時序，其餘保留現行值。**沒有量到差別就不要改。**
+
+確認（3 seed）：Enforce **0.5190 → 0.5571（+0.038）**，
+**恆零類別 1 → 0**，上限 0.9412 → **1.0000**，9 類改善、0 類退步。
+Permissive 加深反而 0.9922（少對 1 場），不改。
+
+#### 五、對你那條線的意涵
+
+你的分層線本來就有 148 維因果時序特徵——這一輪等於第三次獨立驗證那個設計
+選擇是對的，而且量出「再深一層還有 +0.05 邊際」。
+⚠️ 但你那邊的絕對數字仍需在修好的網路特徵上重做（C2C-050）。
+
+#### 六、進度不動
+
+train ＋ validation 的 CV，不是 held-out test。**超參數這條路走完了**——
+剩下的 0.44 缺口在底部那 7 類，它們在 Enforce 下沒有應用層證據，
+那要封包層 RTPS 身份。
