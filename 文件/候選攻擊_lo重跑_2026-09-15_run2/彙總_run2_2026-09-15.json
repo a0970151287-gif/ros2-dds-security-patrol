@@ -1,0 +1,86 @@
+{
+  "authorised_live": true,
+  "batch": "/home/jesse/candidate_smoke_lo_20260915T105127Z",
+  "capture_interface": "lo",
+  "changes_shipped_catalog": false,
+  "join_floor": {
+    "derived_from": "verify_flood (attack_return_code=2)",
+    "guard_lock": 1,
+    "hmac_alerts": 4,
+    "log_reject": 1,
+    "note": "verify_flood 的攻擊 rc=2 完全沒執行，但它的節點已加入 graph。那一場的計數就是「有人加進來」的地板。",
+    "run": "run2",
+    "sessions_used": 1
+  },
+  "schema_version": "sros2-firewall-candidate-rerun/v1",
+  "sessions": {
+    "baseline_poisoning": [
+      {
+        "attack_return_code": 0,
+        "guard_lock": 1,
+        "hmac_alerts": 4,
+        "log_reject": 0,
+        "session": "20260915T105351634749Z_baseline_poisoning_69d4aaf0"
+      }
+    ],
+    "node_name_evasion": [
+      {
+        "attack_return_code": 0,
+        "guard_lock": 0,
+        "hmac_alerts": 0,
+        "log_reject": 0,
+        "session": "20260915T105439812383Z_node_name_evasion_356fa986"
+      }
+    ],
+    "normal": [
+      {
+        "attack_return_code": null,
+        "guard_lock": 0,
+        "hmac_alerts": 0,
+        "log_reject": 0,
+        "session": "20260915T105129341636Z_normal_patrol_4f90565a"
+      },
+      {
+        "attack_return_code": null,
+        "guard_lock": 0,
+        "hmac_alerts": 0,
+        "log_reject": 0,
+        "session": "20260915T105217747134Z_normal_patrol_37b8ca11"
+      },
+      {
+        "attack_return_code": null,
+        "guard_lock": 0,
+        "hmac_alerts": 0,
+        "log_reject": 0,
+        "session": "20260915T105304785741Z_normal_patrol_12f74ce9"
+      }
+    ],
+    "odom_spoof": [
+      {
+        "attack_return_code": 0,
+        "guard_lock": 4,
+        "hmac_alerts": 16,
+        "log_reject": 3,
+        "session": "20260915T105614377469Z_odom_spoof_ea272417"
+      }
+    ],
+    "spdp_flood": [
+      {
+        "attack_return_code": 0,
+        "guard_lock": 37,
+        "hmac_alerts": 152,
+        "log_reject": 2,
+        "session": "20260915T105703527354Z_spdp_flood_6eaa4864"
+      }
+    ],
+    "verify_flood": [
+      {
+        "attack_return_code": 2,
+        "guard_lock": 1,
+        "hmac_alerts": 4,
+        "log_reject": 1,
+        "session": "20260915T105527080853Z_verify_flood_707ee313"
+      }
+    ]
+  }
+}

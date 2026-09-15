@@ -238,6 +238,34 @@
       "intensity_max": 1.0,
       "expected_action": "temporary_block",
       "requires_gazebo": true
+    },
+    {
+      "id": "odom_spoof",
+      "attack_class": "odom_spoof",
+      "runner": "odom_spoof",
+      "description": "持續 publish「靜止」的 /odom，破壞機器人對自己的認知；刻意不偽造高速，那會與 cmd_vel_injection 的訊號重疊。2026-09-15 以 `lo` 重跑後通過證據排他性 gate：16 次 alert、4 次 guard_lock、1 次 log_reject，是「參與者加入」地板（4／1／0）的 4 倍。⚠️ 它**沒有**其他候選沒有的訊號（`log_reject` 只有 1 次，未達 gate 的 min_count=3），所以它與 `spdp_flood` 之間的可分性尚未證明。先前狀態是 not_evaluated。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "lock_velocity",
+      "requires_gazebo": true
+    },
+    {
+      "id": "spdp_flood",
+      "attack_class": "spdp_flood",
+      "runner": "spdp_flood",
+      "description": "同時存在大量 participant，用 SPDP 公告淹沒 discovery——那在安全握手之前就要處理，所以 Enforce 下仍有效。2026-09-15 以 `lo` 重跑後通過證據排他性 gate，而且是同輪唯一**兩兩可分**的一支：111 次 alert、28 次 guard_lock，是「參與者加入」地板（4／1）的 28 倍，並且獨有 `log_reject`。⚠️ 同輪的 `verify_flood` 攻擊完全沒執行卻產生與 `baseline_poisoning` 逐位相同的 4／1，所以地板本身不是攻擊證據——這一支的依據是**遠高於地板**且有專屬訊號。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "temporary_block",
+      "requires_gazebo": true
     }
   ]
 }

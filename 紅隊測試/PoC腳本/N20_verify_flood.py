@@ -42,7 +42,7 @@ import time
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy
+from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
 
 DISCOVERY_TIMEOUT_SEC = 8.0
@@ -68,20 +68,34 @@ def main():
     topic = sys.argv[1] if len(sys.argv) > 1 else '/security/heartbeat'
     duration = float(sys.argv[2]) if len(sys.argv) > 2 else 20.0
     rel = (sys.argv[3] if len(sys.argv) > 3 else 'be').lower()
+    dur = (sys.argv[4] if len(sys.argv) > 4 else 'volatile').lower()
 
     rclpy.init()
     node = Node('attacker_verify_flood')
     reliability = (ReliabilityPolicy.RELIABLE if rel == 'reliable'
                    else ReliabilityPolicy.BEST_EFFORT)
-    qos = QoSProfile(depth=10, reliability=reliability)
+    # ⚠️ QoS 相容有**兩個**軸，兩個都要對。2026-09-15 第一次重跑只修了
+    # reliability，結果仍然 rc=2——防守端的 `/security/heartbeat` 是
+    # RELIABLE **＋ TRANSIENT_LOCAL**（`intelligent_defense_node.py:158`），
+    # 而 VOLATILE writer 一樣配不上 TRANSIENT_LOCAL reader。
+    durability = (DurabilityPolicy.TRANSIENT_LOCAL if dur == 'transient_local'
+                  else DurabilityPolicy.VOLATILE)
+    qos = QoSProfile(depth=10, reliability=reliability, durability=durability)
     pub = node.create_publisher(String, topic, qos)
-    print(f'   QoS reliability = {reliability.name}', flush=True)
+    print(f'   QoS = {reliability.name} / {durability.name}', flush=True)
 
     matched = wait_for_matched_subscriber(node, pub)
     if matched == 0:
         print(f'⛔ {topic} 上沒有任何 QoS 相容的訂閱者配對（等了 '
-              f'{DISCOVERY_TIMEOUT_SEC:.0f} 秒）。這次攻擊不會送達，'
-              f'不執行。若對方是 RELIABLE，請用 `reliable` 當第三個參數。',
+              f'{DISCOVERY_TIMEOUT_SEC:.0f} 秒）。這次攻擊不會送達，不執行。
+'
+              f'   目前宣告 {reliability.name} / {durability.name}。'
+              f'相容性有兩個軸，兩個都要對：
+'
+              f'   第三個參數 reliability（be／reliable）、'
+              f'第四個參數 durability（volatile／transient_local）。
+'
+              f'   防守端的 /security/heartbeat 是 RELIABLE + TRANSIENT_LOCAL。',
               file=sys.stderr, flush=True)
         node.destroy_node()
         rclpy.shutdown()

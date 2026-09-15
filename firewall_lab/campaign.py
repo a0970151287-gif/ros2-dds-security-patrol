@@ -45,6 +45,30 @@ MAX_CAMPAIGN_SESSIONS = 10_000
 # policy migration. Archived catalogs bind only the fields stored in a plan
 # and can never be used to execute pending work.
 ARCHIVED_COMPLETED_CATALOGS = {
+    # 2026-09-15 把 spdp_flood 與 odom_spoof 升級到出貨之前的十七情境
+    # catalog。640 場 refresh campaign 釘著這個雜湊。
+    #
+    # 表的來源：升級腳本在改檔**之前**直接對磁碟上的 scenarios.json 取
+    # sha256，並由同一份內容產生下表，所以鍵與值必然一致。
+    "701ba0ae9767d7f0bf0ad3c7004649f0ef1318ec80e937b299e9e57c6be7e818": {
+        "normal_patrol": ("normal", "allow"),
+        "unauthorized_participant": ("identity_abuse", "deny_participant"),
+        "cmd_vel_injection": ("command_injection", "lock_velocity"),
+        "sensor_status_spoof": ("sensor_spoof", "drop_message"),
+        "parameter_tamper": ("parameter_tamper", "deny_participant"),
+        "oversized_scan": ("message_dos", "drop_message"),
+        "parameter_flood": ("service_dos", "temporary_block"),
+        "heartbeat_replay": ("replay", "drop_message"),
+        "alert_replay": ("replay_dos", "drop_message"),
+        "discovery_recon": ("discovery_recon", "alert"),
+        "insider_hmac_forgery": ("hmac_forgery", "drop_message"),
+        "insider_parameter_write": ("confused_deputy", "alert"),
+        "cross_channel_relay": ("cross_channel_relay", "drop_message"),
+        "scan_drift": ("scan_drift", "lock_velocity"),
+        "health_spoof": ("health_spoof", "drop_message"),
+        "mission_spoof": ("mission_spoof", "drop_message"),
+        "node_churn": ("node_churn", "temporary_block"),
+    },
     # 2026-09-02 把 node_churn 升級到出貨之前的十六情境 catalog。
     # 這個版本沒有 campaign 釘著它；登記是因為封存表要涵蓋每個曾出貨的版本。
     "f2596e622a4e2661a2d9a3a98ea7eb39299c8a8906c800e222e48b8accf655b0": {

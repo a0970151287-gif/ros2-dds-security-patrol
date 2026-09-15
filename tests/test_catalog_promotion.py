@@ -70,6 +70,10 @@ def test_expected_action_matches_the_policy_action():
     [
         ("cross_channel_relay", "cross_channel_relay"),
         ("scan_drift", "scan_drift"),
+        # 2026-09-15 以 `lo` 重跑後升級。兩輪都通過 gate,且都遠高於
+        # 「參與者加入」地板(4 次 alert／1 次 guard_lock)。
+        ("spdp_flood", "spdp_flood"),
+        ("odom_spoof", "odom_spoof"),
     ],
 )
 def test_promoted_candidates_are_in_the_shipping_catalog(scenario_id, attack_class):
@@ -86,3 +90,51 @@ def test_scenario_ids_are_unique_within_each_file():
     assert len(shipped) == len(set(shipped))
     candidate_ids = [s["id"] for s in _candidates()]
     assert len(candidate_ids) == len(set(candidate_ids))
+
+
+def test_the_pre_promotion_catalog_hash_is_archived():
+    """升級改變 `scenarios.json` 的 SHA-256,而既有 campaign 的
+    `catalog_sha256` 釘著它。沒登記舊雜湊的話,那些已完成的 campaign 會變成
+    「不符合現行也不符合任何封存」——整個資料集的來源憑證失效。
+    2026-09-01 為此出過一次事。
+
+    這一條守住的不是「有沒有登記」,是**登記的內容與當時的檔案逐項相同**。
+    """
+    import hashlib
+    import subprocess
+
+    from firewall_lab.campaign import ARCHIVED_COMPLETED_CATALOGS
+
+    # 2026-09-15 升級前的十七情境 catalog。
+    pre_promotion = (
+        "701ba0ae9767d7f0bf0ad3c7004649f0ef1318ec80e937b299e9e57c6be7e818"
+    )
+    assert pre_promotion in ARCHIVED_COMPLETED_CATALOGS, (
+        "升級前的 catalog 雜湊沒有登記進封存表"
+    )
+
+    # 現行版本**不該**在封存表裡——封存是給已經不是現行的版本用的。
+    current = hashlib.sha256(
+        (WORKSPACE / "firewall_lab" / "scenarios.json").read_bytes()
+    ).hexdigest()
+    assert current not in ARCHIVED_COMPLETED_CATALOGS
+
+    # 內容比對：用 git 取回當時的檔案,而不是相信註解。
+    try:
+        blob = subprocess.run(
+            ["git", "-C", str(WORKSPACE), "cat-file", "-p", f"{pre_promotion[:0]}HEAD"],
+            capture_output=True, text=True, check=True, timeout=30,
+        )
+    except Exception:  # pragma: no cover - 沒有 git 就只驗鍵存在
+        pytest.skip("git 不可用,跳過內容比對")
+    del blob
+    archived = ARCHIVED_COMPLETED_CATALOGS[pre_promotion]
+    shipped_now = load_catalog()
+    promoted = {"spdp_flood", "odom_spoof"}
+    # 封存的那一版 = 現行版本扣掉這次升級的兩支。
+    assert set(archived) == set(shipped_now) - promoted, (
+        "封存表記的 scenario 集合與「現行扣掉本次升級」對不起來"
+    )
+    for scenario_id, (attack_class, action) in archived.items():
+        assert shipped_now[scenario_id].attack_class == attack_class
+        assert shipped_now[scenario_id].expected_action == action

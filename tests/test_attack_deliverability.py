@@ -12,7 +12,12 @@ DDS 的規則是單向的：**BEST_EFFORT writer 配不上 RELIABLE reader**
 （reader 要求的可靠性比 writer 提供的強），反過來可以。所以只要防守端是
 RELIABLE，攻擊端就必須也是 RELIABLE，否則一則都不會離開行程。
 
-這裡把「打 RELIABLE 通道的攻擊不得宣告 BEST_EFFORT」釘成回歸測試。
+⚠️ **相容性有兩個軸，兩個都要對。** 2026-09-15 第一次重跑只修了 reliability，
+攻擊仍然 rc=2——防守端的 `/security/heartbeat` 是 RELIABLE **＋
+TRANSIENT_LOCAL**，而 VOLATILE writer 一樣配不上 TRANSIENT_LOCAL reader。
+只驗一個軸的測試會給出「已經修好」的假象。
+
+這裡把兩個軸都釘成回歸測試。
 """
 from __future__ import annotations
 
@@ -80,6 +85,11 @@ def test_verify_flood_does_not_declare_best_effort():
         f" argv={argv}"
     )
     assert "reliable" in argv, f"argv={argv}"
+    # 第二個軸。只修 reliability 的話 2026-09-15 那一輪已經證明還是送不到。
+    assert "transient_local" in argv, (
+        "verify_flood 沒有宣告 transient_local——防守端是 TRANSIENT_LOCAL，"
+        f"VOLATILE writer 配不上它。argv={argv}"
+    )
 
 
 @pytest.mark.parametrize("catalog_path", [
@@ -109,6 +119,23 @@ def test_no_runner_targets_a_reliable_topic_with_best_effort(catalog_path):
     assert not offenders, (
         "以下 runner 對 RELIABLE 通道宣告 BEST_EFFORT，訊息不會送達：\n"
         + "\n".join(f"  {sid}: {tok}" for sid, tok in offenders)
+    )
+
+
+def test_the_check_would_have_caught_the_first_incomplete_fix():
+    """變異測試之二：只修了 reliability 的那一版必須被抓到。
+
+    2026-09-15 第一次重跑就是這一版,攻擊仍然 rc=2。
+    """
+    half_fixed = [
+        "python3",
+        "紅隊測試/PoC腳本/N20_verify_flood.py",
+        "/security/heartbeat",
+        "25.000",
+        "reliable",
+    ]
+    assert "transient_local" not in half_fixed, (
+        "判準對「只修一半」的 argv 不會咬人,那它抓不到 2026-09-15 那次"
     )
 
 

@@ -334,6 +334,8 @@ def build_attack_argv(
             "/security/heartbeat",
             f"{candidate_duration:.3f}",
             "reliable",
+            # durability 也要對。2026-09-15 第一次只改 reliability，仍然 rc=2。
+            "transient_local",
         ]
     if scenario.runner == "discovery_recon":
         # 被動偵察：加入 domain 但不建立任何 publisher／subscriber，
