@@ -1,0 +1,7277 @@
+{
+  "batch": "/home/jesse/dataset_rerun300",
+  "capture_interfaces": {
+    "<未記錄>": 1,
+    "lo": 305
+  },
+  "changes_shipped_features": false,
+  "min_unicast_ratio": 0.5,
+  "rows": [
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5157,
+      "packets_unicast": 4817,
+      "security_mode": "permissive",
+      "session": "20260820T032434555374Z_parameter_flood_e0f6a6c8",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4817
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.93407,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4127,
+      "packets_unicast": 3791,
+      "security_mode": "permissive",
+      "session": "20260820T032529935141Z_heartbeat_replay_6462b37a",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          3791
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.918585,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4524,
+      "packets_unicast": 4186,
+      "security_mode": "permissive",
+      "session": "20260820T032624674528Z_heartbeat_replay_476d9d2e",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4186
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.925287,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 4699,
+      "packets_unicast": 4369,
+      "security_mode": "permissive",
+      "session": "20260820T032718206906Z_parameter_tamper_d7a0c5d9",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4369
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.929772,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5041,
+      "packets_unicast": 4701,
+      "security_mode": "permissive",
+      "session": "20260820T032811637509Z_heartbeat_replay_321db573",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4701
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.932553,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 4763,
+      "packets_unicast": 4433,
+      "security_mode": "permissive",
+      "session": "20260820T032905298518Z_parameter_tamper_a2ca6bbe",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4433
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.930716,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6540,
+      "packets_unicast": 6200,
+      "security_mode": "permissive",
+      "session": "20260820T032957835955Z_parameter_flood_ded173e4",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6200
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.948012,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6953,
+      "packets_unicast": 6613,
+      "security_mode": "permissive",
+      "session": "20260820T033050880894Z_parameter_flood_aed7a83d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6613
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.9511,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5148,
+      "packets_unicast": 4814,
+      "security_mode": "permissive",
+      "session": "20260820T033144285311Z_parameter_tamper_5dd5b70d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4814
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.93512,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 6416,
+      "packets_unicast": 6080,
+      "security_mode": "permissive",
+      "session": "20260820T033236317612Z_parameter_flood_8ef39c9e",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6080
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.947631,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5450,
+      "packets_unicast": 5110,
+      "security_mode": "permissive",
+      "session": "20260820T033329404787Z_heartbeat_replay_bc981427",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5110
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.937615,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5562,
+      "packets_unicast": 5224,
+      "security_mode": "permissive",
+      "session": "20260820T033422462543Z_parameter_flood_7f19e650",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5224
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.93923,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4908,
+      "packets_unicast": 4572,
+      "security_mode": "permissive",
+      "session": "20260820T033515486806Z_heartbeat_replay_c63faae0",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4572
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.93154,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5168,
+      "packets_unicast": 4834,
+      "security_mode": "permissive",
+      "session": "20260820T033608422102Z_parameter_tamper_fdd0a0d8",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4834
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.935372,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 6548,
+      "packets_unicast": 6212,
+      "security_mode": "permissive",
+      "session": "20260820T033700609784Z_heartbeat_replay_a529c1f4",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6212
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.948687,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5161,
+      "packets_unicast": 4821,
+      "security_mode": "permissive",
+      "session": "20260820T033753441010Z_heartbeat_replay_de5fb08d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4821
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.934121,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 4894,
+      "packets_unicast": 4564,
+      "security_mode": "permissive",
+      "session": "20260820T033846527917Z_parameter_tamper_fd168417",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4564
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.93257,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5082,
+      "packets_unicast": 4744,
+      "security_mode": "permissive",
+      "session": "20260820T033938310771Z_heartbeat_replay_91251ed0",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4744
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.933491,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5275,
+      "packets_unicast": 4935,
+      "security_mode": "permissive",
+      "session": "20260820T034030998378Z_heartbeat_replay_d5b0cea7",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4935
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.935545,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4605,
+      "packets_unicast": 4269,
+      "security_mode": "permissive",
+      "session": "20260820T034123776133Z_heartbeat_replay_ec8c20bf",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4269
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.927036,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5970,
+      "packets_unicast": 5632,
+      "security_mode": "permissive",
+      "session": "20260820T034216586083Z_parameter_flood_161ef13b",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5632
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.943384,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4591,
+      "packets_unicast": 4255,
+      "security_mode": "permissive",
+      "session": "20260820T034309545185Z_parameter_tamper_2efc4dee",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4255
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.926813,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5546,
+      "packets_unicast": 5208,
+      "security_mode": "permissive",
+      "session": "20260820T034401276895Z_parameter_flood_515377dc",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5208
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.939055,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5217,
+      "packets_unicast": 4885,
+      "security_mode": "permissive",
+      "session": "20260820T034453985998Z_parameter_tamper_7675b053",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4885
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.936362,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5059,
+      "packets_unicast": 4719,
+      "security_mode": "permissive",
+      "session": "20260820T034545726700Z_heartbeat_replay_08d321ef",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4719
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.932793,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5006,
+      "packets_unicast": 4670,
+      "security_mode": "permissive",
+      "session": "20260820T034638620836Z_heartbeat_replay_1a7e5a3f",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4670
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.932881,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6938,
+      "packets_unicast": 6600,
+      "security_mode": "permissive",
+      "session": "20260820T034731232157Z_parameter_flood_78fce7ea",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6600
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.951283,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5196,
+      "packets_unicast": 4856,
+      "security_mode": "permissive",
+      "session": "20260820T034824601795Z_heartbeat_replay_f2eb6e74",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4856
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.934565,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5210,
+      "packets_unicast": 4876,
+      "security_mode": "permissive",
+      "session": "20260820T034917623261Z_parameter_tamper_df28e68a",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4876
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.935893,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5271,
+      "packets_unicast": 4939,
+      "security_mode": "permissive",
+      "session": "20260820T035009438332Z_parameter_tamper_2145e7ca",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4939
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.937014,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6074,
+      "packets_unicast": 5736,
+      "security_mode": "permissive",
+      "session": "20260820T035101516982Z_parameter_flood_5005589d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5736
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.944353,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 7937,
+      "packets_unicast": 7597,
+      "security_mode": "permissive",
+      "session": "20260820T035154609709Z_parameter_flood_6a051939",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          7597
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.957163,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5225,
+      "packets_unicast": 4885,
+      "security_mode": "permissive",
+      "session": "20260820T035247734117Z_heartbeat_replay_50eed3b9",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4885
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.934928,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4922,
+      "packets_unicast": 4584,
+      "security_mode": "permissive",
+      "session": "20260820T035340561209Z_heartbeat_replay_9872e9ff",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4584
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.931329,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5124,
+      "packets_unicast": 4786,
+      "security_mode": "permissive",
+      "session": "20260820T035433211420Z_heartbeat_replay_4e02dd5b",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4786
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.934036,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5064,
+      "packets_unicast": 4724,
+      "security_mode": "permissive",
+      "session": "20260820T035526183124Z_heartbeat_replay_81d22eff",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4724
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.932859,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 7037,
+      "packets_unicast": 6695,
+      "security_mode": "permissive",
+      "session": "20260820T035619222996Z_parameter_flood_1f599053",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6695
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.9514,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5337,
+      "packets_unicast": 5005,
+      "security_mode": "permissive",
+      "session": "20260820T035712351015Z_parameter_tamper_8a762e8a",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5005
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.937793,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5162,
+      "packets_unicast": 4828,
+      "security_mode": "permissive",
+      "session": "20260820T035804433899Z_parameter_tamper_40f716ce",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4828
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.935296,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4982,
+      "packets_unicast": 4646,
+      "security_mode": "permissive",
+      "session": "20260820T035856741269Z_heartbeat_replay_adced169",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4646
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.932557,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5470,
+      "packets_unicast": 5132,
+      "security_mode": "permissive",
+      "session": "20260820T035949723883Z_parameter_flood_220894bd",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5132
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.938208,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4928,
+      "packets_unicast": 4592,
+      "security_mode": "permissive",
+      "session": "20260820T040042615443Z_parameter_flood_dec9139d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4592
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.931818,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5570,
+      "packets_unicast": 5230,
+      "security_mode": "permissive",
+      "session": "20260820T040135452733Z_parameter_flood_969f7644",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5230
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.938959,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 5683,
+      "packets_unicast": 5341,
+      "security_mode": "permissive",
+      "session": "20260820T040228420491Z_parameter_flood_19755632",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5341
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.939821,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 4980,
+      "packets_unicast": 4640,
+      "security_mode": "permissive",
+      "session": "20260820T040321531892Z_heartbeat_replay_fe8a26fa",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4640
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.931727,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5165,
+      "packets_unicast": 4829,
+      "security_mode": "permissive",
+      "session": "20260820T040414785394Z_heartbeat_replay_38f74337",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4829
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.934947,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 4932,
+      "packets_unicast": 4592,
+      "security_mode": "permissive",
+      "session": "20260820T040507954268Z_heartbeat_replay_613a1766",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4592
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.931062,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5047,
+      "packets_unicast": 4715,
+      "security_mode": "permissive",
+      "session": "20260820T040600915830Z_parameter_tamper_ff9f6f2b",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4715
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.934218,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6412,
+      "packets_unicast": 6074,
+      "security_mode": "permissive",
+      "session": "20260820T040652886676Z_parameter_flood_52cfb472",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6074
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.947286,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5632,
+      "packets_unicast": 5292,
+      "security_mode": "permissive",
+      "session": "20260820T040745839577Z_parameter_flood_6b3c8e47",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5292
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.939631,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5100,
+      "packets_unicast": 4764,
+      "security_mode": "permissive",
+      "session": "20260820T040838949075Z_heartbeat_replay_a4781c96",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4764
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.934118,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4919,
+      "packets_unicast": 4585,
+      "security_mode": "permissive",
+      "session": "20260820T040931819296Z_parameter_tamper_8e6efcfc",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4585
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.9321,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5007,
+      "packets_unicast": 4673,
+      "security_mode": "permissive",
+      "session": "20260820T041023852911Z_parameter_tamper_40497060",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4673
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.933293,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5649,
+      "packets_unicast": 5313,
+      "security_mode": "permissive",
+      "session": "20260820T041115388658Z_parameter_tamper_694b1a87",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5313
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.94052,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4791,
+      "packets_unicast": 4453,
+      "security_mode": "permissive",
+      "session": "20260820T041207402775Z_heartbeat_replay_ec47a01b",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4453
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.929451,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5077,
+      "packets_unicast": 4741,
+      "security_mode": "permissive",
+      "session": "20260820T041300468333Z_heartbeat_replay_5f0b1e1d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4741
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.933819,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6044,
+      "packets_unicast": 5704,
+      "security_mode": "permissive",
+      "session": "20260820T041353431126Z_parameter_flood_1e5dd2da",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5704
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.943746,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4933,
+      "packets_unicast": 4595,
+      "security_mode": "permissive",
+      "session": "20260820T041446403255Z_heartbeat_replay_302c4475",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4595
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.931482,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5420,
+      "packets_unicast": 5088,
+      "security_mode": "permissive",
+      "session": "20260820T041539439116Z_parameter_tamper_62fb5e86",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5088
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.938745,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6485,
+      "packets_unicast": 6147,
+      "security_mode": "permissive",
+      "session": "20260820T041631184024Z_parameter_flood_ef3c2b59",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6147
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.94788,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5035,
+      "packets_unicast": 4701,
+      "security_mode": "permissive",
+      "session": "20260820T041723924394Z_parameter_tamper_1a8ac6c3",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4701
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.933664,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5861,
+      "packets_unicast": 5529,
+      "security_mode": "permissive",
+      "session": "20260820T041815465337Z_parameter_tamper_857010dc",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5529
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.943354,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5779,
+      "packets_unicast": 5441,
+      "security_mode": "permissive",
+      "session": "20260820T041907465976Z_heartbeat_replay_f8a94162",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5441
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.941512,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5046,
+      "packets_unicast": 4710,
+      "security_mode": "permissive",
+      "session": "20260820T042000191900Z_heartbeat_replay_fa42e597",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4710
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.933413,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6572,
+      "packets_unicast": 6232,
+      "security_mode": "permissive",
+      "session": "20260820T042052947356Z_parameter_flood_c8136f56",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6232
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.948265,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4689,
+      "packets_unicast": 4351,
+      "security_mode": "permissive",
+      "session": "20260820T042146016616Z_heartbeat_replay_e294d930",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4351
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.927916,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5068,
+      "packets_unicast": 4736,
+      "security_mode": "permissive",
+      "session": "20260820T042238975212Z_parameter_tamper_1f24680e",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4736
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.934491,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6499,
+      "packets_unicast": 6159,
+      "security_mode": "permissive",
+      "session": "20260820T042330990557Z_parameter_flood_744c57b4",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6159
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.947684,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 5215,
+      "packets_unicast": 4885,
+      "security_mode": "permissive",
+      "session": "20260820T042423883701Z_parameter_tamper_5fbf8003",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4885
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.936721,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 5027,
+      "packets_unicast": 4697,
+      "security_mode": "permissive",
+      "session": "20260820T042515964556Z_parameter_tamper_045ec0c8",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4697
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.934354,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5039,
+      "packets_unicast": 4699,
+      "security_mode": "permissive",
+      "session": "20260820T042607970016Z_heartbeat_replay_34d082f5",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4699
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.932526,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6950,
+      "packets_unicast": 6612,
+      "security_mode": "permissive",
+      "session": "20260820T042701043789Z_parameter_flood_ed482d0a",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6612
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.951367,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5797,
+      "packets_unicast": 5457,
+      "security_mode": "permissive",
+      "session": "20260820T042754186187Z_parameter_flood_35f0c8dd",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5457
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.941349,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5891,
+      "packets_unicast": 5551,
+      "security_mode": "permissive",
+      "session": "20260820T042847394861Z_parameter_flood_ace55bc2",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5551
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.942285,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 6206,
+      "packets_unicast": 5864,
+      "security_mode": "permissive",
+      "session": "20260820T042940464532Z_parameter_flood_da64020a",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5864
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.944892,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5109,
+      "packets_unicast": 4771,
+      "security_mode": "permissive",
+      "session": "20260820T043033381385Z_heartbeat_replay_22190778",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4771
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.933842,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5796,
+      "packets_unicast": 5456,
+      "security_mode": "permissive",
+      "session": "20260820T043126196108Z_heartbeat_replay_3e6e56a5",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5456
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.941339,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5216,
+      "packets_unicast": 4878,
+      "security_mode": "permissive",
+      "session": "20260820T043219424374Z_heartbeat_replay_6f557472",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4878
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.935199,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5262,
+      "packets_unicast": 4924,
+      "security_mode": "permissive",
+      "session": "20260820T043312104810Z_parameter_flood_acdf3c3f",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4924
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.935766,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 7986,
+      "packets_unicast": 7648,
+      "security_mode": "permissive",
+      "session": "20260820T043405017821Z_parameter_flood_f5526d64",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          7648
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.957676,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4811,
+      "packets_unicast": 4479,
+      "security_mode": "permissive",
+      "session": "20260820T043457946015Z_parameter_tamper_1c4126a2",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4479
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.930991,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5748,
+      "packets_unicast": 5414,
+      "security_mode": "permissive",
+      "session": "20260820T043549885797Z_parameter_tamper_69147872",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5414
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.941893,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4897,
+      "packets_unicast": 4565,
+      "security_mode": "permissive",
+      "session": "20260820T043641969139Z_parameter_tamper_c650124a",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4565
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.932203,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6407,
+      "packets_unicast": 6067,
+      "security_mode": "permissive",
+      "session": "20260820T043733806313Z_parameter_flood_777d468e",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6067
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.946933,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5324,
+      "packets_unicast": 4992,
+      "security_mode": "permissive",
+      "session": "20260820T043827065224Z_parameter_tamper_fd8a9bc2",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4992
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.937641,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4932,
+      "packets_unicast": 4598,
+      "security_mode": "permissive",
+      "session": "20260820T043919069558Z_parameter_tamper_390cf98d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4598
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.932279,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6135,
+      "packets_unicast": 5795,
+      "security_mode": "permissive",
+      "session": "20260820T044011331481Z_parameter_flood_696d3e85",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5795
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.94458,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6423,
+      "packets_unicast": 6085,
+      "security_mode": "permissive",
+      "session": "20260820T044104282917Z_parameter_flood_2f07801e",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6085
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.947377,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5117,
+      "packets_unicast": 4781,
+      "security_mode": "permissive",
+      "session": "20260820T044157450107Z_heartbeat_replay_1b53a220",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4781
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.934337,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6411,
+      "packets_unicast": 6073,
+      "security_mode": "permissive",
+      "session": "20260820T044250084502Z_parameter_flood_01109e56",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6073
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.947278,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5052,
+      "packets_unicast": 4720,
+      "security_mode": "permissive",
+      "session": "20260820T044342772170Z_parameter_tamper_b625a5b0",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4720
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.934283,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 4901,
+      "packets_unicast": 4571,
+      "security_mode": "permissive",
+      "session": "20260820T044434502310Z_parameter_tamper_c787805d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4571
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.932667,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6491,
+      "packets_unicast": 6151,
+      "security_mode": "permissive",
+      "session": "20260820T044526406169Z_parameter_flood_2ec5235a",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6151
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.94762,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4909,
+      "packets_unicast": 4575,
+      "security_mode": "permissive",
+      "session": "20260820T044619605437Z_parameter_tamper_179717f8",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4575
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.931962,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6839,
+      "packets_unicast": 6499,
+      "security_mode": "permissive",
+      "session": "20260820T044711466887Z_parameter_flood_e5e2898f",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6499
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.950285,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5993,
+      "packets_unicast": 5659,
+      "security_mode": "permissive",
+      "session": "20260820T044804732662Z_parameter_tamper_21c34201",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5659
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.944268,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5050,
+      "packets_unicast": 4716,
+      "security_mode": "permissive",
+      "session": "20260820T044856754413Z_parameter_tamper_5956dd05",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4716
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.933861,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4822,
+      "packets_unicast": 4490,
+      "security_mode": "permissive",
+      "session": "20260820T044948363122Z_parameter_tamper_dcf9bcf3",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4490
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.931149,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5096,
+      "packets_unicast": 4762,
+      "security_mode": "permissive",
+      "session": "20260820T045040262281Z_parameter_tamper_2535755b",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4762
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.934458,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 6799,
+      "packets_unicast": 6469,
+      "security_mode": "permissive",
+      "session": "20260820T045132005152Z_parameter_tamper_dadbabf1",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6469
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.951463,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6144,
+      "packets_unicast": 5804,
+      "security_mode": "permissive",
+      "session": "20260820T045223633694Z_parameter_flood_f15cf604",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5804
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.944661,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5674,
+      "packets_unicast": 5340,
+      "security_mode": "permissive",
+      "session": "20260820T045316560491Z_parameter_tamper_a845334b",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5340
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.941135,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5024,
+      "packets_unicast": 4692,
+      "security_mode": "permissive",
+      "session": "20260820T045409209370Z_parameter_tamper_74f212c5",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4692
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.933917,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5140,
+      "packets_unicast": 4808,
+      "security_mode": "permissive",
+      "session": "20260820T045501475279Z_parameter_tamper_ef6cbd47",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4808
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.935409,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5030,
+      "packets_unicast": 4690,
+      "security_mode": "permissive",
+      "session": "20260820T045553441288Z_heartbeat_replay_eebf8e16",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4690
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.932406,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4934,
+      "packets_unicast": 4602,
+      "security_mode": "permissive",
+      "session": "20260820T045646356843Z_parameter_tamper_711519d0",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4602
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.932712,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6106,
+      "packets_unicast": 5766,
+      "security_mode": "permissive",
+      "session": "20260820T045738474940Z_parameter_flood_7738cb05",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5766
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.944317,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6275,
+      "packets_unicast": 5937,
+      "security_mode": "permissive",
+      "session": "20260820T045831643822Z_parameter_flood_8f6e0dc8",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5937
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.946135,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 6509,
+      "packets_unicast": 6173,
+      "security_mode": "permissive",
+      "session": "20260820T045924858301Z_heartbeat_replay_ff24b98d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6173
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.948379,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5142,
+      "packets_unicast": 4808,
+      "security_mode": "permissive",
+      "session": "20260820T050017781883Z_parameter_tamper_251c4ef8",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4808
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.935045,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4662,
+      "packets_unicast": 4326,
+      "security_mode": "permissive",
+      "session": "20260820T050109635709Z_heartbeat_replay_2ba0e206",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4326
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.927928,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 6289,
+      "packets_unicast": 5953,
+      "security_mode": "permissive",
+      "session": "20260820T050202778402Z_parameter_flood_fcf7cc83",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5953
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.946573,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5003,
+      "packets_unicast": 4665,
+      "security_mode": "permissive",
+      "session": "20260820T050256047466Z_heartbeat_replay_0970561f",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4665
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.932441,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 8160,
+      "packets_unicast": 7820,
+      "security_mode": "permissive",
+      "session": "20260820T050348955457Z_parameter_flood_b6e87ea0",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          7820
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.958333,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5065,
+      "packets_unicast": 4733,
+      "security_mode": "permissive",
+      "session": "20260820T050441929757Z_parameter_tamper_414d8f15",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4733
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.934452,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 7377,
+      "packets_unicast": 7039,
+      "security_mode": "permissive",
+      "session": "20260820T050534480673Z_parameter_flood_fbbdb4b1",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          7039
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.954182,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 6632,
+      "packets_unicast": 6300,
+      "security_mode": "permissive",
+      "session": "20260820T050627521448Z_parameter_tamper_32615d4b",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6300
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.94994,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 7346,
+      "packets_unicast": 7006,
+      "security_mode": "permissive",
+      "session": "20260820T050719376444Z_parameter_flood_e788d00f",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          7006
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.953716,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4635,
+      "packets_unicast": 4301,
+      "security_mode": "permissive",
+      "session": "20260820T050817216974Z_parameter_tamper_fbbce8a7",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4301
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.92794,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4998,
+      "packets_unicast": 4660,
+      "security_mode": "permissive",
+      "session": "20260820T050915517338Z_heartbeat_replay_972515bb",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4660
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.932373,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5243,
+      "packets_unicast": 4907,
+      "security_mode": "permissive",
+      "session": "20260820T051008746849Z_heartbeat_replay_d82198c4",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4907
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.935915,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 6081,
+      "packets_unicast": 5739,
+      "security_mode": "permissive",
+      "session": "20260820T051101961689Z_parameter_flood_674025d2",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5739
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.943759,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5133,
+      "packets_unicast": 4797,
+      "security_mode": "permissive",
+      "session": "20260820T051157306154Z_heartbeat_replay_5a286662",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4797
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.934541,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5072,
+      "packets_unicast": 4736,
+      "security_mode": "permissive",
+      "session": "20260820T051256342158Z_heartbeat_replay_7c837a7a",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4736
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.933754,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5097,
+      "packets_unicast": 4759,
+      "security_mode": "permissive",
+      "session": "20260820T051349397676Z_heartbeat_replay_d5496ac5",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4759
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.933686,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 4606,
+      "packets_unicast": 4266,
+      "security_mode": "permissive",
+      "session": "20260820T051442178715Z_heartbeat_replay_efbc95c8",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4266
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.926183,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 5711,
+      "packets_unicast": 5381,
+      "security_mode": "permissive",
+      "session": "20260820T051536055942Z_parameter_tamper_0de66d1b",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5381
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.942217,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5206,
+      "packets_unicast": 4870,
+      "security_mode": "permissive",
+      "session": "20260820T051632327875Z_heartbeat_replay_74f5145f",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4870
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.935459,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 344,
+      "packets_total": 6540,
+      "packets_unicast": 6196,
+      "security_mode": "permissive",
+      "session": "20260820T051725909518Z_parameter_flood_dc514e3d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6196
+        ],
+        [
+          "239.255.0.1",
+          344
+        ]
+      ],
+      "unicast_ratio": 0.947401,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5399,
+      "packets_unicast": 5059,
+      "security_mode": "permissive",
+      "session": "20260820T051820296929Z_parameter_flood_b7532b74",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5059
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.937025,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6685,
+      "packets_unicast": 6345,
+      "security_mode": "permissive",
+      "session": "20260820T051913950397Z_parameter_flood_e3ec2052",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6345
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.94914,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5646,
+      "packets_unicast": 5306,
+      "security_mode": "permissive",
+      "session": "20260820T052007659609Z_parameter_flood_28d49899",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5306
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.93978,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6141,
+      "packets_unicast": 5801,
+      "security_mode": "permissive",
+      "session": "20260820T052101306985Z_parameter_flood_d5f26857",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5801
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.944634,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5241,
+      "packets_unicast": 4907,
+      "security_mode": "permissive",
+      "session": "20260820T052155019602Z_parameter_tamper_f5e752fb",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4907
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.936272,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 6601,
+      "packets_unicast": 6265,
+      "security_mode": "permissive",
+      "session": "20260820T052248275713Z_heartbeat_replay_3943d050",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6265
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.949099,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5023,
+      "packets_unicast": 4687,
+      "security_mode": "permissive",
+      "session": "20260820T052342045621Z_heartbeat_replay_34451947",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4687
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.933108,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5385,
+      "packets_unicast": 5049,
+      "security_mode": "permissive",
+      "session": "20260820T052436527959Z_heartbeat_replay_9bf42659",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5049
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.937604,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 324,
+      "packets_total": 5854,
+      "packets_unicast": 5530,
+      "security_mode": "permissive",
+      "session": "20260820T052530838768Z_parameter_flood_e6cf8294",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5530
+        ],
+        [
+          "239.255.0.1",
+          324
+        ]
+      ],
+      "unicast_ratio": 0.944653,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 7249,
+      "packets_unicast": 6911,
+      "security_mode": "permissive",
+      "session": "20260820T052627441295Z_parameter_flood_732cd399",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6911
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.953373,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5490,
+      "packets_unicast": 5156,
+      "security_mode": "permissive",
+      "session": "20260820T052721607845Z_heartbeat_replay_34ff8442",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5156
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.939162,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4926,
+      "packets_unicast": 4594,
+      "security_mode": "permissive",
+      "session": "20260820T052815266198Z_parameter_tamper_b8d6856b",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4594
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.932603,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 6971,
+      "packets_unicast": 6629,
+      "security_mode": "permissive",
+      "session": "20260820T052907598145Z_parameter_flood_1bcfc8f7",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          6629
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.95094,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 4798,
+      "packets_unicast": 4468,
+      "security_mode": "permissive",
+      "session": "20260820T053001082585Z_parameter_tamper_99d7497e",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4468
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.931221,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6070,
+      "packets_unicast": 5730,
+      "security_mode": "permissive",
+      "session": "20260820T053053516188Z_parameter_flood_ba5b12ca",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          5730
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.943987,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5160,
+      "packets_unicast": 4826,
+      "security_mode": "permissive",
+      "session": "20260820T053146988196Z_parameter_tamper_d53b820a",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4826
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.935271,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5090,
+      "packets_unicast": 4758,
+      "security_mode": "permissive",
+      "session": "20260820T053239293004Z_parameter_tamper_b91d09c8",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4758
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.934774,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 4977,
+      "packets_unicast": 4637,
+      "security_mode": "permissive",
+      "session": "20260820T053331477457Z_heartbeat_replay_24d4e0f8",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4637
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.931686,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5133,
+      "packets_unicast": 4795,
+      "security_mode": "permissive",
+      "session": "20260820T053425002119Z_heartbeat_replay_08a39726",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4795
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.934152,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 5001,
+      "packets_unicast": 4671,
+      "security_mode": "permissive",
+      "session": "20260820T053518313925Z_parameter_tamper_dc051674",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4671
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.934013,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5022,
+      "packets_unicast": 4688,
+      "security_mode": "permissive",
+      "session": "20260820T053610814393Z_parameter_tamper_a8d691de",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          4688
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.933493,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 7258,
+      "packets_unicast": 6926,
+      "security_mode": "enforce",
+      "session": "20260820T053856641699Z_parameter_flood_67ea7901",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3463
+        ],
+        [
+          "172.30.123.103",
+          3463
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.954257,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4540,
+      "packets_unicast": 4212,
+      "security_mode": "enforce",
+      "session": "20260820T053950351076Z_parameter_tamper_5539054b",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2106
+        ],
+        [
+          "172.30.123.103",
+          2106
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.927753,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4514,
+      "packets_unicast": 4176,
+      "security_mode": "enforce",
+      "session": "20260820T054042860928Z_heartbeat_replay_976ebc8c",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2088
+        ],
+        [
+          "172.30.123.103",
+          2088
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.925122,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4968,
+      "packets_unicast": 4626,
+      "security_mode": "enforce",
+      "session": "20260820T054136415595Z_parameter_flood_dd5e090f",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2313
+        ],
+        [
+          "172.30.123.103",
+          2313
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.931159,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4648,
+      "packets_unicast": 4316,
+      "security_mode": "enforce",
+      "session": "20260820T054230029513Z_parameter_tamper_1f2fb237",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2158
+        ],
+        [
+          "172.30.123.103",
+          2158
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.928571,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4584,
+      "packets_unicast": 4242,
+      "security_mode": "enforce",
+      "session": "20260820T054322596614Z_heartbeat_replay_2e158bb9",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2121
+        ],
+        [
+          "172.30.123.103",
+          2121
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.925393,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4570,
+      "packets_unicast": 4234,
+      "security_mode": "enforce",
+      "session": "20260820T054416160230Z_parameter_tamper_34a1f6d3",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2117
+        ],
+        [
+          "172.30.123.103",
+          2117
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.926477,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 6710,
+      "packets_unicast": 6368,
+      "security_mode": "enforce",
+      "session": "20260820T054508752177Z_parameter_flood_67f3a6f1",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3184
+        ],
+        [
+          "172.30.123.103",
+          3184
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.949031,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 4634,
+      "packets_unicast": 4304,
+      "security_mode": "enforce",
+      "session": "20260820T054602494026Z_parameter_tamper_f6418965",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2152
+        ],
+        [
+          "172.30.123.103",
+          2152
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.928787,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4450,
+      "packets_unicast": 4112,
+      "security_mode": "enforce",
+      "session": "20260820T054655255664Z_heartbeat_replay_aa8ff254",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2056
+        ],
+        [
+          "172.30.123.103",
+          2056
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.924045,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4600,
+      "packets_unicast": 4264,
+      "security_mode": "enforce",
+      "session": "20260820T054748843614Z_parameter_tamper_e665a706",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2132
+        ],
+        [
+          "172.30.123.103",
+          2132
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.926957,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6128,
+      "packets_unicast": 5788,
+      "security_mode": "enforce",
+      "session": "20260820T054841539222Z_parameter_flood_b76a4a79",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2894
+        ],
+        [
+          "172.30.123.103",
+          2894
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.944517,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5926,
+      "packets_unicast": 5592,
+      "security_mode": "enforce",
+      "session": "20260820T054935321412Z_parameter_flood_c379aba9",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2796
+        ],
+        [
+          "172.30.123.103",
+          2796
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.943638,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 6280,
+      "packets_unicast": 5944,
+      "security_mode": "enforce",
+      "session": "20260820T055028931210Z_parameter_flood_41f34a8a",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2972
+        ],
+        [
+          "172.30.123.103",
+          2972
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.946497,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 5798,
+      "packets_unicast": 5456,
+      "security_mode": "enforce",
+      "session": "20260820T055122478810Z_parameter_flood_5a2f479a",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2728
+        ],
+        [
+          "172.30.123.103",
+          2728
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.941014,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4484,
+      "packets_unicast": 4142,
+      "security_mode": "enforce",
+      "session": "20260820T055216252933Z_heartbeat_replay_d65671fe",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2071
+        ],
+        [
+          "172.30.123.103",
+          2071
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.923729,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5818,
+      "packets_unicast": 5478,
+      "security_mode": "enforce",
+      "session": "20260820T055309791472Z_parameter_flood_3f17ab40",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2739
+        ],
+        [
+          "172.30.123.103",
+          2739
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.941561,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4624,
+      "packets_unicast": 4286,
+      "security_mode": "enforce",
+      "session": "20260820T055403585373Z_heartbeat_replay_5ba76f65",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2143
+        ],
+        [
+          "172.30.123.103",
+          2143
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.926903,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 4488,
+      "packets_unicast": 4148,
+      "security_mode": "enforce",
+      "session": "20260820T055457490520Z_heartbeat_replay_a1397841",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2074
+        ],
+        [
+          "172.30.123.103",
+          2074
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.924242,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 5348,
+      "packets_unicast": 5014,
+      "security_mode": "enforce",
+      "session": "20260820T055551626399Z_parameter_flood_a7b7ca91",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2507
+        ],
+        [
+          "172.30.123.103",
+          2507
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.937547,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 344,
+      "packets_total": 5300,
+      "packets_unicast": 4956,
+      "security_mode": "enforce",
+      "session": "20260820T055646489604Z_parameter_flood_12600208",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2478
+        ],
+        [
+          "172.30.123.103",
+          2478
+        ],
+        [
+          "239.255.0.1",
+          344
+        ]
+      ],
+      "unicast_ratio": 0.935094,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4636,
+      "packets_unicast": 4298,
+      "security_mode": "enforce",
+      "session": "20260820T055740367299Z_parameter_tamper_ec78bfac",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2149
+        ],
+        [
+          "172.30.123.103",
+          2149
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.927092,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4672,
+      "packets_unicast": 4330,
+      "security_mode": "enforce",
+      "session": "20260820T055833146808Z_heartbeat_replay_539715c6",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2165
+        ],
+        [
+          "172.30.123.103",
+          2165
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.926798,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 4638,
+      "packets_unicast": 4298,
+      "security_mode": "enforce",
+      "session": "20260820T055926741855Z_heartbeat_replay_6b50e86b",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2149
+        ],
+        [
+          "172.30.123.103",
+          2149
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.926693,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 6010,
+      "packets_unicast": 5676,
+      "security_mode": "enforce",
+      "session": "20260820T060020326623Z_parameter_flood_432fdc5c",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2838
+        ],
+        [
+          "172.30.123.103",
+          2838
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.944426,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4474,
+      "packets_unicast": 4142,
+      "security_mode": "enforce",
+      "session": "20260820T060113869856Z_parameter_tamper_a7eed417",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2071
+        ],
+        [
+          "172.30.123.103",
+          2071
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.925793,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6146,
+      "packets_unicast": 5808,
+      "security_mode": "enforce",
+      "session": "20260820T060206788560Z_parameter_flood_f0eb85f1",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2904
+        ],
+        [
+          "172.30.123.103",
+          2904
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.945005,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4668,
+      "packets_unicast": 4336,
+      "security_mode": "enforce",
+      "session": "20260820T060301415342Z_parameter_tamper_79d2873a",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2168
+        ],
+        [
+          "172.30.123.103",
+          2168
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.928877,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 6722,
+      "packets_unicast": 6380,
+      "security_mode": "enforce",
+      "session": "20260820T060402918475Z_parameter_flood_d6880941",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3190
+        ],
+        [
+          "172.30.123.103",
+          3190
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.949122,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4400,
+      "packets_unicast": 4066,
+      "security_mode": "enforce",
+      "session": "20260820T060459895117Z_heartbeat_replay_83c6d20e",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2033
+        ],
+        [
+          "172.30.123.103",
+          2033
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.924091,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4582,
+      "packets_unicast": 4244,
+      "security_mode": "enforce",
+      "session": "20260820T060553186031Z_parameter_tamper_23f4d2f1",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2122
+        ],
+        [
+          "172.30.123.103",
+          2122
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.926233,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 314,
+      "packets_total": 3596,
+      "packets_unicast": 3282,
+      "security_mode": "enforce",
+      "session": "20260820T060647653685Z_parameter_tamper_d70ff839",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          1641
+        ],
+        [
+          "172.30.123.103",
+          1641
+        ],
+        [
+          "239.255.0.1",
+          314
+        ]
+      ],
+      "unicast_ratio": 0.912681,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4480,
+      "packets_unicast": 4142,
+      "security_mode": "enforce",
+      "session": "20260820T060742888497Z_heartbeat_replay_31142e81",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2071
+        ],
+        [
+          "172.30.123.103",
+          2071
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.924554,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4622,
+      "packets_unicast": 4288,
+      "security_mode": "enforce",
+      "session": "20260820T060840135034Z_parameter_tamper_212eb76d",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2144
+        ],
+        [
+          "172.30.123.103",
+          2144
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.927737,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4570,
+      "packets_unicast": 4238,
+      "security_mode": "enforce",
+      "session": "20260820T060933425164Z_parameter_tamper_134001be",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2119
+        ],
+        [
+          "172.30.123.103",
+          2119
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.927352,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4520,
+      "packets_unicast": 4178,
+      "security_mode": "enforce",
+      "session": "20260820T061025482073Z_heartbeat_replay_4eb8c877",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2089
+        ],
+        [
+          "172.30.123.103",
+          2089
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.924336,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4452,
+      "packets_unicast": 4114,
+      "security_mode": "enforce",
+      "session": "20260820T061119703856Z_heartbeat_replay_3fdef42b",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2057
+        ],
+        [
+          "172.30.123.103",
+          2057
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.924079,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4656,
+      "packets_unicast": 4324,
+      "security_mode": "enforce",
+      "session": "20260820T061215896823Z_parameter_tamper_c9bd87d1",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2162
+        ],
+        [
+          "172.30.123.103",
+          2162
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.928694,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4526,
+      "packets_unicast": 4184,
+      "security_mode": "enforce",
+      "session": "20260820T061308052735Z_heartbeat_replay_7e9f83a5",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2092
+        ],
+        [
+          "172.30.123.103",
+          2092
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.924437,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4480,
+      "packets_unicast": 4142,
+      "security_mode": "enforce",
+      "session": "20260820T061401083344Z_heartbeat_replay_96aed8be",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2071
+        ],
+        [
+          "172.30.123.103",
+          2071
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.924554,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4504,
+      "packets_unicast": 4170,
+      "security_mode": "enforce",
+      "session": "20260820T061454766567Z_parameter_tamper_0dfc56cd",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2085
+        ],
+        [
+          "172.30.123.103",
+          2085
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.925844,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 4510,
+      "packets_unicast": 4180,
+      "security_mode": "enforce",
+      "session": "20260820T061547453354Z_parameter_tamper_bed8faad",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2090
+        ],
+        [
+          "172.30.123.103",
+          2090
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.926829,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 4564,
+      "packets_unicast": 4224,
+      "security_mode": "enforce",
+      "session": "20260820T061639456537Z_heartbeat_replay_1b246445",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2112
+        ],
+        [
+          "172.30.123.103",
+          2112
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.925504,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4522,
+      "packets_unicast": 4194,
+      "security_mode": "enforce",
+      "session": "20260820T061732565198Z_parameter_tamper_4a6f1a99",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2097
+        ],
+        [
+          "172.30.123.103",
+          2097
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.927466,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4522,
+      "packets_unicast": 4186,
+      "security_mode": "enforce",
+      "session": "20260820T061825333629Z_heartbeat_replay_e5a41713",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2093
+        ],
+        [
+          "172.30.123.103",
+          2093
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.925697,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6174,
+      "packets_unicast": 5834,
+      "security_mode": "enforce",
+      "session": "20260820T061920039952Z_parameter_flood_501eaeaa",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2917
+        ],
+        [
+          "172.30.123.103",
+          2917
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.94493,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4602,
+      "packets_unicast": 4260,
+      "security_mode": "enforce",
+      "session": "20260820T062014391898Z_heartbeat_replay_6e39868d",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2130
+        ],
+        [
+          "172.30.123.103",
+          2130
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.925684,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5634,
+      "packets_unicast": 5296,
+      "security_mode": "enforce",
+      "session": "20260820T062107373472Z_parameter_flood_324bbbea",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2648
+        ],
+        [
+          "172.30.123.103",
+          2648
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.940007,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 5584,
+      "packets_unicast": 5242,
+      "security_mode": "enforce",
+      "session": "20260820T062200716453Z_parameter_flood_efd8ceba",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2621
+        ],
+        [
+          "172.30.123.103",
+          2621
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.938754,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4508,
+      "packets_unicast": 4180,
+      "security_mode": "enforce",
+      "session": "20260820T062253867548Z_parameter_tamper_ac4c5e99",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2090
+        ],
+        [
+          "172.30.123.103",
+          2090
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.92724,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4682,
+      "packets_unicast": 4340,
+      "security_mode": "enforce",
+      "session": "20260820T062345816666Z_heartbeat_replay_65713dbd",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2170
+        ],
+        [
+          "172.30.123.103",
+          2170
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.926954,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4502,
+      "packets_unicast": 4174,
+      "security_mode": "enforce",
+      "session": "20260820T062438845324Z_parameter_tamper_0752aa42",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2087
+        ],
+        [
+          "172.30.123.103",
+          2087
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.927143,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 5940,
+      "packets_unicast": 5598,
+      "security_mode": "enforce",
+      "session": "20260820T062530865829Z_parameter_flood_793f4c28",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2799
+        ],
+        [
+          "172.30.123.103",
+          2799
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.942424,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5754,
+      "packets_unicast": 5418,
+      "security_mode": "enforce",
+      "session": "20260820T062623680180Z_parameter_flood_cc3d4e91",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2709
+        ],
+        [
+          "172.30.123.103",
+          2709
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.941606,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4540,
+      "packets_unicast": 4204,
+      "security_mode": "enforce",
+      "session": "20260820T062716660775Z_parameter_tamper_205ddf02",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2102
+        ],
+        [
+          "172.30.123.103",
+          2102
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.925991,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4606,
+      "packets_unicast": 4274,
+      "security_mode": "enforce",
+      "session": "20260820T062808875198Z_parameter_tamper_04adefca",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2137
+        ],
+        [
+          "172.30.123.103",
+          2137
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.92792,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5058,
+      "packets_unicast": 4720,
+      "security_mode": "enforce",
+      "session": "20260820T062901427570Z_parameter_flood_3bf60587",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2360
+        ],
+        [
+          "172.30.123.103",
+          2360
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.933175,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4658,
+      "packets_unicast": 4330,
+      "security_mode": "enforce",
+      "session": "20260820T062954595536Z_parameter_tamper_cd4b5851",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2165
+        ],
+        [
+          "172.30.123.103",
+          2165
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.929584,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4586,
+      "packets_unicast": 4250,
+      "security_mode": "enforce",
+      "session": "20260820T063050223527Z_parameter_tamper_381724fd",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2125
+        ],
+        [
+          "172.30.123.103",
+          2125
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.926734,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4700,
+      "packets_unicast": 4368,
+      "security_mode": "enforce",
+      "session": "20260820T063212221337Z_parameter_tamper_65b67977",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2184
+        ],
+        [
+          "172.30.123.103",
+          2184
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.929362,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4398,
+      "packets_unicast": 4062,
+      "security_mode": "enforce",
+      "session": "20260820T063304257481Z_parameter_tamper_b15a2000",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2031
+        ],
+        [
+          "172.30.123.103",
+          2031
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.923602,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4616,
+      "packets_unicast": 4284,
+      "security_mode": "enforce",
+      "session": "20260820T063358057811Z_parameter_tamper_f78024e9",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2142
+        ],
+        [
+          "172.30.123.103",
+          2142
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.928076,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4514,
+      "packets_unicast": 4178,
+      "security_mode": "enforce",
+      "session": "20260820T063450091311Z_heartbeat_replay_04ebce35",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2089
+        ],
+        [
+          "172.30.123.103",
+          2089
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.925565,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4500,
+      "packets_unicast": 4164,
+      "security_mode": "enforce",
+      "session": "20260820T063543454563Z_parameter_tamper_e92b464b",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2082
+        ],
+        [
+          "172.30.123.103",
+          2082
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.925333,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6024,
+      "packets_unicast": 5684,
+      "security_mode": "enforce",
+      "session": "20260820T063635813448Z_parameter_flood_21c713c2",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2842
+        ],
+        [
+          "172.30.123.103",
+          2842
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.943559,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 5778,
+      "packets_unicast": 5436,
+      "security_mode": "enforce",
+      "session": "20260820T063729300891Z_parameter_flood_8e12256f",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2718
+        ],
+        [
+          "172.30.123.103",
+          2718
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.94081,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4646,
+      "packets_unicast": 4318,
+      "security_mode": "enforce",
+      "session": "20260820T063822213594Z_parameter_tamper_efe486a2",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2159
+        ],
+        [
+          "172.30.123.103",
+          2159
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.929402,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4456,
+      "packets_unicast": 4118,
+      "security_mode": "enforce",
+      "session": "20260820T063917060033Z_heartbeat_replay_9584973a",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2059
+        ],
+        [
+          "172.30.123.103",
+          2059
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.924147,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4694,
+      "packets_unicast": 4358,
+      "security_mode": "enforce",
+      "session": "20260820T064012830283Z_parameter_tamper_93d364bb",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2179
+        ],
+        [
+          "172.30.123.103",
+          2179
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.928419,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4618,
+      "packets_unicast": 4280,
+      "security_mode": "enforce",
+      "session": "20260820T064105431300Z_parameter_tamper_f3832463",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2140
+        ],
+        [
+          "172.30.123.103",
+          2140
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.926808,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4580,
+      "packets_unicast": 4238,
+      "security_mode": "enforce",
+      "session": "20260820T064157704215Z_heartbeat_replay_f5310249",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2119
+        ],
+        [
+          "172.30.123.103",
+          2119
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.925328,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 4510,
+      "packets_unicast": 4180,
+      "security_mode": "enforce",
+      "session": "20260820T064250637234Z_parameter_tamper_70f3f2cc",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2090
+        ],
+        [
+          "172.30.123.103",
+          2090
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.926829,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 6730,
+      "packets_unicast": 6388,
+      "security_mode": "enforce",
+      "session": "20260820T064342875595Z_parameter_flood_903c9237",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3194
+        ],
+        [
+          "172.30.123.103",
+          3194
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.949183,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4522,
+      "packets_unicast": 4188,
+      "security_mode": "enforce",
+      "session": "20260820T064436026072Z_heartbeat_replay_da37f0f5",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2094
+        ],
+        [
+          "172.30.123.103",
+          2094
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.926139,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5486,
+      "packets_unicast": 5148,
+      "security_mode": "enforce",
+      "session": "20260820T064528949397Z_parameter_flood_18463066",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2574
+        ],
+        [
+          "172.30.123.103",
+          2574
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.938389,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4628,
+      "packets_unicast": 4300,
+      "security_mode": "enforce",
+      "session": "20260820T064622065486Z_parameter_tamper_e49655db",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2150
+        ],
+        [
+          "172.30.123.103",
+          2150
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.929127,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4564,
+      "packets_unicast": 4226,
+      "security_mode": "enforce",
+      "session": "20260820T064714292271Z_parameter_tamper_db768677",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2113
+        ],
+        [
+          "172.30.123.103",
+          2113
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.925942,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4494,
+      "packets_unicast": 4152,
+      "security_mode": "enforce",
+      "session": "20260820T064806595520Z_heartbeat_replay_b38a1f83",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2076
+        ],
+        [
+          "172.30.123.103",
+          2076
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.923899,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 5218,
+      "packets_unicast": 4876,
+      "security_mode": "enforce",
+      "session": "20260820T064901547661Z_parameter_flood_8d4aa865",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2438
+        ],
+        [
+          "172.30.123.103",
+          2438
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.934458,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4654,
+      "packets_unicast": 4312,
+      "security_mode": "enforce",
+      "session": "20260820T064957050168Z_heartbeat_replay_3b8e07ea",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2156
+        ],
+        [
+          "172.30.123.103",
+          2156
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.926515,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4580,
+      "packets_unicast": 4242,
+      "security_mode": "enforce",
+      "session": "20260820T065051301090Z_heartbeat_replay_f4eb9c11",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2121
+        ],
+        [
+          "172.30.123.103",
+          2121
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.926201,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4366,
+      "packets_unicast": 4032,
+      "security_mode": "enforce",
+      "session": "20260820T065146097560Z_heartbeat_replay_4148dfd8",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2016
+        ],
+        [
+          "172.30.123.103",
+          2016
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.9235,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 344,
+      "packets_total": 5104,
+      "packets_unicast": 4760,
+      "security_mode": "enforce",
+      "session": "20260820T065240360295Z_parameter_flood_eef344f1",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2380
+        ],
+        [
+          "172.30.123.103",
+          2380
+        ],
+        [
+          "239.255.0.1",
+          344
+        ]
+      ],
+      "unicast_ratio": 0.932602,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4630,
+      "packets_unicast": 4298,
+      "security_mode": "enforce",
+      "session": "20260820T065337718212Z_parameter_tamper_4cf20d16",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2149
+        ],
+        [
+          "172.30.123.103",
+          2149
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.928294,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4562,
+      "packets_unicast": 4226,
+      "security_mode": "enforce",
+      "session": "20260820T065431174877Z_parameter_tamper_97171f89",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2113
+        ],
+        [
+          "172.30.123.103",
+          2113
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.926348,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4304,
+      "packets_unicast": 3968,
+      "security_mode": "enforce",
+      "session": "20260820T065524671183Z_heartbeat_replay_865991f3",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          1984
+        ],
+        [
+          "172.30.123.103",
+          1984
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.921933,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5384,
+      "packets_unicast": 5046,
+      "security_mode": "enforce",
+      "session": "20260820T065618971774Z_parameter_flood_00076cad",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2523
+        ],
+        [
+          "172.30.123.103",
+          2523
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.937221,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4666,
+      "packets_unicast": 4330,
+      "security_mode": "enforce",
+      "session": "20260820T065713118085Z_parameter_tamper_6f730216",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2165
+        ],
+        [
+          "172.30.123.103",
+          2165
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.92799,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4566,
+      "packets_unicast": 4230,
+      "security_mode": "enforce",
+      "session": "20260820T065807597616Z_parameter_tamper_659df6fa",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2115
+        ],
+        [
+          "172.30.123.103",
+          2115
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.926413,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 4692,
+      "packets_unicast": 4350,
+      "security_mode": "enforce",
+      "session": "20260820T065903169547Z_heartbeat_replay_0954aa75",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2175
+        ],
+        [
+          "172.30.123.103",
+          2175
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.92711,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4764,
+      "packets_unicast": 4432,
+      "security_mode": "enforce",
+      "session": "20260820T070000804693Z_parameter_flood_4dc27c77",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2216
+        ],
+        [
+          "172.30.123.103",
+          2216
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.930311,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": null,
+      "security_mode": "enforce",
+      "session": "20260820T070117182359Z_heartbeat_replay_1ef099ba",
+      "session_status": "complete",
+      "training_eligible": false,
+      "verdict": "skipped_not_eligible"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": null,
+      "security_mode": "enforce",
+      "session": "20260821T012617293536Z_heartbeat_replay_0e6924eb",
+      "session_status": "complete",
+      "training_eligible": false,
+      "verdict": "skipped_not_eligible"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": null,
+      "security_mode": "enforce",
+      "session": "20260821T014424056704Z_heartbeat_replay_dfb46aaf",
+      "session_status": "complete",
+      "training_eligible": false,
+      "verdict": "skipped_not_eligible"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4892,
+      "packets_unicast": 4560,
+      "security_mode": "enforce",
+      "session": "20260821T014956111608Z_heartbeat_replay_b4dad663",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2280
+        ],
+        [
+          "172.30.123.103",
+          2280
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.932134,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 6240,
+      "packets_unicast": 5906,
+      "security_mode": "enforce",
+      "session": "20260821T015104682261Z_parameter_flood_74fad4fe",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2953
+        ],
+        [
+          "172.30.123.103",
+          2953
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.946474,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5032,
+      "packets_unicast": 4700,
+      "security_mode": "enforce",
+      "session": "20260821T015203706934Z_parameter_tamper_c943e07b",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2350
+        ],
+        [
+          "172.30.123.103",
+          2350
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.934022,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4712,
+      "packets_unicast": 4378,
+      "security_mode": "enforce",
+      "session": "20260821T015301266932Z_parameter_tamper_db5e6b5e",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2189
+        ],
+        [
+          "172.30.123.103",
+          2189
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.929117,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6936,
+      "packets_unicast": 6598,
+      "security_mode": "enforce",
+      "session": "20260821T015358064287Z_parameter_flood_648368a9",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3299
+        ],
+        [
+          "172.30.123.103",
+          3299
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.951269,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6556,
+      "packets_unicast": 6216,
+      "security_mode": "enforce",
+      "session": "20260821T015452772203Z_parameter_flood_7a0f4e0f",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3108
+        ],
+        [
+          "172.30.123.103",
+          3108
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.948139,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6804,
+      "packets_unicast": 6464,
+      "security_mode": "enforce",
+      "session": "20260821T015548580974Z_parameter_flood_25ca731c",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3232
+        ],
+        [
+          "172.30.123.103",
+          3232
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.950029,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 342,
+      "packets_total": 5584,
+      "packets_unicast": 5242,
+      "security_mode": "enforce",
+      "session": "20260821T015644813407Z_parameter_flood_c45dfc98",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2621
+        ],
+        [
+          "172.30.123.103",
+          2621
+        ],
+        [
+          "239.255.0.1",
+          342
+        ]
+      ],
+      "unicast_ratio": 0.938754,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 6142,
+      "packets_unicast": 5806,
+      "security_mode": "enforce",
+      "session": "20260821T015739294998Z_parameter_flood_46d60247",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2903
+        ],
+        [
+          "172.30.123.103",
+          2903
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.945295,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4960,
+      "packets_unicast": 4622,
+      "security_mode": "enforce",
+      "session": "20260821T015835012543Z_heartbeat_replay_6226eecf",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2311
+        ],
+        [
+          "172.30.123.103",
+          2311
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.931855,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5742,
+      "packets_unicast": 5402,
+      "security_mode": "enforce",
+      "session": "20260821T015931120083Z_parameter_flood_953f5ceb",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2701
+        ],
+        [
+          "172.30.123.103",
+          2701
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.940787,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 6778,
+      "packets_unicast": 6442,
+      "security_mode": "enforce",
+      "session": "20260821T020026785513Z_parameter_flood_1edf3e35",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3221
+        ],
+        [
+          "172.30.123.103",
+          3221
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.950428,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4846,
+      "packets_unicast": 4508,
+      "security_mode": "enforce",
+      "session": "20260821T020123037939Z_heartbeat_replay_cabbfd26",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2254
+        ],
+        [
+          "172.30.123.103",
+          2254
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.930252,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5888,
+      "packets_unicast": 5550,
+      "security_mode": "enforce",
+      "session": "20260821T020218480381Z_parameter_flood_9479258b",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2775
+        ],
+        [
+          "172.30.123.103",
+          2775
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.942595,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6998,
+      "packets_unicast": 6660,
+      "security_mode": "enforce",
+      "session": "20260821T020313514092Z_parameter_flood_86b0de7c",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3330
+        ],
+        [
+          "172.30.123.103",
+          3330
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.9517,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6764,
+      "packets_unicast": 6424,
+      "security_mode": "enforce",
+      "session": "20260821T020409316660Z_parameter_flood_1bc19047",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3212
+        ],
+        [
+          "172.30.123.103",
+          3212
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.949734,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5012,
+      "packets_unicast": 4676,
+      "security_mode": "enforce",
+      "session": "20260821T020505181375Z_heartbeat_replay_bbc15c62",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2338
+        ],
+        [
+          "172.30.123.103",
+          2338
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.932961,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6918,
+      "packets_unicast": 6580,
+      "security_mode": "enforce",
+      "session": "20260821T020559715154Z_parameter_flood_97f2cd10",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3290
+        ],
+        [
+          "172.30.123.103",
+          3290
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.951142,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4844,
+      "packets_unicast": 4508,
+      "security_mode": "enforce",
+      "session": "20260821T020657120408Z_heartbeat_replay_a83b3190",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2254
+        ],
+        [
+          "172.30.123.103",
+          2254
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.930636,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4850,
+      "packets_unicast": 4512,
+      "security_mode": "enforce",
+      "session": "20260821T020753226706Z_heartbeat_replay_ee35d296",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2256
+        ],
+        [
+          "172.30.123.103",
+          2256
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.930309,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4664,
+      "packets_unicast": 4326,
+      "security_mode": "enforce",
+      "session": "20260821T020847969062Z_heartbeat_replay_2bdd6c4d",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2163
+        ],
+        [
+          "172.30.123.103",
+          2163
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.92753,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4982,
+      "packets_unicast": 4648,
+      "security_mode": "enforce",
+      "session": "20260821T020952073668Z_parameter_tamper_843eeb3d",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2324
+        ],
+        [
+          "172.30.123.103",
+          2324
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.932959,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 5010,
+      "packets_unicast": 4670,
+      "security_mode": "enforce",
+      "session": "20260821T021106857909Z_heartbeat_replay_0c82589f",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2335
+        ],
+        [
+          "172.30.123.103",
+          2335
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.932136,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 5014,
+      "packets_unicast": 4678,
+      "security_mode": "enforce",
+      "session": "20260821T021202846627Z_heartbeat_replay_1cb0b3b1",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2339
+        ],
+        [
+          "172.30.123.103",
+          2339
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.932988,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4910,
+      "packets_unicast": 4572,
+      "security_mode": "enforce",
+      "session": "20260821T021258752056Z_heartbeat_replay_7ef8240e",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2286
+        ],
+        [
+          "172.30.123.103",
+          2286
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.931161,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4892,
+      "packets_unicast": 4554,
+      "security_mode": "enforce",
+      "session": "20260821T021353224355Z_parameter_tamper_baee0180",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2277
+        ],
+        [
+          "172.30.123.103",
+          2277
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.930908,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 344,
+      "packets_total": 7668,
+      "packets_unicast": 7324,
+      "security_mode": "enforce",
+      "session": "20260821T021448703592Z_parameter_flood_4f4a3dbd",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3662
+        ],
+        [
+          "172.30.123.103",
+          3662
+        ],
+        [
+          "239.255.0.1",
+          344
+        ]
+      ],
+      "unicast_ratio": 0.955138,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4914,
+      "packets_unicast": 4576,
+      "security_mode": "enforce",
+      "session": "20260821T021545843755Z_heartbeat_replay_f56d3630",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2288
+        ],
+        [
+          "172.30.123.103",
+          2288
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.931217,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4952,
+      "packets_unicast": 4616,
+      "security_mode": "enforce",
+      "session": "20260821T021640730722Z_parameter_tamper_58a4687a",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2308
+        ],
+        [
+          "172.30.123.103",
+          2308
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.932149,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4824,
+      "packets_unicast": 4496,
+      "security_mode": "enforce",
+      "session": "20260821T021736913775Z_parameter_tamper_3a110039",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2248
+        ],
+        [
+          "172.30.123.103",
+          2248
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.932007,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6622,
+      "packets_unicast": 6284,
+      "security_mode": "enforce",
+      "session": "20260821T021833329479Z_parameter_flood_9377dd48",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3142
+        ],
+        [
+          "172.30.123.103",
+          3142
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.948958,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 4576,
+      "packets_unicast": 4246,
+      "security_mode": "enforce",
+      "session": "20260821T021931303767Z_heartbeat_replay_187f0f5e",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2123
+        ],
+        [
+          "172.30.123.103",
+          2123
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.927885,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4930,
+      "packets_unicast": 4596,
+      "security_mode": "enforce",
+      "session": "20260821T022037096873Z_heartbeat_replay_4774a692",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2298
+        ],
+        [
+          "172.30.123.103",
+          2298
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.932252,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4936,
+      "packets_unicast": 4598,
+      "security_mode": "enforce",
+      "session": "20260821T022133531698Z_heartbeat_replay_85b477d6",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2299
+        ],
+        [
+          "172.30.123.103",
+          2299
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.931524,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": null,
+      "security_mode": "enforce",
+      "session": "20260821T022229957789Z_parameter_flood_06c2a06c",
+      "session_status": "complete",
+      "training_eligible": false,
+      "verdict": "skipped_not_eligible"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4564,
+      "packets_unicast": 4236,
+      "security_mode": "enforce",
+      "session": "20260821T055423496097Z_parameter_flood_20ab73f7",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2118
+        ],
+        [
+          "172.30.123.103",
+          2118
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.928133,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4812,
+      "packets_unicast": 4476,
+      "security_mode": "enforce",
+      "session": "20260821T055526840956Z_parameter_tamper_b4b7274c",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2238
+        ],
+        [
+          "172.30.123.103",
+          2238
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.930175,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 6030,
+      "packets_unicast": 5692,
+      "security_mode": "enforce",
+      "session": "20260821T055627014536Z_parameter_flood_0c18904c",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2846
+        ],
+        [
+          "172.30.123.103",
+          2846
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.943947,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5616,
+      "packets_unicast": 5278,
+      "security_mode": "enforce",
+      "session": "20260821T055722315207Z_parameter_flood_bfe6f8d8",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2639
+        ],
+        [
+          "172.30.123.103",
+          2639
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.939815,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4772,
+      "packets_unicast": 4436,
+      "security_mode": "enforce",
+      "session": "20260821T055820752314Z_parameter_tamper_c2b9606a",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2218
+        ],
+        [
+          "172.30.123.103",
+          2218
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.929589,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4382,
+      "packets_unicast": 4050,
+      "security_mode": "enforce",
+      "session": "20260821T055917543643Z_heartbeat_replay_f90eb135",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2025
+        ],
+        [
+          "172.30.123.103",
+          2025
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.924236,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 4554,
+      "packets_unicast": 4218,
+      "security_mode": "enforce",
+      "session": "20260821T060012836574Z_heartbeat_replay_44c4d398",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2109
+        ],
+        [
+          "172.30.123.103",
+          2109
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.926219,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 336,
+      "packets_total": 6556,
+      "packets_unicast": 6220,
+      "security_mode": "enforce",
+      "session": "20260821T060108739418Z_parameter_flood_015c1b21",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3110
+        ],
+        [
+          "172.30.123.103",
+          3110
+        ],
+        [
+          "239.255.0.1",
+          336
+        ]
+      ],
+      "unicast_ratio": 0.948749,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": null,
+      "security_mode": "enforce",
+      "session": "20260821T060204996944Z_parameter_tamper_b6f3a2cf",
+      "session_status": "complete",
+      "training_eligible": false,
+      "verdict": "skipped_not_eligible"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 7532,
+      "packets_unicast": 7198,
+      "security_mode": "enforce",
+      "session": "20260821T060524483014Z_parameter_flood_e25048a7",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3599
+        ],
+        [
+          "172.30.123.103",
+          3599
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.955656,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 326,
+      "packets_total": 5012,
+      "packets_unicast": 4686,
+      "security_mode": "enforce",
+      "session": "20260821T060632119164Z_parameter_tamper_33eff01b",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2343
+        ],
+        [
+          "172.30.123.103",
+          2343
+        ],
+        [
+          "239.255.0.1",
+          326
+        ]
+      ],
+      "unicast_ratio": 0.934956,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 4978,
+      "packets_unicast": 4646,
+      "security_mode": "enforce",
+      "session": "20260821T060737875223Z_parameter_tamper_df990bd2",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2323
+        ],
+        [
+          "172.30.123.103",
+          2323
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.933307,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 7448,
+      "packets_unicast": 7110,
+      "security_mode": "enforce",
+      "session": "20260821T060845916901Z_parameter_flood_20db6bea",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3555
+        ],
+        [
+          "172.30.123.103",
+          3555
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.954619,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 330,
+      "packets_total": 4900,
+      "packets_unicast": 4570,
+      "security_mode": "enforce",
+      "session": "20260821T060959220163Z_parameter_tamper_485bb8c8",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2285
+        ],
+        [
+          "172.30.123.103",
+          2285
+        ],
+        [
+          "239.255.0.1",
+          330
+        ]
+      ],
+      "unicast_ratio": 0.932653,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 326,
+      "packets_total": 4814,
+      "packets_unicast": 4488,
+      "security_mode": "enforce",
+      "session": "20260821T061106613021Z_parameter_tamper_a7060df0",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2244
+        ],
+        [
+          "172.30.123.103",
+          2244
+        ],
+        [
+          "239.255.0.1",
+          326
+        ]
+      ],
+      "unicast_ratio": 0.932281,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 7488,
+      "packets_unicast": 7150,
+      "security_mode": "enforce",
+      "session": "20260821T061213175889Z_parameter_flood_8234b152",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3575
+        ],
+        [
+          "172.30.123.103",
+          3575
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.954861,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5644,
+      "packets_unicast": 5306,
+      "security_mode": "enforce",
+      "session": "20260821T061320293936Z_parameter_flood_4d56a772",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2653
+        ],
+        [
+          "172.30.123.103",
+          2653
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.940113,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4900,
+      "packets_unicast": 4566,
+      "security_mode": "enforce",
+      "session": "20260821T061424679209Z_heartbeat_replay_57b4080c",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2283
+        ],
+        [
+          "172.30.123.103",
+          2283
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.931837,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4778,
+      "packets_unicast": 4450,
+      "security_mode": "enforce",
+      "session": "20260821T061530999753Z_heartbeat_replay_93692dbb",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2225
+        ],
+        [
+          "172.30.123.103",
+          2225
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.931352,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 334,
+      "packets_total": 4912,
+      "packets_unicast": 4578,
+      "security_mode": "enforce",
+      "session": "20260821T061640490122Z_heartbeat_replay_46c92ae8",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2289
+        ],
+        [
+          "172.30.123.103",
+          2289
+        ],
+        [
+          "239.255.0.1",
+          334
+        ]
+      ],
+      "unicast_ratio": 0.932003,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": null,
+      "packet_source": null,
+      "security_mode": "enforce",
+      "session": "20260821T061750076682Z_heartbeat_replay_d36bfa1d",
+      "session_status": "failed",
+      "training_eligible": false,
+      "verdict": "skipped_not_eligible"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 324,
+      "packets_total": 4588,
+      "packets_unicast": 4264,
+      "security_mode": "enforce",
+      "session": "20260821T062053261997Z_parameter_tamper_e9e586e7",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2132
+        ],
+        [
+          "172.30.123.103",
+          2132
+        ],
+        [
+          "239.255.0.1",
+          324
+        ]
+      ],
+      "unicast_ratio": 0.929381,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 4884,
+      "packets_unicast": 4546,
+      "security_mode": "enforce",
+      "session": "20260821T062204288427Z_heartbeat_replay_eace49f4",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2273
+        ],
+        [
+          "172.30.123.103",
+          2273
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.930794,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 328,
+      "packets_total": 4170,
+      "packets_unicast": 3842,
+      "security_mode": "enforce",
+      "session": "20260821T062301715184Z_heartbeat_replay_8de61207",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          1921
+        ],
+        [
+          "172.30.123.103",
+          1921
+        ],
+        [
+          "239.255.0.1",
+          328
+        ]
+      ],
+      "unicast_ratio": 0.921343,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "service_dos",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 340,
+      "packets_total": 6968,
+      "packets_unicast": 6628,
+      "security_mode": "enforce",
+      "session": "20260821T062548553850Z_parameter_flood_ec52ecc3",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          3314
+        ],
+        [
+          "172.30.123.103",
+          3314
+        ],
+        [
+          "239.255.0.1",
+          340
+        ]
+      ],
+      "unicast_ratio": 0.951206,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 332,
+      "packets_total": 5074,
+      "packets_unicast": 4742,
+      "security_mode": "enforce",
+      "session": "20260821T062645979674Z_parameter_tamper_f7acf002",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2371
+        ],
+        [
+          "172.30.123.103",
+          2371
+        ],
+        [
+          "239.255.0.1",
+          332
+        ]
+      ],
+      "unicast_ratio": 0.934568,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "replay",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 338,
+      "packets_total": 5094,
+      "packets_unicast": 4756,
+      "security_mode": "enforce",
+      "session": "20260821T062746862566Z_heartbeat_replay_191db687",
+      "top_destinations": [
+        [
+          "10.255.255.254",
+          2378
+        ],
+        [
+          "172.30.123.103",
+          2378
+        ],
+        [
+          "239.255.0.1",
+          338
+        ]
+      ],
+      "unicast_ratio": 0.933647,
+      "verdict": "ok"
+    }
+  ],
+  "schema_version": "sros2-firewall-capture-scope/v1",
+  "sessions": 306,
+  "verdicts": {
+    "ok": 300,
+    "skipped_not_eligible": 6
+  }
+}

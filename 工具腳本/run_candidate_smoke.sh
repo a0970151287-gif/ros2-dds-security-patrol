@@ -15,7 +15,16 @@
 # 失效（2026-09-01 發生過一次）。
 #
 # 用法（ROS stack 必須已經在跑，campaign 假設 external stack）：
-#     bash 工具腳本/run_candidate_smoke.sh eth1
+#     bash 工具腳本/run_candidate_smoke.sh          # 介面預設 lo
+#
+# ⚠️ 2026-09-15：這一行原本寫 `eth1`，而 2026-09-02 那一批就照著跑了。
+# 同機的 ROS 2 流量走 loopback，擷取開在區網介面上只看得到漏出去的多播——
+# 實測九場**每一場單播封包都是 0**，而其中 96% 還是 Gazebo 的 gz-transport，
+# 跟 DDS 無關。攻擊自己回報「送出 1,480 筆偽造 odometry」，對應的封包 0 個。
+# 那一批的網路證據因此**無效**（不是陰性），而 gate 的判定寫進了
+# 「至少 4 類在目前的觀測層結構上做不到」。
+# 正式 campaign 一直都是 `-i lo`（實測 2,308 場，單播佔比 71–100%），
+# 所以這是 smoke 這條路徑專屬的缺陷。
 # ROS 必須在 `set -u` **之前** source：setup.bash 會讀未設定的
 # AMENT_TRACE_SETUP_FILES。沒有 source 的話攻擊行程 import rclpy 就死，
 # 而那在 gate 眼裡是「攻擊沒有執行」——判定正確，但整批白跑。
@@ -36,7 +45,18 @@ python3 -c "import rclpy" 2>/dev/null || {
   exit 2
 }
 
-IFACE="${1:?請指定擷取介面，例如 eth1。可用 dumpcap -D 查看}"
+# 同機 smoke 的正解就是 lo，與 `formal_preflight.py` 的 same_host_loopback
+# 規則一致——那條規則早就存在，只是這支腳本沒有套用它。
+IFACE="${1:-lo}"
+if [ "$IFACE" != "lo" ] &&    [ "${SMOKE_ALLOW_NON_LOOPBACK:-}" != "i_know_this_cannot_see_same_host_dds" ]; then
+  printf '⛔ 介面 %s 看不到同機 ROS 2 的流量，這一批的網路特徵會是無效的。
+' "$IFACE" >&2
+  printf '   同機 smoke 請用 lo。真的要用其他介面，設
+' >&2
+  printf '   SMOKE_ALLOW_NON_LOOPBACK=i_know_this_cannot_see_same_host_dds
+' >&2
+  exit 2
+fi
 WORKSPACE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 CATALOG="firewall_lab/scenarios_smoke_candidates.json"
 OUT="${SMOKE_OUT:-$HOME/candidate_smoke_$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -160,6 +180,20 @@ echo "=================================================================="
 echo " 通過 $PASSED / ${#CANDIDATES[@]}"
 echo " 報告在 $OUT/gate_*.json"
 echo "=================================================================="
+echo
+echo "=================================================================="
+echo " 擷取範圍稽核（判定之後才跑，因為它會否決上面整張表）"
+echo "=================================================================="
+# gate 只看遙測，所以它不會發現擷取是空的。這一步獨立問：這一批的封包
+# 擷取裡到底有沒有同機 DDS 的使用者資料？沒有的話上面的 gate 結論對
+# **網路層**完全不適用——是無效，不是陰性。
+if ! python3 工具腳本/audit_capture_scope.py --batch "$OUT"        --output "$OUT/capture_scope.json"; then
+  echo
+  echo "⛔ 這一批的封包擷取無效。gate 的遙測判定仍然成立，但任何"
+  echo "   以網路特徵做出的判定都不可引用。"
+  exit 3
+fi
+
 echo
 echo "⚠️ 預期（2026-09-01 事前寫下）：打已修補缺陷的六支多半不會通過——"
 echo "   N2、N5、N4、N20、N24b、N8。若它們反而通過了，代表那些漏洞沒有"
