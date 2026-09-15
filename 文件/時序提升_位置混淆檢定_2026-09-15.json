@@ -1,0 +1,66 @@
+{
+  "attack_start_window_note": "98% of attack sessions start at window 1",
+  "modes": {
+    "enforce": {
+      "base+position": {
+        "features": 27,
+        "session_ba": 0.3791,
+        "window_ba": 0.3573
+      },
+      "base+temporal": {
+        "features": 106,
+        "session_ba": 0.5556,
+        "window_ba": 0.4416
+      },
+      "base+temporal+position": {
+        "features": 107,
+        "session_ba": 0.5556,
+        "window_ba": 0.4475
+      },
+      "base+temporal_nohist": {
+        "features": 104,
+        "session_ba": 0.5621,
+        "window_ba": 0.4461
+      },
+      "base32": {
+        "features": 26,
+        "session_ba": 0.3791,
+        "window_ba": 0.3218
+      }
+    },
+    "permissive": {
+      "base+position": {
+        "features": 33,
+        "session_ba": 0.9778,
+        "window_ba": 0.8908
+      },
+      "base+temporal": {
+        "features": 130,
+        "session_ba": 0.9778,
+        "window_ba": 0.9389
+      },
+      "base+temporal+position": {
+        "features": 131,
+        "session_ba": 0.9778,
+        "window_ba": 0.9393
+      },
+      "base+temporal_nohist": {
+        "features": 128,
+        "session_ba": 0.9778,
+        "window_ba": 0.9398
+      },
+      "base32": {
+        "features": 32,
+        "session_ba": 0.9778,
+        "window_ba": 0.8728
+      }
+    }
+  },
+  "schema_version": "sros2-firewall-position-confound/v1",
+  "seeds": [
+    20260915,
+    7,
+    991
+  ],
+  "test_rows_used": 0
+}
