@@ -195,3 +195,70 @@ def test_baseline_artifact_has_the_field_the_validity_check_reads(tmp_path):
 def test_unknown_model_and_formulation_are_rejected():
     with pytest.raises(cmp.CompareError):
         cmp.make_model("magic", 0)
+
+
+# ── 2026-09-16 擴充的學習法清單 ────────────────────────────────
+
+
+def test_every_declared_model_can_be_constructed():
+    """清單裡有建不起來的名字,那一格會在跑到一半才炸,而前面的結果已經算完。
+
+    ⚠️ 需要 xgboost／lightgbm／catboost,那些只裝在 ~/.venvs/sros2-seqmodel。
+    在專案的 venv 下缺哪一個就跳過哪一個——但**純 sklearn 的那些不准跳**。
+    """
+    optional = {"xgboost", "lightgbm", "catboost"}
+    missing = []
+    for name in cmp.MODELS:
+        try:
+            cmp.make_model(name, 0)
+        except ModuleNotFoundError:
+            if name in optional:
+                continue
+            missing.append((name, "ModuleNotFoundError"))
+        except Exception as exc:  # noqa: BLE001
+            missing.append((name, f"{type(exc).__name__}: {exc}"))
+    assert not missing, f"這些宣告的模型建不起來：{missing}"
+
+
+def test_the_list_covers_every_inductive_bias_family():
+    """清單的價值在於涵蓋不同的歸納偏置,不是數量。少掉一整族就要察覺。"""
+    families = {
+        "樹／集成": {"random_forest", "extra_trees", "hist_gradient_boosting",
+                     "xgboost", "lightgbm", "catboost", "adaboost",
+                     "gradient_boosting"},
+        "核方法": {"svm_rbf", "svm_linear", "pca_svm"},
+        "生成式": {"lda_shrinkage", "qda", "gaussian_nb"},
+        "原型／實例": {"nearest_centroid", "knn", "lda_project_knn"},
+        "正則化線性": {"logistic", "ridge", "sgd_hinge"},
+        "機率式": {"gaussian_process"},
+        "神經網路": {"mlp"},
+        "組合": {"stacking", "voting_soft"},
+    }
+    declared = set(cmp.MODELS)
+    for family, members in families.items():
+        assert members & declared, f"「{family}」這一族在清單裡一個都沒有"
+    uncovered = declared - set().union(*families.values())
+    assert not uncovered, f"這些模型沒有被歸到任何一族：{sorted(uncovered)}"
+
+
+def test_random_forest_is_not_the_only_option():
+    """Jesse 2026-09-16 要求不要只用隨機森林。清單必須真的有替代品。"""
+    assert len(cmp.MODELS) >= 20
+    assert len(set(cmp.MODELS) - {"random_forest"}) >= 19
+
+
+def test_formulation_and_model_filters_exist():
+    """只跑勝出的表述時要能過濾,否則每次都要重跑 per_window_pooled。"""
+    parser = cmp.build_parser()
+    args = parser.parse_args([
+        "--features", "x.csv", "--eval-split", "train_validation",
+        "--formulations", "session_aggregate",
+        "--models", "svm_rbf", "lda_shrinkage",
+    ])
+    assert args.formulations == ["session_aggregate"]
+    assert args.models == ["svm_rbf", "lda_shrinkage"]
+    with pytest.raises(SystemExit):
+        parser.parse_args([
+            "--features", "x.csv", "--eval-split", "train_validation",
+            "--formulations", "not_a_formulation",
+        ])

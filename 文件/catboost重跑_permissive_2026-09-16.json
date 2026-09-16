@@ -1,0 +1,154 @@
+{
+  "baseline": null,
+  "best": {
+    "ceiling": {
+      "arithmetic_ceiling": 1.0,
+      "classes": 15,
+      "note": "balanced accuracy 是逐類 recall 的平均；恆零的類別鎖死上限。",
+      "zero_recall_classes": []
+    },
+    "configuration": "session_aggregate/catboost",
+    "per_class": {
+      "command_injection": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "cross_channel_relay": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "discovery_recon": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "health_spoof": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "identity_abuse": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "message_dos": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "mission_spoof": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "node_churn": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "normal": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "parameter_tamper": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "replay": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "replay_dos": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "scan_drift": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "sensor_spoof": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      },
+      "service_dos": {
+        "correct": 17,
+        "recall": 1.0,
+        "sessions": 17
+      }
+    },
+    "score": 1.0
+  },
+  "changes_shipped_defaults": false,
+  "control": null,
+  "declared_space": {
+    "aggregate_stats": [
+      "mean",
+      "std",
+      "min",
+      "max",
+      "max_abs_delta",
+      "trend"
+    ],
+    "formulation": [
+      "per_window_pooled",
+      "session_aggregate",
+      "window_sequence"
+    ],
+    "model": [
+      "random_forest",
+      "extra_trees",
+      "hist_gradient_boosting",
+      "xgboost",
+      "lightgbm",
+      "catboost",
+      "adaboost",
+      "gradient_boosting",
+      "svm_rbf",
+      "svm_linear",
+      "lda_shrinkage",
+      "qda",
+      "gaussian_nb",
+      "nearest_centroid",
+      "knn",
+      "logistic",
+      "ridge",
+      "sgd_hinge",
+      "pca_svm",
+      "lda_project_knn",
+      "gaussian_process",
+      "mlp",
+      "stacking",
+      "voting_soft"
+    ],
+    "sequence_model": [
+      "tcn",
+      "gru"
+    ]
+  },
+  "environment_note": "torch／xgboost／lightgbm 裝在平行的 ~/.venvs/sros2-seqmodel；numpy 2.5.0／scikit-learn 1.9.0／scipy 1.18.0 與 ~/.venvs/sros2-firewall 釘成相同版本，安裝後已逐字驗過舊 venv 未變。",
+  "eval_split": "train_validation",
+  "features_table": "/home/jesse/features_refresh_split/fusion_features_permissive.csv",
+  "folds": 5,
+  "not_applicable": {},
+  "pooling_rule": "session_attack_only",
+  "rows": 3232,
+  "schema_version": "sros2-firewall-model-comparison/v1",
+  "scores": {
+    "session_aggregate/catboost": 1.0,
+    "session_aggregate/hist_gradient_boosting": 0.9804
+  },
+  "seeds": 3,
+  "sessions": 255,
+  "temporal": "none",
+  "test_rows_used": 0,
+  "torch_available": true
+}

@@ -76,8 +76,29 @@ import sys
 _HERE = pathlib.Path(__file__).resolve().parent
 
 FORMULATIONS = ("per_window_pooled", "session_aggregate", "window_sequence")
-MODELS = ("random_forest", "extra_trees", "hist_gradient_boosting",
-          "xgboost", "lightgbm", "mlp", "logistic")
+# 2026-09-16 第二輪:Jesse 要求不要只用隨機森林,把其他學習法都列出來。
+# 依歸納偏置分組,每一組至少一個代表。順序固定,跑完不追加。
+MODELS = (
+    # 樹／集成
+    "random_forest", "extra_trees", "hist_gradient_boosting",
+    "xgboost", "lightgbm", "catboost", "adaboost", "gradient_boosting",
+    # 核方法／最大間隔
+    "svm_rbf", "svm_linear",
+    # 生成式
+    "lda_shrinkage", "qda", "gaussian_nb",
+    # 原型／實例
+    "nearest_centroid", "knn",
+    # 正則化線性
+    "logistic", "ridge", "sgd_hinge",
+    # 降維 ＋ 分類
+    "pca_svm", "lda_project_knn",
+    # 機率式
+    "gaussian_process",
+    # 神經網路
+    "mlp",
+    # 組合
+    "stacking", "voting_soft",
+)
 SEQUENCE_MODELS = ("tcn", "gru")
 AGGREGATE_STATS = ("mean", "std", "min", "max", "max_abs_delta", "trend")
 
@@ -151,6 +172,12 @@ def make_sequence_model(kind: str, in_dim: int, n_classes: int, seed: int):
     raise CompareError(f"unknown sequence model: {kind}")
 
 
+def _scaled(estimator):
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import StandardScaler
+    return make_pipeline(StandardScaler(), estimator)
+
+
 def make_model(name: str, seed: int):
     from sklearn.ensemble import (
         ExtraTreesClassifier,
@@ -217,6 +244,133 @@ def make_model(name: str, seed: int):
             StandardScaler(),
             LogisticRegression(max_iter=4000, class_weight="balanced",
                                random_state=seed))
+
+    # ── 2026-09-16 新增的學習法 ────────────────────────────────
+    if name == "catboost":
+        from catboost import CatBoostClassifier
+
+        class _CatBoost:
+            """CatBoost 的多類 `predict()` 回傳 (n, 1) 的二維陣列。
+
+            不攤平的話,`str(prediction)` 會是 `"['normal']"`,與真值永遠比對
+            不上,分數會是 0.0000——而那看起來像「模型很差」。
+            2026-09-16 實測就是這樣,兩個模式都 0.0000。
+            """
+
+            def __init__(self):
+                self._model = CatBoostClassifier(
+                    iterations=300, depth=6, learning_rate=0.1,
+                    loss_function="MultiClass",
+                    auto_class_weights="Balanced",
+                    random_seed=seed, verbose=False,
+                    allow_writing_files=False)
+
+            def fit(self, X, y):
+                self._model.fit(X, y)
+                self.classes_ = self._model.classes_
+                return self
+
+            def predict(self, X):
+                import numpy as np
+                return np.asarray(self._model.predict(X)).ravel()
+
+            def predict_proba(self, X):
+                return self._model.predict_proba(X)
+
+        return _CatBoost()
+    if name == "adaboost":
+        from sklearn.ensemble import AdaBoostClassifier
+        return AdaBoostClassifier(n_estimators=200, random_state=seed)
+    if name == "gradient_boosting":
+        from sklearn.ensemble import GradientBoostingClassifier
+        return GradientBoostingClassifier(n_estimators=100, random_state=seed)
+    if name == "svm_rbf":
+        from sklearn.svm import SVC
+        # p>n 時的經典強基準。probability=True 才進得了軟投票。
+        return _scaled(SVC(kernel="rbf", C=10.0, gamma="scale",
+                           class_weight="balanced", probability=True,
+                           random_state=seed))
+    if name == "svm_linear":
+        from sklearn.svm import LinearSVC
+        return _scaled(LinearSVC(C=1.0, class_weight="balanced",
+                                 max_iter=20000, random_state=seed))
+    if name == "lda_shrinkage":
+        from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+        # 156 維、289 場,共變異必然病態;shrinkage 正是為這種情況設計的。
+        return _scaled(LinearDiscriminantAnalysis(solver="lsqr",
+                                                  shrinkage="auto"))
+    if name == "qda":
+        from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+        # ⚠️ QDA 要為**每一類**估完整共變異,需要 每類樣本數 > 維度。
+        # 這裡是 13–16 對 156–192,數學上不可能——即使 reg_param 拉到 0.8。
+        # 保留在清單裡是因為「不適用」本身是結果;跑起來會被記成
+        # not_applicable 並寫下理由,不會讓整輪作廢。
+        return _scaled(QuadraticDiscriminantAnalysis(reg_param=0.8))
+    if name == "gaussian_nb":
+        from sklearn.naive_bayes import GaussianNB
+        return _scaled(GaussianNB())
+    if name == "nearest_centroid":
+        from sklearn.neighbors import NearestCentroid
+        # 原型法。每類 17 場正是它的主場。
+        return _scaled(NearestCentroid(shrink_threshold=0.5))
+    if name == "knn":
+        from sklearn.neighbors import KNeighborsClassifier
+        return _scaled(KNeighborsClassifier(n_neighbors=5, weights="distance"))
+    if name == "ridge":
+        from sklearn.linear_model import RidgeClassifier
+        return _scaled(RidgeClassifier(alpha=1.0, class_weight="balanced"))
+    if name == "sgd_hinge":
+        from sklearn.linear_model import SGDClassifier
+        return _scaled(SGDClassifier(loss="hinge", class_weight="balanced",
+                                     max_iter=5000, random_state=seed))
+    if name == "pca_svm":
+        from sklearn.decomposition import PCA
+        from sklearn.pipeline import make_pipeline as chain
+        from sklearn.svm import SVC
+        # 先把維度壓到 32,直接處理 p>n。
+        return chain(StandardScaler(), PCA(n_components=32, random_state=seed),
+                     SVC(kernel="rbf", C=10.0, class_weight="balanced",
+                         random_state=seed))
+    if name == "lda_project_knn":
+        from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+        from sklearn.neighbors import KNeighborsClassifier
+        from sklearn.pipeline import make_pipeline as chain
+        # LDA 當降維(最多 n_classes-1 維),再用最近鄰。
+        # solver="svd" 在 每類樣本數 < 維度 時必然失敗(13 對 156),
+        # 而這一格的用途是降維不是測試 svd,所以用 eigen + shrinkage。
+        return chain(StandardScaler(),
+                     LinearDiscriminantAnalysis(solver="eigen",
+                                                shrinkage="auto"),
+                     KNeighborsClassifier(n_neighbors=3, weights="distance"))
+    if name == "gaussian_process":
+        from sklearn.gaussian_process import GaussianProcessClassifier
+        from sklearn.gaussian_process.kernels import RBF
+        return _scaled(GaussianProcessClassifier(
+            kernel=1.0 * RBF(length_scale=10.0), random_state=seed,
+            max_iter_predict=50, n_jobs=-1))
+    if name in ("stacking", "voting_soft"):
+        from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+        from sklearn.ensemble import (
+            HistGradientBoostingClassifier as _HGB,
+            StackingClassifier,
+            VotingClassifier,
+        )
+        from sklearn.svm import SVC
+        # 刻意選歸納偏置互補的三個:boosting、核方法、生成式。
+        parts = [
+            ("hgb", _HGB(random_state=seed)),
+            ("svm", _scaled(SVC(kernel="rbf", C=10.0, class_weight="balanced",
+                                probability=True, random_state=seed))),
+            ("lda", _scaled(LinearDiscriminantAnalysis(solver="lsqr",
+                                                       shrinkage="auto"))),
+        ]
+        if name == "voting_soft":
+            return VotingClassifier(estimators=parts, voting="soft", n_jobs=1)
+        return StackingClassifier(
+            estimators=parts,
+            final_estimator=LogisticRegression(max_iter=4000,
+                                               random_state=seed),
+            cv=3, n_jobs=1)
     raise CompareError(f"unknown model: {name}")
 
 
@@ -374,8 +528,15 @@ def evaluate(cv, helpers, rows, *, formulation, model_name, folds, seeds,
             for seed in seeds:
                 model = make_model(model_name, seed)
                 model.fit(Xs[train_index], ys[train_index])
-                for pos, prediction in zip(test_index,
-                                           model.predict(Xs[test_index])):
+                choice = np.asarray(model.predict(Xs[test_index]))
+                # 任何模型的 predict 都必須是一維。二維會讓 str() 產生
+                # "['normal']" 這種字串而永遠比對不上——分數變成 0.0000,
+                # 看起來像模型很差。CatBoost 2026-09-16 就是這樣。
+                if choice.ndim != 1:
+                    raise CompareError(
+                        f"{model_name} 的 predict 回傳 {choice.ndim} 維 "
+                        f"{choice.shape},必須是一維")
+                for pos, prediction in zip(test_index, choice):
                     predicted[sessions[pos]].append(str(prediction))
     elif formulation == "window_sequence":
         import torch
@@ -451,6 +612,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seeds", type=int, default=3)
     parser.add_argument("--temporal", default="d1_m3_x3_m5_x5")
     parser.add_argument("--rule", default="session_attack_only")
+    parser.add_argument(
+        "--formulations", nargs="+", choices=FORMULATIONS, default=None,
+        help="只跑指定的表述（預設全部）")
+    parser.add_argument(
+        "--models", nargs="+", default=None,
+        help="只跑指定的模型（預設全部）")
     parser.add_argument("--skip-control", action="store_true")
     parser.add_argument("--output", type=pathlib.Path)
     return parser
@@ -485,19 +652,35 @@ def main(argv: list[str] | None = None) -> int:
 
     results = {}
     per_class_of = {}
-    for formulation in FORMULATIONS:
+    not_applicable: dict[str, str] = {}
+    for formulation in (args.formulations or FORMULATIONS):
         names = SEQUENCE_MODELS if formulation == "window_sequence" else MODELS
+        if args.models:
+            names = tuple(n for n in names if n in set(args.models))
         for model_name in names:
-            score, per_class = evaluate(
-                cv, helpers, rows, formulation=formulation,
-                model_name=model_name, folds=args.folds, seeds=seeds,
-                temporal=args.temporal, rule=args.rule)
             key = f"{formulation}/{model_name}"
+            try:
+                score, per_class = evaluate(
+                    cv, helpers, rows, formulation=formulation,
+                    model_name=model_name, folds=args.folds, seeds=seeds,
+                    temporal=args.temporal, rule=args.rule)
+            except Exception as exc:  # noqa: BLE001
+                # 一個方法不適用,不該讓已經跑完的其他格全部作廢。
+                # 但**記下來**——「不適用」與「沒跑到」在一張只有分數的表上
+                # 長得一樣,而它們是兩件事。
+                reason = f"{type(exc).__name__}: {exc}"
+                not_applicable[key] = reason
+                print("  %-42s ⛔ 不適用 — %s" % (key, reason.split("\n")[0][:90]))
+                continue
             results[key] = round(score, 4)
             per_class_of[key] = per_class
             print("  %-42s %.4f" % (key, score))
 
     baseline_key = "per_window_pooled/random_forest"
+    if args.baseline_artifact and baseline_key not in results:
+        print("⛔ 指定了基準 artifact，但這一輪沒有跑 %s，無法做有效性檢查"
+              % baseline_key, file=sys.stderr)
+        return 2
     if args.baseline_artifact:
         known = json.loads(args.baseline_artifact.read_text(encoding="utf-8"))
         expected = float(known["session_balanced_accuracy"])
@@ -509,11 +692,27 @@ def main(argv: list[str] | None = None) -> int:
             print("⛔ 基準重現不了，這支與既有流程分岔了。不輸出。", file=sys.stderr)
             return 1
 
+    if not results:
+        print("⛔ 沒有任何一組跑得起來", file=sys.stderr)
+        return 1
     best = max(results, key=lambda k: results[k])
     print()
-    print("最佳 %s = %.4f（現行 %s = %.4f，差 %+0.4f）"
-          % (best, results[best], baseline_key, results[baseline_key],
-             results[best] - results[baseline_key]))
+    print("=== 依分數排序 ===")
+    for key in sorted(results, key=lambda k: -results[k]):
+        mark = "  ← 最佳" if key == best else ""
+        print("  %-46s %.4f%s" % (key, results[key], mark))
+    if not_applicable:
+        print()
+        print("=== 不適用（%d 個）===" % len(not_applicable))
+        for key, reason in sorted(not_applicable.items()):
+            print("  %-46s %s" % (key, reason.split("\n")[0][:100]))
+    print()
+    if baseline_key in results:
+        print("最佳 %s = %.4f（現行 %s = %.4f，差 %+0.4f）"
+              % (best, results[best], baseline_key, results[baseline_key],
+                 results[best] - results[baseline_key]))
+    else:
+        print("最佳 %s = %.4f" % (best, results[best]))
 
     control = None
     if not args.skip_control:
@@ -555,12 +754,14 @@ def main(argv: list[str] | None = None) -> int:
             "numpy 2.5.0／scikit-learn 1.9.0／scipy 1.18.0 與 "
             "~/.venvs/sros2-firewall 釘成相同版本，安裝後已逐字驗過舊 venv 未變。"),
         "scores": results,
+        "not_applicable": not_applicable,
         "best": {"configuration": best, "score": results[best],
                  "per_class": per_class_of[best],
                  "ceiling": cv.ceiling(per_class_of[best])},
-        "baseline": {"configuration": baseline_key,
-                     "score": results[baseline_key],
-                     "per_class": per_class_of[baseline_key]},
+        "baseline": ({"configuration": baseline_key,
+                      "score": results[baseline_key],
+                      "per_class": per_class_of[baseline_key]}
+                     if baseline_key in results else None),
         "control": control,
         "changes_shipped_defaults": False,
     }
