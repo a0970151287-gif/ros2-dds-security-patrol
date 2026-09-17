@@ -1,0 +1,259 @@
+{
+ "datasets": {
+  "enforce": "/home/jesse/refresh_20260902T111358Z/enforce/dataset",
+  "permissive": "/home/jesse/refresh_20260902T111358Z/permissive_v3/dataset"
+ },
+ "modes": {
+  "enforce": {
+   "mean_events_per_session": {
+    "command_injection": {
+     "heartbeat": 50.7,
+     "mission/cmd": 51.1,
+     "sensor/status": 102.2,
+     "system/health": 25.45
+    },
+    "confused_deputy": {
+     "alerts": 4.0,
+     "heartbeat": 43.8,
+     "mission/cmd": 16.25,
+     "sensor/status": 87.2,
+     "system/health": 21.7
+    },
+    "cross_channel_relay": {
+     "heartbeat": 42.9,
+     "mission/cmd": 43.0,
+     "sensor/status": 86.0,
+     "system/health": 21.55
+    },
+    "discovery_recon": {
+     "heartbeat": 43.25,
+     "mission/cmd": 43.15,
+     "sensor/status": 86.3,
+     "system/health": 21.75
+    },
+    "health_spoof": {
+     "heartbeat": 42.85,
+     "mission/cmd": 42.9,
+     "sensor/status": 85.8,
+     "system/health": 21.4
+    },
+    "hmac_forgery": {
+     "alerts": 38.25,
+     "heartbeat": 42.9,
+     "mission/cmd": 27.9,
+     "sensor/status": 85.6,
+     "system/health": 21.55
+    },
+    "identity_abuse": {
+     "heartbeat": 46.1,
+     "mission/cmd": 45.95,
+     "sensor/status": 91.9,
+     "system/health": 22.9
+    },
+    "message_dos": {
+     "heartbeat": 48.4,
+     "mission/cmd": 48.15,
+     "sensor/status": 96.3,
+     "system/health": 24.1
+    },
+    "mission_spoof": {
+     "heartbeat": 42.7,
+     "mission/cmd": 19.35,
+     "sensor/status": 85.4,
+     "system/health": 21.35
+    },
+    "node_churn": {
+     "heartbeat": 41.35,
+     "mission/cmd": 22.25,
+     "sensor/status": 85.45,
+     "system/health": 21.25
+    },
+    "normal": {
+     "heartbeat": 42.8,
+     "mission/cmd": 42.8,
+     "sensor/status": 85.6,
+     "system/health": 21.4
+    },
+    "parameter_tamper": {
+     "heartbeat": 47.3,
+     "mission/cmd": 47.3,
+     "sensor/status": 94.6,
+     "system/health": 23.6
+    },
+    "replay": {
+     "heartbeat": 48.3,
+     "mission/cmd": 48.1,
+     "sensor/status": 96.2,
+     "system/health": 23.9
+    },
+    "replay_dos": {
+     "heartbeat": 47.9,
+     "mission/cmd": 47.95,
+     "sensor/status": 95.9,
+     "system/health": 24.0
+    },
+    "scan_drift": {
+     "heartbeat": 42.9,
+     "mission/cmd": 42.85,
+     "sensor/status": 85.7,
+     "system/health": 21.6
+    },
+    "sensor_spoof": {
+     "heartbeat": 47.5,
+     "mission/cmd": 47.95,
+     "sensor/status": 95.9,
+     "system/health": 24.0
+    },
+    "service_dos": {
+     "heartbeat": 47.6,
+     "mission/cmd": 47.5,
+     "sensor/status": 95.0,
+     "system/health": 23.85
+    }
+   },
+   "sessions_per_class": {
+    "command_injection": 20,
+    "confused_deputy": 20,
+    "cross_channel_relay": 20,
+    "discovery_recon": 20,
+    "health_spoof": 20,
+    "hmac_forgery": 20,
+    "identity_abuse": 20,
+    "message_dos": 20,
+    "mission_spoof": 20,
+    "node_churn": 20,
+    "normal": 20,
+    "parameter_tamper": 20,
+    "replay": 20,
+    "replay_dos": 20,
+    "scan_drift": 20,
+    "sensor_spoof": 20,
+    "service_dos": 20
+   }
+  },
+  "permissive": {
+   "mean_events_per_session": {
+    "command_injection": {
+     "alerts": 14.6,
+     "heartbeat": 49.1,
+     "mission/cmd": 0.8,
+     "sensor/status": 94.1,
+     "system/health": 23.6
+    },
+    "cross_channel_relay": {
+     "alerts": 54.8,
+     "heartbeat": 42.55,
+     "mission/cmd": 20.55,
+     "sensor/status": 84.05,
+     "system/health": 21.6
+    },
+    "discovery_recon": {
+     "alerts": 4.0,
+     "heartbeat": 41.1,
+     "mission/cmd": 15.0,
+     "sensor/status": 78.6,
+     "system/health": 21.55
+    },
+    "health_spoof": {
+     "heartbeat": 43.95,
+     "mission/cmd": 42.6,
+     "sensor/status": 88.9,
+     "system/health": 142.0
+    },
+    "identity_abuse": {
+     "alerts": 4.0,
+     "heartbeat": 44.65,
+     "mission/cmd": 18.8,
+     "sensor/status": 84.2,
+     "system/health": 23.25
+    },
+    "message_dos": {
+     "alerts": 18.15,
+     "heartbeat": 46.45,
+     "mission/cmd": 9.75,
+     "sensor/status": 87.45,
+     "system/health": 23.4
+    },
+    "mission_spoof": {
+     "heartbeat": 41.8,
+     "mission/cmd": 245.05,
+     "sensor/status": 84.0,
+     "system/health": 21.45
+    },
+    "node_churn": {
+     "alerts": 10.45,
+     "heartbeat": 40.75,
+     "mission/cmd": 11.6,
+     "sensor/status": 78.25,
+     "system/health": 20.3
+    },
+    "normal": {
+     "heartbeat": 44.2,
+     "mission/cmd": 38.7,
+     "sensor/status": 88.4,
+     "system/health": 21.75
+    },
+    "parameter_tamper": {
+     "alerts": 3.8,
+     "heartbeat": 43.35,
+     "mission/cmd": 17.5,
+     "sensor/status": 90.75,
+     "system/health": 23.0
+    },
+    "replay": {
+     "alerts": 4.0,
+     "heartbeat": 175.7,
+     "mission/cmd": 13.8,
+     "sensor/status": 91.1,
+     "system/health": 22.55
+    },
+    "replay_dos": {
+     "alerts": 26.8,
+     "heartbeat": 46.0,
+     "mission/cmd": 9.1,
+     "sensor/status": 88.25,
+     "system/health": 22.95
+    },
+    "scan_drift": {
+     "alerts": 15.45,
+     "heartbeat": 40.15,
+     "mission/cmd": 15.3,
+     "sensor/status": 78.75,
+     "system/health": 21.2
+    },
+    "sensor_spoof": {
+     "heartbeat": 49.05,
+     "mission/cmd": 48.35,
+     "sensor/status": 170.2,
+     "system/health": 24.65
+    },
+    "service_dos": {
+     "alerts": 4.55,
+     "heartbeat": 12.95,
+     "mission/cmd": 0.25,
+     "sensor/status": 28.2,
+     "system/health": 7.75
+    }
+   },
+   "sessions_per_class": {
+    "command_injection": 20,
+    "cross_channel_relay": 20,
+    "discovery_recon": 20,
+    "health_spoof": 20,
+    "identity_abuse": 20,
+    "message_dos": 20,
+    "mission_spoof": 20,
+    "node_churn": 20,
+    "normal": 20,
+    "parameter_tamper": 20,
+    "replay": 20,
+    "replay_dos": 20,
+    "scan_drift": 20,
+    "sensor_spoof": 20,
+    "service_dos": 20
+   }
+  }
+ },
+ "note": "每場平均 hmac_result 事件數,依 channel 與攻擊類別分組",
+ "schema_version": "sros2-firewall-hmac-channel-distribution/v1"
+}

@@ -1,0 +1,456 @@
+{
+ "schema_version": "sros2-firewall-hmac-channel-blindspot/v1",
+ "question": "hmac_result.channel 接成特徵會不會重蹈身份特徵的覆轍",
+ "insiders": [
+  "confused_deputy",
+  "hmac_forgery"
+ ],
+ "features_table": "/home/jesse/join_enforce_both.csv",
+ "changes_shipped_features": false,
+ "splits": {
+  "all": {
+   "flagged_features": [
+    "sros_auth_fail_rate"
+   ],
+   "constant_features": [
+    "alert_reflection_ratio",
+    "channel_mismatch_ratio",
+    "heartbeat_gap_sec",
+    "hmac_ch_heartbeat_reject_ratio",
+    "hmac_ch_mission_cmd_reject_ratio",
+    "hmac_ch_patrol_goto_rate",
+    "hmac_ch_patrol_goto_reject_ratio",
+    "hmac_ch_patrol_goto_share",
+    "hmac_ch_sensor_status_reject_ratio",
+    "hmac_ch_system_health_reject_ratio",
+    "nonce_reuse_ratio",
+    "odom_cmd_mismatch_ratio",
+    "oversized_message_ratio",
+    "publisher_violation_ratio",
+    "qos_drop_ratio",
+    "scan_static_ratio",
+    "sros_permission_deny_rate",
+    "timestamp_violation_ratio"
+   ],
+   "screen_channel_only": [
+    {
+     "auc_insider_vs_normal": 0.5875,
+     "auc_outsider_vs_normal": 0.585,
+     "blind_to_insiders": true,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_sensor_status_rate",
+     "flagged": false,
+     "insider_separation": 0.0875,
+     "outsider_separation": 0.085
+    },
+    {
+     "auc_insider_vs_normal": 0.5875,
+     "auc_outsider_vs_normal": 0.5841,
+     "blind_to_insiders": true,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_system_health_rate",
+     "flagged": false,
+     "insider_separation": 0.0875,
+     "outsider_separation": 0.0841
+    },
+    {
+     "auc_insider_vs_normal": 0.5807,
+     "auc_outsider_vs_normal": 0.5794,
+     "blind_to_insiders": true,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_heartbeat_rate",
+     "flagged": false,
+     "insider_separation": 0.0807,
+     "outsider_separation": 0.0794
+    },
+    {
+     "auc_insider_vs_normal": 0.1976,
+     "auc_outsider_vs_normal": 0.5434,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_mission_cmd_rate",
+     "flagged": false,
+     "insider_separation": 0.3024,
+     "outsider_separation": 0.0434
+    },
+    {
+     "auc_insider_vs_normal": 0.6833,
+     "auc_outsider_vs_normal": 0.5431,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_sensor_status_share",
+     "flagged": false,
+     "insider_separation": 0.1833,
+     "outsider_separation": 0.0431
+    },
+    {
+     "auc_insider_vs_normal": 0.103,
+     "auc_outsider_vs_normal": 0.4702,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_mission_cmd_share",
+     "flagged": false,
+     "insider_separation": 0.397,
+     "outsider_separation": 0.0298
+    },
+    {
+     "auc_insider_vs_normal": 0.6782,
+     "auc_outsider_vs_normal": 0.5255,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_heartbeat_share",
+     "flagged": false,
+     "insider_separation": 0.1782,
+     "outsider_separation": 0.0255
+    },
+    {
+     "auc_insider_vs_normal": 0.6607,
+     "auc_outsider_vs_normal": 0.515,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_system_health_share",
+     "flagged": false,
+     "insider_separation": 0.1607,
+     "outsider_separation": 0.015
+    },
+    {
+     "auc_insider_vs_normal": 0.5625,
+     "auc_outsider_vs_normal": 0.5,
+     "blind_to_insiders": true,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_alerts_reject_ratio",
+     "flagged": false,
+     "insider_separation": 0.0625,
+     "outsider_separation": 0.0
+    },
+    {
+     "auc_insider_vs_normal": 0.625,
+     "auc_outsider_vs_normal": 0.5,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_alerts_rate",
+     "flagged": false,
+     "insider_separation": 0.125,
+     "outsider_separation": 0.0
+    },
+    {
+     "auc_insider_vs_normal": 0.625,
+     "auc_outsider_vs_normal": 0.5,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_alerts_share",
+     "flagged": false,
+     "insider_separation": 0.125,
+     "outsider_separation": 0.0
+    }
+   ],
+   "sanity_check_enforced": true,
+   "known_blind_spot_ablation": [
+    {
+     "dropped": [
+      "sros_auth_fail_rate"
+     ],
+     "delta_unseen_recall": -0.1937,
+     "harmful": true,
+     "role": "flagged"
+    },
+    {
+     "dropped": [
+      "mean_bytes_per_packet"
+     ],
+     "delta_unseen_recall": -0.1813,
+     "harmful": true,
+     "role": "control"
+    },
+    {
+     "dropped": [
+      "tuple_repeat_ratio"
+     ],
+     "delta_unseen_recall": -0.0031,
+     "harmful": true,
+     "role": "control"
+    },
+    {
+     "dropped": [
+      "max_conn_bytes"
+     ],
+     "delta_unseen_recall": 0.0,
+     "harmful": false,
+     "role": "control"
+    }
+   ],
+   "reverse_ablation": [
+    {
+     "added": "behavioural (rate+share)",
+     "base": 0.096875,
+     "base_plus": 0.125,
+     "delta": 0.0281
+    },
+    {
+     "added": "defence_reaction (reject_ratio)",
+     "base": 0.128125,
+     "base_plus": 0.125,
+     "delta": -0.0031
+    },
+    {
+     "added": "all channel features",
+     "base": 0.09375,
+     "base_plus": 0.125,
+     "delta": 0.0312
+    },
+    {
+     "added": "  only alerts",
+     "base": 0.125,
+     "base_plus": 0.125,
+     "delta": 0.0
+    },
+    {
+     "added": "  only mission_cmd",
+     "base": 0.1125,
+     "base_plus": 0.125,
+     "delta": 0.0125
+    },
+    {
+     "added": "  only heartbeat",
+     "base": 0.15,
+     "base_plus": 0.125,
+     "delta": -0.025
+    },
+    {
+     "added": "  only sensor_status",
+     "base": 0.115625,
+     "base_plus": 0.125,
+     "delta": 0.0094
+    },
+    {
+     "added": "  only system_health",
+     "base": 0.128125,
+     "base_plus": 0.125,
+     "delta": -0.0031
+    }
+   ]
+  },
+  "train": {
+   "flagged_features": [
+    "sros_auth_fail_rate"
+   ],
+   "constant_features": [
+    "alert_reflection_ratio",
+    "channel_mismatch_ratio",
+    "heartbeat_gap_sec",
+    "hmac_ch_heartbeat_reject_ratio",
+    "hmac_ch_mission_cmd_reject_ratio",
+    "hmac_ch_patrol_goto_rate",
+    "hmac_ch_patrol_goto_reject_ratio",
+    "hmac_ch_patrol_goto_share",
+    "hmac_ch_sensor_status_reject_ratio",
+    "hmac_ch_system_health_reject_ratio",
+    "nonce_reuse_ratio",
+    "odom_cmd_mismatch_ratio",
+    "oversized_message_ratio",
+    "publisher_violation_ratio",
+    "qos_drop_ratio",
+    "scan_static_ratio",
+    "sros_permission_deny_rate",
+    "timestamp_violation_ratio"
+   ],
+   "screen_channel_only": [
+    {
+     "auc_insider_vs_normal": 0.5893,
+     "auc_outsider_vs_normal": 0.5861,
+     "blind_to_insiders": true,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_sensor_status_rate",
+     "flagged": false,
+     "insider_separation": 0.0893,
+     "outsider_separation": 0.0861
+    },
+    {
+     "auc_insider_vs_normal": 0.5893,
+     "auc_outsider_vs_normal": 0.5844,
+     "blind_to_insiders": true,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_system_health_rate",
+     "flagged": false,
+     "insider_separation": 0.0893,
+     "outsider_separation": 0.0844
+    },
+    {
+     "auc_insider_vs_normal": 0.5796,
+     "auc_outsider_vs_normal": 0.5776,
+     "blind_to_insiders": true,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_heartbeat_rate",
+     "flagged": false,
+     "insider_separation": 0.0796,
+     "outsider_separation": 0.0776
+    },
+    {
+     "auc_insider_vs_normal": 0.6711,
+     "auc_outsider_vs_normal": 0.555,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_sensor_status_share",
+     "flagged": false,
+     "insider_separation": 0.1711,
+     "outsider_separation": 0.055
+    },
+    {
+     "auc_insider_vs_normal": 0.6603,
+     "auc_outsider_vs_normal": 0.5373,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_system_health_share",
+     "flagged": false,
+     "insider_separation": 0.1603,
+     "outsider_separation": 0.0373
+    },
+    {
+     "auc_insider_vs_normal": 0.214,
+     "auc_outsider_vs_normal": 0.5351,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_mission_cmd_rate",
+     "flagged": false,
+     "insider_separation": 0.286,
+     "outsider_separation": 0.0351
+    },
+    {
+     "auc_insider_vs_normal": 0.1074,
+     "auc_outsider_vs_normal": 0.4651,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_mission_cmd_share",
+     "flagged": false,
+     "insider_separation": 0.3926,
+     "outsider_separation": 0.0349
+    },
+    {
+     "auc_insider_vs_normal": 0.6614,
+     "auc_outsider_vs_normal": 0.5176,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_heartbeat_share",
+     "flagged": false,
+     "insider_separation": 0.1614,
+     "outsider_separation": 0.0176
+    },
+    {
+     "auc_insider_vs_normal": 0.5625,
+     "auc_outsider_vs_normal": 0.5,
+     "blind_to_insiders": true,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_alerts_reject_ratio",
+     "flagged": false,
+     "insider_separation": 0.0625,
+     "outsider_separation": 0.0
+    },
+    {
+     "auc_insider_vs_normal": 0.625,
+     "auc_outsider_vs_normal": 0.5,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_alerts_rate",
+     "flagged": false,
+     "insider_separation": 0.125,
+     "outsider_separation": 0.0
+    },
+    {
+     "auc_insider_vs_normal": 0.625,
+     "auc_outsider_vs_normal": 0.5,
+     "blind_to_insiders": false,
+     "discriminates_outsiders": false,
+     "feature": "hmac_ch_alerts_share",
+     "flagged": false,
+     "insider_separation": 0.125,
+     "outsider_separation": 0.0
+    }
+   ],
+   "sanity_check_enforced": true,
+   "known_blind_spot_ablation": [
+    {
+     "dropped": [
+      "sros_auth_fail_rate"
+     ],
+     "delta_unseen_recall": -0.067,
+     "harmful": true,
+     "role": "flagged"
+    },
+    {
+     "dropped": [
+      "mean_bytes_per_packet"
+     ],
+     "delta_unseen_recall": -0.0982,
+     "harmful": true,
+     "role": "control"
+    },
+    {
+     "dropped": [
+      "tuple_repeat_ratio"
+     ],
+     "delta_unseen_recall": 0.0,
+     "harmful": false,
+     "role": "control"
+    },
+    {
+     "dropped": [
+      "max_conn_bytes"
+     ],
+     "delta_unseen_recall": 0.0,
+     "harmful": false,
+     "role": "control"
+    }
+   ],
+   "reverse_ablation": [
+    {
+     "added": "behavioural (rate+share)",
+     "base": 0.08482142857142858,
+     "base_plus": 0.12946428571428573,
+     "delta": 0.0446
+    },
+    {
+     "added": "defence_reaction (reject_ratio)",
+     "base": 0.125,
+     "base_plus": 0.12946428571428573,
+     "delta": 0.0045
+    },
+    {
+     "added": "all channel features",
+     "base": 0.08035714285714286,
+     "base_plus": 0.12946428571428573,
+     "delta": 0.0491
+    },
+    {
+     "added": "  only alerts",
+     "base": 0.11160714285714286,
+     "base_plus": 0.12946428571428573,
+     "delta": 0.0179
+    },
+    {
+     "added": "  only mission_cmd",
+     "base": 0.07589285714285714,
+     "base_plus": 0.12946428571428573,
+     "delta": 0.0536
+    },
+    {
+     "added": "  only heartbeat",
+     "base": 0.11607142857142858,
+     "base_plus": 0.12946428571428573,
+     "delta": 0.0134
+    },
+    {
+     "added": "  only sensor_status",
+     "base": 0.11160714285714286,
+     "base_plus": 0.12946428571428573,
+     "delta": 0.0179
+    },
+    {
+     "added": "  only system_health",
+     "base": 0.12946428571428573,
+     "base_plus": 0.12946428571428573,
+     "delta": 0.0
+    }
+   ]
+  }
+ }
+}

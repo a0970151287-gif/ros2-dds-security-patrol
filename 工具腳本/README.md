@@ -53,6 +53,7 @@ source 工具腳本/load_ros_environment.sh
 | `compare_rule_vs_learned.py` | **規則式 vs 學習式的公平對照**，附場次層級 bootstrap 信賴區間 |
 | `diagnose_gate_veto.py` | **量 parallel gate 丟掉多少 OOD 頭已經認對的未知**，並掃 normality 預算看代價 |
 | `audit_conformal_readiness.py` | session-level conformal 樣本是否足夠 |
+| `audit_defence_reaction_features.py` | **哪些特徵對繞過防禦的攻擊視而不見**（篩選＋留出內鬼消融，含陰性對照） |
 
 ## 資料集與特徵
 
@@ -63,6 +64,8 @@ source 工具腳本/load_ros_environment.sh
 | `supervise_rerun_campaign.sh` | 讓 campaign 撐得過偶發的單場失敗 |
 | `merge_rerun_features.py` | 把重跑的 300 場**在特徵層**併回原本 800 場，不動原始資料集 |
 | `verify_rerun_predictions.py` | 檢核重跑的三個可否證預測 |
+| `build_hmac_channel_features.py` | 把 `hmac_result.channel` 建成側表，**刻意分成「到達量」與「拒絕比例」兩半**好分開測（2026-09-17 結論：不接） |
+| `join_side_features.py` | 把側表接回既有特徵表；**接不齊就拒絕**（補零與只留交集各自會弄壞一種比較） |
 
 ## 本機防禦九項 outcome
 
