@@ -1,0 +1,67 @@
+{
+  "autonomous_ip_block_ready": false,
+  "blockers": [
+    "no complete decoded RTPS identity plus independent attestation archive",
+    "Zeek conn.log exposes five-tuples but not GUID, endpoint, topic, or identity subject",
+    "same-UID telemetry source validation is not DDS identity-to-IP attribution",
+    "same-host WSL mirrored addresses cannot establish a unique external attacker IP",
+    "no independent trusted collector has attested GUID-to-IP-to-subject bindings"
+  ],
+  "counts": {
+    "dds_security_audit.jsonl_sessions": 0,
+    "identity_attestation.json_sessions": 0,
+    "pcap_sessions": 1100,
+    "rtps_identity.jsonl_sessions": 0,
+    "sessions": 1101,
+    "training_eligible_sessions": 1100,
+    "zeek_conn_sessions": 1100,
+    "zeek_identity_field_sessions": 0
+  },
+  "created_utc": "2026-08-25T05:26:57.926894+00:00",
+  "cross_host_test_ready": false,
+  "dataset": {
+    "path": "firewall_lab/dataset_live",
+    "session_name_list_sha256": "094ea0b8868342fb28f55873414fbbb9da38619757ea2ae10c24cb8dfd326aec"
+  },
+  "deployment_eligible": false,
+  "network_activity_performed": false,
+  "observed_zeek_fields": [
+    "conn_state",
+    "duration",
+    "history",
+    "id.orig_h",
+    "id.orig_p",
+    "id.resp_h",
+    "id.resp_p",
+    "ip_proto",
+    "local_orig",
+    "local_resp",
+    "missed_bytes",
+    "orig_bytes",
+    "orig_ip_bytes",
+    "orig_pkts",
+    "proto",
+    "resp_bytes",
+    "resp_ip_bytes",
+    "resp_pkts",
+    "service",
+    "ts",
+    "tunnel_parents",
+    "uid"
+  ],
+  "required_identity_artifacts": [
+    "rtps_identity.jsonl",
+    "identity_attestation.json",
+    "dds_security_audit.jsonl"
+  ],
+  "required_zeek_identity_fields": [
+    "dds_identity_subject_sha256",
+    "dds_topic",
+    "rtps_entity_id",
+    "rtps_guid_prefix"
+  ],
+  "runtime_authorization": false,
+  "schema_version": "sros2-firewall-identity-attribution-readiness/v1",
+  "source_ip_attribution_verified": false,
+  "status": "blocked"
+}

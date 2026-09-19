@@ -204,7 +204,8 @@ attack_H_token_leak() {
     done
     if [ $found -gt 0 ]; then
         echo "  ✗ 攻擊成功（$found+ process 把 LINE token 放 env）"
-        echo "    修補建議：改用 ~/.config/dds-monitor/credentials 檔案 + chmod 600"
+        echo "    降低暴露：改讀 ~/.config/dds-monitor/line_token（chmod 600），不要放 credentials/env"
+        echo "    殘餘風險：同一 Linux UID 的惡意程式仍可直接讀此檔"
     else
         echo "  ✓ 沒找到 token in environ（已修補 or 沒在跑 monitor）"
     fi
@@ -496,5 +497,5 @@ else
     echo "  I/M → 訓練/模型檔加 HMAC checksum，部署時驗章"
     echo "  K → /scan source authentication + 連續性檢查"
     echo "  L → multi-threaded executor + reload rate limit"
-    echo "  H → 不要 export 敏感 token，改用 chmod 600 檔案"
+    echo "  H → token 改讀 chmod 600 檔可降低 env 暴露；同 UID 仍可讀，credentials 只留白名單內非秘密設定"
 fi

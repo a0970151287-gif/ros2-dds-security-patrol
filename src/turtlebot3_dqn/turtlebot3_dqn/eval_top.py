@@ -30,14 +30,17 @@ from sb3_contrib import TQC
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from turtlebot3_dqn.burger_env_top import BurgerEnvTop, N_WP_TOTAL
+from turtlebot3_dqn.atomic_io import (
+    ArtifactIntegrityError,
+    open_verified_snapshot,
+)
 from turtlebot3_dqn.feature_extractors import LiDARConvExtractor  # noqa: F401  (needed for unpickle)
 
 try:
-    from dds_security_monitor.monitor_node import verify_file, _load_alert_secret
+    from dds_security_monitor.monitor_node import _load_alert_secret
     _SEC_AVAILABLE = True
 except Exception:
     _SEC_AVAILABLE = False
-    def verify_file(_p, _s): return False
     def _load_alert_secret(): return b""
 
 
@@ -68,27 +71,26 @@ def main() -> None:
     p.add_argument("--seed-base", type=int, default=0)
     args = p.parse_args()
 
-    rclpy.init()
-
     # ── Integrity check before loading model (refuse tampered) ────────
     model_zip = Path(args.model).with_suffix(".zip")
-    if _SEC_AVAILABLE:
+    if not _SEC_AVAILABLE:
+        sys.exit("dds_security_monitor 不可匯入；拒絕在無驗章能力下 eval")
+    try:
         secret = _load_alert_secret()
-        fp = hashlib.sha256(secret).hexdigest()[:8] if secret else "(none)"
-        print(f"🔐 HMAC fingerprint sha256:{fp}")
-        sig = model_zip.with_suffix(".zip.sha256.hmac")
-        if sig.exists() and secret:
-            if verify_file(model_zip, secret):
-                print(f"  ✓ Model HMAC verified")
-            else:
-                print(f"  ✗ MODEL HMAC FAILED — refusing to eval tampered model")
-                rclpy.shutdown()
-                sys.exit(2)
-        else:
-            print(f"  ⚠️  no signature on model — proceeding without verification")
+        with open_verified_snapshot(
+            model_zip,
+            secret=secret,
+            label="TQC model",
+        ) as model_snapshot:
+            model = TQC.load(model_snapshot, env=None)
+    except (ArtifactIntegrityError, OSError, RuntimeError) as exc:
+        sys.exit(f"模型完整性檢查失敗：{exc}")
+    fp = hashlib.sha256(secret).hexdigest()[:8]
+    print(f"🔐 HMAC fingerprint sha256:{fp}")
+    print("  ✓ Model HMAC verified and loaded from snapshot")
 
+    rclpy.init()
     env = BurgerEnvTop(eval_mode=True, curriculum_max_wp=args.max_wp)
-    model = TQC.load(args.model, env=None)
     print(f"▶ Loaded model: {args.model}")
     print(f"  Episodes: {args.episodes}   max_wp: {args.max_wp}   seed base: {args.seed_base}\n")
 

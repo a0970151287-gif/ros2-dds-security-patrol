@@ -1,9 +1,15 @@
-"""pytest 共享設定。"""
-import os
+"""pytest 共享設定。
+
+測試優先載入目前工作樹的 Python package，避免綁死 ``~/ros2_ws``、
+特定 Python 小版本，或誤測到舊的 ``install/`` 產物。
+ROS2 本身仍需先 ``source /opt/ros/jazzy/setup.bash``。
+"""
 import sys
 from pathlib import Path
 
-# 把 ROS2 build 後的 site-packages 加進來
-_ROS_PKG = Path.home() / "ros2_ws" / "install" / "dds_security_monitor" / "lib" / "python3.12" / "site-packages"
-if _ROS_PKG.exists() and str(_ROS_PKG) not in sys.path:
-    sys.path.insert(0, str(_ROS_PKG))
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_SOURCE_PACKAGE = _REPO_ROOT / "src" / "dds_security_monitor"
+
+if _SOURCE_PACKAGE.is_dir() and str(_SOURCE_PACKAGE) not in sys.path:
+    sys.path.insert(0, str(_SOURCE_PACKAGE))

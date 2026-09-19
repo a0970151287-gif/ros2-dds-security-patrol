@@ -1,0 +1,846 @@
+{
+  "schema_version": "sros2-firewall-link-layer-revalidation/v1",
+  "sessions": [
+    {
+      "claimed_blockable": [],
+      "link_layer_verdicts": {},
+      "session": "20260826T144915061128Z_crosshost_621c2968",
+      "status": "missing_inputs"
+    },
+    {
+      "claimed_blockable": [],
+      "link_layer_verdicts": {},
+      "session": "20260829T180706768191Z_crosshost_a226422d",
+      "status": "no_claim"
+    },
+    {
+      "claimed_blockable": [],
+      "link_layer_verdicts": {},
+      "session": "20260829T182637876021Z_crosshost_d0e137a3",
+      "status": "no_claim"
+    },
+    {
+      "claimed_blockable": [],
+      "link_layer_verdicts": {},
+      "session": "20260829T183412733398Z_crosshost_050b1ba8",
+      "status": "no_claim"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T191031842634Z_crosshost_76a52ce0",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [],
+      "link_layer_verdicts": {},
+      "session": "20260829T194333659656Z_crosshost_de1051e9",
+      "status": "no_claim"
+    },
+    {
+      "claimed_blockable": [],
+      "link_layer_verdicts": {},
+      "session": "20260829T195401114293Z_crosshost_a4c247f9",
+      "status": "no_claim"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T200001176005Z_crosshost_bfc00acc",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T200600744247Z_crosshost_81cdf71d",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T201201497577Z_crosshost_1a79387d",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T201800528610Z_crosshost_cd737bc8",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T202401202937Z_crosshost_d71d89c8",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T203001530461Z_crosshost_e8bccdc8",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T203601281266Z_crosshost_f4cf67ba",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T204200473009Z_crosshost_4507acf8",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T204801708997Z_crosshost_d930e25a",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T205401155891Z_crosshost_b9fd93dc",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T210000874992Z_crosshost_ee1184ec",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T210601280935Z_crosshost_899fd3f2",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T211200933668Z_crosshost_c587c2c8",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T211801314603Z_crosshost_0e3695a8",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T212400758098Z_crosshost_db18492c",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T213002126070Z_crosshost_44e0d995",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T213600884891Z_crosshost_e984a1af",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T214201145293Z_crosshost_c29e774a",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T214800764552Z_crosshost_ce3852c0",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T215401053554Z_crosshost_c483e723",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T220000581971Z_crosshost_4fc4dc85",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T220601322364Z_crosshost_dbd03ae8",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T221201461714Z_crosshost_ff1d5dae",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T221800840934Z_crosshost_36119764",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T222400367327Z_crosshost_feee0b01",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T223001168910Z_crosshost_46ddab55",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T223600361483Z_crosshost_8163d03e",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T224159830758Z_crosshost_a85d0721",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T224759812618Z_crosshost_74194634",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T225359595256Z_crosshost_89e16447",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T225959820085Z_crosshost_30e55a38",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T230600005415Z_crosshost_161ca81f",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T231159442489Z_crosshost_801ba0d2",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T231759951353Z_crosshost_68b0e600",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T232400265707Z_crosshost_bf7e3ada",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T233000284033Z_crosshost_03ffa72c",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T233600602985Z_crosshost_cdd0d518",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T234200602557Z_crosshost_e0f40f22",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T234800031055Z_crosshost_0aec02c8",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T235359509894Z_crosshost_4fc87776",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260829T235959721855Z_crosshost_79ab5b2a",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T000558957075Z_crosshost_82e79ed2",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T001159964727Z_crosshost_65427577",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T001759474078Z_crosshost_4dd358fc",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T002359521447Z_crosshost_c986d395",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T002958948641Z_crosshost_daf056cd",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T003600402639Z_crosshost_5982bfdd",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T004159507352Z_crosshost_7693c0e7",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T004759233090Z_crosshost_41df12a7",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T005400338109Z_crosshost_c429417c",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T005959886704Z_crosshost_31fd02bc",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T010559757201Z_crosshost_6a2c0337",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T011159566012Z_crosshost_417d912a",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T011759632217Z_crosshost_aae04bcc",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T012400237754Z_crosshost_629d9c85",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T012959733023Z_crosshost_86064357",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T013559793250Z_crosshost_58e9b327",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T014159274215Z_crosshost_5352b71c",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T014759051638Z_crosshost_0b687136",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T015359164755Z_crosshost_25c1519e",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T015958795426Z_crosshost_813a4a2e",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T020559606365Z_crosshost_141d4d8c",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T021158863666Z_crosshost_8a26f9d6",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T021800112936Z_crosshost_7f24aeed",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T022359047840Z_crosshost_00dec098",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T022959596252Z_crosshost_49f682fe",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T023559544679Z_crosshost_a0f558ba",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T024158985203Z_crosshost_8be919bc",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T024759543889Z_crosshost_e26f387e",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T025359575914Z_crosshost_2e9c6067",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T025959675158Z_crosshost_e755f046",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T030559376824Z_crosshost_72e2bb18",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T031158541600Z_crosshost_8728f71c",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T031759619607Z_crosshost_b4edb028",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T032359076707Z_crosshost_eb437f30",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T032958869961Z_crosshost_00673a38",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T033559945688Z_crosshost_b1615be0",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T034200264802Z_crosshost_60ba4db1",
+      "status": "holds"
+    },
+    {
+      "claimed_blockable": [
+        "192.168.0.30"
+      ],
+      "link_layer_verdicts": {
+        "192.168.0.30": "consistent"
+      },
+      "session": "20260830T034759828134Z_crosshost_af4faf53",
+      "status": "holds"
+    }
+  ],
+  "status_counts": {
+    "holds": 80,
+    "missing_inputs": 1,
+    "no_claim": 5
+  }
+}

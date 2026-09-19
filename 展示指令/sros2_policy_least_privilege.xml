@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SROS2 最小權限存取控制政策（G2 加固：取代全 wildcard）。
+     每個節點只放行它「實際用到」的 topic/service（從原始碼 create_pub/sub/service 撈出）。
+     效果：即使某節點被攻陷或持合法憑證的內鬼，也只能碰自己該碰的 topic
+           ——發不了別人的 /cmd_vel、呼叫不了別人的 set_parameters、偷讀不了 /security/*。
+
+     共通最小集（每個節點都需要，否則 ROS2 跑不起來）：
+       publish:   rosout
+       subscribe: parameter_events
+       services reply: ~/ 六個參數服務（節點只服務「自己」的參數，無法改別人）
+     ※ 沒有任何**部署節點**獲得 services request 參數權限 → 沒有營運中的節點能對別人
+       下 set_parameters（外部 ros2 param set 是另一個 participant，Enforce 下無憑證直接被擋）。
+
+     ※ 唯二的例外是兩個**證據探針**，不是部署節點，正常 stack 不會啟動它們：
+         /local_outcome_probe   — 只能 request 一條 dds_security_monitor/get_parameters
+         /parameter_write_probe — 只能 request 一條 dds_security_monitor/set_parameters
+       後者是 2026-08-27 新增的，理由與代價寫在它自己的 enclave 註解裡。
+       引用「沒有任何身分能呼叫 set_parameters」這句話前，先確認講的是哪一個設定。
+
+     topic 名用相對（無前導 /）；~/ 表節點自身命名空間。
+     重新簽章：改完跑 bash 展示指令/10_SROS2啟用.sh 重產 permissions。 -->
+<policy version="0.2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://download.ros.org/schema/policy.xsd">
+  <enclaves>
+
+    <!-- ── demo：talker / listener ── -->
+    <enclave path="/talker">
+      <profiles>
+        <profile ns="/" node="talker">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic><topic>chatter</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <enclave path="/listener">
+      <profiles>
+        <profile ns="/" node="listener">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic><topic>chatter</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── 訓練環境 burger_env_top（pub 私有 /cmd_vel/tqc；sub 感測）── -->
+    <enclave path="/burger_env_top">
+      <profiles>
+        <profile ns="/" node="burger_env_top">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic><topic>cmd_vel/tqc</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic>
+            <topic>scan</topic><topic>odom</topic><topic>imu</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── monitor：發簽章告警/心跳；不再直接寫 final /cmd_vel ── -->
+    <enclave path="/dds_security_monitor">
+      <profiles>
+        <profile ns="/" node="dds_security_monitor">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic>
+            <topic>security/alerts</topic><topic>security/heartbeat</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+          <!-- monitor 對 Nav2 發急停取消（cancel_goal）→ 需 services request -->
+          <services request="ALLOW">
+            <service>navigate_to_pose/_action/cancel_goal</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── 感測融合：sub /scan /imu → pub /sensor/status ── -->
+    <enclave path="/sensor_hub_node">
+      <profiles>
+        <profile ns="/" node="sensor_hub_node">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic><topic>sensor/status</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic>
+            <topic>imu</topic><topic>scan</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── 巡邏：pub 私有 /cmd_vel/patrol；final 由 velocity guard 發布 ── -->
+    <enclave path="/patrol_node">
+      <profiles>
+        <profile ns="/" node="patrol_node">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic><topic>cmd_vel/patrol</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic>
+            <topic>odom</topic><topic>scan</topic><topic>patrol/goto</topic><topic>security/alerts</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+            <service>patrol/reload</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── 唯一速度仲裁：私有控制 input + 簽章 alert → final /cmd_vel ── -->
+    <enclave path="/velocity_guard_node">
+      <profiles>
+        <profile ns="/" node="velocity_guard_node">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic>
+            <topic>cmd_vel</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic>
+            <topic>cmd_vel/patrol</topic><topic>cmd_vel/nav2</topic>
+            <topic>cmd_vel/tqc</topic><topic>security/alerts</topic>
+            <topic>security/heartbeat</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── Enforce 一次性 readiness：只讀 Gazebo/RSP 必要資料流 ── -->
+    <enclave path="/security_readiness_probe">
+      <profiles>
+        <profile ns="/" node="security_readiness_probe">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic>
+            <topic>scan</topic><topic>odom</topic><topic>imu</topic>
+            <topic>clock</topic><topic>tf</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── 本機結果驗票：限 loopback、只讀 topic/get_parameters，不發控制 ── -->
+    <enclave path="/local_outcome_probe">
+      <profiles>
+        <profile ns="/" node="local_outcome_probe">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic>
+            <topic>scan</topic><topic>odom</topic><topic>imu</topic>
+            <topic>cmd_vel</topic><topic>chatter</topic></topics>
+          <services request="ALLOW">
+            <service>dds_security_monitor/get_parameters</service>
+          </services>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── 參數寫入探針（證據用，不是部署節點）──────────────────────────
+         為什麼需要它
+         parameter_unchanged 要證明的是「請求真的抵達節點之後，安全敏感參數
+         仍然改不了」。但現行政策裡**沒有任何身分**獲得 set_parameters 的
+         request 權限，所以在 Enforce 下請求根本到不了節點——那一項因此
+         空洞地成立：證明的是 ACL，不是應用層。
+
+         這個 enclave 存在的唯一目的，是讓 SROS2 **授權**一個呼叫者，
+         好讓拒絕來自 rcl 的 read_only 描述子而不是來自 ACL。它與
+         /local_outcome_probe 是同一類東西：為了取得證據而開的極窄授權，
+         不是部署中的操作節點。
+
+         要付出的代價，明講
+         keystore 因此多出一個「能呼叫 set_parameters」的身分。原本的宣稱是
+         「沒有任何節點能呼叫」，加了它之後變成「授權的呼叫者仍然改不動」。
+         後者對**應用層**是更強的證據，對**ACL**是較弱的宣稱。兩者都是真的，
+         但講的是不同設定，報告裡要分開寫。
+
+         這把私鑰必須與其他 enclave 一樣受保護；它不在正常執行的 stack 裡，
+         只在收 parameter_unchanged 證據時啟動。
+    -->
+    <enclave path="/parameter_write_probe">
+      <profiles>
+        <profile ns="/" node="parameter_write_probe">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic></topics>
+          <!-- 只有這一條。刻意不給 get_parameters／list_parameters：
+               這個身分唯一的用途是發起一次會被拒絕的寫入。 -->
+          <services request="ALLOW">
+            <service>dds_security_monitor/set_parameters</service>
+          </services>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── 任務管理（節點名 mission_manager_node）── -->
+    <enclave path="/mission_manager">
+      <profiles>
+        <profile ns="/" node="mission_manager_node">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic><topic>mission/cmd</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic>
+            <topic>security/alerts</topic><topic>sensor/status</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── 系統狀態聚合 ── -->
+    <enclave path="/system_status_node">
+      <profiles>
+        <profile ns="/" node="system_status_node">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic><topic>system/health</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic>
+            <topic>mission/cmd</topic><topic>security/alerts</topic>
+            <topic>sensor/status</topic><topic>system/health</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── 行為 IDS：sub /cmd_vel /odom /scan /security/heartbeat → pub /security/alerts ── -->
+    <enclave path="/intelligent_defense_node">
+      <profiles>
+        <profile ns="/" node="intelligent_defense_node">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic><topic>security/alerts</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic>
+            <topic>cmd_vel</topic><topic>odom</topic><topic>scan</topic><topic>security/heartbeat</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+    <!-- ── /gazebo enclave：gazebo + ros_gz_bridge + robot_state_publisher 共用 ──
+         sim 基礎設施：橋接機器人 topic。bridge sub /cmd_vel（驅動）、pub 感測；
+         rsp pub /tf。給定機器人 topic 集（非 wildcard），漏掉某 topic 只影響該資料流，
+         不影響 /cmd_vel 控制安全。實跑若缺 topic → 補進對應 profile 即可。 -->
+    <enclave path="/gazebo">
+      <profiles>
+        <profile ns="/" node="gazebo">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic>
+            <topic>scan</topic><topic>odom</topic><topic>imu</topic><topic>clock</topic>
+            <topic>joint_states</topic><topic>tf</topic><topic>tf_static</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic><topic>cmd_vel</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+        <profile ns="/" node="ros_gz_bridge">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic>
+            <topic>scan</topic><topic>odom</topic><topic>imu</topic><topic>clock</topic>
+            <topic>joint_states</topic><topic>tf</topic><topic>tf_static</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic><topic>cmd_vel</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+        <!-- ros_gz_sim/create 以 node name ros_gz_sim 啟動；實體生成走
+             Gazebo Transport，不需要額外 ROS service request 權限。 -->
+        <profile ns="/" node="ros_gz_sim">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+        <profile ns="/" node="robot_state_publisher">
+          <topics publish="ALLOW"><topic>rosout</topic><topic>parameter_events</topic>
+            <topic>tf</topic><topic>tf_static</topic><topic>robot_description</topic></topics>
+          <topics subscribe="ALLOW"><topic>parameter_events</topic><topic>joint_states</topic><topic>clock</topic></topics>
+          <services reply="ALLOW">
+            <service>~/describe_parameters</service><service>~/get_parameter_types</service>
+            <service>~/get_parameters</service><service>~/list_parameters</service>
+            <service>~/set_parameters</service><service>~/set_parameters_atomically</service><service>~/get_type_description</service>
+          </services>
+        </profile>
+      </profiles>
+    </enclave>
+
+  </enclaves>
+</policy>

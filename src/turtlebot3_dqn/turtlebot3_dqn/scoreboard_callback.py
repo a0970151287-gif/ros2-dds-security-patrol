@@ -30,6 +30,7 @@ from typing import Deque
 
 import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
+from turtlebot3_dqn.atomic_io import atomic_save
 
 try:
     # tqdm.write 避免跟 SB3 的 progress_bar 搶 stdout 互相覆蓋
@@ -336,13 +337,16 @@ class BestRewardCallback(BaseCallback):
             if mean_r > self.best_mean_reward:
                 old = self.best_mean_reward
                 self.best_mean_reward = mean_r
-                self.model.save(str(self.save_path))
-                # 簽 best.zip 完整性章（修補 M）— 部署時驗章才信任
-                if _BEST_SECRET:
-                    try:
-                        sign_file(self.save_path.with_suffix(".zip"), _BEST_SECRET)
-                    except Exception as e:
-                        _writeln(f"⚠️  best.zip 簽章失敗: {e}")
+                if not _BEST_SECRET:
+                    raise RuntimeError(
+                        "找不到 HMAC key，拒絕寫出未簽章 best.zip"
+                    )
+                atomic_save(
+                    self.model.save,
+                    self.save_path.with_suffix(".zip"),
+                    sign_fn=sign_file,
+                    secret=_BEST_SECRET,
+                )
                 if self.verbose:
                     _writeln(
                         f"💎 New best mean_reward={mean_r:+.2f} "

@@ -4,7 +4,7 @@
 # 攻擊後觀察各節點的防禦反應
 # ============================================================
 
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 
 # 截圖 A：monitor_node 終端輸出
 # 觀察：「偵測到未知節點: /intruder_node」→ 緊急停止 → LINE 通知
@@ -29,7 +29,7 @@ ros2 topic echo /system/health --once
 #    這正是主防線在應用層的原因：偽造的明文 /sensor/status 由 mission_manager 行為反應，
 #    而簽章頻道 /security/alerts 的偽造則被 HMAC envelope v3 驗章擋下。
 #    要 DDS 層直接擋發布，需切 SROS2 Enforce 模式（未來工作）。
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 export ROS_SECURITY_ENCLAVE_OVERRIDE=/patrol_node
 ros2 topic pub /sensor/status std_msgs/msg/String "data: '危險'" --rate 5
 

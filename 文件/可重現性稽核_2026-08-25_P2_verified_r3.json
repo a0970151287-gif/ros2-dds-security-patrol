@@ -1,0 +1,240 @@
+{
+  "checks": [
+    {
+      "actual": "3.12.3",
+      "detail": "expected=3.12.3; actual=3.12.3",
+      "executable": "/mnt/c/Users/Jesse/Documents/專題ROS2/.venv/bin/python",
+      "expected": "3.12.3",
+      "name": "python_version",
+      "status": "verified"
+    },
+    {
+      "detail": "ROS 2 Jazzy setup and ros2 executable are present; neither was invoked",
+      "environment_ros_distro": null,
+      "expected_distro": "jazzy",
+      "name": "ros_jazzy_installation",
+      "ros_started": false,
+      "status": "verified"
+    },
+    {
+      "bytes": 119,
+      "detail": "exact pins matched 7/7",
+      "name": "dependency_lock",
+      "path": "ML防禦/requirements.txt",
+      "sha256": "10a3677ee21b685f7fbe952dbee3897537bfbac58cab86248c2db64bd25a57ee",
+      "status": "verified"
+    },
+    {
+      "bytes": 3144,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:firewall_lab/action_policy.json",
+      "path": "firewall_lab/action_policy.json",
+      "sha256": "0ed41ad00639e77f45be4df367f3c9efb5fdcf756a10c07820e4e6380d7c2a49",
+      "status": "verified"
+    },
+    {
+      "bytes": 4576,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:firewall_lab/live_multimodal_contract.json",
+      "path": "firewall_lab/live_multimodal_contract.json",
+      "sha256": "cdc63fd63dd4128d523ceb6f4abc6d7339a101217794123422e981a1b62fc1a2",
+      "status": "verified"
+    },
+    {
+      "bytes": 1185,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:firewall_lab/dataset_exclusions.v1.json",
+      "path": "firewall_lab/dataset_exclusions.v1.json",
+      "sha256": "9dffa6a361fff27e1cd9353a2249ebc0fa5b0f1f1e436eb3eea0a54e376aa35e",
+      "status": "verified"
+    },
+    {
+      "bytes": 31102,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:firewall_lab/hierarchical_model.py",
+      "path": "firewall_lab/hierarchical_model.py",
+      "sha256": "53b94dac023d680747b508b831f7a1366cb4d35e69052c6c0a5ffa391116481e",
+      "status": "verified"
+    },
+    {
+      "bytes": 58795,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:firewall_lab/hierarchical_training.py",
+      "path": "firewall_lab/hierarchical_training.py",
+      "sha256": "89e5e2879d8020b9026bd66eab0308f8e6c560af7a5a9b9594ab7f88f3a44ccb",
+      "status": "verified"
+    },
+    {
+      "bytes": 21143,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:firewall_lab/project_evidence.py",
+      "path": "firewall_lab/project_evidence.py",
+      "sha256": "02b311e739944843b773ae508b7d02a2b9d7a365c4edded2630cda8c012d9499",
+      "status": "verified"
+    },
+    {
+      "bytes": 670,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:工具腳本/run_full_tests.sh",
+      "path": "工具腳本/run_full_tests.sh",
+      "sha256": "9d884963076b06d9e4ce21cb28b39da5b43235abed016afccb27492d33878dba",
+      "status": "verified"
+    },
+    {
+      "bytes": 15968,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:工具腳本/verify_reproducibility.py",
+      "path": "工具腳本/verify_reproducibility.py",
+      "sha256": "fa6a7135bc5f0ea08343626548051c66b37d74b0bf32f07a72e09a0034b3a99e",
+      "status": "verified"
+    },
+    {
+      "bytes": 19165,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:firewall_lab/identity_attribution.py",
+      "path": "firewall_lab/identity_attribution.py",
+      "sha256": "418be48135361e457052758f0fa19896be4370e2e25981b1776e5a506e8950f6",
+      "status": "verified"
+    },
+    {
+      "bytes": 1960,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:firewall_lab/identity_attribution_contract.v1.json",
+      "path": "firewall_lab/identity_attribution_contract.v1.json",
+      "sha256": "c8d9d730981d038da6a0a6064f053dbca8bd5ffe25aaca812277407bf5ec739b",
+      "status": "verified"
+    },
+    {
+      "bytes": 8296,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:firewall_lab/session_conformal.py",
+      "path": "firewall_lab/session_conformal.py",
+      "sha256": "a452a45b1a5b9d9c106f575ddc5f0e38293cb70878eb404e2a1bc9bb61d9b6ad",
+      "status": "verified"
+    },
+    {
+      "bytes": 1398,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:工具腳本/audit_identity_attribution.py",
+      "path": "工具腳本/audit_identity_attribution.py",
+      "sha256": "651c5e43586d84387571397f87da906aa54a0900b5c10418c3ed56b3f5488b7f",
+      "status": "verified"
+    },
+    {
+      "bytes": 6830,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:工具腳本/audit_conformal_readiness.py",
+      "path": "工具腳本/audit_conformal_readiness.py",
+      "sha256": "b231d1f5617b53cceaf464590140861bb8aae3bc46519af14887fe17d3db3b72",
+      "status": "verified"
+    },
+    {
+      "bytes": 7088,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:tests/test_identity_attribution.py",
+      "path": "tests/test_identity_attribution.py",
+      "sha256": "e9abe6e08c5e31b26d48236c9961547276b8fb0c64d75fe5b52018b0546ed779",
+      "status": "verified"
+    },
+    {
+      "bytes": 3840,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:tests/test_session_conformal.py",
+      "path": "tests/test_session_conformal.py",
+      "sha256": "45eeea90ebf7b393adc0a92573b1406821b56750d584ab3820c918fecb642f32",
+      "status": "verified"
+    },
+    {
+      "bytes": 3921,
+      "detail": "regular non-empty repository file hashed",
+      "name": "critical_file:tests/test_conformal_readiness.py",
+      "path": "tests/test_conformal_readiness.py",
+      "sha256": "254ff3e758ae6207125939fb18ab1c5f7d07ace3c1ff3d3a364f9b8d63081ccf",
+      "status": "verified"
+    },
+    {
+      "argv": [
+        "bash",
+        "工具腳本/run_full_tests.sh",
+        "tests/",
+        "-q"
+      ],
+      "detail": "run_full_tests.sh return_code=0",
+      "duration_sec": 26.351334,
+      "name": "full_test_execution",
+      "return_code": 0,
+      "status": "verified",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_tail": "",
+      "stdout_sha256": "e15089bcf5e3cf59e44d505e3fec26eafd3a386aa16c923342ed27ece1b4181f",
+      "stdout_tail": "\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m               [ 17%]\u001b[0m\ntests/test_identity_attribution.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                         [ 19%]\u001b[0m\ntests/test_inference_safety.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                   [ 22%]\u001b[0m\ntests/test_isolated_topology.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                 [ 24%]\u001b[0m\ntests/test_live_dataset_quality.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                    [ 24%]\u001b[0m\ntests/test_live_multimodal.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                     [ 27%]\u001b[0m\ntests/test_local_outcomes.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                            [ 30%]\u001b[0m\ntests/test_ml_ids.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                [ 35%]\u001b[0m\ntests/test_mode_leakage.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                        [ 36%]\u001b[0m\ntests/test_model_policy_rebind.py \u001b[32m.\u001b[0m\u001b[33m                                      [ 36%]\u001b[0m\ntests/test_nft_backend_service.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m         [ 41%]\u001b[0m\ntests/test_ood_scorers.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                      [ 42%]\u001b[0m\ntests/test_project_evidence.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                           [ 44%]\u001b[0m\ntests/test_response_authorizer.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                        [ 46%]\u001b[0m\ntests/test_response_backend.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                            [ 49%]\u001b[0m\ntests/test_runtime_telemetry.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m [ 55%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                        [ 60%]\u001b[0m\ntests/test_security.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m [ 67%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m [ 78%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                       [ 83%]\u001b[0m\ntests/test_session_conformal.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                         [ 85%]\u001b[0m\ntests/test_sros2_delivery_evidence.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m     [ 90%]\u001b[0m\ntests/test_sros2_deny_adapter.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                        [ 92%]\u001b[0m\ntests/test_sros2_policy.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                 [ 94%]\u001b[0m\ntests/test_tqc_static.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                               [ 97%]\u001b[0m\ntests/test_verify_reproducibility.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                               [ 97%]\u001b[0m\ntests/test_zeek_helpers.py \u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m                                [100%]\u001b[0m\n\n\u001b[33m=============================== warnings summary ===============================\u001b[0m\ntests/test_hierarchical_model.py: 265 warnings\n  Warning: Setting the shape on a NumPy array has been deprecated in NumPy 2.5.\n  As an alternative, you can create a new view using np.reshape (with copy=False if needed).\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n\u001b[33m====================== \u001b[32m665 passed\u001b[0m, \u001b[33m\u001b[1m265 warnings\u001b[0m\u001b[33m in 24.69s\u001b[0m\u001b[33m ======================\u001b[0m\n"
+    }
+  ],
+  "created_utc": "2026-08-25T05:36:14.460979+00:00",
+  "dependencies": [
+    {
+      "actual": "1.5.3",
+      "expected": "1.5.3",
+      "matches": true,
+      "name": "joblib"
+    },
+    {
+      "actual": "2.5.0",
+      "expected": "2.5.0",
+      "matches": true,
+      "name": "numpy"
+    },
+    {
+      "actual": "3.0.3",
+      "expected": "3.0.3",
+      "matches": true,
+      "name": "pandas"
+    },
+    {
+      "actual": "1.9.0",
+      "expected": "1.9.0",
+      "matches": true,
+      "name": "scikit-learn"
+    },
+    {
+      "actual": "1.18.0",
+      "expected": "1.18.0",
+      "matches": true,
+      "name": "scipy"
+    },
+    {
+      "actual": "3.11.0",
+      "expected": "3.11.0",
+      "matches": true,
+      "name": "matplotlib"
+    },
+    {
+      "actual": "0.14.2",
+      "expected": "0.14.2",
+      "matches": true,
+      "name": "imbalanced-learn"
+    }
+  ],
+  "limitations": [
+    "File hashes are observations, not signatures or a trusted remote attestation.",
+    "ROS presence is checked from files only; no ROS process is started.",
+    "Without --run-tests the audit is necessarily provisional.",
+    "This audit is not live, cross-host, Raspberry Pi, or firewall-backend evidence."
+  ],
+  "overall_status": "verified",
+  "safety": {
+    "firewall_state_changed": false,
+    "network_or_attack_traffic_generated": false,
+    "packages_installed": false,
+    "ros_started": false,
+    "test_runner": "工具腳本/run_full_tests.sh",
+    "tests_explicitly_requested": true
+  },
+  "schema_version": "sros2-firewall-reproducibility-audit/v1",
+  "summary": {
+    "blocked": 0,
+    "provisional": 0,
+    "total": 20,
+    "verified": 20
+  }
+}

@@ -1,0 +1,5 @@
+{"event":"participant_authentication","status":"AUTHORIZED","guid":"a0.3a.14.14.83.da.2a.0d.9c.84.62.d2|0.0.1.c1","claimed_subject":""}
+{"event":"participant_discovery","status":"0","guid":"a0.3a.14.14.83.da.2a.0d.9c.84.62.d2|0.0.1.c1","claimed_subject":"/CN=\/security_readiness_probe"}
+{"event":"participant_authentication","status":"UNAUTHORIZED","guid":"a2.5a.10.4e.14.09.ff.76.a1.d8.57.2d|0.0.1.c1","claimed_subject":""}
+{"event":"participant_authentication","status":"UNAUTHORIZED","guid":"a2.5a.10.4e.14.09.ff.76.a1.d8.57.2d|0.0.1.c1","claimed_subject":""}
+{"event":"participant_authentication","status":"UNAUTHORIZED","guid":"a2.5a.10.4e.14.09.ff.76.a1.d8.57.2d|0.0.1.c1","claimed_subject":""}

@@ -1,0 +1,372 @@
+{
+  "claims": [
+    {
+      "blockers": [],
+      "claim_id": "credentialed_insider_threat_model",
+      "evidence": [
+        {
+          "bytes": 15914,
+          "description": "CREDENTIALED_RUNNERS allowlist, insider_environment, per-runner session_environment dispatch",
+          "path": "firewall_lab/runners.py",
+          "sha256": "c8e7de1bc16adbb2a70d0bd8a635617ac58c045e0fc1dea57e56fb9aa698a1bb"
+        },
+        {
+          "bytes": 9592,
+          "description": "Insider scenario definitions in the shipping catalog",
+          "path": "firewall_lab/scenarios.json",
+          "sha256": "701ba0ae9767d7f0bf0ad3c7004649f0ef1318ec80e937b299e9e57c6be7e818"
+        },
+        {
+          "bytes": 12307,
+          "description": "Secrets-stripped, keystore-only-for-registered-runners and Enforce-only regressions",
+          "path": "tests/test_insider_runners.py",
+          "sha256": "b9be49f531a7afcfec02eedffe4e6a5a2a03e09d303558c02cd13e9e19d1664e"
+        }
+      ],
+      "limitations": [
+        "Two attack types over 40 Enforce sessions. The direction is measured; the magnitude is not a population estimate."
+      ],
+      "statement": "Two insider runners receive the SROS2 keystore but never the HMAC secret or the telemetry socket, so the threat model (SROS2 admits, the application layer blocks) is structural rather than asserted. They are refused outside Enforce because under Permissive SROS2 admits everyone and stolen credentials grant nothing.",
+      "status": "verified",
+      "title": "Credentialed-insider scenarios are wired fail-closed and Enforce-only"
+    },
+    {
+      "blockers": [],
+      "claim_id": "evidence_exclusivity_gate",
+      "evidence": [
+        {
+          "bytes": 13206,
+          "description": "Gate implementation including the 2026-09-02 field-pair encoding",
+          "path": "工具腳本/check_evidence_exclusivity.py",
+          "sha256": "c1f1a40c74865cde7de8e883927a035406adc1ae72765b0e77e6d8f6a3d6a881"
+        },
+        {
+          "bytes": 7209,
+          "description": "ARCHIVED_COMPLETED_CATALOGS and the promotion path",
+          "path": "firewall_lab/catalog.py",
+          "sha256": "59059292a24303aefac97ec88510ebfb1d750fe1c40e79d00622d09e07134903"
+        },
+        {
+          "bytes": 7630,
+          "description": "Shared session reader whose signal encoding is pinned equal to the gate",
+          "path": "firewall_lab/session_reader.py",
+          "sha256": "65033b1ed3629ba2d1236c91a0c2caf940dbe24a370b0928299d7ab5d05b7c85"
+        },
+        {
+          "bytes": 7062,
+          "description": "13 tests, one asserting the two encodings agree bit for bit",
+          "path": "tests/test_session_reader.py",
+          "sha256": "3996ed578bb51ca4088502de3d2b4c2e5ea564e79cbc322b528626984b502332"
+        }
+      ],
+      "limitations": [
+        "Shipping coverage is 17 of 23 policy classes. At least four of the remaining six are structurally unobtainable at this observation layer."
+      ],
+      "statement": "Before a candidate attack class is promoted into the shipping catalog it must leave at least one telemetry signal that normal traffic never produces. Signals are encoded as event type, per-field tokens and same-event field pairs; a candidate that only triggers the generic reaction of the defence is refused.",
+      "status": "verified",
+      "title": "Attack-surface expansion is gated on exclusive evidence, not on the attack running"
+    },
+    {
+      "blockers": [],
+      "claim_id": "enforce_has_no_exclusive_signals",
+      "evidence": [
+        {
+          "bytes": 5023,
+          "description": "Full per-class measurement and the 28 of 28 unseparable-pair result",
+          "path": "文件/Enforce下沒有任何排他訊號_2026-09-02.md",
+          "sha256": "d34ed48437d70fa1b8431233513dea4928f8ed199de6d80b5b72df838a0172cc"
+        },
+        {
+          "bytes": 7141,
+          "description": "Reproduction tool; --dataset is repeatable and any override must be stated explicitly",
+          "path": "工具腳本/measure_class_separability.py",
+          "sha256": "739f8e28321f4036e8b8c46f40a430e535c03a3a0c883387265592882d457e59"
+        }
+      ],
+      "limitations": [
+        "The session corpus lives outside the repository, so this ledger pins the analysis and its tool but not the raw evidence.",
+        "12 sessions per class. Signal kinds converge well before that, but the count is not a confidence interval."
+      ],
+      "statement": "Measured over 12 sessions per class per mode: each of the eight attack classes has 3 to 17 exclusive signals under Permissive and zero under Enforce, while normal traffic produces 50 to 52 signal kinds in both modes. This is a structural explanation for the identification gap, not a model-capacity limit.",
+      "status": "provisional",
+      "title": "Under Enforce no attack class leaves an exclusive application-layer signal"
+    },
+    {
+      "blockers": [],
+      "claim_id": "independent_final_test_permissive",
+      "evidence": [
+        {
+          "bytes": 5595,
+          "description": "Collection, data-quality checks, final test and the like-for-like nine-class comparison",
+          "path": "文件/全量重收結果與第一次獨立test_2026-09-03.md",
+          "sha256": "b7e7b4cd0716e7aeeffecc3818f17cc3a4526ff3d6da2f50cf304acfc337ebdc"
+        }
+      ],
+      "limitations": [
+        "Model and feature artifacts live outside the repository; only the analysis is pinned here.",
+        "The new and old Enforce numbers are not the same condition: 20 sessions per class versus roughly 61. This must not be reported as a regression.",
+        "The test partition is now spent. A further independent number requires another collection."
+      ],
+      "statement": "640 fresh sessions with no overlap with the existing 1,100 were collected, split anew, and the test partition opened exactly once. Permissive reaches balanced accuracy 0.8502 and macro F1 0.8528 over 15 classes, clearing the 0.80 gate. Enforce reaches 0.2819 over 17 classes.",
+      "status": "provisional",
+      "title": "First genuinely independent final test: Permissive 0.8502 over 15 classes"
+    },
+    {
+      "blockers": [],
+      "claim_id": "openset_protocol_first_clean_run",
+      "evidence": [
+        {
+          "bytes": 4415,
+          "description": "Protocol, selection table, holdout result and the three disclosed limits",
+          "path": "文件/未知攻擊_全新holdout首次評估_2026-09-03.md",
+          "sha256": "85f500fd07aa442276cb9840b675b37f573946013118fca054d30f28cf9664bf"
+        },
+        {
+          "bytes": 6664,
+          "description": "Stream-history guard; contiguity gaps reset rather than error, completeness supplied by the caller",
+          "path": "firewall_lab/stream_replay.py",
+          "sha256": "f70676a81f5078114f40f95ef68929c3feda640a8c86ed99cb2f8c227b7e9dc6"
+        },
+        {
+          "bytes": 6013,
+          "description": "Regressions including one reproducing the original filter-before-feed defect",
+          "path": "tests/test_stream_replay.py",
+          "sha256": "ad8c30f647b404974804c803c99d02fd1f58350a5c3b10fd8d29e046c821bbf0"
+        }
+      ],
+      "limitations": [
+        "The scorer used is Mahalanobis, not the shipping default. The shipping default cannot be back-evaluated because the holdout is spent.",
+        "Permissive does not clear the gate and there is no known remedy at this observation layer.",
+        "worst_family_unknown_recall is 0.0000 in all four LOO configurations: a good macro does not mean every family is covered."
+      ],
+      "statement": "Fresh data, scorer selected on validation family-LOO only, holdout spent once. Enforce reaches open-set recall 0.8475 with 0.0103 normal false-unknown, clearing 0.70. Permissive reaches 0.5479 and does not clear it.",
+      "status": "provisional",
+      "title": "Open-set protocol run correctly end to end for the first time"
+    },
+    {
+      "blockers": [],
+      "claim_id": "identity_feature_rejected",
+      "evidence": [
+        {
+          "bytes": 6740,
+          "description": "Six leave-out configurations, the mechanism, and the retraction of the 2026-09-01 recommendation",
+          "path": "文件/身份特徵是盲點製造機_2026-09-03.md",
+          "sha256": "b60ae44ff8c3807f08a1127cb6e379119fac161acfee3b0feaa4e17b0a04a74e"
+        },
+        {
+          "bytes": 7159,
+          "description": "80-session insider control with positive and negative controls",
+          "path": "文件/身份通道對持證內鬼無效_2026-09-01.md",
+          "sha256": "85ec3f3235c06971d28b470d53e89bbdce984be84325986cec1003ae22f827f2"
+        },
+        {
+          "bytes": 4090,
+          "description": "Permissive per-class deny medians showing no discriminative power",
+          "path": "文件/身份通道只在Enforce有意義_2026-09-03.md",
+          "sha256": "90b476b92fff4a6b7a3edc24f316bffdf4006d7268dd03b2f006bb23ff2954cc"
+        },
+        {
+          "bytes": 6962,
+          "description": "Reproduction tool",
+          "path": "工具腳本/measure_unseen_gate_recall.py",
+          "sha256": "e20565189e96ad10ae367084e3839179b6b8fd6ad0b0de3345dee2854c910649"
+        },
+        {
+          "bytes": 11258,
+          "description": "Insider-silence measurement with its three hard preconditions",
+          "path": "工具腳本/measure_insider_channel_silence.py",
+          "sha256": "44bf23a0e0c6cac8944e8c9775d67cc78ae032ee255f5da965886090882efa53"
+        }
+      ],
+      "limitations": [
+        "Validation partition only; the test partition was not touched for this measurement.",
+        "Two insider attack types over 40 sessions. The sign is credible, the magnitude is not.",
+        "The cause of the disappearing benefit is not isolated: the full table differs in both class count and session count.",
+        "Corrected on 2026-09-04: the cited document originally said the measurement used the validation partition only. The tool has no split filter, so test-labelled rows were in the training set. The conclusion stands (held-out classes are excluded whole, nothing is tuned, the evaluation set is entirely unseen) but the description was wrong.",
+        "The identity channel was measured as a pair, but sros_permission_deny_rate is a constant-zero column on this table. The measured cost comes entirely from sros_auth_fail_rate."
+      ],
+      "statement": "On the full 340-session 17-class table the identity channel changes unseen-outsider gate recall by at most 0.013 in either direction, with 0.0000 normal false-positive in both arms, while costing 0.2125 recall against unseen credentialed insiders. The model learns that a zero identity signal implies normal, and a successful insider is exactly zero.",
+      "status": "provisional",
+      "title": "The identity channel is refused as a model feature because it manufactures a blind spot"
+    },
+    {
+      "blockers": [],
+      "claim_id": "cross_host_identity_attribution",
+      "evidence": [
+        {
+          "bytes": 9693,
+          "description": "Batch result, negative control and soak",
+          "path": "文件/跨主機批次結果_79場_2026-08-30.md",
+          "sha256": "0e21766867b77e3d3d6548cb1e23e5283163d2bde789842b01cbd3540ea2bd44"
+        },
+        {
+          "bytes": 8009,
+          "description": "Fourth rule, three-level verdict and the 80 of 80 re-verification with zero retraction",
+          "path": "文件/來源位址偽造加固_2026-08-31.md",
+          "sha256": "da8fc13c88da25cb86e4bbbc874bf53bfb0c189775bf9a9d2f4a9250faa96e8e"
+        },
+        {
+          "bytes": 11270,
+          "description": "Passive link-layer binding check",
+          "path": "工具腳本/check_link_layer_binding.py",
+          "sha256": "e68f6a3d153791da50992290febdaee8ec7017ef2397068a0829076611a27c50"
+        },
+        {
+          "bytes": 15706,
+          "description": "Four-rule admission cross-check, report schema v2",
+          "path": "工具腳本/crosscheck_identity_attribution.py",
+          "sha256": "35791acb01d24a1b05be4cbf75fdd26e1f1ec17b30ff1b430244408fd9420a41"
+        },
+        {
+          "bytes": 26037,
+          "description": "Fail-closed regressions for all four rules",
+          "path": "tests/test_identity_crosscheck.py",
+          "sha256": "70c3fc409354e69f481922bea22bb527e33f2cede616622afe6f3c7bc7c7c308"
+        }
+      ],
+      "limitations": [
+        "One attack type. 79 rounds is repetition, not attack-surface coverage.",
+        "Same-subnet Wi-Fi with multicast measured unreachable; unicast initial peer throughout.",
+        "No positive control: it is shown that a hostile remote is blocked, not that a legitimate remote is spared.",
+        "Not integrated into the feature set. authorizes_action remains false."
+      ],
+      "statement": "79 of 80 unattended rounds over eight hours produced attestation against 79 distinct attacker GUIDs with zero false attribution of the defender own address. A fourth admission rule compares observed source MAC against the ARP resolution of the defender, closing a hole where a source-address forgery would have caused an innocent host to be declared blockable.",
+      "status": "provisional",
+      "title": "Cross-host identity-to-IP attribution with a fourth link-layer rule"
+    },
+    {
+      "blockers": [
+        "executable_classes is the empty list in the shipping policy; zero classes are authorised.",
+        "The kernel nftables backend has never been exercised; that needs root and an explicit authorisation.",
+        "Source attribution is absent in 0 of 1,101 historical sessions; the cross-host channel is not yet integrated."
+      ],
+      "claim_id": "autonomous_ip_block",
+      "evidence": [
+        {
+          "bytes": 37073,
+          "description": "Collector schema, including the optional-detail asymmetry that keeps historical sessions readable",
+          "path": "firewall_lab/live_telemetry_collector.py",
+          "sha256": "f0c5ea8de50eda8e4122ac78463cadb2e8ceae1206bde9683b26d0354fcb9ffd"
+        }
+      ],
+      "limitations": [
+        "This claim is recorded as blocked so the ledger cannot be read as deployment readiness."
+      ],
+      "statement": "The authoriser, ticket verification, backend and revocation chain passes 7 of 7 on a real ROS runtime, but no class is authorised to execute, no rule points at the DDS guard, and the nftables backend has never actually run.",
+      "status": "blocked",
+      "title": "Room-level autonomous IP blocking"
+    },
+    {
+      "blockers": [],
+      "claim_id": "defence_reaction_feature_audit",
+      "evidence": [
+        {
+          "bytes": 18520,
+          "description": "Screen plus ablation, with a sanity check that refuses to run if it cannot rediscover the known blind spot",
+          "path": "工具腳本/audit_defence_reaction_features.py",
+          "sha256": "214a6643e1bbed462d9dd43594f79633709891f048ba28e734d63c92cba9113a"
+        },
+        {
+          "bytes": 9016,
+          "description": "13 tests including a mutation-verified assertion that the sanity check exits non-zero",
+          "path": "tests/test_defence_reaction_audit.py",
+          "sha256": "73665d6fa42e407d0c78f872f8144895ab4d697489815046f6f50b2d933a16e9"
+        },
+        {
+          "bytes": 13020,
+          "description": "Full result, mechanism, removal cost, and the correction to the 2026-09-03 split claim",
+          "path": "文件/防禦反應特徵稽核_2026-09-04.md",
+          "sha256": "f5038c417bc0a881659e9d7bce172af22550ce676355c7e33655a0ccf3411d33"
+        },
+        {
+          "bytes": 11095,
+          "description": "Screen and flagged-feature ablation",
+          "path": "文件/防禦反應特徵稽核_2026-09-04.json",
+          "sha256": "f11466fb6f3aceb88d505acbaa961b9331d008cd237c0f4ce7740f166acc557c"
+        },
+        {
+          "bytes": 7909,
+          "description": "Per-feature ablation over 26 live features and three seeds",
+          "path": "文件/防禦反應特徵稽核_逐一消融_2026-09-04.json",
+          "sha256": "70c95c81cbc45d6dcd970a1dd180ee1c7e15ee407402ec28359511b5d5f94e15"
+        },
+        {
+          "bytes": 7447,
+          "description": "Removal cost across one insider and five outsider holdouts",
+          "path": "文件/盲點特徵_移除代價_2026-09-04.json",
+          "sha256": "8c166c32d12fbb9f63d791c250f03319e68ea7d256c49d4bd7e07a6959d22400"
+        },
+        {
+          "bytes": 1882,
+          "description": "Multi-class impact, fitted on train and evaluated on validation",
+          "path": "文件/盲點特徵_對識別率的影響_2026-09-04.json",
+          "sha256": "930402fddccd2b780d9639f4e1c9e9b0ef008a662be7ae097731ff96c1d12ebf"
+        },
+        {
+          "bytes": 7317,
+          "description": "family-LOO, enforce, isolation_forest, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
+          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_isolation_forest_full.json",
+          "sha256": "3cb47e298e23af5fd30dcd9fb54845733299603ed5595ff1b54ba3f96be6c0a0"
+        },
+        {
+          "bytes": 7353,
+          "description": "family-LOO, enforce, isolation_forest, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
+          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_isolation_forest_ablated.json",
+          "sha256": "64e0b02d02bcc84f698bf4037b1ffe257f1804f0e9994145a1e3b07e849fb4dc"
+        },
+        {
+          "bytes": 7342,
+          "description": "family-LOO, enforce, mahalanobis, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
+          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_mahalanobis_full.json",
+          "sha256": "18c10cca2534f4eff667bd4fcffe7d65d5e6cbf5ec06da2e446f69b88b23925f"
+        },
+        {
+          "bytes": 7402,
+          "description": "family-LOO, enforce, mahalanobis, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
+          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/enforce_mahalanobis_ablated.json",
+          "sha256": "82a5f57dde670bcb84ac7e82d153f7467113652804ff1ef788a683407bd29381"
+        },
+        {
+          "bytes": 7285,
+          "description": "family-LOO, permissive, isolation_forest, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
+          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_isolation_forest_full.json",
+          "sha256": "b904a7aefe9322684f6fe629b72d8084b996f2c5a782dc6895a224b9bf9e4661"
+        },
+        {
+          "bytes": 7245,
+          "description": "family-LOO, permissive, isolation_forest, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
+          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_isolation_forest_ablated.json",
+          "sha256": "009f21b639dcd4f041a69c9b1293b87f4572a8acad0fcd85273620a9e984bbfd"
+        },
+        {
+          "bytes": 7354,
+          "description": "family-LOO, permissive, mahalanobis, full arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
+          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_mahalanobis_full.json",
+          "sha256": "00d3107bf891a3b35dde11f7cda775b1695c4a32b6ad168668e0426678b30b5a"
+        },
+        {
+          "bytes": 7320,
+          "description": "family-LOO, permissive, mahalanobis, ablated arm (Codex's evaluator unmodified; the two columns are zeroed, not dropped, so the feature contract still holds and the two arms have identical column counts)",
+          "path": "文件/盲點特徵_對familyLOO的影響_2026-09-04/permissive_mahalanobis_ablated.json",
+          "sha256": "b93d6473227d1793e0535b622b03319952c11adaec6d5d43bd47e03bff1c9a7b"
+        }
+      ],
+      "limitations": [
+        "Two insider attack types over 40 Enforce sessions. The direction is credible, the magnitude is not a population estimate.",
+        "Measurable under Enforce only: insiders are meaningless under Permissive, so the Permissive half cannot be audited this way.",
+        "0.6010 is still poor in absolute terms, and it is bought by collapsing unknown-outsider detection.",
+        "An earlier draft of the cited report concluded the removal cost was near zero. That was based on three axes; the fourth axis (family-LOO) overturned it. The report records the correction.",
+        "The gate ablation uses a RandomForest, not the shipping hierarchical model. The direction transfers, the numbers do not.",
+        "The shipping feature set was not changed, and after the family-LOO result changing it is no longer the obvious move.",
+        "Validation and holdout protocol throughout; the official test partition and the open-set holdout were not used.",
+        "worst_family_unknown_recall is 0.0000 in both arms of all four family-LOO configurations."
+      ],
+      "statement": "Every live feature was ablated individually against an unseen-insider holdout. Exactly two are stably harmful: sros_auth_fail_rate (+0.2260 unseen-insider gate recall when dropped) and mean_bytes_per_packet (+0.0958); removing both raises it from 0.0885 to 0.6010, far more than the sum, because both are redundant proxies for whether the participant is authenticated. On the binary gate and on multi-class identification the cost is within noise. But on the full unknown-detection chain (Codex's family-LOO protocol, evaluator unmodified) all four configurations get worse, and under Enforce the macro unknown recall collapses from 0.0667 to 0.0012. Under Enforce the only reason an unseen attack is visible at all is that it failed authentication, so the signal that finds unknown outsiders is the same signal that hides insiders. At this observation layer the two cannot be had together; the fix is packet-layer RTPS identity, not a feature change.",
+      "status": "provisional",
+      "title": "Two features are blind to credentialed insiders, and removing them collapses unknown-outsider detection: a real trade-off"
+    }
+  ],
+  "project_id": "sros2_intelligent_firewall",
+  "project_revision": "r4-2026-09-04-defence-reaction-feature-audit",
+  "schema_version": "sros2-firewall-project-claim-spec/v1"
+}

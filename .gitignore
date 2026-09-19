@@ -35,6 +35,12 @@ credentials.save
 紅隊測試/results/
 紅隊測試/*.log
 
+# Zeek 即時擷取輸出 — 持續變動、不追蹤；證據存檔放 網路記錄/archive/（不受此規則影響，可正常 git add）
+# 官方擷取位置見 文件/系統文件/檔案說明.md。用根目錄相對路徑，不影響 archive/ 子目錄或其他地方的 .log
+/*.log
+網路記錄/*.log
+Zeek監控/*.log
+
 # Python
 __pycache__/
 *.pyc
@@ -50,5 +56,41 @@ website/
 # Claude memory (private)
 .claude/
 
+# Codex local validation/render scratch space
+.codex_tmp/
+
 # SROS2 keystore — 含 CA 私鑰，嚴禁進版控（N26 教訓）
-sros2_keystore/
+# 無尾斜線可同時忽略本機目錄與指向 WSL 安全儲存區的符號連結。
+sros2_keystore
+
+# Generated firewall evidence and models stay local; campaign plans and code
+# remain versionable. PCAP may also contain lab-network metadata.
+firewall_lab/dataset/
+firewall_lab/dataset_live/
+firewall_lab/demo_dataset/
+firewall_lab/demo_features/
+firewall_lab/features/
+firewall_lab/model/
+firewall_lab/pretrain_dataset/
+firewall_lab/live_runtime/
+firewall_lab/dataset_pilot/
+firewall_lab/features_pilot/
+firewall_lab/features_per_mode/
+# Trained model blobs are regenerable from the dataset and dwarf the repo:
+# a single grouped-training run emitted a 324 MB firewall_model.joblib, over
+# GitHub's 100 MB per-file limit. Metrics and model cards are small and stay.
+*.joblib
+firewall_lab/readiness_evidence/
+紅隊測試/Claude回傳證據/
+紅隊測試/external_redteam_evidence/
+
+# Authorised smoke-test evidence, reproducible from the runner; 20 MB.
+firewall_lab/dataset_smoke_*/
+firewall_lab/dataset_paired*/
+firewall_lab/dataset_verify_*/
+
+# Canary evidence lives outside the repo; reproducible from the runner.
+canary_evidence/
+
+# campaign 執行中的鎖檔，不進版控
+firewall_lab/campaign_*.json.lock

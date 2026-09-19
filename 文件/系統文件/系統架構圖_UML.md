@@ -3,7 +3,7 @@
 > 依據教授建議：定義系統邊界、模組間關係、Level 1 → Level 2 展開
 > 方框 = 模組（Class / 功能主體）；虛線框 = 系統邊界（System Boundary）；箭頭 = 依賴 / 資料流
 >
-> 版本：TQC（Truncated Quantile Critics）+ HMAC envelope v3 + 行為 IDS + 紅隊 N1–N24
+> 版本：HMAC envelope v3 + 行為 IDS + 紅隊 N1–N27 等；TQC（Truncated Quantile Critics）為獨立未來工作軌
 
 ---
 
@@ -15,7 +15,7 @@
 ║                                                                           ║
 ║  ┌─────────────────┐      ┌──────────────────────────────────────┐       ║
 ║  │  Gazebo Garden  │      │  紅隊測試 Lab（離線驗證）             │       ║
-║  │  LiDAR / IMU    │      │  N1–N24 PoC · pytest · CVSS v3.1     │       ║
+║  │  LiDAR / IMU    │      │  N1–N27 等 PoC · pytest · CVSS v3.1  │       ║
 ║  │  物理引擎        │      │  IEC 62443-3-3 / NIST CSF v2.0       │       ║
 ║  └────────┬────────┘      └────────────────────┬─────────────────┘       ║
 ╚═══════════╪════════════════════════════════════╪═════════════════════════╝
@@ -94,7 +94,7 @@
 │                                │   （Burger 物理上限）            │ │
 │                                │ · 角速 = a[1] x 1.5 rad/s        │ │
 │                                │ · 發布 /cmd_vel (10 Hz)          │ │
-│                                │ · 資安警報（驗章）時強制 v=0 w=0  │ │
+│                                │ · 僅供 TQC 訓練/評估             │ │
 │                                └──────────────────────────────────┘ │
 │                                                                     │
 │  推論迴圈（10 Hz）：                                                 │
@@ -106,9 +106,9 @@
 
   外部依賴：
     · Gazebo 提供 /scan（180 beams LiDAR）、/odom（位置/航向/速度）
-    · /security/alerts（簽章）驗章通過 -> 覆蓋 A4 輸出（緊急停止）
+    · 安全邊界：TQC 環境不訂閱 /security/alerts、不驗 publisher；部署防護由外部 DDS 安全堆疊負責
     · 模型檔：runs_top/models/tqc_best.zip（load 前驗 .sha256.hmac）
-    · Reward = γ·Φ(s') − Φ(s)（Ng-Harada-Russell 1999 potential-based）
+    · Reward = Δdist − 0.05‖Δa‖² − 0.05 + 0.04·action[0]；碰撞/到達 = −100/+100
 ```
 
 ---
@@ -164,7 +164,7 @@
     · 無（B2 直接呼叫 ROS2 Graph API，不需外部服務）
     · B4 輸出 /security/alerts（CH_ALERTS 簽章）-> 模組 C / A 驗章後處理
     · 共享密鑰 ~/.config/dds-monitor/alert_secret（chmod 600）
-    · 紅隊 N1–N24 已驗證：18 漏洞全擋下 / 緩解
+    · 紅隊 N1–N24 為多輪受控實測；歷史版本與現行版的回歸證據需分開解讀
 ```
 
 ---
@@ -202,7 +202,7 @@
 │                    │ · D4 unauthorized publisher             │        │
 │                    │ · D5 heartbeat watchdog 10s             │        │
 │                    │ · D6 cmd-vs-odom-vs-scan 一致性          │        │
-│                    │ · 投票 ≥2 fire（D4/D5 可單獨）           │        │
+│                    │ · 投票 ≥2 fire（D1/D4/D5 可單獨）        │        │
 │                    └────────────────────┬───────────────────┘        │
 │                                         │ 偵測到攻擊                  │
 │                    ┌────────────────────┼───────────────────┐        │
@@ -214,11 +214,11 @@
 │  │ · 90s 內≥2 pause →    │  │ · Critical × 4 (9.1) │           │        │
 │  │   120s quiet window   │  │ · High × 10 (7.1-8.7)│          │        │
 │  │ · 升級到外部介入       │  │ · Medium × 4 (4.3-6.5)│          │        │
-│  │ · LINE 30s batch 通知 │  │ · pytest 24 全綠     │          │        │
+│  │ · LINE 30s batch 通知 │  │ · pytest 60/60*     │          │        │
 │  └──────────────────────┘  └──────────────────────┘           │        │
 │                                                                │        │
 │  發現漏洞統計（截至目前）：                                      │        │
-│    18 漏洞 100% 修補 / 緩解                                     │        │
+│    18 漏洞：13 完封 / 4 緩解 / 1 out-of-scope                  │        │
 │    對齊 IEC 62443-3-3（17/17 SR）+ NIST CSF v2.0（6/6 Function）│        │
 │                                                                │        │
 │  資料流：D1 攻擊 -> D2 驗章 -> D3 行為偵測 -> D4 斷路器 + D5 報告│        │
@@ -226,7 +226,7 @@
 
   外部依賴：
     · 無外部 API（紅隊 PoC 與 IDS 全在本機 ROS2 domain 內）
-    · pytest tests/test_security.py（24 個自動化測試）
+    · pytest tests/test_security.py（*2026-07-24 WSL ROS2 Jazzy：60/60；後續以當次 collection/run 為準）
     · 驗證對象：模組 B 的防禦 + topic 層 cmd_vel/scan/odom 攻擊
 ```
 
@@ -265,9 +265,9 @@ WhitelistManager ──> NodeScanner ──> AnomalyDetector
 | 分類 | 元件 | 說明 |
 |------|------|------|
 | **外部** | Gazebo Garden | /scan /imu /odom，非本專題開發 |
-| **外部** | 紅隊測試 Lab | N1–N24 PoC / pytest / CVSS，離線驗證 |
-| **外部** | SROS2（Permissive） | DDS 層；Enforce migration 列入 90 天計畫 |
-| **內部** | patrol_node / burger_env_top | TQC 推論 + 巡邏點管理 |
+| **外部** | 紅隊測試 Lab | N1–N27 等 PoC 為受控實際攻防；pytest 自動化測試另計，2026-07-24 為 60/60 |
+| **外部** | SROS2（日常demo為Permissive；`01c`為Enforce）| 雙CA+最小權限ACL及稽核已完成；隔離 live 對照通過，修補後全場景 after 待補 |
+| **內部** | patrol_node / burger_env_top | 幾何巡邏是攻防主線；TQC 為獨立未來工作軌 |
 | **內部** | monitor_node | 白名單偵測 + HMAC 簽章警報 + 緊急停止 |
 | **內部** | MissionManager / SystemStatus / SensorHub | 任務整合層（channel binding 驗章） |
 | **內部** | intelligent_defense_node | 行為 IDS（D1–D6）+ cascade 斷路器 |

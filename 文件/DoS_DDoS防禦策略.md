@@ -9,8 +9,8 @@
 
 | 層 | 機制 | 擋什麼 | 狀態 |
 |---|---|---|---|
-| L1 邊界限流 | `dos_firewall.sh`：允許清單 + per-source hashlimit(50/s) + 連線數上限 | 單一來源/未知來源的封包洪水（含 SPDP 多播風暴） | ✅ 已實作（需 sudo） |
-| L2 偵測→阻斷 | Zeek `DOS_BLOCK_ENABLED`：偵測 SPDP 風暴 → `block_source.sh` 動態封鎖來源 N 秒 | 已上線的洪水來源（自動封 + 自動解封） | ✅ 已實作（Zeek root 可下 iptables） |
+| L1 邊界限流 | `dos_firewall.sh`：允許清單 + per-source hashlimit(50/s) + 連線數上限 | 單一來源/未知來源的封包洪水（含 SPDP 多播風暴） | 🟡 實驗腳本存在，但未安裝、未列入自動回應 backend |
+| L2 偵測→授權請求 | Zeek 偵測 SPDP 風暴 → response authorizer 驗證 signed evidence 與雙訊號 | 已上線的洪水來源候選事件 | 🟡 偵測與授權鏈已實作；root ticket backend 未准入，只 dry-run |
 | L3 認證隔離 | SROS2 Enforce：未認證 participant 無法加入 | N19/N20 等「應用層」洪水（攻擊者連不進來就發不了 param/verify 洪水） | ✅ 已建（01c） |
 | L4 資源上限 | 應用層硬上限 | 耗盡型 DoS | ✅ 部分（見下） |
 
@@ -37,22 +37,29 @@
 
 - **WSL2 mirrored 模式**：host 端 iptables 可能**不攔截**鏡像流量（網路在 Windows 層）。此時 L1/L2 的 iptables 要改用 **Windows 端防火牆**（`New-NetFirewallRule` 封來源、`Set-NetFirewallHyperVVMSetting`），或在**原生 Linux** 機器上才完全有效。
 - **網路層 SPDP 洪水無法 100% 消除**：封包仍會到網卡、消耗少量 CPU/頻寬。L1 限流 + L3 Discovery Server 是把它**削到無害**，不是讓它「不存在」。
-- **L2 自動封鎖有 FP 風險**：故預設 `DOS_BLOCK_ENABLED=F`，只在 DoS 防禦 demo 時開；門檻(25/8s)遠高於正常(Gazebo ~15)以降誤封。
+- **自動封鎖有 FP 與來源歸因風險**：`DOS_BLOCK_ENABLED` 即使設為 `T` 也只輸出 suppressed request；缺少第二訊號、共享 IP、來源不在 owned scope、模型不合格或 backend 未通過時一律不封。
 
 ---
 
-## 操作（DoS 防禦 demo）
+## 目前安全操作（偵測／dry-run demo）
 
 ```bash
-# L1 事前限流（目標機 sudo）
-sudo bash 跨主機紅隊/dos_firewall.sh on        # demo 後: ... off
+# 只安裝低權限通知 helper；不建立 block helper 或 NOPASSWD
+cd ~/ros2_ws
+sudo bash 工具腳本/install_zeek_helpers.sh
 
-# L2 偵測→自動阻斷（目標機 sudo Zeek，開啟 BLOCK）
-sudo /opt/zeek/bin/zeek -i eth0 Zeek監控/dds_monitor.zeek DOS_BLOCK_ENABLED=T
+# Zeek 可偵測並提出 suppressed request，但不會直接封鎖
+cd 網路記錄
+/opt/zeek/bin/zeek -i eth0 ../Zeek監控/dds_monitor.zeek DOS_BLOCK_ENABLED=T
 
-# 攻擊機發 N-DoS 風暴 → 預期：Zeek 告警 + 「🛡️ 已封鎖 10.10.10.1」+ 後續封包被 DROP
+# 檢查跨主機／主動處置硬門檻（未通過會非零退出）
+cd ~/ros2_ws
+python3 -m firewall_lab.cross_host_admission --model <signed-live-model> --report cross_host_admission.json
 ```
+
+預期結果是 Zeek 告警與 `status=suppressed`；在 backend gate 通過前，不應出現
+「已封鎖」宣稱，也不能把 dry-run 當成真實 DROP 證據。
 
 ---
 
-_對應實作：`Zeek監控/dds_monitor.zeek`(L2)、`Zeek監控/block_source.sh`(L2 helper)、`跨主機紅隊/dos_firewall.sh`(L1)、應用層上限見各節點 N1/N24/G4 修補。_
+_對應實作：`Zeek監控/dds_monitor.zeek`(L2 sensor)、`firewall_lab/response_authorizer.py`（授權）、`Zeek監控/block_source.sh`（舊介面 fail-closed stub）、`跨主機紅隊/dos_firewall.sh`（尚未准入的實驗 L1 腳本）、應用層上限見各節點 N1/N24/G4 修補。_

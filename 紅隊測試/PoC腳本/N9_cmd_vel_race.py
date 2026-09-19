@@ -19,6 +19,12 @@
 import sys
 import time
 import rclpy
+from rclpy.executors import ExternalShutdownException
+
+try:  # rclpy exposes RCLError under different paths across distros
+    from rclpy._rclpy_pybind11 import RCLError
+except ImportError:  # pragma: no cover - fallback for older rclpy
+    RCLError = RuntimeError
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
 
@@ -60,17 +66,20 @@ def main():
     try:
         while rclpy.ok() and time.monotonic() < deadline:
             rclpy.spin_once(node, timeout_sec=0.05)
+    except (KeyboardInterrupt, ExternalShutdownException, RCLError):
+        pass
     finally:
         z, n = node._zero, node._nonzero
         total = z + n
-        if total:
+        if total and rclpy.ok():
             node.get_logger().error(
                 f'⏹ 收到 /cmd_vel 總數: {total} — '
                 f'zero={z} ({100*z/total:.0f}%), nonzero={n} ({100*n/total:.0f}%) '
                 f'| attacker 發了 {node._attacker} 筆'
             )
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

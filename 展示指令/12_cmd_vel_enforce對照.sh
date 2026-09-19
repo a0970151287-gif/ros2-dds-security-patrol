@@ -1,51 +1,67 @@
 #!/usr/bin/env bash
 # ============================================================================
-# 12 最小 /cmd_vel SROS2 Enforce 對照
-#   證明：Enforce 下「合法憑證可下 /cmd_vel」「攻擊者無憑證注入被拒」
-#   對應紅隊要求的控制鏈對照（先用 demo enclave 驗流程，再擴到 patrol/橋接）
+# 12 /cmd_vel Enforce 離線安全 gate
 #
-# 前置：先跑過 10_SROS2啟用.sh（keystore + /talker /listener enclave、domain 30）
+# 這支腳本不偽造「live 攻防結果」。它驗證目前實際簽進 keystore 的政策：
+#   1. SROS2 結構、CA、簽章及 canonical policy 完全一致
+#   2. 只有 /velocity_guard_node 能發布 final /cmd_vel
+#   3. patrol / Nav2 / TQC 只能寫各自的私有控制 topic
+#
+# 真正的 live Enforce 驗證仍要在 01c 場景啟動後，以無憑證 participant
+# 注入 private 與 final topic，並保存雙方 log；未執行時不得宣稱已完封。
+#
 # 用法：bash 展示指令/12_cmd_vel_enforce對照.sh
 # ============================================================================
-set +eu
-WS="$HOME/ros2_ws"
-PROBE="$WS/展示指令/_cmd_vel_sub_probe.py"
-RECV=/tmp/cmd_recv.txt
-MSG='{twist: {linear: {x: 0.5}, angular: {z: 1.0}}}'
-ATK='{twist: {linear: {x: 9.9}, angular: {z: 9.9}}}'
+set -euo pipefail
 
-source /opt/ros/jazzy/setup.bash 2>/dev/null
-source "$WS/install/setup.bash" 2>/dev/null
-export ROS_SECURITY_KEYSTORE="$WS/sros2_keystore"
-export ROS_SECURITY_ENABLE=true ROS_SECURITY_STRATEGY=Enforce
-export ROS_DOMAIN_ID=30 RMW_IMPLEMENTATION=rmw_fastrtps_cpp PYTHONUNBUFFERED=1
-unset FASTRTPS_DEFAULT_PROFILES_FILE
+WS="${ROS2_WS:-$HOME/ros2_ws}"
+KS="$WS/sros2_keystore"
+AUDIT="$WS/展示指令/sros2_稽核.sh"
 
-run_probe() {  # $1=秒數  以指定 enclave 起加密訂閱端
-  ROS_SECURITY_ENCLAVE_OVERRIDE=/listener timeout "$1" python3 "$PROBE" "$1" "$RECV" >/tmp/cv_sub.log 2>&1 &
+fail() {
+  echo "❌ $1" >&2
+  exit 1
 }
 
-echo "═══ 測試 1：Enforce + 合法憑證（/talker → /listener）═══"
-rm -f "$RECV"; run_probe 10; sleep 5
-ROS_SECURITY_ENCLAVE_OVERRIDE=/talker timeout 4 ros2 topic pub -r 2 /cmd_vel \
-  geometry_msgs/msg/TwistStamped "$MSG" >/tmp/cv_pub.log 2>&1
-sleep 2
-N1=$(grep -ac '^recv' "$RECV" 2>/dev/null)
-echo "  合法訂閱端收到 /cmd_vel：$N1 筆  →  $([ "$N1" -gt 0 ] && echo '✅ 合法控制可通' || echo '❌')"
-wait 2>/dev/null
+[[ -x "$AUDIT" || -f "$AUDIT" ]] || fail "找不到 $AUDIT"
+[[ -d "$KS/enclaves" ]] || fail "找不到 keystore；先跑 10_SROS2啟用.sh"
 
-echo "═══ 測試 2：Enforce + 攻擊者無憑證注入 ═══"
-rm -f "$RECV"; run_probe 10; sleep 5
-# 攻擊者：不設 enclave override（預設 / 不存在）→ 應被認證層拒絕
-timeout 4 ros2 topic pub -r 2 /cmd_vel geometry_msgs/msg/TwistStamped "$ATK" >/tmp/cv_atk.log 2>&1
-ATK_EXIT=$?
-sleep 2
-N2=$(grep -ac '9.9' "$RECV" 2>/dev/null)
-echo "  攻擊 pub 退出碼：$ATK_EXIT（非0=participant 被拒）"
-grep -a "security files" /tmp/cv_atk.log | head -1 | sed 's/^/  /'
-echo "  訂閱端收到惡意注入：$N2 筆  →  $([ "$N2" -eq 0 ] && echo '✅ 注入被擋' || echo '❌ 被劫持')"
-wait 2>/dev/null
+echo "═══ 1/3：SROS2 簽章與 canonical policy ═══"
+bash "$AUDIT"
 
 echo
-echo "結論：Enforce 下合法控制可通、未授權注入在認證層被拒。"
-echo "（Permissive 劫持對照由紅隊跨主機示範；同機 Permissive 因 WSL localhost discovery 不穩不在此測）"
+echo "═══ 2/3：final /cmd_vel 唯一發布者 ═══"
+mapfile -t final_writers < <(
+  for permissions in "$KS"/enclaves/*/permissions.xml; do
+    if awk '
+      /<publish>/ { in_publish=1 }
+      /<\/publish>/ { in_publish=0 }
+      in_publish && /<topic>rt\/cmd_vel<\/topic>/ { found=1 }
+      END { exit(found ? 0 : 1) }
+    ' "$permissions"; then
+      basename "$(dirname "$permissions")"
+    fi
+  done | sort
+)
+[[ "${#final_writers[@]}" -eq 1 ]] \
+  || fail "final /cmd_vel 發布者不是唯一：${final_writers[*]:-(none)}"
+[[ "${final_writers[0]}" == "velocity_guard_node" ]] \
+  || fail "final /cmd_vel 發布者應為 velocity_guard_node，實際是 ${final_writers[0]}"
+echo "✅ 唯一 final writer：/velocity_guard_node"
+
+echo
+echo "═══ 3/3：控制器只能寫私有 topic ═══"
+grep -q '<topic>rt/cmd_vel/patrol</topic>' \
+  "$KS/enclaves/patrol_node/permissions.xml" \
+  || fail "patrol_node 缺少 private /cmd_vel/patrol"
+grep -q '<topic>rt/cmd_vel/tqc</topic>' \
+  "$KS/enclaves/burger_env_top/permissions.xml" \
+  || fail "burger_env_top 缺少 private /cmd_vel/tqc"
+grep -q '<topic>rt/cmd_vel/nav2</topic>' \
+  "$KS/enclaves/velocity_guard_node/permissions.xml" \
+  || fail "velocity guard 缺少 private /cmd_vel/nav2 input"
+echo "✅ patrol、Nav2、TQC 都經 private input → velocity guard → final /cmd_vel"
+
+echo
+echo "離線 gate 通過。這證明簽章政策的唯一 writer 不變式；"
+echo "不等同於完整 Gazebo live 長時間攻防，live 證據仍須另行保存。"

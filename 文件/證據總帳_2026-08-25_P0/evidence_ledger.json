@@ -1,0 +1,305 @@
+{
+  "claims": [
+    {
+      "blockers": [],
+      "claim_id": "formal_campaign_manifest",
+      "evidence": [
+        {
+          "bytes": 402585,
+          "description": "Pinned campaign manifest with 1,100 complete entries",
+          "path": "firewall_lab/campaign_1100.json",
+          "sha256": "2ff3f597a1ef7074213fdf4e1fe213c4f65ff4829e9b0529115dfc764de4b7db"
+        }
+      ],
+      "limitations": [
+        "The 300 corrective reruns replace defective feature sources and do not increase the declared campaign to 1,400 sessions.",
+        "Manifest completeness does not prove cross-host, Raspberry Pi, kernel-firewall, or enterprise-field behavior."
+      ],
+      "statement": "The sealed campaign manifest records 1,100 completed sessions, split evenly between Permissive and Enforce, across nine scenario identifiers.",
+      "status": "verified",
+      "title": "Formal campaign manifest"
+    },
+    {
+      "blockers": [],
+      "claim_id": "dataset_integrity_exclusion",
+      "evidence": [
+        {
+          "bytes": 1185,
+          "description": "Fail-closed external exclusion with pinned observed digests",
+          "path": "firewall_lab/dataset_exclusions.v1.json",
+          "sha256": "9dffa6a361fff27e1cd9353a2249ebc0fa5b0f1f1e436eb3eea0a54e376aa35e"
+        }
+      ],
+      "limitations": [
+        "The raw session is not repaired or relabelled.",
+        "The exclusion policy does not establish that the remaining 1,099 sessions represent enterprise traffic."
+      ],
+      "statement": "The candidate set excludes the one known post-manifest mutation from training, calibration, selection, and evaluation while preserving the raw session for audit.",
+      "status": "verified",
+      "title": "Dataset integrity exclusion"
+    },
+    {
+      "blockers": [],
+      "claim_id": "hierarchical_candidate_contract",
+      "evidence": [
+        {
+          "bytes": 29024,
+          "description": "Runtime hierarchical model contract",
+          "path": "firewall_lab/hierarchical_model.py",
+          "sha256": "1415e87e1ac182b8be9d22f1808a3569b0c0064ac90b85562fa705e6caa7203d"
+        },
+        {
+          "bytes": 58056,
+          "description": "Session-disjoint candidate training pipeline with default scorer unchanged",
+          "path": "firewall_lab/hierarchical_training.py",
+          "sha256": "b34b71725d0e2dd9ed08f754e71ea1e953bb56305b9fcd9fdf6d63e9d56acc20"
+        },
+        {
+          "bytes": 20884,
+          "description": "Split-integrity and fail-closed runtime tests",
+          "path": "tests/test_hierarchical_model.py",
+          "sha256": "061620e3208472bb3151f075d18df62694592a81be2d7b122ae3f1b3efa72ffb"
+        },
+        {
+          "bytes": 19128,
+          "description": "P0 audit with 12 of 12 checks and 615 tests verified",
+          "path": "文件/可重現性稽核_2026-08-25_P0_verified.json",
+          "sha256": "8a6040d869482f7c06fd308e4109127e32cdef6eae83200a1ae9678666cd972b"
+        }
+      ],
+      "limitations": [
+        "The candidate remains observe-only and is not deployment eligible.",
+        "A verified implementation contract does not verify model accuracy, source-IP attribution, or autonomous response safety."
+      ],
+      "statement": "The repository contains a fail-closed hierarchical candidate with causal temporal features, source-availability masks, signed policy binding, explicit opt-in OOD scorer selection, and dedicated regression tests.",
+      "status": "verified",
+      "title": "Hierarchical causal-temporal candidate contract"
+    },
+    {
+      "blockers": [
+        "Whole-model recall on the virgin command_injection and identity_abuse holdout is only 0.0410.",
+        "The declared 0.05 known-attack rejection budget transfers as 0.2652 under Mahalanobis.",
+        "The hard binary gate prevents 73.8 percent of the virgin-holdout rows from reaching the OOD head."
+      ],
+      "claim_id": "experimental_ood_candidate",
+      "evidence": [
+        {
+          "bytes": 4662,
+          "description": "Opt-in Mahalanobis novelty detector",
+          "path": "firewall_lab/ood_scorers.py",
+          "sha256": "5f60d508eee96634bf3acf22a7af5cd26c44dcff2e14db88f99065811b42e85e"
+        },
+        {
+          "bytes": 3785,
+          "description": "Nine scorer behavior and default-preservation tests",
+          "path": "tests/test_ood_scorers.py",
+          "sha256": "35273fa743eb26f46fb0d98548e5ce7fd1d89ac67c4860b3b413a902607fc573"
+        },
+        {
+          "bytes": 11609,
+          "description": "Measured benefits, virgin-holdout failure, and known-attack rejection cost",
+          "path": "文件/未知攻擊偵測改善_2026-08-25.md",
+          "sha256": "4e47226b1fa07cb4abd9b4b3dcfd3aa7eb9ae6e09fb547d44b88820c2804dab1"
+        }
+      ],
+      "limitations": [
+        "The 0.8850 result uses a holdout for the second time and is not a fresh final estimate.",
+        "The scorer is research evidence only and cannot authorize quarantine or an IP block."
+      ],
+      "statement": "An opt-in Mahalanobis known-attack OOD scorer and grouped evaluation tools exist, while the default scorer remains unchanged and the candidate is explicitly non-deployable.",
+      "status": "provisional",
+      "title": "Experimental Mahalanobis OOD candidate"
+    },
+    {
+      "blockers": [],
+      "claim_id": "development_evaluation_contract",
+      "evidence": [
+        {
+          "bytes": 50139,
+          "description": "Frozen development evaluation implementation",
+          "path": "firewall_lab/development_evaluation.py",
+          "sha256": "2f89b781a3c5f7833ef920d2c606c8f6e5162f64e8344d2e626e8975b20585fe"
+        },
+        {
+          "bytes": 10201,
+          "description": "Evaluation split and test-access safeguards",
+          "path": "tests/test_development_evaluation.py",
+          "sha256": "5ccf978ade6e550e5c130edcc4be367db964151beabe4a47928a71769a52c94e"
+        },
+        {
+          "bytes": 19128,
+          "description": "P0 full-suite execution record",
+          "path": "文件/可重現性稽核_2026-08-25_P0_verified.json",
+          "sha256": "8a6040d869482f7c06fd308e4109127e32cdef6eae83200a1ae9678666cd972b"
+        }
+      ],
+      "limitations": [
+        "Development evaluation does not replace a new pre-registered final holdout.",
+        "No development metric authorizes a response adapter or network block."
+      ],
+      "statement": "The frozen development evaluator compares tasks, feature views, and model families with session-disjoint selection, calibration, bootstrap intervals, latency, and test-access safeguards.",
+      "status": "verified",
+      "title": "Leakage-resistant development evaluation"
+    },
+    {
+      "blockers": [
+        "The current expected-delivery rule treats every Enforce trial as blocked and therefore misclassifies authorized Enforce controls.",
+        "The existing 12 live archives have not been recomputed into a trustworthy aggregate under corrected semantics."
+      ],
+      "claim_id": "direct_delivery_verifier_contract",
+      "evidence": [
+        {
+          "bytes": 35014,
+          "description": "Bounded two-ended evidence verifier",
+          "path": "firewall_lab/sros2_delivery_evidence.py",
+          "sha256": "2235745f394bc314f58764fcc477295842b7e83e480becae8f8962fc549833ee"
+        },
+        {
+          "bytes": 18811,
+          "description": "Current integrity and state-machine tests",
+          "path": "tests/test_sros2_delivery_evidence.py",
+          "sha256": "48ebfa4b1ab6e5d70ccd27d38cdc00c6d20bd05c9af5b8c882373bdbb8c98eb5"
+        }
+      ],
+      "limitations": [
+        "The verifier deliberately supplies no trusted source-IP attribution.",
+        "Passing unit tests verifies current code behavior, not that its authorization semantics are complete."
+      ],
+      "statement": "The verifier binds attempt, receipt, heartbeat, policy, topic, enclave, and time window, but its expected-delivery rule is not yet credential-and-ACL aware.",
+      "status": "provisional",
+      "title": "Two-ended SROS2 delivery verifier contract"
+    },
+    {
+      "blockers": [],
+      "claim_id": "reproducibility_and_ledger_tooling",
+      "evidence": [
+        {
+          "bytes": 15968,
+          "description": "Passive audit with atomic no-overwrite publication",
+          "path": "工具腳本/verify_reproducibility.py",
+          "sha256": "fa6a7135bc5f0ea08343626548051c66b37d74b0bf32f07a72e09a0034b3a99e"
+        },
+        {
+          "bytes": 3524,
+          "description": "Audit atomicity and overwrite-refusal tests",
+          "path": "tests/test_verify_reproducibility.py",
+          "sha256": "459ab2d7199bf34ea5dbf96ff6547b2cd18df85ff289f083f471e9e41b5d39e3"
+        },
+        {
+          "bytes": 21143,
+          "description": "Fail-closed exact-size and SHA-256 ledger generator",
+          "path": "firewall_lab/project_evidence.py",
+          "sha256": "02b311e739944843b773ae508b7d02a2b9d7a365c4edded2630cda8c012d9499"
+        },
+        {
+          "bytes": 9996,
+          "description": "Traversal, tamper, overclaim, and atomicity tests",
+          "path": "tests/test_project_evidence.py",
+          "sha256": "a41e65826bee9a7f8f009a34f4b977b7373696cec09aa849b53fc2d56b18c2fc"
+        },
+        {
+          "bytes": 19128,
+          "description": "Verified P0 audit payload",
+          "path": "文件/可重現性稽核_2026-08-25_P0_verified.json",
+          "sha256": "8a6040d869482f7c06fd308e4109127e32cdef6eae83200a1ae9678666cd972b"
+        }
+      ],
+      "limitations": [
+        "The test run emitted 268 warnings: three calibration sample-weight warnings and 265 NumPy deprecation warnings.",
+        "File hashes are integrity observations, not signatures or trusted remote attestation."
+      ],
+      "statement": "The P0 audit verified 12 of 12 environment, dependency, file-integrity, and full-suite checks; the full suite completed with 615 passing tests.",
+      "status": "verified",
+      "title": "P0 reproducibility audit and evidence tooling"
+    },
+    {
+      "blockers": [
+        "Authorized Enforce controls are misclassified by the current expected-delivery rule.",
+        "The live archives are not sealed inside this repository as a current evidence bundle."
+      ],
+      "claim_id": "live_sros2_delivery_outcome",
+      "evidence": [],
+      "limitations": [
+        "Same-host delivery behavior is not cross-host firewall evidence.",
+        "Raw delivery counts do not provide trusted participant-to-source-IP attribution."
+      ],
+      "statement": "Twelve same-host 2-by-2 live archives show the expected raw delivery pattern, but no corrected formal aggregate is accepted for P0.",
+      "status": "provisional",
+      "title": "Live SROS2 direct-delivery outcome"
+    },
+    {
+      "blockers": [
+        "Replay and parameter cases are blocked upstream and do not exercise the currently named inner-layer outcome.",
+        "Velocity recovery and graph-failure recovery lack stable same-session three-stage evidence."
+      ],
+      "claim_id": "nine_local_live_outcomes",
+      "evidence": [
+        {
+          "bytes": 11762,
+          "description": "Measured five-of-nine outcomes and blockers",
+          "path": "文件/九項本機防禦結果_2026-08-19.md",
+          "sha256": "79dec3d0e3216690271bb0ef0234742c4af19e338beda42b47b5d051f34f0869"
+        }
+      ],
+      "limitations": [
+        "Offline unit tests and synthetic fixtures do not count as the missing live outcomes.",
+        "The fail-closed assembler correctly refuses to emit a nine-of-nine certificate."
+      ],
+      "statement": "Five of nine local outcomes have complete per-session live evidence; no nine-of-nine aggregate is available.",
+      "status": "provisional",
+      "title": "Nine local block-zero-release-recovery outcomes"
+    },
+    {
+      "blockers": [
+        "No new pre-registered final holdout authorizes the candidate.",
+        "No trusted ROS or DDS identity-to-source-IP attribution has been demonstrated.",
+        "The nine local live outcomes and corrected two-ended delivery aggregate remain incomplete.",
+        "No isolated two-physical-host acceptance has been completed.",
+        "No real nftables forward-path timeout, expiry, restart recovery, and rollback acceptance has been completed.",
+        "No Raspberry Pi 5 latency, memory, temperature, packet-drop, and 60-minute soak acceptance has been completed."
+      ],
+      "claim_id": "room_firewall_deployment",
+      "evidence": [
+        {
+          "bytes": 3144,
+          "description": "Shipping action policy with no executable classes",
+          "path": "firewall_lab/action_policy.json",
+          "sha256": "0ed41ad00639e77f45be4df367f3c9efb5fdcf756a10c07820e4e6380d7c2a49"
+        },
+        {
+          "bytes": 4576,
+          "description": "Blocked live multimodal contract and source gaps",
+          "path": "firewall_lab/live_multimodal_contract.json",
+          "sha256": "cdc63fd63dd4128d523ceb6f4abc6d7339a101217794123422e981a1b62fc1a2"
+        }
+      ],
+      "limitations": [
+        "The current artifacts authorize observation and offline verification only.",
+        "The shipping policy has executable_classes set to an empty list."
+      ],
+      "statement": "The P0 checkpoint is not qualified for autonomous room-level IP blocking or Raspberry Pi gateway deployment.",
+      "status": "blocked",
+      "title": "Room-level autonomous IP-blocking deployment"
+    }
+  ],
+  "created_utc": "2026-08-25T03:36:31.086882+00:00",
+  "ledger_sha256": "e9a1de0b3914ca21f02c3631c254519413623cb4575b46218fb0ec6e878353db",
+  "markdown_sha256": "51f2bcf7f178181d48e58fdee4b0d135d95b7733f7f912fc9192371d477fb942",
+  "project_id": "sros2_room_firewall",
+  "project_revision": "p0-2026-08-25-experimental-ood-checkpoint",
+  "safety": {
+    "autonomous_ip_block_ready": false,
+    "deployment_eligible": false,
+    "evidence_inventory_only": true,
+    "runtime_authorization": false
+  },
+  "schema_version": "sros2-firewall-project-evidence-ledger/v1",
+  "source_spec_sha256": "fd32b95649d3d525533ea288c6c95cc4931c63de6709018c1062463971b129b9",
+  "summary": {
+    "all_claims_verified": false,
+    "blocked": 1,
+    "provisional": 4,
+    "total": 10,
+    "verified": 5
+  }
+}

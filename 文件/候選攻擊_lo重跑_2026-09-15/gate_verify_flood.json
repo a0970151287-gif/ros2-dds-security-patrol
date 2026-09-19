@@ -1,0 +1,23 @@
+{
+  "attack_class": "verify_flood",
+  "attack_evidence": "攻擊行程 return_code=2，不是 0",
+  "attack_ran": false,
+  "baseline_event_kinds": 73,
+  "baseline_sessions": [
+    "/home/jesse/candidate_smoke_lo_20260915T074804Z/20260915T074806105623Z_normal_patrol_73f0350d",
+    "/home/jesse/candidate_smoke_lo_20260915T074804Z/20260915T074856602282Z_normal_patrol_f4aa23da",
+    "/home/jesse/candidate_smoke_lo_20260915T074804Z/20260915T074943178608Z_normal_patrol_f3721a73"
+  ],
+  "candidate": "/home/jesse/candidate_smoke_lo_20260915T074804Z/20260915T075203097676Z_verify_flood_2d091bfe",
+  "candidate_event_kinds": 75,
+  "exclusive_signals": {
+    "hmac_result.channel=alerts": 4,
+    "hmac_result.channel=alerts&outcome=accepted": 4,
+    "hmac_result.channel=alerts&reason=accepted": 4
+  },
+  "min_count": 3,
+  "scenario_id": "verify_flood",
+  "schema_version": "sros2-firewall-evidence-exclusivity/v1",
+  "security_mode": "permissive",
+  "verdict": "void_attack_did_not_run"
+}

@@ -1,0 +1,335 @@
+{
+  "blind_spot_features": [
+    "sros_auth_fail_rate",
+    "mean_bytes_per_packet"
+  ],
+  "changes_shipped_defaults": false,
+  "features_table": "/home/jesse/features_refresh_split/fusion_features_enforce.csv",
+  "holdouts": [
+    {
+      "arms": {
+        "-both": {
+          "features_used": 24,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.5969,
+            0.6156,
+            0.5906
+          ],
+          "unseen_recall": 0.601
+        },
+        "-identity": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.3156,
+            0.3156,
+            0.3125
+          ],
+          "unseen_recall": 0.3146
+        },
+        "-packetsize": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.1875,
+            0.1812,
+            0.1844
+          ],
+          "unseen_recall": 0.1844
+        },
+        "full": {
+          "features_used": 26,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.0875,
+            0.0906,
+            0.0875
+          ],
+          "unseen_recall": 0.0885
+        }
+      },
+      "holdout": [
+        "confused_deputy",
+        "hmac_forgery"
+      ],
+      "holdout_sessions": 40,
+      "kind": "insider",
+      "unseen_rows": 320
+    },
+    {
+      "arms": {
+        "-both": {
+          "features_used": 24,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.9402,
+            0.9348,
+            0.9375
+          ],
+          "unseen_recall": 0.9375
+        },
+        "-identity": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.9076,
+            0.9076,
+            0.9076
+          ],
+          "unseen_recall": 0.9076
+        },
+        "-packetsize": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.9321,
+            0.9348,
+            0.9348
+          ],
+          "unseen_recall": 0.9339
+        },
+        "full": {
+          "features_used": 26,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.913,
+            0.913,
+            0.9158
+          ],
+          "unseen_recall": 0.9139
+        }
+      },
+      "holdout": [
+        "command_injection",
+        "identity_abuse"
+      ],
+      "holdout_sessions": 40,
+      "kind": "outsider",
+      "unseen_rows": 368
+    },
+    {
+      "arms": {
+        "-both": {
+          "features_used": 24,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.988,
+            0.982,
+            0.988
+          ],
+          "unseen_recall": 0.986
+        },
+        "-identity": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.985,
+            0.985,
+            0.985
+          ],
+          "unseen_recall": 0.985
+        },
+        "-packetsize": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.988,
+            0.988,
+            0.988
+          ],
+          "unseen_recall": 0.988
+        },
+        "full": {
+          "features_used": 26,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.988,
+            0.988,
+            0.991
+          ],
+          "unseen_recall": 0.989
+        }
+      },
+      "holdout": [
+        "replay",
+        "replay_dos"
+      ],
+      "holdout_sessions": 40,
+      "kind": "outsider",
+      "unseen_rows": 334
+    },
+    {
+      "arms": {
+        "-both": {
+          "features_used": 24,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.9571,
+            0.9571,
+            0.96
+          ],
+          "unseen_recall": 0.9581
+        },
+        "-identity": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.96,
+            0.9629,
+            0.96
+          ],
+          "unseen_recall": 0.961
+        },
+        "-packetsize": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.9657,
+            0.9657,
+            0.9629
+          ],
+          "unseen_recall": 0.9648
+        },
+        "full": {
+          "features_used": 26,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.96,
+            0.96,
+            0.9571
+          ],
+          "unseen_recall": 0.959
+        }
+      },
+      "holdout": [
+        "message_dos",
+        "service_dos"
+      ],
+      "holdout_sessions": 40,
+      "kind": "outsider",
+      "unseen_rows": 350
+    },
+    {
+      "arms": {
+        "-both": {
+          "features_used": 24,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.9938,
+            0.9938,
+            0.9938
+          ],
+          "unseen_recall": 0.9938
+        },
+        "-identity": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.9938,
+            0.9938,
+            0.9938
+          ],
+          "unseen_recall": 0.9938
+        },
+        "-packetsize": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.9969,
+            0.9969,
+            0.9969
+          ],
+          "unseen_recall": 0.9969
+        },
+        "full": {
+          "features_used": 26,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.9969,
+            0.9969,
+            0.9969
+          ],
+          "unseen_recall": 0.9969
+        }
+      },
+      "holdout": [
+        "parameter_tamper",
+        "sensor_spoof"
+      ],
+      "holdout_sessions": 40,
+      "kind": "outsider",
+      "unseen_rows": 324
+    },
+    {
+      "arms": {
+        "-both": {
+          "features_used": 24,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.8317,
+            0.8127,
+            0.8222
+          ],
+          "unseen_recall": 0.8222
+        },
+        "-identity": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.8571,
+            0.9048,
+            0.8508
+          ],
+          "unseen_recall": 0.8709
+        },
+        "-packetsize": {
+          "features_used": 25,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.7968,
+            0.7873,
+            0.8
+          ],
+          "unseen_recall": 0.7947
+        },
+        "full": {
+          "features_used": 26,
+          "normal_false_positive_rate": 0.0,
+          "per_seed": [
+            0.8349,
+            0.8889,
+            0.8889
+          ],
+          "unseen_recall": 0.8709
+        }
+      },
+      "holdout": [
+        "node_churn",
+        "scan_drift"
+      ],
+      "holdout_sessions": 40,
+      "kind": "outsider",
+      "unseen_rows": 315
+    }
+  ],
+  "live_features": 26,
+  "schema_version": "sros2-firewall-blindspot-removal-cost/v1",
+  "seeds": [
+    20260904,
+    7,
+    991
+  ],
+  "summary": {
+    "insider_gain_from_removing_both": 0.5125,
+    "outsider_cost_mean": -0.0064,
+    "outsider_cost_worst": -0.0487,
+    "outsider_costs": [
+      0.0236,
+      -0.003,
+      -0.0009,
+      -0.0031,
+      -0.0487
+    ]
+  }
+}

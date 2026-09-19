@@ -5,8 +5,8 @@ Upgrades over burger_env.py (v1):
     1. Raw 180-beam lidar instead of 20 min-pooled bins
        — spatial structure preserved for 1D-Conv encoder
     2. Frame stack K=4 — temporal velocity/accel inferable from obs alone
-    3. Potential-based reward shaping (Ng-Harada-Russell 1999)
-       — preserves optimal policy under shaping (theoretically grounded)
+    3. Progress-based dense reward (Δdist) — staying still = 0,
+       no NHR baseline bias that traps the policy at "spin in place"
     4. Domain randomization (lidar noise / dropout / max-vel jitter)
        — sim2real ready
     5. Curriculum-aware waypoint queue (1..stage samples per episode)
@@ -14,6 +14,11 @@ Upgrades over burger_env.py (v1):
        action-feedback jam) — robust under DDS-layer attacks
     7. Event-driven reset (no wall-clock sleep) — deterministic timing
     8. SPL (Anderson 2018) metric in info dict — Habitat-grade eval
+
+Security boundary:
+    This class is a training/evaluation environment.  It does not subscribe to
+    /security/alerts, authenticate publishers, or replace the external
+    dds_security_monitor / SROS2 enforcement layer.
 
 Obs (per frame, then K-stacked, then flattened):
     lidar (180)    : ranges normalized to [0,1] via /LIDAR_MAX_M
@@ -24,11 +29,12 @@ Obs (per frame, then K-stacked, then flattened):
 Action: Box[-1,1]^2 → (lin ∈ [0, max_lin_eff], ang ∈ [-max_ang_eff, +max_ang_eff])
 
 Reward (per step):
-    r_collide = -100               (terminal)
-    r_reach   = +100               (per waypoint)
-    r_shape   = γ·Φ(s') - Φ(s)     Φ = -dist_to_goal  (optimality-preserving)
-    r_smooth  = -0.05·‖a_t - a_{t-1}‖²
-    r_time    = -0.005
+    r_collide  = -100              (terminal)
+    r_reach    = +100              (per waypoint)
+    r_progress = Δdist             (prev_dist - dist; 0 when still)
+    r_smooth   = -0.05·‖a_t - a_{t-1}‖²
+    r_time     = -0.05
+    r_forward  = +0.04·action[0]   (Reinis Cimurs forward-bonus pattern)
 """
 from __future__ import annotations
 
@@ -66,12 +72,20 @@ WAYPOINT_REACH  = 0.30
 
 MAX_STEPS       = 500
 SCAN_TIMEOUT_S  = 2.0
-GAMMA_SHAPING   = 0.99
 
 W_COLLIDE       = -100.0
 W_REACH         =  100.0
 W_SMOOTH        =  0.05
-W_TIME          =  0.005
+W_TIME          =  0.05    # 10× upgraded from 0.005 — must be visible
+                            # against per-step Δdist signal (~±0.1) or
+                            # the agent literally cannot perceive time
+                            # pressure. SB3-Zoo proven scale.
+W_FORWARD       =  0.04    # Direct bonus for forward velocity action.
+                            # Inspired by reiniscimurs/DRL-Robot-Navigation
+                            # (96%+ success). Closes the "stand still"
+                            # escape hatch entirely: every stationary step
+                            # carries −0.04 reward, immediately punishing
+                            # the exploration-collapse pattern.
 
 DR_LIDAR_NOISE_STD = (0.0, 0.02)
 DR_LIDAR_DROPOUT_P = (0.0, 0.05)
@@ -130,22 +144,23 @@ class BurgerEnvTop(gym.Env, Node):
     觀測（744D）= frame stack K=4 of:
       • 180 LiDAR beams（raw，非池化；給 1D-Conv encoder 抓 spatial pattern）
       • 6 state = [dist_to_goal, cos(θ), sin(θ), prev_lin_vel,
-                   prev_ang_vel, curriculum_stage]
+                   prev_ang_vel, time_norm]
 
-    Reward（Ng-Harada-Russell 1999 potential-based shaping）：
-      r = γ·Φ(s') − Φ(s) + smooth_penalty + sparse_waypoint_bonus
-      → 理論保證最佳策略不變，論文可直接引用（取代上一代 ×10 hack）
+    Reward（progress-based: Δdist）：
+      r = (prev_dist − dist) + smooth_penalty + sparse_waypoint_bonus + time_penalty
+      原本用 NHR γ·Φ(s')−Φ(s)（Φ=−dist）— 理論最佳策略不變，但 (1−γ)·dist
+      每步基線讓「原地不動」每集穩拿 +5..+9 → 121 集 0 成功，policy 收斂
+      到原地轉圈的 local optimum。改純 Δdist：原地 = 0，移動才有訊號。
 
     Robustness：
       • Curriculum 1→5 waypoints（stage success ≥ 0.7 → 自動升級）
       • Domain Randomization：LiDAR noise / random dropout / max-vel jitter
-      • Adversarial training：5% episode 注入 lidar bias / noise burst / action jam
+      • Adversarial training：三種擾動各自以 5% episode 機率注入
         → 對應 ROSEC-2026-009 K 攻擊的端到端 robust policy
 
-    安全行為（部署時繼承）：
-      • 訂閱 /security/alerts，驗章通過 → episode 終止 + reward 重置
-      • 啟動掃描 /cmd_vel + /scan publisher，發現未授權即標 alert
-      • scan 異常三重檢查：std<0.01 + frame-repeat + 95% near-max
+    安全邊界：
+      • 本類別只負責 TQC 的訓練／評估，不實作 security alert 驗章或 publisher
+        身分驗證；部署安全由 dds_security_monitor 與 SROS2 Enforce 提供。
     """
 
     metadata = {"render_modes": []}
@@ -172,7 +187,9 @@ class BurgerEnvTop(gym.Env, Node):
         qos = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
         self._scan_sub = self.create_subscription(LaserScan, "/scan", self._scan_cb, qos)
         self._odom_sub = self.create_subscription(Odometry,  "/odom", self._odom_cb, qos)
-        self._cmd_pub  = self.create_publisher(TwistStamped, "/cmd_vel", 10)
+        # Final /cmd_vel is owned by velocity_guard_node.
+        self._cmd_pub  = self.create_publisher(
+            TwistStamped, "/cmd_vel/tqc", 10)
 
         self._raw_scan: np.ndarray | None = None
         self._x = self._y = self._yaw = 0.0
@@ -260,9 +277,13 @@ class BurgerEnvTop(gym.Env, Node):
         syaw   = float(rng.uniform(-math.pi, math.pi))
         self._odom_ok = False
         self._teleport(sx, sy, syaw)
-        self._wait_odom(2.0)
+        if not self._wait_odom(2.0):
+            self._publish_cmd(0.0, 0.0)
+            raise RuntimeError("teleport 後未收到新的 /odom，拒絕用陳舊狀態訓練")
         self._raw_scan = None
-        self._wait_scan(SCAN_TIMEOUT_S)
+        if not self._wait_scan(SCAN_TIMEOUT_S):
+            self._publish_cmd(0.0, 0.0)
+            raise RuntimeError("reset 後未收到新的 /scan，拒絕用合成空曠資料訓練")
 
         wps = list(WAYPOINTS_ALL)
         rng.shuffle(wps)
@@ -296,8 +317,12 @@ class BurgerEnvTop(gym.Env, Node):
     def step(self, action):
         self._steps += 1
         action = np.asarray(action, dtype=np.float32)
-        if not np.all(np.isfinite(action)):
-            return self._stacked_obs(), W_COLLIDE, True, False, self._build_info("collision")
+        if action.shape != (2,) or not np.all(np.isfinite(action)):
+            self._publish_cmd(0.0, 0.0)
+            return (
+                self._stacked_obs(), W_COLLIDE, True, False,
+                self._build_info("invalid_action"),
+            )
         action = np.clip(action, -1.0, 1.0)
 
         lin_cmd = float((action[0] + 1.0) / 2.0 * self._dr_max_lin)
@@ -310,6 +335,7 @@ class BurgerEnvTop(gym.Env, Node):
 
         if not scan_ok:
             # environment failure: truncate without polluting reward signal
+            self._publish_cmd(0.0, 0.0)
             return self._stacked_obs(), 0.0, False, True, self._build_info("scan_timeout")
 
         dx_walk = self._x - self._prev_pos[0]
@@ -321,7 +347,7 @@ class BurgerEnvTop(gym.Env, Node):
         truncated = (self._steps >= MAX_STEPS) and not terminated
         if truncated and event == "running":
             event = "timeout"
-        if terminated:
+        if terminated or truncated:
             self._publish_cmd(0.0, 0.0)
 
         self._prev_action = action.copy()
@@ -355,9 +381,11 @@ class BurgerEnvTop(gym.Env, Node):
                 return W_REACH, False, "waypoint"
             return W_REACH, True, "all_done"
 
-        phi_now  = -dist
-        phi_prev = -self._prev_dist
-        r_shape  = GAMMA_SHAPING * phi_now - phi_prev
+        # Δdist progress: 0 when still, + when closer, − when farther.
+        # NHR γ·Φ(s')−Φ(s) with Φ=−dist was tried first — its (1−γ)·dist
+        # per-step baseline rewarded staying put (+5..+9/episode) and the
+        # policy collapsed to spinning. See: project_state memory + git log.
+        r_progress = self._prev_dist - dist
         self._prev_dist = dist
 
         a_diff = action - self._prev_action
@@ -365,7 +393,14 @@ class BurgerEnvTop(gym.Env, Node):
 
         r_time = -W_TIME
 
-        return float(r_shape + r_smooth + r_time), False, "running"
+        # Direct forward-velocity bonus (Reinis Cimurs design pattern):
+        # action[0] ∈ [-1, +1] maps to [0, max_lin] commanded velocity.
+        # Per-step reward of W_FORWARD·action[0] pushes the policy out
+        # of any "stand still" local minimum even before Δdist signal
+        # accumulates. action[0]=+1 → +W_FORWARD; action[0]=-1 → −W_FORWARD.
+        r_forward = W_FORWARD * float(action[0])
+
+        return float(r_progress + r_smooth + r_time + r_forward), False, "running"
 
     # ── obs builders ────────────────────────────────────────────────────
     def _safe_scan_array(self) -> np.ndarray:
@@ -460,7 +495,7 @@ class BurgerEnvTop(gym.Env, Node):
         qw = math.cos(yaw / 2.0)
         env = os.environ.copy()
         env["GZ_IP"] = "127.0.0.1"
-        subprocess.run(
+        result = subprocess.run(
             [
                 "gz", "service", "-s", "/world/default/set_pose",
                 "--reqtype", "gz.msgs.Pose",
@@ -473,6 +508,9 @@ class BurgerEnvTop(gym.Env, Node):
             capture_output=True,
             env=env,
         )
+        if result.returncode != 0:
+            detail = result.stderr.decode(errors="replace").strip()
+            raise RuntimeError(f"Gazebo teleport 失敗 (rc={result.returncode}): {detail}")
 
     def _wait_sim_ready(self, timeout: float) -> None:
         self.get_logger().info(f"等待 Gazebo /scan + /odom 就緒 (max {timeout:.0f}s)…")
@@ -485,7 +523,9 @@ class BurgerEnvTop(gym.Env, Node):
                 self._raw_scan = None
                 self._odom_ok = False
                 return
-        self.get_logger().error(f"Gazebo not ready after {timeout:.0f}s")
+        message = f"Gazebo not ready after {timeout:.0f}s"
+        self.get_logger().error(message)
+        raise RuntimeError(message)
 
     def _wait_scan(self, timeout: float) -> bool:
         t0 = time.time()

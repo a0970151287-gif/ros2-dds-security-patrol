@@ -10,23 +10,41 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
+from dds_security_monitor.runtime_telemetry import RuntimeTelemetryProducer
 from dds_security_monitor.monitor_node import (
     CH_ALERTS,
     CH_HEALTH,
     CH_MISSION,
     CH_SENSOR,
     ReplayCache,
+    SECURITY_STATE_MONITOR_HEARTBEAT,
     _load_alert_secret,
+    decode_security_state,
+    decode_sensor_status,
+    lock_sensitive_params,
     secret_fingerprint,
     sign_alert,
     verify_alert,
 )
 
 ALERT_TIMEOUT = 30.0  # 秒後自動清除警報狀態
+SENSOR_STATUS_TIMEOUT = 3.0
 
 # N13 修補 rate-limit 常數（不再用 latch — latch 一次性致盲）
 _UNSIGNED_LOG_COOLDOWN_SEC: float = 10.0    # 未簽章雜訊 log 頻率上限
 _REAL_IMPOSTOR_COOLDOWN_SEC: float = 60.0   # 真 impostor (持 secret 第二者) log 頻率上限
+
+
+def _emit_alert_observation(node, *, reflection: bool) -> None:
+    """Best-effort alert-channel evidence; never allowed to alter N13 handling."""
+    telemetry = getattr(node, "_telemetry", None)
+    emit = getattr(telemetry, "emit_alert_observation", None)
+    if not callable(emit):
+        return
+    try:
+        emit(count=1, reflection_count=1 if reflection else 0)
+    except Exception:
+        pass
 
 
 class SystemStatusNode(Node):
@@ -42,6 +60,9 @@ class SystemStatusNode(Node):
 
     def __init__(self) -> None:
         super().__init__('system_status_node')
+        self._telemetry = RuntimeTelemetryProducer.from_environment(
+            "system_status_node"
+        )
 
         # B2 修補：alert subscription 改 VOLATILE，啟動時不吃歷史 alert
         qos = QoSProfile(
@@ -67,6 +88,10 @@ class SystemStatusNode(Node):
         self._mission_status: str = '等待任務...'
         self._security_status: str = '✅ 安全'
         self._alert_time: float = 0.0
+        self._monitor_down: bool = False
+        self._monitor_fault_detail: str = ''
+        self._startup_wall: float = time.monotonic()
+        self._last_sensor_status_wall: float = 0.0
         self._alert_secret = _load_alert_secret()
         # N3 修補：alert nonce LRU 防 replay
         self._alert_replay_cache = ReplayCache()
@@ -76,6 +101,9 @@ class SystemStatusNode(Node):
         self._sensor_replay_cache = ReplayCache()
         # N8 修補：health 自我監控也用 cache（impostor 重放也擋）
         self._health_replay_cache = ReplayCache()
+
+        # F1-b 修補：鎖 use_sim_time 等敏感參數，runtime 拒絕未授權竄改
+        lock_sensitive_params(self)
 
         self.create_timer(2.0, self._publish_health)
         self.get_logger().info(
@@ -90,13 +118,23 @@ class SystemStatusNode(Node):
             expected_channel=CH_SENSOR,
             cache=self._sensor_replay_cache,
             max_age=5.0,
+            telemetry=getattr(self, "_telemetry", None),
         )
         if payload is None:
             self.get_logger().warn(
                 '⚠️ /sensor/status 未簽章/重放/過期/cross-channel — 拒絕',
                 throttle_duration_sec=5.0)
             return
-        self._sensor_status = payload
+        decoded = decode_sensor_status(payload)
+        if decoded is None:
+            self._sensor_status = '⛔ 已驗章但 sensor status schema 無效'
+            self.get_logger().error(
+                '⛔ /sensor/status schema/欄位無效；不顯示為安全',
+                throttle_duration_sec=5.0)
+            return
+        _state, detail = decoded
+        self._sensor_status = detail
+        self._last_sensor_status_wall = time.monotonic()
 
     def _on_mission(self, msg: String) -> None:
         # N7 修補：mission/cmd 必須通過 HMAC + channel=mission/cmd 驗章。
@@ -106,6 +144,7 @@ class SystemStatusNode(Node):
             expected_channel=CH_MISSION,
             cache=self._mission_replay_cache,
             max_age=5.0,
+            telemetry=getattr(self, "_telemetry", None),
         )
         if payload is None:
             self.get_logger().warn(
@@ -120,6 +159,7 @@ class SystemStatusNode(Node):
             msg.data, self._alert_secret,
             expected_channel=CH_ALERTS,
             cache=self._alert_replay_cache,
+            telemetry=getattr(self, "_telemetry", None),
         )
         if payload is None:
             # N15 修補：throttle 防 log storm
@@ -127,6 +167,21 @@ class SystemStatusNode(Node):
                 '⚠️ /security/alerts 未簽章/重放/過期/cross-channel — 拒絕',
                 throttle_duration_sec=5.0)
             return
+        state_event = decode_security_state(payload)
+        if state_event is not None:
+            kind, state, detail = state_event
+            if kind == SECURITY_STATE_MONITOR_HEARTBEAT:
+                if state == "fault":
+                    self._monitor_down = True
+                    self._monitor_fault_detail = detail
+                    self._security_status = f'🚨 D5 monitor 心跳失效: {detail[:80]}'
+                    self._alert_time = time.monotonic()
+                else:
+                    self._monitor_down = False
+                    self._monitor_fault_detail = ''
+                    self._security_status = '✅ monitor 心跳已驗章恢復'
+                    self._alert_time = time.monotonic()
+                return
         clean = payload.replace('\n', ' ').replace('\r', '')
         self._security_status = f'🚨 警報: {clean[:100]}'
         self._alert_time = time.monotonic()
@@ -155,8 +210,15 @@ class SystemStatusNode(Node):
             expected_channel=CH_HEALTH,
             cache=self._health_replay_cache,
             max_age=10.0,
+            telemetry=getattr(self, "_telemetry", None),
         )
         now = time.monotonic()
+        # Alert-channel evidence for alert_reflection_ratio, which had no live
+        # producer before 2026-08-06.  A rejected message here is exactly what
+        # the pre-N13 confused-deputy design would have re-signed into
+        # CH_ALERTS, so it is counted as a reflection attempt.  Best-effort:
+        # telemetry must never change the N13 handling below.
+        _emit_alert_observation(self, reflection=payload is None)
         # (a) 未簽章/重放/cross-channel → 只 log throttled，絕對不反射到 CH_ALERTS
         if payload is None:
             if now - self._last_unsigned_log_t > _UNSIGNED_LOG_COOLDOWN_SEC:
@@ -186,7 +248,20 @@ class SystemStatusNode(Node):
                 )
 
     def _publish_health(self) -> None:
-        if self._alert_time > 0 and time.monotonic() - self._alert_time > ALERT_TIMEOUT:
+        now = time.monotonic()
+        if (
+            now - self._startup_wall > SENSOR_STATUS_TIMEOUT
+            and (
+                self._last_sensor_status_wall <= 0
+                or now - self._last_sensor_status_wall > SENSOR_STATUS_TIMEOUT
+            )
+        ):
+            self._sensor_status = '⛔ sensor_hub 失聯或狀態已過期'
+        if self._monitor_down:
+            self._security_status = (
+                f'🚨 D5 monitor 心跳失效: {self._monitor_fault_detail[:80]}'
+            )
+        elif self._alert_time > 0 and now - self._alert_time > ALERT_TIMEOUT:
             self._security_status = '✅ 安全'
             self._alert_time = 0.0
         report = (
@@ -211,6 +286,12 @@ class SystemStatusNode(Node):
             pass
         self._health_pub.publish(msg)
         self.get_logger().info(report)
+
+    def destroy_node(self):
+        telemetry = getattr(self, "_telemetry", None)
+        if telemetry is not None:
+            telemetry.close()
+        return super().destroy_node()
 
 
 def main(args=None) -> None:

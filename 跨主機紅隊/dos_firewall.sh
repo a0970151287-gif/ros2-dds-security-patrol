@@ -1,54 +1,75 @@
 #!/usr/bin/env bash
 # ============================================================================
-# dos_firewall.sh — DoS/DDoS 主動式限流防火牆（目標機 eth0，需 sudo）
+# 固定 L1 DDS 限流實驗腳本（不由 Zeek／ML 自動執行，也不由 installer 安裝）
 #
-# 策略（針對直連 DDS 實驗室 10.10.10.0/24）：
-#   1) 允許清單：DDS UDP 埠只放行「預期對端」(直連 peer + 自己)，其餘來源直接 DROP
-#   2) 每來源限速：用 hashlimit 對 SPDP/DDS 封包做 per-source rate cap，
-#      單一來源洪水(N-DoS 40 participant/8s)會被丟到門檻以下
-#   3) 連線數上限：限制同一來源同時 UDP flow 數，擋「狂開 participant」
+# 僅供管理者在自有、無路由的隔離跨主機實驗中明確手動操作；它不是通過
+# signed-ticket 准入的正式 response backend，也不得建立 NOPASSWD 規則。
 #
-# 用法： sudo bash dos_firewall.sh on    # 套用
-#        sudo bash dos_firewall.sh off   # 移除
-#
-# ⚠️ WSL2 mirrored 模式：host iptables 可能不攔截鏡像流量 → 需在 Windows 端
-#    防火牆做對應限制(見 文件/DoS_DDoS防禦策略.md)。原生 Linux 攻擊機/目標機則有效。
+# 僅保護本專題固定的 eth0 / 10.10.10.1↔10.10.10.2 / DDS domain 0..30
+# 實驗網段；不接受環境變數覆寫，避免受限 sudo 被拿去修改其他介面/主機。
+# WSL2 mirrored 模式下 Linux iptables 可能不攔截鏡像流量，需另驗證 Windows
+# 防火牆效果。
 # ============================================================================
-set -uo pipefail
-IFACE="${IFACE:-eth0}"
-PEER="${PEER:-10.10.10.1}"      # 預期的直連對端（合法跨主機 DDS）
-SELF="${SELF:-10.10.10.2}"
-PLO=7400; PHI=65000
-CH="DDS_RATELIMIT"
+set -euo pipefail
 
-apply() {
-  iptables -N "$CH" 2>/dev/null
-  iptables -F "$CH"
-  # (1) 自己 / 多播探索放行
-  iptables -A "$CH" -s "$SELF" -j RETURN
-  iptables -A "$CH" -d 239.0.0.0/8 -p udp -m hashlimit \
-      --hashlimit-name spdp_mcast --hashlimit-mode srcip \
-      --hashlimit-above 50/sec --hashlimit-burst 100 -j DROP
-  # (2) 預期對端：限速放行（per-source 50/s，突發 100）
-  iptables -A "$CH" -s "$PEER" -p udp --dport "$PLO:$PHI" -m hashlimit \
-      --hashlimit-name dds_peer --hashlimit-mode srcip \
-      --hashlimit-above 50/sec --hashlimit-burst 100 -j DROP
-  iptables -A "$CH" -s "$PEER" -p udp --dport "$PLO:$PHI" -j RETURN
-  # (3) 其餘來源打 DDS 埠：一律 DROP（允許清單）
-  iptables -A "$CH" -p udp --dport "$PLO:$PHI" -j DROP
-  # 掛上 INPUT（限本介面）
-  iptables -C INPUT -i "$IFACE" -j "$CH" 2>/dev/null || iptables -I INPUT -i "$IFACE" -j "$CH"
-  echo "✅ DoS/DDoS 限流已套用 ($IFACE)：peer=$PEER 限 50/s、其餘 DDS 來源 DROP"
+readonly IFACE="eth0"
+readonly PEER="10.10.10.1"
+readonly SELF="10.10.10.2"
+readonly PORT_LOW=7400
+readonly PORT_HIGH=15200
+readonly CHAIN="DDS_RATELIMIT"
+
+if (( EUID != 0 )); then
+  echo "dos-firewall 僅能由隔離實驗管理者以 root 明確執行" >&2
+  exit 1
+fi
+command -v iptables >/dev/null 2>&1 || {
+  echo "找不到 iptables" >&2
+  exit 1
+}
+[[ -d "/sys/class/net/$IFACE" ]] || {
+  echo "找不到固定介面 $IFACE；拒絕猜測其他介面" >&2
+  exit 1
 }
 
-remove() {
-  iptables -D INPUT -i "$IFACE" -j "$CH" 2>/dev/null
-  iptables -F "$CH" 2>/dev/null; iptables -X "$CH" 2>/dev/null
-  echo "🧹 DoS/DDoS 限流已移除"
+apply_rules() {
+  iptables -w 5 -nL "$CHAIN" >/dev/null 2>&1 ||
+    iptables -w 5 -N "$CHAIN"
+  iptables -w 5 -F "$CHAIN"
+
+  # 本機回送與合法對端；只作用在本專題 DDS UDP 範圍。
+  iptables -w 5 -A "$CHAIN" -s "$SELF" -p udp \
+    --dport "$PORT_LOW:$PORT_HIGH" -j RETURN
+  iptables -w 5 -A "$CHAIN" -d 239.0.0.0/8 -p udp \
+    --dport "$PORT_LOW:$PORT_HIGH" -m hashlimit \
+    --hashlimit-name dds_spdp_mcast --hashlimit-mode srcip \
+    --hashlimit-above 50/sec --hashlimit-burst 100 -j DROP
+  iptables -w 5 -A "$CHAIN" -s "$PEER" -p udp \
+    --dport "$PORT_LOW:$PORT_HIGH" -m hashlimit \
+    --hashlimit-name dds_peer --hashlimit-mode srcip \
+    --hashlimit-above 50/sec --hashlimit-burst 100 -j DROP
+  iptables -w 5 -A "$CHAIN" -s "$PEER" -p udp \
+    --dport "$PORT_LOW:$PORT_HIGH" -j RETURN
+  iptables -w 5 -A "$CHAIN" -p udp \
+    --dport "$PORT_LOW:$PORT_HIGH" -j DROP
+
+  iptables -w 5 -C INPUT -i "$IFACE" -j "$CHAIN" 2>/dev/null ||
+    iptables -w 5 -I INPUT -i "$IFACE" -j "$CHAIN"
+  echo "✅ DDS 限流已套用：$IFACE，peer=$PEER，UDP $PORT_LOW-$PORT_HIGH"
+}
+
+remove_rules() {
+  iptables -w 5 -D INPUT -i "$IFACE" -j "$CHAIN" 2>/dev/null || true
+  iptables -w 5 -F "$CHAIN" 2>/dev/null || true
+  iptables -w 5 -X "$CHAIN" 2>/dev/null || true
+  echo "🧹 DDS 限流已移除"
 }
 
 case "${1:-}" in
-  on)  apply ;;
-  off) remove ;;
-  *)   echo "用法: sudo bash dos_firewall.sh on|off"; exit 1 ;;
+  on) apply_rules ;;
+  off) remove_rules ;;
+  *)
+    echo "用法：dos-firewall on|off" >&2
+    exit 2
+    ;;
 esac

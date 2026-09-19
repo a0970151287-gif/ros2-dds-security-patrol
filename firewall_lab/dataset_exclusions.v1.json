@@ -1,0 +1,30 @@
+{
+  "schema_version": "sros2-firewall-dataset-exclusions/v1",
+  "campaign": {
+    "path": "firewall_lab/campaign_1100.json",
+    "sha256": "2ff3f597a1ef7074213fdf4e1fe213c4f65ff4829e9b0529115dfc764de4b7db"
+  },
+  "created_utc": "2026-08-17T07:34:43.9532687Z",
+  "policy": "preserve raw evidence; exclude only when every pinned mismatch field agrees",
+  "exclusions": [
+    {
+      "session_id": "20260807T080715844515Z_unauthorized_participant_ea19b28d",
+      "security_mode": "enforce",
+      "attack_class": "identity_abuse",
+      "split": "train",
+      "reason": "attack stderr continued growing after the manifest was sealed",
+      "disposition": "exclude_from_training_calibration_selection_and_evaluation",
+      "manifest": {
+        "bytes": 7469,
+        "sha256": "a89c596c817994e0d008ef8989ebf455bebd76b06d1daf7c0ee41fd3163764aa"
+      },
+      "artifact": {
+        "path": "attack.stderr.log",
+        "manifest_bytes": 3231,
+        "manifest_sha256": "722083124f5b075c9d18d49cad88082ebc33ab64260927e6ebed49f8df6c0f48",
+        "observed_bytes": 45206,
+        "observed_sha256": "2ab7d5429afbde30c5c6ed830d8c9a509d7ca9f172329e3aa33c725164b56dba"
+      }
+    }
+  ]
+}

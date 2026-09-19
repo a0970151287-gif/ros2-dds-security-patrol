@@ -1,0 +1,239 @@
+{
+  "arms": {
+    "base": 26,
+    "base+behav": 31,
+    "base+both": 34,
+    "base+defence": 29,
+    "noblind": 24,
+    "noblind+behav": 29
+  },
+  "behavioural": [
+    "guard_input_rate",
+    "guard_input_nonzero_ratio",
+    "guard_input_angular_abs_mean",
+    "guard_input_linear_abs_mean",
+    "authenticated_action_rate"
+  ],
+  "blind_spot_removed_in_noblind": [
+    "mean_bytes_per_packet",
+    "sros_auth_fail_rate"
+  ],
+  "changes_shipped_features": false,
+  "defence_reaction": [
+    "guard_block_ratio",
+    "guard_lock_rate",
+    "parameter_veto_rate"
+  ],
+  "results": {
+    "both_insiders": {
+      "base": {
+        "features_used": 26,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.0875,
+          0.0906,
+          0.0875
+        ],
+        "unseen_recall": 0.0885,
+        "unseen_rows": 320
+      },
+      "base+behav": {
+        "features_used": 31,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.1625,
+          0.1656,
+          0.1656
+        ],
+        "unseen_recall": 0.1646,
+        "unseen_rows": 320
+      },
+      "base+both": {
+        "features_used": 34,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.1688,
+          0.1688,
+          0.1625
+        ],
+        "unseen_recall": 0.1667,
+        "unseen_rows": 320
+      },
+      "base+defence": {
+        "features_used": 29,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.0781,
+          0.0906,
+          0.0594
+        ],
+        "unseen_recall": 0.076,
+        "unseen_rows": 320
+      },
+      "noblind": {
+        "features_used": 24,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.5969,
+          0.6156,
+          0.5906
+        ],
+        "unseen_recall": 0.601,
+        "unseen_rows": 320
+      },
+      "noblind+behav": {
+        "features_used": 29,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.6062,
+          0.575,
+          0.6094
+        ],
+        "unseen_recall": 0.5969,
+        "unseen_rows": 320
+      }
+    },
+    "loo_confused_deputy": {
+      "base": {
+        "features_used": 26,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.6438,
+          0.6875,
+          0.5563
+        ],
+        "unseen_recall": 0.6292,
+        "unseen_rows": 160
+      },
+      "base+behav": {
+        "features_used": 31,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.9375,
+          0.9625,
+          0.9563
+        ],
+        "unseen_recall": 0.9521,
+        "unseen_rows": 160
+      },
+      "base+both": {
+        "features_used": 34,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.975,
+          0.9812,
+          0.9875
+        ],
+        "unseen_recall": 0.9812,
+        "unseen_rows": 160
+      },
+      "base+defence": {
+        "features_used": 29,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.9938,
+          0.9938,
+          0.9938
+        ],
+        "unseen_recall": 0.9938,
+        "unseen_rows": 160
+      },
+      "noblind": {
+        "features_used": 24,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.9938,
+          0.9938,
+          0.9938
+        ],
+        "unseen_recall": 0.9938,
+        "unseen_rows": 160
+      },
+      "noblind+behav": {
+        "features_used": 29,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          1.0,
+          0.9938,
+          1.0
+        ],
+        "unseen_recall": 0.9979,
+        "unseen_rows": 160
+      }
+    },
+    "loo_hmac_forgery": {
+      "base": {
+        "features_used": 26,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.25,
+          0.2437,
+          0.2437
+        ],
+        "unseen_recall": 0.2458,
+        "unseen_rows": 160
+      },
+      "base+behav": {
+        "features_used": 31,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.2437,
+          0.2437,
+          0.2437
+        ],
+        "unseen_recall": 0.2437,
+        "unseen_rows": 160
+      },
+      "base+both": {
+        "features_used": 34,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.2437,
+          0.25,
+          0.2375
+        ],
+        "unseen_recall": 0.2437,
+        "unseen_rows": 160
+      },
+      "base+defence": {
+        "features_used": 29,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.2437,
+          0.2375,
+          0.2313
+        ],
+        "unseen_recall": 0.2375,
+        "unseen_rows": 160
+      },
+      "noblind": {
+        "features_used": 24,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.25,
+          0.25,
+          0.25
+        ],
+        "unseen_recall": 0.25,
+        "unseen_rows": 160
+      },
+      "noblind+behav": {
+        "features_used": 29,
+        "normal_false_positive_rate": 0.0,
+        "per_seed": [
+          0.25,
+          0.25,
+          0.25
+        ],
+        "unseen_recall": 0.25,
+        "unseen_rows": 160
+      }
+    }
+  },
+  "schema_version": "sros2-firewall-behavioural-insider/v1",
+  "seeds": [
+    20260904,
+    7,
+    991
+  ]
+}

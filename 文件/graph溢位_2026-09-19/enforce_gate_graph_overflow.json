@@ -1,0 +1,19 @@
+{
+  "attack_class": "graph_overflow",
+  "attack_evidence": "攻擊執行 75.0 秒，return_code=0",
+  "attack_ran": true,
+  "baseline_event_kinds": 75,
+  "baseline_sessions": [
+    "/home/jesse/p4_enforce_20260919T170606Z/20260919T170651550475Z_normal_patrol_2c2071ce",
+    "/home/jesse/p4_enforce_20260919T170606Z/20260919T170738357710Z_normal_patrol_df5e3a0c",
+    "/home/jesse/p4_enforce_20260919T170606Z/20260919T170823357118Z_normal_patrol_6c265374"
+  ],
+  "candidate": "/home/jesse/p4_enforce_20260919T170606Z/20260919T170910074826Z_graph_overflow_8f8240d1",
+  "candidate_event_kinds": 69,
+  "exclusive_signals": {},
+  "min_count": 3,
+  "scenario_id": "graph_overflow",
+  "schema_version": "sros2-firewall-evidence-exclusivity/v1",
+  "security_mode": "enforce",
+  "verdict": "reject_no_exclusive_evidence"
+}

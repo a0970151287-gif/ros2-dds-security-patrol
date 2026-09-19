@@ -4,13 +4,12 @@
 # ============================================================
 
 # ── 每個終端都要先執行的 source ─────────────────────────────
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
-
-# ── TQC 訓練終端 ────────────────────────────────────────────
-source ~/.config/dds-monitor/credentials && source ~/dqn_env/bin/activate && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 
 # ── Python 虛擬環境（TQC 訓練專用，只需建一次）────────────
-python3 -m venv ~/dqn_env --system-site-packages
+if [[ ! -f "$HOME/dqn_env/bin/activate" ]]; then
+  python3 -m venv "$HOME/dqn_env" --system-site-packages
+fi
 source ~/dqn_env/bin/activate
 # GPU 版（RTX 5070 / CUDA）
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128

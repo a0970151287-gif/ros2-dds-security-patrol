@@ -1,0 +1,231 @@
+{
+  "artifacts": {
+    "evaluator_sha256": "883b7f113c42c82a9ab7ec60169a5d64913075845d84da08b022c624f4955f3f",
+    "features": {
+      "path": "/home/jesse/loo_blindspot_20260904/fusion_features_permissive.csv",
+      "sha256": "e1b9f1ea933cb3709356b07d9cc84cc861b42f9b5ab8b8405142ea78debb5770"
+    },
+    "training_metrics": {
+      "path": "/home/jesse/models_hier_refresh_maha/permissive/training_metrics.json",
+      "sha256": "3c36c44ca136d927d052187b4d6dad13982bb5c627be8f8a49435c938122ce1f"
+    }
+  },
+  "attack_ood_scorer": "isolation_forest",
+  "budgets": {
+    "maximum_known_attack_ood_fpr": 0.05,
+    "maximum_normal_fpr": 0.02,
+    "minimum_unknown_recall": 0.7
+  },
+  "created_utc": "2026-09-03T16:25:34.152618+00:00",
+  "decision_contract": "parallel_binary_normality_attack_ood/v1",
+  "folds": [
+    {
+      "fit_groups": 168,
+      "held_family": "alert_only",
+      "held_groups": 3,
+      "held_labels": [
+        "discovery_recon"
+      ],
+      "metrics": {
+        "binary_miss_recovered_rate": 0.0,
+        "binary_unknown_recall": 1.0,
+        "known_attack_false_unknown_rate": 0.011363636363636362,
+        "normal_false_unknown_rate": 0.0,
+        "normal_false_unknown_session_rate": 0.0,
+        "normal_not_eligible_rate": 0.0625,
+        "parallel_unknown_recall": 0.0,
+        "parallel_unknown_session_recall": 0.0
+      },
+      "reference_groups": 12,
+      "rows": {
+        "fit": 2114,
+        "known_attack_reference": 100,
+        "normal_reference": 52,
+        "threshold": 154,
+        "unknown": 24
+      },
+      "threshold_groups": 12,
+      "thresholds": {
+        "attack_ood": -0.5246894737947667,
+        "binary": 0.7214406410673602,
+        "normality": -0.5312370205220018
+      }
+    },
+    {
+      "fit_groups": 98,
+      "held_family": "application_drop",
+      "held_groups": 18,
+      "held_labels": [
+        "cross_channel_relay",
+        "health_spoof",
+        "message_dos",
+        "mission_spoof",
+        "replay",
+        "replay_dos"
+      ],
+      "metrics": {
+        "binary_miss_recovered_rate": 0.0,
+        "binary_unknown_recall": 0.8249999999999998,
+        "known_attack_false_unknown_rate": 0.0,
+        "normal_false_unknown_rate": 0.0,
+        "normal_false_unknown_session_rate": 0.0,
+        "normal_not_eligible_rate": 0.07142857142857144,
+        "parallel_unknown_recall": 0.0,
+        "parallel_unknown_session_recall": 0.0
+      },
+      "reference_groups": 7,
+      "rows": {
+        "fit": 1220,
+        "known_attack_reference": 54,
+        "normal_reference": 34,
+        "threshold": 88,
+        "unknown": 158
+      },
+      "threshold_groups": 7,
+      "thresholds": {
+        "attack_ood": -0.5811655657165921,
+        "binary": 0.7319522591553522,
+        "normality": -0.5722947825490174
+      }
+    },
+    {
+      "fit_groups": 154,
+      "held_family": "control_lock",
+      "held_groups": 6,
+      "held_labels": [
+        "command_injection",
+        "scan_drift"
+      ],
+      "metrics": {
+        "binary_miss_recovered_rate": 0.0,
+        "binary_unknown_recall": 1.0,
+        "known_attack_false_unknown_rate": 0.012499999999999995,
+        "normal_false_unknown_rate": 0.0,
+        "normal_false_unknown_session_rate": 0.0,
+        "normal_not_eligible_rate": 0.02272727272727273,
+        "parallel_unknown_recall": 0.0,
+        "parallel_unknown_session_recall": 0.0
+      },
+      "reference_groups": 11,
+      "rows": {
+        "fit": 1918,
+        "known_attack_reference": 90,
+        "normal_reference": 48,
+        "threshold": 140,
+        "unknown": 54
+      },
+      "threshold_groups": 11,
+      "thresholds": {
+        "attack_ood": -0.5375791963953063,
+        "binary": 0.6584529392775749,
+        "normality": -0.5494595143121136
+      }
+    },
+    {
+      "fit_groups": 168,
+      "held_family": "network_block",
+      "held_groups": 3,
+      "held_labels": [
+        "node_churn"
+      ],
+      "metrics": {
+        "binary_miss_recovered_rate": 0.25,
+        "binary_unknown_recall": 0.375,
+        "known_attack_false_unknown_rate": 0.038636363636363635,
+        "normal_false_unknown_rate": 0.020833333333333332,
+        "normal_false_unknown_session_rate": 0.08333333333333333,
+        "normal_not_eligible_rate": 0.0625,
+        "parallel_unknown_recall": 0.3333333333333333,
+        "parallel_unknown_session_recall": 1.0
+      },
+      "reference_groups": 12,
+      "rows": {
+        "fit": 2114,
+        "known_attack_reference": 100,
+        "normal_reference": 52,
+        "threshold": 154,
+        "unknown": 24
+      },
+      "threshold_groups": 12,
+      "thresholds": {
+        "attack_ood": -0.5531979024423189,
+        "binary": 0.7902436731342318,
+        "normality": -0.5266242457746759
+      }
+    },
+    {
+      "fit_groups": 154,
+      "held_family": "participant_deny",
+      "held_groups": 6,
+      "held_labels": [
+        "identity_abuse",
+        "parameter_tamper"
+      ],
+      "metrics": {
+        "binary_miss_recovered_rate": 0.0,
+        "binary_unknown_recall": 0.8,
+        "known_attack_false_unknown_rate": 0.0,
+        "normal_false_unknown_rate": 0.0,
+        "normal_false_unknown_session_rate": 0.0,
+        "normal_not_eligible_rate": 0.045454545454545456,
+        "parallel_unknown_recall": 0.0,
+        "parallel_unknown_session_recall": 0.0
+      },
+      "reference_groups": 11,
+      "rows": {
+        "fit": 1930,
+        "known_attack_reference": 88,
+        "normal_reference": 50,
+        "threshold": 140,
+        "unknown": 60
+      },
+      "threshold_groups": 11,
+      "thresholds": {
+        "attack_ood": -0.5484356801053389,
+        "binary": 0.7470651945182,
+        "normality": -0.5267534382056216
+      }
+    }
+  ],
+  "protocol": {
+    "entire_held_family_sessions_removed_before_fit": true,
+    "fit_split": "train",
+    "historical_validation_reused_for_development": true,
+    "known_family_head_role": "advisory after the parallel gate; it cannot accept normal traffic",
+    "name": "session_grouped_leave_one_attack_family_out",
+    "official_novelty_holdout_groups_excluded": 40,
+    "official_novelty_holdout_labels_excluded": [
+      "sensor_spoof",
+      "service_dos"
+    ],
+    "official_novelty_holdout_rows_used": 0,
+    "reference_split": "validation.selection_groups",
+    "test_rows_used": 0,
+    "threshold_split": "validation.threshold_groups",
+    "unknown_split": "all validation rows from the held family"
+  },
+  "safety": {
+    "automatic_ip_block_authorized": false,
+    "deployment_eligible": false,
+    "development_only": true,
+    "executable": false,
+    "independent_final_test": false,
+    "network_activity_performed": false
+  },
+  "schema_version": "sros2-firewall-parallel-gate-family-loo/v1",
+  "security_mode": "permissive",
+  "summary": {
+    "all_constraints_satisfied": false,
+    "constraints": {
+      "known_attack_false_unknown_budget": true,
+      "macro_unknown_recall": false,
+      "normal_false_unknown_budget": false,
+      "worst_family_unknown_recall": false
+    },
+    "families": 5,
+    "macro_unknown_recall": 0.06666666666666667,
+    "worst_family_unknown_recall": 0.0,
+    "worst_known_attack_false_unknown_rate": 0.038636363636363635,
+    "worst_normal_false_unknown_rate": 0.020833333333333332
+  }
+}

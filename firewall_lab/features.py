@@ -1,0 +1,1676 @@
+#!/usr/bin/env python3
+"""Build leak-resistant firewall features from generated session evidence."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import gzip
+import json
+import math
+import re
+import statistics
+import sys
+from collections import Counter, defaultdict
+from pathlib import Path
+from typing import Any, Iterable
+
+from .live_telemetry_collector import validate_telemetry_event
+from .schema import (
+    LABEL_SCHEMA_VERSION,
+    SCHEMA_VERSION,
+    SchemaError,
+    atomic_write_json,
+)
+
+
+SESSION_COLUMNS = [
+    "session_id",
+    "group_id",
+    "scenario_id",
+    "attack_class",
+    "binary",
+    "security_mode",
+    "ros_domain_id",
+    "seed",
+    "origin",
+    "training_eligible",
+    "status",
+    "intensity",
+    "label_duration_sec",
+    "event_count",
+    "resource_samples",
+    "load1_mean",
+    "load1_max",
+    "pcap_bytes",
+    "attack_stdout_lines",
+    "attack_stderr_lines",
+    "auth_failure_mentions",
+    "permission_deny_mentions",
+    "attack_return_code",
+    "expected_action",
+    "policy_sha256",
+]
+NETWORK_COLUMNS = [
+    "session_id",
+    "group_id",
+    "capture_id",
+    "scenario_id",
+    "security_mode",
+    "ros_domain_id",
+    "origin",
+    "source",
+    "window",
+    "window_start_unix",
+    "conn_count",
+    "conn_rate",
+    # 2026-08-31 新增的五個量體特徵。先前 14 個網路特徵**全部是連線數與比例**，
+    # 沒有一個看得見位元組量，所以「連線數不變、每個封包變大」的攻擊在網路層
+    # 完全隱形——oversized_scan 之所以被抓到，靠的是遙測層的
+    # oversized_message_ratio，網路層沒有備援。Zeek 的 conn.log 一直有這些欄位，
+    # 只是沒被讀。
+    "orig_bytes_rate",
+    "orig_pkts_rate",
+    "mean_bytes_per_packet",
+    "max_conn_bytes",
+    # 反射／放大（CWE-406）：攻擊者送很少、受害者回很多。這是唯一一個看
+    # **回應**方向的特徵，其餘都只看來源送出什麼。
+    "amplification_ratio",
+    "uniq_dst_ports",
+    "uniq_dst_hosts",
+    "spdp_ratio",
+    "meta_ratio",
+    "userdata_ratio",
+    "mcast_ratio",
+    "dst_port_entropy",
+    "interarrival_cv",
+    "burstiness",
+    "dominant_port_ratio",
+    "dominant_host_ratio",
+    "tuple_repeat_ratio",
+    "label",
+    "binary",
+    "label_scope",
+    "training_eligible",
+    "evaluation_eligible",
+    "policy_sha256",
+]
+TELEMETRY_FEATURES = [
+    "sros_auth_fail_rate",
+    "sros_permission_deny_rate",
+    "participant_churn_rate",
+    "unknown_node_rate",
+    "hmac_failure_rate",
+    "nonce_reuse_ratio",
+    "channel_mismatch_ratio",
+    "timestamp_violation_ratio",
+    "publisher_violation_ratio",
+    "parameter_call_rate",
+    "oversized_message_ratio",
+    "qos_drop_ratio",
+    "heartbeat_gap_sec",
+    "control_conflict_ratio",
+    "scan_static_ratio",
+    "odom_cmd_mismatch_ratio",
+    "alert_reflection_ratio",
+    "log_reject_rate",
+]
+TELEMETRY_COLUMNS = [
+    "session_id",
+    "group_id",
+    "scenario_id",
+    "security_mode",
+    "ros_domain_id",
+    "origin",
+    "window",
+    "window_start_unix",
+    "telemetry_event_count",
+    "collector_tick_count",
+    *TELEMETRY_FEATURES,
+    "label",
+    "binary",
+    "label_scope",
+    "training_eligible",
+    "evaluation_eligible",
+    "policy_sha256",
+]
+FUSION_COLUMNS = NETWORK_COLUMNS + TELEMETRY_FEATURES
+OBSERVATION_COLUMNS = [
+    "session_id",
+    "group_id",
+    "scenario_id",
+    "security_mode",
+    "sample_index",
+    "participant_count",
+    "spdp_rate",
+    "data_rate",
+    "auth_failures",
+    "permission_denies",
+    "label",
+    "binary",
+    "training_eligible",
+]
+
+
+def _read_json(path: Path) -> dict[str, Any]:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise SchemaError(f"expected JSON object: {path}")
+    return value
+
+
+def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    result = []
+    if not path.is_file():
+        return result
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, 1):
+            if not line.strip():
+                continue
+            try:
+                value = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise SchemaError(
+                    f"invalid JSONL at {path}:{line_number}"
+                ) from exc
+            if not isinstance(value, dict):
+                raise SchemaError(
+                    f"JSONL row must be object at {path}:{line_number}"
+                )
+            result.append(value)
+    return result
+
+
+def discover_sessions(dataset_root: str | Path) -> list[Path]:
+    root = Path(dataset_root)
+    if not root.is_dir() or root.is_symlink():
+        raise FileNotFoundError(f"invalid dataset root: {root}")
+    sessions = []
+    for manifest in sorted(root.glob("*/manifest.json")):
+        session_dir = manifest.parent
+        if session_dir.is_symlink() or manifest.is_symlink():
+            raise SchemaError(f"session evidence may not be symlinked: {session_dir}")
+        sessions.append(session_dir)
+    return sessions
+
+
+class ManifestEvidenceMismatch(SchemaError):
+    """帶著逐項問題清單的失配，讓呼叫端能比對釘住的排除記錄。"""
+
+    def __init__(self, session_name: str, problems: list[str]):
+        self.session_name = session_name
+        self.problems = list(problems)
+        super().__init__(
+            f"{session_name} evidence does not match its manifest: "
+            + "; ".join(problems)
+        )
+
+
+def verify_manifest_evidence(
+    session_dir: Path,
+    manifest: dict[str, Any],
+    *,
+    verify_hashes: bool = False,
+) -> None:
+    """Refuse a session whose evidence no longer matches its manifest.
+
+    Nothing between collection and training re-checked this, so session
+    20260807T080715844515Z_unauthorized_participant_ea19b28d reached the
+    feature table with training_eligible=true even though its attack.stderr.log
+    had grown from the recorded 3,231 bytes to 45,206: a surviving grandchild
+    held the inherited descriptor and kept writing after the manifest was
+    written. Its 18 windows landed in the Enforce training split.
+
+    Sizes are checked always -- one stat() per artifact, and the failure that
+    actually occurred changes the size. Hashes are opt-in because covering
+    1,100 sessions costs about a quarter of an hour, most of it the 7 MB
+    pcap per session.
+    """
+
+    evidence = manifest.get("evidence")
+    if not isinstance(evidence, dict) or not evidence:
+        raise SchemaError(f"{session_dir.name} manifest has no evidence block")
+    problems = []
+    for name, meta in sorted(evidence.items()):
+        if not isinstance(meta, dict) or "bytes" not in meta:
+            problems.append(f"{name}: manifest entry is malformed")
+            continue
+        path = session_dir / name
+        if path.is_symlink() or not path.is_file():
+            problems.append(f"{name}: missing")
+            continue
+        actual = path.stat().st_size
+        expected = int(meta["bytes"])
+        if actual != expected:
+            problems.append(
+                f"{name}: manifest {expected} bytes, on disk {actual}"
+            )
+            continue
+        if not verify_hashes:
+            continue
+        expected_hash = meta.get("sha256")
+        if not isinstance(expected_hash, str) or len(expected_hash) != 64:
+            problems.append(f"{name}: manifest sha256 is malformed")
+            continue
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1 << 20), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != expected_hash:
+            problems.append(f"{name}: sha256 does not match the manifest")
+    if problems:
+        raise ManifestEvidenceMismatch(session_dir.name, problems)
+
+
+def load_pinned_exclusions(path: Path | None) -> dict[str, dict[str, Any]]:
+    """讀入 dataset_exclusions registry，回傳 session_id → 排除記錄。
+
+    registry 的 policy 寫得很清楚：「只在每個釘住的失配欄位都相符時才排除」。
+    所以這裡不是一份「跳過這些 session」的名單——它釘住了完整的失配指紋
+    （manifest 的 bytes／sha256 與實際觀察到的 bytes／sha256）。排除只在
+    **實際看到的損壞與當初記錄的完全相同**時才成立；同一個 session 若出現
+    任何新的、不同的損壞，仍然會被 fail-closed 擋下。
+    """
+    if path is None:
+        return {}
+    value = _read_json(path)
+    if value.get("schema_version") != "sros2-firewall-dataset-exclusions/v1":
+        raise SchemaError("unsupported dataset exclusions schema")
+    entries = value.get("exclusions")
+    if not isinstance(entries, list):
+        raise SchemaError("dataset exclusions must be a list")
+    pinned: dict[str, dict[str, Any]] = {}
+    for entry in entries:
+        session_id = entry.get("session_id")
+        artifact = entry.get("artifact")
+        if not isinstance(session_id, str) or not isinstance(artifact, dict):
+            raise SchemaError("dataset exclusion entry is malformed")
+        for field in ("path", "manifest_bytes", "observed_bytes"):
+            if field not in artifact:
+                raise SchemaError(
+                    f"dataset exclusion for {session_id} is missing {field}"
+                )
+        pinned[session_id] = entry
+    return pinned
+
+
+def exclusion_matches(session_dir: Path, entry: dict[str, Any], problem: str) -> bool:
+    """實際失配是否與釘住的那一筆完全相符。"""
+    artifact = entry["artifact"]
+    name = artifact["path"]
+    expected = (
+        f"{name}: manifest {int(artifact['manifest_bytes'])} bytes, "
+        f"on disk {int(artifact['observed_bytes'])}"
+    )
+    if problem != expected:
+        return False
+    path = session_dir / name
+    try:
+        return path.is_file() and path.stat().st_size == int(
+            artifact["observed_bytes"]
+        )
+    except OSError:
+        return False
+
+
+def load_manifest(session_dir: Path) -> dict[str, Any]:
+    manifest = _read_json(session_dir / "manifest.json")
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise SchemaError(
+            f"unsupported manifest schema in {session_dir.name}"
+        )
+    if manifest.get("session_id") != session_dir.name:
+        raise SchemaError(
+            f"session directory/name mismatch: {session_dir.name}"
+        )
+    return manifest
+
+
+def load_label_intervals(session_dir: Path) -> list[dict[str, Any]]:
+    labels = _read_jsonl(session_dir / "labels.jsonl")
+    for label in labels:
+        if label.get("schema_version") != LABEL_SCHEMA_VERSION:
+            raise SchemaError(f"invalid label schema in {session_dir.name}")
+        start = label.get("start_unix_ns")
+        end = label.get("end_unix_ns")
+        if (
+            isinstance(start, bool)
+            or isinstance(end, bool)
+            or not isinstance(start, int)
+            or not isinstance(end, int)
+            or start <= 0
+            or end < start
+        ):
+            raise SchemaError(f"invalid label interval in {session_dir.name}")
+    return labels
+
+
+def _line_count(path: Path) -> int:
+    if not path.is_file():
+        return 0
+    with path.open("r", encoding="utf-8", errors="replace") as handle:
+        return sum(1 for _ in handle)
+
+
+def _security_mentions(session_dir: Path) -> tuple[int, int]:
+    auth_pattern = re.compile(
+        r"auth(?:entication)?\s*(?:failed|failure)|"
+        r"couldn.?t find security files|unauthenticated",
+        re.IGNORECASE,
+    )
+    deny_pattern = re.compile(
+        r"permission(?:s)?\s*(?:denied|deny|rejected)|"
+        r"access control|not allowed",
+        re.IGNORECASE,
+    )
+    auth = 0
+    deny = 0
+    for path in session_dir.rglob("*.log"):
+        if path.is_symlink() or not path.is_file():
+            continue
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for index, line in enumerate(handle):
+                if index >= 200_000:
+                    break
+                auth += int(bool(auth_pattern.search(line)))
+                deny += int(bool(deny_pattern.search(line)))
+    return auth, deny
+
+
+def _resource_features(session_dir: Path) -> tuple[int, float, float]:
+    samples = _read_jsonl(session_dir / "resources.jsonl")
+    load1 = []
+    for sample in samples:
+        values = sample.get("load_average")
+        if (
+            isinstance(values, list)
+            and values
+            and isinstance(values[0], (int, float))
+            and not isinstance(values[0], bool)
+            and math.isfinite(float(values[0]))
+        ):
+            load1.append(float(values[0]))
+    return (
+        len(samples),
+        round(statistics.fmean(load1), 6) if load1 else 0.0,
+        round(max(load1), 6) if load1 else 0.0,
+    )
+
+
+def build_session_row(
+    session_dir: Path,
+    manifest: dict[str, Any],
+    labels: list[dict[str, Any]],
+) -> dict[str, Any]:
+    event_count = len(_read_jsonl(session_dir / "events.jsonl"))
+    resource_count, load_mean, load_max = _resource_features(session_dir)
+    auth_mentions, deny_mentions = _security_mentions(session_dir)
+    pcap = session_dir / "traffic.pcapng"
+    label_duration = sum(
+        max(0, label["end_unix_ns"] - label["start_unix_ns"])
+        for label in labels
+    ) / 1_000_000_000
+    attack_process = (
+        manifest.get("result", {}).get("attack_process")
+        if isinstance(manifest.get("result"), dict)
+        else None
+    )
+    return {
+        "session_id": manifest["session_id"],
+        "group_id": manifest["session_id"],
+        "scenario_id": manifest["scenario_id"],
+        "attack_class": manifest["attack_class"],
+        "binary": manifest["binary_label"],
+        "security_mode": manifest["security_mode"],
+        "ros_domain_id": manifest["ros_domain_id"],
+        "seed": manifest["seed"],
+        "origin": manifest["origin"],
+        "training_eligible": bool(manifest["training_eligible"]),
+        "status": manifest["status"],
+        "intensity": manifest.get("randomization", {}).get("intensity", 0.0),
+        "label_duration_sec": round(label_duration, 6),
+        "event_count": event_count,
+        "resource_samples": resource_count,
+        "load1_mean": load_mean,
+        "load1_max": load_max,
+        "pcap_bytes": pcap.stat().st_size if pcap.is_file() else 0,
+        "attack_stdout_lines": _line_count(
+            session_dir / "attack.stdout.log"
+        ),
+        "attack_stderr_lines": _line_count(
+            session_dir / "attack.stderr.log"
+        ),
+        "auth_failure_mentions": auth_mentions,
+        "permission_deny_mentions": deny_mentions,
+        "attack_return_code": (
+            attack_process.get("return_code")
+            if isinstance(attack_process, dict)
+            else ""
+        ),
+        "expected_action": manifest["expected_action"],
+        "policy_sha256": manifest["policy_sha256"],
+    }
+
+
+def _is_multicast(address: str) -> bool:
+    try:
+        first = int(address.split(".", 1)[0])
+    except (ValueError, IndexError):
+        return False
+    return 224 <= first <= 239
+
+
+def _entropy(counts: Iterable[int]) -> float:
+    values = list(counts)
+    total = sum(values)
+    if total <= 0:
+        return 0.0
+    result = 0.0
+    for count in values:
+        if count > 0:
+            probability = count / total
+            result -= probability * math.log2(probability)
+    return result
+
+
+def _temporal_shape(timestamps: list[float]) -> tuple[float, float]:
+    ordered = sorted(timestamps)
+    deltas = [
+        later - earlier
+        for earlier, later in zip(ordered, ordered[1:])
+        if later >= earlier
+    ]
+    if not deltas:
+        return 0.0, 0.0
+    mean = statistics.fmean(deltas)
+    deviation = statistics.pstdev(deltas) if len(deltas) > 1 else 0.0
+    coefficient = deviation / mean if mean > 0 else 0.0
+    denominator = deviation + mean
+    burstiness = (
+        (deviation - mean) / denominator if denominator > 0 else 0.0
+    )
+    return min(coefficient, 1_000_000.0), burstiness
+
+
+def _load_zeek_conn(path: Path) -> list[dict[str, str]]:
+    fields = None
+    rows = []
+    with path.open("r", encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+            if line.startswith("#fields"):
+                fields = line.rstrip("\r\n").split("\t")[1:]
+                continue
+            if line.startswith("#") or not line.strip():
+                continue
+            if fields is None:
+                raise SchemaError(f"Zeek conn.log has no #fields header: {path}")
+            values = line.rstrip("\r\n").split("\t")
+            if len(values) != len(fields):
+                continue
+            rows.append(dict(zip(fields, values)))
+    return rows
+
+
+def _zeek_count(raw: object) -> int:
+    """Zeek 的 count 欄位，未設定時是 '-' 而不是 0。
+
+    把 '-' 當成 0 是對的（那條連線沒有量到位元組），但把它當成缺值而丟掉整列
+    就會讓 UDP 連線大量消失——DDS 幾乎全是 UDP，而 Zeek 對某些 UDP 流不填
+    orig_bytes。所以這裡回 0 而不是拋例外。
+    """
+    if raw is None:
+        return 0
+    text = str(raw).strip()
+    if not text or text in {"-", "(empty)"}:
+        return 0
+    try:
+        value = int(text)
+    except (TypeError, ValueError):
+        return 0
+    return value if value >= 0 else 0
+
+
+def _label_at(
+    midpoint_unix_ns: int,
+    intervals: list[dict[str, Any]],
+) -> tuple[str, str]:
+    for label in intervals:
+        if label["start_unix_ns"] <= midpoint_unix_ns <= label["end_unix_ns"]:
+            return str(label["attack_class"]), str(label["scope"])
+    return "normal", "session_window"
+
+
+ZEEK_REBUILT_DIR = "zeek_checksum_fixed"
+
+
+def resolve_conn_log(session_dir: Path) -> tuple[Path | None, str]:
+    """挑要用哪一份 conn.log，並說出挑了哪一份。
+
+    原始的 `zeek/conn.log` 是在沒有 `-C` 的情況下產生的，checksum offloading
+    造成的無效校驗和讓 Zeek 把封包整批丟棄：位元組、封包數與 duration 全部
+    未設定，而且連線被碎裂成 8 倍的短流。`conn_count` 與 `conn_rate` 因此
+    一直在量校驗和的行為而不是連線的行為。
+
+    `工具腳本/rebuild_zeek_checksum.py` 用同一份 pcap 加 `-C` 重跑，結果寫在
+    平行目錄裡（不覆寫原始證據，那是 manifest 有雜湊的檔案）。有重建就用
+    重建的，沒有就退回原始的——但**整批只能有一種來源**，見 build_features。
+    """
+    rebuilt = session_dir / ZEEK_REBUILT_DIR / "conn.log"
+    if rebuilt.is_file():
+        return rebuilt, "checksum_rebuilt"
+    original = session_dir / "zeek" / "conn.log"
+    if original.is_file():
+        return original, "original"
+    return None, "missing"
+
+
+def build_network_rows(
+    session_dir: Path,
+    manifest: dict[str, Any],
+    labels: list[dict[str, Any]],
+    *,
+    window_sec: float,
+) -> list[dict[str, Any]]:
+    conn_path, _ = resolve_conn_log(session_dir)
+    if conn_path is None:
+        return []
+    rows = _load_zeek_conn(conn_path)
+    parsed = []
+    for row in rows:
+        try:
+            timestamp = float(row["ts"])
+            source = row["id.orig_h"]
+            destination = row["id.resp_h"]
+            port = int(row["id.resp_p"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if not math.isfinite(timestamp) or not source:
+            continue
+        parsed.append((
+            timestamp,
+            source,
+            destination,
+            port,
+            _zeek_count(row.get("orig_bytes")),
+            _zeek_count(row.get("orig_pkts")),
+            _zeek_count(row.get("resp_bytes")),
+        ))
+    if not parsed:
+        return []
+
+    t0 = min(item[0] for item in parsed)
+    grouped: dict[tuple[str, int], list[tuple[float, str, str, int]]] = (
+        defaultdict(list)
+    )
+    for item in parsed:
+        window = int((item[0] - t0) // window_sec)
+        grouped[(item[1], window)].append(item)
+
+    domain = int(manifest["ros_domain_id"])
+    base_port = 7400 + 250 * domain
+    spdp_port = base_port
+    meta_ports = {base_port + 10, base_port + 11, base_port + 12}
+    userdata_low = base_port + 13
+    userdata_high = base_port + 249
+    return [
+        _network_row(
+            manifest,
+            labels,
+            source,
+            window,
+            group,
+            [item[0] for item in group],
+            resp_bytes=sum(item[6] for item in group),
+            t0=t0,
+            window_sec=window_sec,
+            domain=domain,
+            spdp_port=spdp_port,
+            meta_ports=meta_ports,
+            userdata_low=userdata_low,
+            userdata_high=userdata_high,
+        )
+        for (source, window), group in sorted(grouped.items())
+    ]
+def _network_row(
+    manifest: dict[str, Any],
+    labels: list[dict[str, Any]],
+    source: str,
+    window: int,
+    group: list[tuple],
+    shape_timestamps: list[float],
+    *,
+    resp_bytes: int,
+    ratio_items: list[tuple[str, int]] | None = None,
+    t0: float,
+    window_sec: float,
+    domain: int,
+    spdp_port: int,
+    meta_ports: set[int],
+    userdata_low: int,
+    userdata_high: int,
+) -> dict[str, Any]:
+    """一個 (來源, 視窗) 的網路特徵。
+
+    `group` 的每個元素是一個計數單位
+    `(ts, source, destination, port, orig_bytes, orig_pkts, resp_bytes)`。
+    從 conn.log 來時它是一筆 Zeek 流；從封包來時它是這個視窗裡的一個
+    五元組聚合。`shape_timestamps` 是算爆發性要用的時間戳——封包版傳的是
+    逐封包時間，那才是流量形狀，流的起點不是。
+
+    `resp_bytes` 由呼叫端算好傳進來，因為兩種來源的正確算法不同：conn 版是
+    Zeek 對該流量到的反方向位元組；封包版是**這個視窗裡送到這台主機的總量**。
+    不能用「五元組反轉」去配對——RTPS 的回應來自對方的臨時埠，實測一場 462
+    個五元組裡存在嚴格反轉配對的是 0 個。
+
+    `ratio_items` 是比例特徵的基底 `(目的, 埠)`，預設沿用 `group`。埠與主機
+    的**分布**問的是「流量長什麼樣」，所以封包版傳的是逐封包的清單而不是
+    去重過的五元組——後者會把「九成封包打在 SPDP 埠」抹成「用過 SPDP 埠」。
+    `conn_count` 仍按單位算，兩個分母因此分開。
+    """
+    if ratio_items is None:
+        ratio_items = [(item[2], item[3]) for item in group]
+    destinations = [item[0] for item in ratio_items]
+    ports = [item[1] for item in ratio_items]
+    # 計數單位（有幾條流）與比例基底（有多少流量）是兩回事。conn 來源兩者
+    # 相等，所以既有行為逐位不變。
+    count = len(group)
+    basis = len(ratio_items) or 1
+    orig_bytes = sum(item[4] for item in group)
+    orig_pkts = sum(item[5] for item in group)
+    max_conn_bytes = max(item[4] for item in group)
+    # Label the time window, not this source's traffic within it.
+    #
+    # Rows are grouped by (source, window), so a window that straddles the
+    # start or end of the attack interval used to get one label per source:
+    # each group was labelled from the mean timestamp of its own conns, and
+    # those means differ. In session
+    # 20260807T082401902811Z_parameter_tamper_cedeb73f the attack began
+    # 3.6s into window 0 and the three sources' means landed 1 ms apart on
+    # opposite sides of it, so the window was simultaneously normal and
+    # parameter_tamper. build_telemetry_rows requires one label per window
+    # and refused the whole session, which would have blocked the feature
+    # build for the entire campaign.
+    #
+    # The window's own centre is deterministic and identical for every
+    # source, so the disagreement cannot recur by construction.
+    window_midpoint_seconds = t0 + window * window_sec + window_sec / 2.0
+    midpoint_ns = int(window_midpoint_seconds * 1_000_000_000)
+    label, label_scope = _label_at(midpoint_ns, labels)
+    port_counts = Counter(ports)
+    host_counts = Counter(destinations)
+    tuple_counts = Counter(ratio_items)
+    interarrival_cv, burstiness = _temporal_shape(shape_timestamps)
+    return (
+        {
+            "session_id": manifest["session_id"],
+            "group_id": manifest["session_id"],
+            "capture_id": manifest["session_id"],
+            "scenario_id": manifest["scenario_id"],
+            "security_mode": manifest["security_mode"],
+            "ros_domain_id": domain,
+            "origin": manifest["origin"],
+            "source": source,
+            "window": window,
+            "window_start_unix": round(t0 + window * window_sec, 6),
+            "conn_count": count,
+            "conn_rate": round(count / window_sec, 6),
+            "orig_bytes_rate": round(orig_bytes / window_sec, 6),
+            "orig_pkts_rate": round(orig_pkts / window_sec, 6),
+            # 每封包平均位元組。這是「連線數不變但封包變大」唯一看得見的
+            # 特徵；沒有封包就是 0，不是未定義。
+            "mean_bytes_per_packet": round(
+                orig_bytes / orig_pkts, 6
+            ) if orig_pkts else 0.0,
+            "max_conn_bytes": max_conn_bytes,
+            # 回應量 ÷ 送出量。反射攻擊的特徵是送得少、回得多。送出為 0
+            # 時比值無定義，記 0——那種情況下沒有「放大」可言。
+            "amplification_ratio": round(
+                resp_bytes / orig_bytes, 6
+            ) if orig_bytes else 0.0,
+            "uniq_dst_ports": len(set(ports)),
+            "uniq_dst_hosts": len(set(destinations)),
+            "spdp_ratio": round(ports.count(spdp_port) / basis, 6),
+            "meta_ratio": round(
+                sum(port in meta_ports for port in ports) / basis, 6
+            ),
+            "userdata_ratio": round(
+                sum(
+                    userdata_low <= port <= userdata_high
+                    for port in ports
+                )
+                / basis,
+                6,
+            ),
+            "mcast_ratio": round(
+                sum(_is_multicast(item) for item in destinations) / basis,
+                6,
+            ),
+            "dst_port_entropy": round(
+                _entropy(port_counts.values()), 6
+            ),
+            "interarrival_cv": round(interarrival_cv, 6),
+            "burstiness": round(burstiness, 6),
+            "dominant_port_ratio": round(
+                max(port_counts.values()) / basis, 6
+            ),
+            "dominant_host_ratio": round(
+                max(host_counts.values()) / basis, 6
+            ),
+            "tuple_repeat_ratio": round(
+                sum(
+                    max(repetitions - 1, 0)
+                    for repetitions in tuple_counts.values()
+                )
+                / basis,
+                6,
+            ),
+            "label": label,
+            "binary": "normal" if label == "normal" else "attack",
+            "label_scope": label_scope,
+            "training_eligible": bool(manifest["training_eligible"]),
+            "evaluation_eligible": bool(
+                manifest["training_eligible"]
+                and manifest["origin"] == "live_lab"
+            ),
+            "policy_sha256": manifest["policy_sha256"],
+        }
+    )
+
+
+PACKET_WINDOW_DIR = "packet_windows"
+
+
+def load_packet_records(session_dir: Path) -> list[tuple]:
+    """讀 `packet_windows/packets.tsv.gz` 的逐封包紀錄。
+
+    回傳 `(ts, src_ip, dst_ip, sport, dport, length)`；沒有這個 artifact 就
+    回傳空清單，由呼叫端決定要不要 fail-closed。
+    """
+    path = session_dir / PACKET_WINDOW_DIR / "packets.tsv.gz"
+    if not path.is_file():
+        return []
+    records: list[tuple] = []
+    with gzip.open(path, "rt", encoding="utf-8", errors="replace") as handle:
+        header = handle.readline().rstrip("\n").split("\t")
+        if header[:1] != ["frame.time_epoch"]:
+            raise SchemaError(f"{path} 的表頭不是逐封包格式：{header[:1]}")
+        for line in handle:
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) != 6:
+                continue
+            try:
+                timestamp = float(parts[0])
+                sport = int(parts[3]) if parts[3] else -1
+                dport = int(parts[4]) if parts[4] else -1
+                length = int(parts[5]) if parts[5] else 0
+            except ValueError:
+                continue
+            if not math.isfinite(timestamp) or not parts[1]:
+                continue
+            records.append(
+                (timestamp, parts[1], parts[2], sport, dport, length)
+            )
+    return records
+
+
+def build_network_rows_from_packets(
+    session_dir: Path,
+    manifest: dict[str, Any],
+    labels: list[dict[str, Any]],
+    *,
+    window_sec: float,
+) -> list[dict[str, Any]]:
+    """按封包時間分窗的網路特徵。
+
+    與 conn.log 版的差別只有一個，但那個差別是決定性的：**視窗歸屬用封包自己
+    的時間，不是流的起點。** Zeek 的 conn 紀錄一筆代表整條流，時間戳是起點，
+    所以一條 50 秒的 DDS 流只會落進一個 8 秒視窗——量到的是「這個視窗裡開始
+    了幾條流」，不是「這個視窗裡有多少流量」。
+
+    這裡的計數單位是**視窗內的五元組**：同一條流跨越 7 個視窗就在 7 個視窗
+    各出現一次，帶著它在那個視窗裡實際傳的位元組。所以
+
+    - `conn_count` = 這個視窗裡活躍的五元組數（不是流的起點數）
+    - `orig_bytes` = 來源在這個視窗裡實際送出的位元組
+    - `resp_bytes` = 這個視窗裡**送到這台主機**的總位元組（放大比的分子）
+    - `interarrival_cv`／`burstiness` 用逐封包時間戳，那才是流量形狀
+
+    `max_conn_bytes` 是視窗內單一五元組的最大量體。
+    """
+    packets = load_packet_records(session_dir)
+    if not packets:
+        return []
+
+    t0 = min(item[0] for item in packets)
+    # (來源, 視窗) -> 五元組 -> [送出位元組, 送出封包, 收到位元組, 最早時間]
+    sent: dict[tuple[str, int], dict[tuple, list]] = defaultdict(dict)
+    # 收到的量按**主機**累計。RTPS 的回應來自對方的臨時埠，五元組反轉配不
+    # 起來（實測一場 462 個五元組，嚴格反轉配對 0 個），而反射攻擊要問的
+    # 本來就是「這台送出多少、收回多少」。
+    received: dict[tuple[str, int], int] = defaultdict(int)
+    shape: dict[tuple[str, int], list[float]] = defaultdict(list)
+    # 比例特徵的基底：逐封包的 (目的, 目的埠)，不去重。
+    ratios: dict[tuple[str, int], list[tuple[str, int]]] = defaultdict(list)
+
+    for timestamp, src, dst, sport, dport, length in packets:
+        window = int((timestamp - t0) // window_sec)
+        key = (src, window)
+        tuple_key = (dst, sport, dport)
+        entry = sent[key].get(tuple_key)
+        if entry is None:
+            sent[key][tuple_key] = [length, 1, 0, timestamp]
+        else:
+            entry[0] += length
+            entry[1] += 1
+            entry[3] = min(entry[3], timestamp)
+        shape[key].append(timestamp)
+        ratios[key].append((dst, dport))
+        # 反向：這個封包對目的端而言是「收到」。
+        received[(dst, window)] += length
+
+    domain = int(manifest["ros_domain_id"])
+    base_port = 7400 + 250 * domain
+    spdp_port = base_port
+    meta_ports = {base_port + 10, base_port + 11, base_port + 12}
+    userdata_low = base_port + 13
+    userdata_high = base_port + 249
+
+    result = []
+    for (source, window), tuples in sorted(sent.items()):
+        group = []
+        for (dst, sport, dport), (obytes, opkts, _, first) in sorted(
+            tuples.items()
+        ):
+            group.append((first, source, dst, dport, obytes, opkts, 0))
+        timestamps = sorted(shape[(source, window)])
+        result.append(
+            _network_row(
+                manifest,
+                labels,
+                source,
+                window,
+                group,
+                timestamps,
+                resp_bytes=received.get((source, window), 0),
+                ratio_items=ratios[(source, window)],
+                t0=t0,
+                window_sec=window_sec,
+                domain=domain,
+                spdp_port=spdp_port,
+                meta_ports=meta_ports,
+                userdata_low=userdata_low,
+                userdata_high=userdata_high,
+            )
+        )
+    return result
+
+
+def load_telemetry_events(session_dir: Path) -> list[dict[str, Any]]:
+    """Load one canonical, ordered telemetry stream for a session."""
+    path = session_dir / "telemetry_events.jsonl"
+    if not path.is_file():
+        return []
+    events = [validate_telemetry_event(item) for item in _read_jsonl(path)]
+    if any(item["session_id"] != session_dir.name for item in events):
+        raise SchemaError(
+            f"telemetry session_id mismatch in {session_dir.name}"
+        )
+    sequences = [int(item["sequence"]) for item in events]
+    if sequences != list(range(len(events))):
+        raise SchemaError(
+            f"telemetry sequence gap or reorder in {session_dir.name}"
+        )
+    timestamps = [int(item["ts_unix_ns"]) for item in events]
+    if timestamps != sorted(timestamps):
+        raise SchemaError(
+            f"telemetry timestamps are not monotonic in {session_dir.name}"
+        )
+    return events
+
+
+def _safe_ratio(numerator: float, denominator: float) -> float:
+    if denominator <= 0:
+        return 0.0
+    return min(1.0, max(0.0, numerator / denominator))
+
+
+def _new_telemetry_accumulator() -> dict[str, float]:
+    return defaultdict(float)
+
+
+# Event types the collector accepts and live ROS nodes really emit, but which
+# do not currently feed any of the 18 telemetry features.  They belong to the
+# local-outcome / evidence workflow rather than the model input.
+#
+# Before this set existed the dispatcher below raised on anything it did not
+# recognise, on the assumption that the collector had already rejected it.  The
+# 2026-08-06 loopback pilot disproved that: velocity_guard_node emits
+# ``guard_input`` on its very first accepted command, so every live feature
+# build died with "unsupported telemetry event_type: guard_input" before a
+# single row was written.  Naming the non-contributing types explicitly keeps
+# the fail-closed guarantee for genuinely unknown types while letting live
+# sessions build.
+#
+# ``guard_input``, ``guard_output`` and ``authenticated_action`` are parked here
+# only until their feature semantics are agreed; step 1 of the contract
+# alignment moves them out and maps them onto real feature accumulators.
+NON_FEATURE_TELEMETRY_EVENTS = frozenset(
+    {
+        "authenticated_action",
+        "controlled_fault_injection",
+        # sidecar 觀測者的原始身份訊號（GUID＋認證判定）。它**不餵任何特徵**：
+        # 認證拒絕已經由 observer_deny_adapter 轉成 sros2_deny 進入
+        # sros_auth_fail_rate，identity→IP 歸因則由 P2 的 identity_attribution
+        # 另外處理。這裡列進來只是為了讓視窗不被整個丟掉——未知事件型別
+        # fail-closed 是刻意的，2026-08-30 第一次接觀測者就是被這道擋下。
+        "dds_identity",
+        "delivery_probe",
+        "guard_input",
+        "guard_output",
+        "guard_state",
+        "outcome_marker",
+        "parameter_digest",
+        "parameter_veto",
+        "process_health",
+        "state_digest",
+        "topic_probe",
+    }
+)
+
+
+def _accumulate_telemetry(
+    accumulator: dict[str, float],
+    event: dict[str, Any],
+) -> None:
+    event_type = event["event_type"]
+    details = event["details"]
+    accumulator["telemetry_event_count"] += 1
+    if event_type == "collector_tick":
+        accumulator["collector_tick_count"] += 1
+    elif event_type == "sros_auth_failure":
+        accumulator["sros_auth_failures"] += details["count"]
+    elif event_type == "sros_permission_denied":
+        accumulator["sros_permission_denies"] += details["count"]
+    elif event_type == "participant_change":
+        accumulator["participant_changes"] += details["count"]
+    elif event_type == "unknown_node":
+        accumulator["unknown_nodes"] += details["count"]
+    elif event_type == "hmac_validation":
+        accumulator["hmac_count"] += details["count"]
+        accumulator["hmac_valid"] += details["valid_count"]
+        accumulator["nonce_reuse"] += details["nonce_reuse_count"]
+        accumulator["channel_mismatch"] += details[
+            "channel_mismatch_count"
+        ]
+        accumulator["timestamp_violation"] += details[
+            "timestamp_violation_count"
+        ]
+    elif event_type == "publisher_observation":
+        accumulator["publisher_count"] += details["count"]
+        accumulator["publisher_violation"] += details["violation_count"]
+    elif event_type == "parameter_call":
+        accumulator["parameter_calls"] += details["count"]
+    elif event_type == "message_validation":
+        accumulator["message_count"] += details["count"]
+        accumulator["oversized_messages"] += details["oversized_count"]
+    elif event_type == "qos_delivery":
+        accumulator["qos_expected"] += details["expected_count"]
+        accumulator["qos_delivered"] += details["delivered_count"]
+    elif event_type == "heartbeat_observation":
+        accumulator["heartbeat_gap_sec"] = max(
+            accumulator["heartbeat_gap_sec"], details["gap_sec"]
+        )
+    elif event_type == "control_observation":
+        accumulator["control_count"] += details["count"]
+        accumulator["control_conflicts"] += details["conflict_count"]
+    elif event_type == "scan_observation":
+        accumulator["scan_count"] += details["count"]
+        accumulator["scan_static"] += details["static_count"]
+    elif event_type == "odom_cmd_observation":
+        accumulator["odom_cmd_count"] += details["count"]
+        accumulator["odom_cmd_mismatch"] += details["mismatch_count"]
+    elif event_type == "alert_observation":
+        accumulator["alert_count"] += details["count"]
+        accumulator["alert_reflection"] += details["reflection_count"]
+    elif event_type == "log_reject":
+        accumulator["log_rejects"] += details["count"]
+    elif event_type == "hmac_result":
+        accumulator["hmac_count"] += 1
+        if details["outcome"] == "accepted":
+            accumulator["hmac_valid"] += 1
+        elif details["reason"] == "nonce_reuse_or_capacity":
+            accumulator["nonce_reuse"] += 1
+        elif details["reason"] == "channel_mismatch":
+            accumulator["channel_mismatch"] += 1
+        elif details["reason"] == "timestamp_violation":
+            accumulator["timestamp_violation"] += 1
+    elif event_type == "detector_state":
+        # Transition evidence is intentionally sparse.  Incidents contribute a
+        # positive observation; recovery remains present in raw JSONL evidence
+        # without inflating the feature numerator.
+        incident = details["state"] == "incident"
+        detector = details["detector"]
+        if detector in {"d1", "d2"}:
+            accumulator["control_count"] += 1
+            accumulator["control_conflicts"] += int(incident)
+        elif detector == "d3":
+            accumulator["scan_count"] += 1
+            accumulator["scan_static"] += int(incident)
+        elif detector == "d4":
+            accumulator["publisher_count"] += 1
+            accumulator["publisher_violation"] += int(incident)
+        elif detector == "d6":
+            accumulator["odom_cmd_count"] += 1
+            accumulator["odom_cmd_mismatch"] += int(incident)
+    elif event_type == "authenticated_heartbeat_state":
+        accumulator["heartbeat_gap_sec"] = max(
+            accumulator["heartbeat_gap_sec"], details["gap_sec"]
+        )
+    elif event_type == "graph_state":
+        if details["state"] in {"fault", "overflow"}:
+            accumulator["log_rejects"] += 1
+    elif event_type == "sros2_deny":
+        # The classifier emits three kinds. Folding everything that is not
+        # authentication into the permission rate made a governance or plugin
+        # initialisation fault indistinguishable from a remote peer being
+        # refused access, which are different events with different responses:
+        # one is our own misconfiguration, the other is an attacker. Both
+        # features are source_unavailable today, so nothing is lost by fixing
+        # the semantics now -- and waiting would mean finding out they were
+        # mixed only after a sink existed and data had been collected.
+        kind = details["kind"]
+        if kind == "authentication":
+            accumulator["sros_auth_failures"] += details["count"]
+        elif kind == "permission":
+            accumulator["sros_permission_denies"] += details["count"]
+        else:
+            # governance: a configuration and source-health signal, not a
+            # denial of a remote peer. Counted so the window is not silently
+            # dropped, but it feeds no feature.
+            accumulator["sros_governance_faults"] += details["count"]
+    elif event_type in NON_FEATURE_TELEMETRY_EVENTS:
+        # Counted in telemetry_event_count above, but contributes no feature.
+        return
+    else:
+        # Reached when the collector gains an event type that no one taught the
+        # feature builder about.  Fail closed rather than silently dropping a
+        # signal the model may depend on.
+        raise SchemaError(f"unsupported telemetry event_type: {event_type}")
+
+
+def _telemetry_feature_values(
+    accumulator: dict[str, float],
+    *,
+    window_sec: float,
+) -> dict[str, float]:
+    hmac_count = accumulator["hmac_count"]
+    hmac_failures = max(0.0, hmac_count - accumulator["hmac_valid"])
+    qos_expected = accumulator["qos_expected"]
+    qos_dropped = max(
+        0.0, qos_expected - accumulator["qos_delivered"]
+    )
+    return {
+        "sros_auth_fail_rate": round(
+            accumulator["sros_auth_failures"] / window_sec, 6
+        ),
+        "sros_permission_deny_rate": round(
+            accumulator["sros_permission_denies"] / window_sec, 6
+        ),
+        "participant_churn_rate": round(
+            accumulator["participant_changes"] / window_sec, 6
+        ),
+        "unknown_node_rate": round(
+            accumulator["unknown_nodes"] / window_sec, 6
+        ),
+        "hmac_failure_rate": round(hmac_failures / window_sec, 6),
+        "nonce_reuse_ratio": round(
+            _safe_ratio(accumulator["nonce_reuse"], hmac_count), 6
+        ),
+        "channel_mismatch_ratio": round(
+            _safe_ratio(accumulator["channel_mismatch"], hmac_count), 6
+        ),
+        "timestamp_violation_ratio": round(
+            _safe_ratio(accumulator["timestamp_violation"], hmac_count), 6
+        ),
+        "publisher_violation_ratio": round(
+            _safe_ratio(
+                accumulator["publisher_violation"],
+                accumulator["publisher_count"],
+            ),
+            6,
+        ),
+        "parameter_call_rate": round(
+            accumulator["parameter_calls"] / window_sec, 6
+        ),
+        "oversized_message_ratio": round(
+            _safe_ratio(
+                accumulator["oversized_messages"],
+                accumulator["message_count"],
+            ),
+            6,
+        ),
+        "qos_drop_ratio": round(
+            _safe_ratio(qos_dropped, qos_expected), 6
+        ),
+        "heartbeat_gap_sec": round(
+            accumulator["heartbeat_gap_sec"], 6
+        ),
+        "control_conflict_ratio": round(
+            _safe_ratio(
+                accumulator["control_conflicts"],
+                accumulator["control_count"],
+            ),
+            6,
+        ),
+        "scan_static_ratio": round(
+            _safe_ratio(
+                accumulator["scan_static"], accumulator["scan_count"]
+            ),
+            6,
+        ),
+        "odom_cmd_mismatch_ratio": round(
+            _safe_ratio(
+                accumulator["odom_cmd_mismatch"],
+                accumulator["odom_cmd_count"],
+            ),
+            6,
+        ),
+        "alert_reflection_ratio": round(
+            _safe_ratio(
+                accumulator["alert_reflection"],
+                accumulator["alert_count"],
+            ),
+            6,
+        ),
+        "log_reject_rate": round(
+            accumulator["log_rejects"] / window_sec, 6
+        ),
+    }
+
+
+def build_telemetry_rows(
+    session_dir: Path,
+    manifest: dict[str, Any],
+    network_rows: list[dict[str, Any]],
+    *,
+    window_sec: float,
+) -> list[dict[str, Any]]:
+    """Aggregate raw events into the exact network session/window grid."""
+    events = load_telemetry_events(session_dir)
+    if not events or not network_rows:
+        return []
+    windows = sorted({int(row["window"]) for row in network_rows})
+    starts: dict[int, set[float]] = defaultdict(set)
+    labels: dict[int, set[tuple[str, str, str]]] = defaultdict(set)
+    for row in network_rows:
+        window = int(row["window"])
+        starts[window].add(float(row["window_start_unix"]))
+        labels[window].add(
+            (str(row["label"]), str(row["binary"]), str(row["label_scope"]))
+        )
+    if any(len(values) != 1 for values in starts.values()):
+        raise SchemaError(
+            f"network window start disagreement in {session_dir.name}"
+        )
+    if any(len(values) != 1 for values in labels.values()):
+        raise SchemaError(
+            f"network label disagreement in {session_dir.name}"
+        )
+    t0_values = {
+        next(iter(starts[window])) - window * window_sec
+        for window in windows
+    }
+    if len({round(value, 6) for value in t0_values}) != 1:
+        raise SchemaError(f"network window grid drift in {session_dir.name}")
+    t0 = min(t0_values)
+    accumulators = {
+        window: _new_telemetry_accumulator() for window in windows
+    }
+    for event in events:
+        event_seconds = int(event["ts_unix_ns"]) / 1_000_000_000
+        window = math.floor((event_seconds - t0) / window_sec)
+        if window in accumulators:
+            _accumulate_telemetry(accumulators[window], event)
+
+    result = []
+    for window in windows:
+        accumulator = accumulators[window]
+        label, binary, label_scope = next(iter(labels[window]))
+        result.append(
+            {
+                "session_id": manifest["session_id"],
+                "group_id": manifest["session_id"],
+                "scenario_id": manifest["scenario_id"],
+                "security_mode": manifest["security_mode"],
+                "ros_domain_id": manifest["ros_domain_id"],
+                "origin": manifest["origin"],
+                "window": window,
+                "window_start_unix": round(next(iter(starts[window])), 6),
+                "telemetry_event_count": int(
+                    accumulator["telemetry_event_count"]
+                ),
+                "collector_tick_count": int(
+                    accumulator["collector_tick_count"]
+                ),
+                **_telemetry_feature_values(
+                    accumulator, window_sec=window_sec
+                ),
+                "label": label,
+                "binary": binary,
+                "label_scope": label_scope,
+                "training_eligible": bool(manifest["training_eligible"]),
+                "evaluation_eligible": bool(
+                    manifest["training_eligible"]
+                    and manifest["origin"] == "live_lab"
+                ),
+                "policy_sha256": manifest["policy_sha256"],
+            }
+        )
+    return result
+
+
+def build_fusion_rows(
+    network_rows: list[dict[str, Any]],
+    telemetry_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    by_key = {
+        (row["session_id"], int(row["window"])): row
+        for row in telemetry_rows
+    }
+    if len(by_key) != len(telemetry_rows):
+        raise SchemaError("duplicate telemetry session/window key")
+    result = []
+    for network in network_rows:
+        telemetry = by_key.get(
+            (network["session_id"], int(network["window"]))
+        )
+        if telemetry is None:
+            continue
+        for name in ("label", "binary", "security_mode", "policy_sha256"):
+            if telemetry[name] != network[name]:
+                raise SchemaError(
+                    "network/telemetry metadata mismatch for "
+                    f"{network['session_id']} window={network['window']}"
+                )
+        result.append(
+            {
+                **network,
+                **{name: telemetry[name] for name in TELEMETRY_FEATURES},
+            }
+        )
+    return result
+
+
+def validate_multimodal_quality(
+    network_rows: list[dict[str, Any]],
+    telemetry_rows: list[dict[str, Any]],
+    fusion_rows: list[dict[str, Any]],
+) -> None:
+    """Fail closed when an eligible live session has incomplete alignment."""
+    expected_keys = {
+        (row["session_id"], int(row["window"])) for row in network_rows
+    }
+    actual_keys = {
+        (row["session_id"], int(row["window"])) for row in telemetry_rows
+    }
+    if expected_keys != actual_keys:
+        raise SchemaError(
+            "telemetry does not cover every network session/window"
+        )
+    if len(fusion_rows) != len(network_rows):
+        raise SchemaError("fusion row count does not match network row count")
+    ratio_features = {
+        "nonce_reuse_ratio",
+        "channel_mismatch_ratio",
+        "timestamp_violation_ratio",
+        "publisher_violation_ratio",
+        "oversized_message_ratio",
+        "qos_drop_ratio",
+        "control_conflict_ratio",
+        "scan_static_ratio",
+        "odom_cmd_mismatch_ratio",
+        "alert_reflection_ratio",
+    }
+    for row in telemetry_rows:
+        if int(row["collector_tick_count"]) <= 0:
+            raise SchemaError(
+                "telemetry window has no collector_tick evidence"
+            )
+        for name in TELEMETRY_FEATURES:
+            value = row[name]
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                or float(value) < 0.0
+                or (name in ratio_features and float(value) > 1.0)
+            ):
+                raise SchemaError(f"invalid live telemetry feature: {name}")
+
+
+def build_observation_rows(
+    session_dir: Path,
+    manifest: dict[str, Any],
+) -> list[dict[str, Any]]:
+    observations = _read_jsonl(
+        session_dir / "smoke_observations.jsonl"
+    )
+    result = []
+    for item in observations:
+        label = str(item.get("label", "normal"))
+        result.append(
+            {
+                "session_id": manifest["session_id"],
+                "group_id": manifest["session_id"],
+                "scenario_id": manifest["scenario_id"],
+                "security_mode": manifest["security_mode"],
+                "sample_index": item.get("sample_index", 0),
+                "participant_count": item.get("participant_count", 0),
+                "spdp_rate": item.get("spdp_rate", 0.0),
+                "data_rate": item.get("data_rate", 0.0),
+                "auth_failures": item.get("auth_failures", 0),
+                "permission_denies": item.get("permission_denies", 0),
+                "label": label,
+                "binary": "normal" if label == "normal" else "attack",
+                # Smoke observations remain false even with
+                # --include-nontrainable.
+                "training_eligible": False,
+            }
+        )
+    return result
+
+
+def _write_csv(
+    path: Path,
+    columns: list[str],
+    rows: list[dict[str, Any]],
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=columns,
+            extrasaction="raise",
+        )
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+
+def build_features(
+    *,
+    dataset_root: str | Path,
+    output_dir: str | Path,
+    include_nontrainable: bool = False,
+    window_sec: float = 8.0,
+    require_multimodal: bool = False,
+    verify_evidence_hashes: bool = False,
+    exclusions_path: str | Path | None = None,
+    network_source: str = "conn",
+) -> dict[str, int]:
+    if (
+        isinstance(window_sec, bool)
+        or not isinstance(window_sec, (int, float))
+        or not math.isfinite(float(window_sec))
+        or not 0.5 <= float(window_sec) <= 300
+    ):
+        raise ValueError("window_sec must be finite and in 0.5..300")
+    session_rows = []
+    network_rows = []
+    telemetry_rows = []
+    pinned_exclusions = load_pinned_exclusions(
+        Path(exclusions_path) if exclusions_path else None
+    )
+    fusion_rows = []
+    observation_rows = []
+    excluded_sessions: list[str] = []
+    if network_source not in ("conn", "packet"):
+        raise SchemaError(
+            f"network_source 只能是 conn 或 packet，收到 {network_source!r}"
+        )
+    conn_sources: dict[str, int] = {}
+    skipped = 0
+    missing_multimodal_sessions = 0
+    for session_dir in discover_sessions(dataset_root):
+        manifest = load_manifest(session_dir)
+        if manifest.get("status") != "complete":
+            skipped += 1
+            continue
+        if not include_nontrainable and not manifest.get("training_eligible"):
+            skipped += 1
+            continue
+        # Only sessions that are about to contribute rows are checked; a
+        # session already excluded above cannot contaminate anything.
+        try:
+            verify_manifest_evidence(
+                session_dir, manifest, verify_hashes=verify_evidence_hashes
+            )
+        except ManifestEvidenceMismatch as mismatch:
+            entry = pinned_exclusions.get(manifest.get("session_id", ""))
+            # 只有「單一問題」且與釘住的那一筆逐欄相符才排除。多個問題代表
+            # 這場的損壞已經超出當初記錄的範圍，仍舊 fail-closed。
+            if (
+                entry is not None
+                and len(mismatch.problems) == 1
+                and exclusion_matches(session_dir, entry, mismatch.problems[0])
+            ):
+                excluded_sessions.append(manifest["session_id"])
+                skipped += 1
+                continue
+            raise
+        labels = load_label_intervals(session_dir)
+        if len(labels) != 1:
+            raise SchemaError(
+                f"{session_dir.name} must have exactly one canonical interval"
+            )
+        session_rows.append(
+            build_session_row(session_dir, manifest, labels)
+        )
+        _, conn_source = resolve_conn_log(session_dir)
+        conn_sources[conn_source] = conn_sources.get(conn_source, 0) + 1
+        if network_source == "packet":
+            session_network = build_network_rows_from_packets(
+                session_dir,
+                manifest,
+                labels,
+                window_sec=float(window_sec),
+            )
+            if not session_network and (session_dir / "traffic.pcapng").is_file():
+                # 有 pcap 卻沒有逐封包紀錄，代表抽取還沒跑或跑壞了。默默回傳
+                # 空清單會讓這一場從特徵表裡消失，看起來像「這場沒有流量」。
+                raise SchemaError(
+                    f"{session_dir.name} 缺少 packet_windows/packets.tsv.gz；"
+                    "請先跑 工具腳本/extract_packet_windows.py"
+                )
+        else:
+            session_network = build_network_rows(
+                session_dir,
+                manifest,
+                labels,
+                window_sec=float(window_sec),
+            )
+        network_rows.extend(session_network)
+        session_telemetry = build_telemetry_rows(
+            session_dir,
+            manifest,
+            session_network,
+            window_sec=float(window_sec),
+        )
+        session_fusion = build_fusion_rows(
+            session_network, session_telemetry
+        )
+        telemetry_rows.extend(session_telemetry)
+        fusion_rows.extend(session_fusion)
+        eligible_live = bool(
+            manifest.get("training_eligible")
+            and manifest.get("origin") == "live_lab"
+        )
+        if eligible_live and (
+            not session_network or not session_telemetry
+        ):
+            missing_multimodal_sessions += 1
+        if require_multimodal and eligible_live:
+            if not session_network:
+                raise SchemaError(
+                    f"eligible live session has no network rows: "
+                    f"{session_dir.name}"
+                )
+            validate_multimodal_quality(
+                session_network,
+                session_telemetry,
+                session_fusion,
+            )
+        if include_nontrainable:
+            observation_rows.extend(
+                build_observation_rows(session_dir, manifest)
+            )
+
+    # 一半場次用重建後的位元組、一半用「校驗和丟包後的殘骸」，模型學到的會是
+    # 「哪些場次被重建過」而不是攻擊的性質——與 8/30 觀測者覆蓋不均等是同一種
+    # 假象。與其產出一張看起來變好的表，不如在這裡停下來。
+    present = {k: v for k, v in conn_sources.items() if k != "missing"}
+    if len(present) > 1:
+        detail = "、".join(f"{k}={v}" for k, v in sorted(present.items()))
+        raise SchemaError(
+            "conn.log 來源不一致，拒絕建表："
+            f"{detail}。請先對整個資料集跑 "
+            "工具腳本/rebuild_zeek_checksum.py，或把重建結果整批移走。"
+        )
+
+    output = Path(output_dir)
+    _write_csv(output / "session_features.csv", SESSION_COLUMNS, session_rows)
+    _write_csv(output / "network_features.csv", NETWORK_COLUMNS, network_rows)
+    _write_csv(
+        output / "telemetry_features.csv",
+        TELEMETRY_COLUMNS,
+        telemetry_rows,
+    )
+    _write_csv(output / "fusion_features.csv", FUSION_COLUMNS, fusion_rows)
+    _write_csv(
+        output / "smoke_observation_features.csv",
+        OBSERVATION_COLUMNS,
+        observation_rows,
+    )
+    summary = {
+        "schema_version": "sros2-firewall-feature-build/v1",
+        "session_rows": len(session_rows),
+        "network_rows": len(network_rows),
+        "telemetry_rows": len(telemetry_rows),
+        "fusion_rows": len(fusion_rows),
+        "smoke_observation_rows": len(observation_rows),
+        "skipped_sessions": skipped,
+        # 逐一列出被排除的 session，讓特徵表的來源可稽核：排除是有記錄的決定，
+        # 不是靜默跳過。
+        "pinned_exclusions_applied": sorted(excluded_sessions),
+        "missing_multimodal_sessions": missing_multimodal_sessions,
+        "include_nontrainable": include_nontrainable,
+        "require_multimodal": require_multimodal,
+        "window_sec": float(window_sec),
+        "grouping": "session_id",
+        # 這張表的位元組／封包／duration 是從哪一份 conn.log 來的。
+        "zeek_conn_sources": dict(sorted(conn_sources.items())),
+        # 網路特徵的分窗依據：conn 是流起點，packet 是封包時間。
+        "network_source": network_source,
+    }
+    atomic_write_json(output / "feature_build.json", summary)
+    return {
+        "session_rows": len(session_rows),
+        "network_rows": len(network_rows),
+        "telemetry_rows": len(telemetry_rows),
+        "fusion_rows": len(fusion_rows),
+        "observation_rows": len(observation_rows),
+        "skipped_sessions": skipped,
+        # 逐一列出被排除的 session，讓特徵表的來源可稽核：排除是有記錄的決定，
+        # 不是靜默跳過。
+        "pinned_exclusions_applied": sorted(excluded_sessions),
+        "missing_multimodal_sessions": missing_multimodal_sessions,
+    }
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Build session-grouped SROS2 firewall features"
+    )
+    parser.add_argument(
+        "--dataset",
+        type=Path,
+        default=Path(__file__).resolve().parent / "dataset",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path(__file__).resolve().parent / "features",
+    )
+    parser.add_argument("--window-sec", type=float, default=8.0)
+    parser.add_argument(
+        "--include-nontrainable",
+        action="store_true",
+        help="QA only; smoke rows remain training_eligible=false",
+    )
+    parser.add_argument(
+        "--require-multimodal",
+        action="store_true",
+        help=(
+            "fail if any eligible live session lacks aligned telemetry/fusion"
+        ),
+    )
+    parser.add_argument(
+        "--exclusions",
+        type=Path,
+        default=None,
+        help=(
+            "dataset_exclusions registry；只在實際失配與釘住的那一筆逐欄相符時"
+            "才排除該 session，其餘一律 fail-closed"
+        ),
+    )
+    parser.add_argument(
+        "--verify-evidence-hashes",
+        action="store_true",
+        help=(
+            "also re-hash every artifact against the manifest; sizes are "
+            "always checked, hashing 1,100 sessions costs about 15 minutes"
+        ),
+    )
+    parser.add_argument(
+        "--network-source",
+        choices=("conn", "packet"),
+        required=True,
+        help=(
+            "網路特徵的分窗依據。conn 用 Zeek 流紀錄的起點；packet 用逐封包"
+            "時間，需要先跑 extract_packet_windows.py。刻意沒有預設值："
+            "兩者欄位相同、意義不同，選錯不會有任何徵兆。"
+        ),
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    args = build_parser().parse_args(argv)
+    result = build_features(
+        network_source=args.network_source,
+        dataset_root=args.dataset,
+        output_dir=args.output,
+        include_nontrainable=args.include_nontrainable,
+        window_sec=args.window_sec,
+        require_multimodal=args.require_multimodal,
+        verify_evidence_hashes=args.verify_evidence_hashes,
+        exclusions_path=args.exclusions,
+    )
+    print(
+        "✅ 特徵輸出完成："
+        f"session={result['session_rows']}，"
+        f"network={result['network_rows']}，"
+        f"telemetry={result['telemetry_rows']}，"
+        f"fusion={result['fusion_rows']}，"
+        f"smoke={result['observation_rows']}，"
+        f"skipped={result['skipped_sessions']}"
+    )
+    print("所有模型切分必須使用 group_id=session_id。")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,95 @@
+{
+  "cases": {
+    "cross_host_with_security_log": {
+      "blockable_ips": [
+        "10.42.0.12"
+      ],
+      "distinct_guids": 4,
+      "distinct_source_ips": 2,
+      "features": {
+        "rtps_acl_deny_ratio": 0.0,
+        "rtps_authenticated_binding_ratio": 0.5,
+        "rtps_complete_evidence_ratio": 0.5,
+        "rtps_endpoint_rate": 0.25,
+        "rtps_guid_churn_rate": 0.25,
+        "rtps_guid_multi_ip_ratio": 0.0,
+        "rtps_ip_multi_guid_ratio": 1.0,
+        "rtps_participant_rate": 0.25,
+        "rtps_topic_diversity_ratio": 1.0
+      },
+      "observations": 11,
+      "per_ip": {
+        "10.42.0.11": {
+          "blockable": false,
+          "guids": 3,
+          "has_authenticated_identity": true,
+          "unique_guid": false
+        },
+        "10.42.0.12": {
+          "blockable": true,
+          "guids": 1,
+          "has_authenticated_identity": false,
+          "unique_guid": true
+        }
+      },
+      "windows": 3
+    },
+    "same_host_no_security_log": {
+      "blockable_ips": [],
+      "distinct_guids": 4,
+      "distinct_source_ips": 1,
+      "features": {
+        "rtps_acl_deny_ratio": 0.0,
+        "rtps_authenticated_binding_ratio": 0.0,
+        "rtps_complete_evidence_ratio": 0.0,
+        "rtps_endpoint_rate": 0.25,
+        "rtps_guid_churn_rate": 0.25,
+        "rtps_guid_multi_ip_ratio": 0.0,
+        "rtps_ip_multi_guid_ratio": 1.0,
+        "rtps_participant_rate": 0.25,
+        "rtps_topic_diversity_ratio": 0.5
+      },
+      "observations": 8,
+      "per_ip": {
+        "127.0.0.1": {
+          "blockable": false,
+          "guids": 4,
+          "has_authenticated_identity": false,
+          "unique_guid": false
+        }
+      },
+      "windows": 2
+    },
+    "same_host_with_security_log": {
+      "blockable_ips": [],
+      "distinct_guids": 4,
+      "distinct_source_ips": 1,
+      "features": {
+        "rtps_acl_deny_ratio": 0.0,
+        "rtps_authenticated_binding_ratio": 0.5,
+        "rtps_complete_evidence_ratio": 0.5,
+        "rtps_endpoint_rate": 0.25,
+        "rtps_guid_churn_rate": 0.25,
+        "rtps_guid_multi_ip_ratio": 0.0,
+        "rtps_ip_multi_guid_ratio": 1.0,
+        "rtps_participant_rate": 0.25,
+        "rtps_topic_diversity_ratio": 1.0
+      },
+      "observations": 11,
+      "per_ip": {
+        "127.0.0.1": {
+          "blockable": false,
+          "guids": 4,
+          "has_authenticated_identity": true,
+          "unique_guid": false
+        }
+      },
+      "windows": 3
+    }
+  },
+  "evidence": false,
+  "purpose": "pipeline shape validation before hardware exists",
+  "schema_version": "sros2-firewall-identity-dryrun/v1",
+  "synthetic": true,
+  "window_sec": 8.0
+}

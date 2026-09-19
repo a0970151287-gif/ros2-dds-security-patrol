@@ -1,0 +1,213 @@
+{
+  "batch": "/home/jesse/candidate_smoke_20260902T081833Z",
+  "capture_interfaces": {
+    "eth1": 9
+  },
+  "changes_shipped_features": false,
+  "min_unicast_ratio": 0.5,
+  "rows": [
+    {
+      "attack_class": "normal",
+      "capture_interface": "eth1",
+      "packet_source": "packet_windows",
+      "packets_multicast": 3320,
+      "packets_total": 3320,
+      "packets_unicast": 0,
+      "security_mode": "permissive",
+      "session": "20260902T081833333664Z_normal_patrol_6807df9d",
+      "top_destinations": [
+        [
+          "239.255.0.7",
+          3186
+        ],
+        [
+          "239.255.0.1",
+          134
+        ]
+      ],
+      "unicast_ratio": 0.0,
+      "verdict": "void_no_unicast"
+    },
+    {
+      "attack_class": "normal",
+      "capture_interface": "eth1",
+      "packet_source": "packet_windows",
+      "packets_multicast": 3375,
+      "packets_total": 3375,
+      "packets_unicast": 0,
+      "security_mode": "permissive",
+      "session": "20260902T081917487369Z_normal_patrol_2747bcfb",
+      "top_destinations": [
+        [
+          "239.255.0.7",
+          3240
+        ],
+        [
+          "239.255.0.1",
+          135
+        ]
+      ],
+      "unicast_ratio": 0.0,
+      "verdict": "void_no_unicast"
+    },
+    {
+      "attack_class": "normal",
+      "capture_interface": "eth1",
+      "packet_source": "packet_windows",
+      "packets_multicast": 3375,
+      "packets_total": 3375,
+      "packets_unicast": 0,
+      "security_mode": "permissive",
+      "session": "20260902T082002356560Z_normal_patrol_c40aa24c",
+      "top_destinations": [
+        [
+          "239.255.0.7",
+          3240
+        ],
+        [
+          "239.255.0.1",
+          135
+        ]
+      ],
+      "unicast_ratio": 0.0,
+      "verdict": "void_no_unicast"
+    },
+    {
+      "attack_class": "baseline_poisoning",
+      "capture_interface": "eth1",
+      "packet_source": "packet_windows",
+      "packets_multicast": 3386,
+      "packets_total": 3386,
+      "packets_unicast": 0,
+      "security_mode": "permissive",
+      "session": "20260902T082046240470Z_baseline_poisoning_f84ac724",
+      "top_destinations": [
+        [
+          "239.255.0.7",
+          3237
+        ],
+        [
+          "239.255.0.1",
+          149
+        ]
+      ],
+      "unicast_ratio": 0.0,
+      "verdict": "void_no_unicast"
+    },
+    {
+      "attack_class": "node_name_evasion",
+      "capture_interface": "eth1",
+      "packet_source": "packet_windows",
+      "packets_multicast": 3389,
+      "packets_total": 3389,
+      "packets_unicast": 0,
+      "security_mode": "permissive",
+      "session": "20260902T082131213299Z_node_name_evasion_20a3f347",
+      "top_destinations": [
+        [
+          "239.255.0.7",
+          3240
+        ],
+        [
+          "239.255.0.1",
+          149
+        ]
+      ],
+      "unicast_ratio": 0.0,
+      "verdict": "void_no_unicast"
+    },
+    {
+      "attack_class": "verify_flood",
+      "capture_interface": "eth1",
+      "packet_source": "packet_windows",
+      "packets_multicast": 3390,
+      "packets_total": 3390,
+      "packets_unicast": 0,
+      "security_mode": "permissive",
+      "session": "20260902T082215051955Z_verify_flood_22a41bbb",
+      "top_destinations": [
+        [
+          "239.255.0.7",
+          3240
+        ],
+        [
+          "239.255.0.1",
+          150
+        ]
+      ],
+      "unicast_ratio": 0.0,
+      "verdict": "void_no_unicast"
+    },
+    {
+      "attack_class": "node_churn",
+      "capture_interface": "eth1",
+      "packet_source": "packet_windows",
+      "packets_multicast": 3515,
+      "packets_total": 3515,
+      "packets_unicast": 0,
+      "security_mode": "permissive",
+      "session": "20260902T082259990738Z_node_churn_678b3555",
+      "top_destinations": [
+        [
+          "239.255.0.7",
+          3240
+        ],
+        [
+          "239.255.0.1",
+          275
+        ]
+      ],
+      "unicast_ratio": 0.0,
+      "verdict": "void_no_unicast"
+    },
+    {
+      "attack_class": "odom_spoof",
+      "capture_interface": "eth1",
+      "packet_source": "packet_windows",
+      "packets_multicast": 3336,
+      "packets_total": 3336,
+      "packets_unicast": 0,
+      "security_mode": "permissive",
+      "session": "20260902T082344772054Z_odom_spoof_3b47c5a6",
+      "top_destinations": [
+        [
+          "239.255.0.7",
+          3186
+        ],
+        [
+          "239.255.0.1",
+          150
+        ]
+      ],
+      "unicast_ratio": 0.0,
+      "verdict": "void_no_unicast"
+    },
+    {
+      "attack_class": "spdp_flood",
+      "capture_interface": "eth1",
+      "packet_source": "packet_windows",
+      "packets_multicast": 3336,
+      "packets_total": 3336,
+      "packets_unicast": 0,
+      "security_mode": "permissive",
+      "session": "20260902T082428616263Z_spdp_flood_b6eec10e",
+      "top_destinations": [
+        [
+          "239.255.0.7",
+          3186
+        ],
+        [
+          "239.255.0.1",
+          150
+        ]
+      ],
+      "unicast_ratio": 0.0,
+      "verdict": "void_no_unicast"
+    }
+  ],
+  "schema_version": "sros2-firewall-capture-scope/v1",
+  "sessions": 9,
+  "verdicts": {
+    "void_no_unicast": 9
+  }
+}

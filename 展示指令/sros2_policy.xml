@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SROS2 存取控制政策 — 合法節點放行（含 FastDDS 探索 topic ros_discovery_info）。
      目前用 wildcard 全放行，先讓「身分驗證+加密+擋攻擊機」成立；
-     細粒度 ACL（限定各節點只能讀寫特定 topic）列為階段二後續強化。 -->
+     細粒度 ACL（限定各節點只能讀寫特定 topic）列為階段二後續強化。
+
+     ※ 控制鏈說明（回應紅隊 2026-06-19 報告 §2.5 /cmd_vel 劫持）：
+       機器人的 /cmd_vel 實際訂閱端 = ros_gz_bridge，它與 robot_state_publisher、
+       gz 同跑在 /gazebo enclave（01c 以 ROS_SECURITY_ENCLAVE_OVERRIDE=/gazebo 啟動）。
+       SROS2 以「enclave 憑證(participant)層」授權，wildcard <topic>* 等於放行所有 topic，
+       故同 enclave 下的 bridge 在 Enforce 仍能合法訂閱 /cmd_vel；而**無 CA 憑證的攻擊機
+       participant 配不上加密握手 → 偽造的 /cmd_vel 送不進來（DATA=0）**。
+       下方 /gazebo 已明列 ros_gz_bridge / robot_state_publisher profile 以正確展開
+       各自的 node-relative 名稱（參數服務 / rosout）。 -->
 <policy version="0.2.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="http://download.ros.org/schema/policy.xsd">
@@ -96,9 +105,23 @@
         </profile>
       </profiles>
     </enclave>
+    <!-- /gazebo enclave：gazebo + ros_gz_bridge + robot_state_publisher 共用。
+         ros_gz_bridge 是 /cmd_vel / /scan / /odom 的橋接訂閱端（驅動機器人的關鍵）。 -->
     <enclave path="/gazebo">
       <profiles>
         <profile ns="/" node="gazebo">
+          <topics publish="ALLOW"><topic>*</topic></topics>
+          <topics subscribe="ALLOW"><topic>*</topic></topics>
+          <services reply="ALLOW"><service>*</service></services>
+          <services request="ALLOW"><service>*</service></services>
+        </profile>
+        <profile ns="/" node="ros_gz_bridge">
+          <topics publish="ALLOW"><topic>*</topic></topics>
+          <topics subscribe="ALLOW"><topic>*</topic></topics>
+          <services reply="ALLOW"><service>*</service></services>
+          <services request="ALLOW"><service>*</service></services>
+        </profile>
+        <profile ns="/" node="robot_state_publisher">
           <topics publish="ALLOW"><topic>*</topic></topics>
           <topics subscribe="ALLOW"><topic>*</topic></topics>
           <services reply="ALLOW"><service>*</service></services>

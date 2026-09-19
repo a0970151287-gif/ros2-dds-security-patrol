@@ -29,21 +29,43 @@ import threading
 import time
 
 import rclpy
+from rclpy.executors import (
+    ExternalShutdownException,
+    SingleThreadedExecutor,
+)
 from rclpy.node import Node
 from rcl_interfaces.srv import GetParameters
 
 
 def worker(target: str, stop_evt: threading.Event, idx: int, counter: list):
     node = Node(f'attacker_paramflood_{idx}')
-    cli = node.create_client(GetParameters, f'/{target}/get_parameters')
-    cli.wait_for_service(timeout_sec=5.0)
-    while not stop_evt.is_set():
-        req = GetParameters.Request()
-        req.names = ['poll_interval_sec', 'whitelist', 'emergency_stop_enabled']
-        fut = cli.call_async(req)
-        rclpy.spin_until_future_complete(node, fut, timeout_sec=2.0)
-        counter[idx] += 1
-    node.destroy_node()
+    executor = SingleThreadedExecutor(context=node.context)
+    try:
+        executor.add_node(node)
+        cli = node.create_client(GetParameters, f'/{target}/get_parameters')
+        cli.wait_for_service(timeout_sec=5.0)
+        while rclpy.ok() and not stop_evt.is_set():
+            req = GetParameters.Request()
+            req.names = [
+                'poll_interval_sec',
+                'whitelist',
+                'emergency_stop_enabled',
+            ]
+            fut = cli.call_async(req)
+            counter[idx] += 1
+            executor.spin_until_future_complete(fut, timeout_sec=2.0)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    except Exception:
+        # Jazzy may surface context shutdown as a private RCLError class that
+        # is not exported from rclpy.exceptions. Suppress only after the
+        # shared context has actually shut down; real runtime errors re-raise.
+        if rclpy.ok():
+            raise
+    finally:
+        executor.remove_node(node)
+        executor.shutdown(timeout_sec=0.5)
+        node.destroy_node()
 
 
 def main():
@@ -63,13 +85,21 @@ def main():
         t.start()
         threads.append(t)
 
-    time.sleep(duration)
-    stop_evt.set()
-    time.sleep(1.0)
-    total = sum(counter)
-    print(f'⏹ 結束：{duration:.0f}s 內送出 {total} 次 get_parameters '
-          f'(~{total/duration:.0f} req/s)', flush=True)
-    rclpy.shutdown()
+    try:
+        deadline = time.monotonic() + duration
+        while rclpy.ok() and time.monotonic() < deadline:
+            time.sleep(min(0.2, max(0.0, deadline - time.monotonic())))
+    except KeyboardInterrupt:
+        pass
+    finally:
+        stop_evt.set()
+        for thread in threads:
+            thread.join(timeout=2.5)
+        total = sum(counter)
+        print(f'⏹ 結束：{duration:.0f}s 內送出 {total} 次 get_parameters '
+              f'(~{total/duration:.0f} req/s)', flush=True)
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

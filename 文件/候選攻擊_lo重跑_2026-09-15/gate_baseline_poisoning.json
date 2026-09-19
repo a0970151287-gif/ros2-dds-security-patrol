@@ -1,0 +1,23 @@
+{
+  "attack_class": "baseline_poisoning",
+  "attack_evidence": "攻擊執行 30.0 秒，return_code=0",
+  "attack_ran": true,
+  "baseline_event_kinds": 73,
+  "baseline_sessions": [
+    "/home/jesse/candidate_smoke_lo_20260915T074804Z/20260915T074806105623Z_normal_patrol_73f0350d",
+    "/home/jesse/candidate_smoke_lo_20260915T074804Z/20260915T074856602282Z_normal_patrol_f4aa23da",
+    "/home/jesse/candidate_smoke_lo_20260915T074804Z/20260915T074943178608Z_normal_patrol_f3721a73"
+  ],
+  "candidate": "/home/jesse/candidate_smoke_lo_20260915T074804Z/20260915T075029794143Z_baseline_poisoning_d9a2e820",
+  "candidate_event_kinds": 71,
+  "exclusive_signals": {
+    "hmac_result.channel=alerts": 4,
+    "hmac_result.channel=alerts&outcome=accepted": 4,
+    "hmac_result.channel=alerts&reason=accepted": 4
+  },
+  "min_count": 3,
+  "scenario_id": "baseline_poisoning",
+  "schema_version": "sros2-firewall-evidence-exclusivity/v1",
+  "security_mode": "permissive",
+  "verdict": "pass"
+}

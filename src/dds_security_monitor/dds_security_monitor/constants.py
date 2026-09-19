@@ -71,13 +71,9 @@ DEFAULT_WAYPOINTS: tuple[Waypoint, ...] = (
 # 系統合法 publisher / subscriber 的 node 名清單
 # Reviewer 指出原本散布在 4 處，現在集中在這裡
 
-# 合法 /cmd_vel publisher（不含 ROS internal 跟 TQC 訓練專用）
+# 最終 /cmd_vel 只能有一個 publisher；控制器一律寫私有 input topic。
 CMD_VEL_ALLOWED_PUBS = frozenset({
-    "burger_env_top",          # TQC 訓練環境（節點名 burger_env_top）
-    "teleop_keyboard",         # 手動 teleop
-    "patrol_node",             # 自動巡邏（部署）
-    "dds_security_monitor",    # emergency stop
-    "intelligent_defense_node",  # IDS 也可發 stop cmd
+    "velocity_guard_node",
 })
 
 # 合法 /scan publisher
@@ -88,6 +84,21 @@ SCAN_ALLOWED_PUBS = frozenset({
     "rplidar_node",
     "ldlidar_node",
     "urg_node",
+})
+
+# 合法 /odom、/imu publisher
+ODOM_ALLOWED_PUBS = frozenset({
+    "ros_gz_bridge",
+    "parameter_bridge",
+    "turtlebot3_node",
+    "diff_drive_controller",
+    "gazebo",
+})
+IMU_ALLOWED_PUBS = frozenset({
+    "ros_gz_bridge",
+    "parameter_bridge",
+    "turtlebot3_node",
+    "gazebo",
 })
 
 # 合法的 ROS2 圖中節點（給 monitor_node 白名單用）
@@ -124,7 +135,6 @@ INTERNAL_NODE_PREFIXES = frozenset({
 
 # ── F. HMAC / Alert 設定 ────────────────────────────────────────────────────
 ALERT_SECRET_FILE     = os.path.expanduser("~/.config/dds-monitor/alert_secret")
-ALERT_SECRET_ENV      = "DDS_ALERT_SECRET"
 LINE_TOKEN_FILE       = os.path.expanduser("~/.config/dds-monitor/line_token")
 LINE_USER_ID_FILE     = os.path.expanduser("~/.config/dds-monitor/line_user_id")
 
@@ -132,8 +142,8 @@ LINE_RATE_LIMIT_SEC   = 15.0          # LINE 推送頻率限制
 
 
 # ── G. IDS detector thresholds（智能防禦）──────────────────────────────────
-IDS_PHYSICS_LIN_MAX    = 0.50          # m/s, 超出即攻擊 C
-IDS_PHYSICS_ANG_MAX    = 4.50          # rad/s
+IDS_PHYSICS_LIN_MAX    = 0.23          # m/s, Burger 0.22 + 約 5% buffer
+IDS_PHYSICS_ANG_MAX    = 3.00          # rad/s, Burger 2.84 + 約 5% buffer
 IDS_OSCILLATION_RATIO  = 0.15          # 方向衝突比例（D2）
 IDS_SCAN_REPEAT_DIFF   = 0.005         # 連續幀差異門檻（D3）
 IDS_VOTE_THRESHOLD     = 2             # 至少幾個 detector 觸發才發 alert

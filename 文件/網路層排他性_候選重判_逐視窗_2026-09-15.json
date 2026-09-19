@@ -1,0 +1,206 @@
+{
+  "batch": "/home/jesse/candidate_smoke_20260902T081833Z",
+  "candidates": {
+    "baseline_poisoning": {
+      "beats_control": true,
+      "count": 12,
+      "violated_features": [
+        "burstiness",
+        "conn_count",
+        "conn_rate",
+        "dominant_host_ratio",
+        "dominant_port_ratio",
+        "dst_port_entropy",
+        "interarrival_cv",
+        "mean_bytes_per_packet",
+        "orig_bytes_rate",
+        "orig_pkts_rate",
+        "spdp_ratio",
+        "tuple_repeat_ratio"
+      ],
+      "windows_outside": {
+        "burstiness": 1,
+        "conn_count": 4,
+        "conn_rate": 4,
+        "dominant_host_ratio": 3,
+        "dominant_port_ratio": 1,
+        "dst_port_entropy": 1,
+        "interarrival_cv": 1,
+        "mean_bytes_per_packet": 2,
+        "orig_bytes_rate": 1,
+        "orig_pkts_rate": 1,
+        "spdp_ratio": 3,
+        "tuple_repeat_ratio": 1
+      }
+    },
+    "node_churn": {
+      "beats_control": true,
+      "count": 11,
+      "violated_features": [
+        "burstiness",
+        "conn_count",
+        "conn_rate",
+        "dominant_host_ratio",
+        "dst_port_entropy",
+        "interarrival_cv",
+        "mean_bytes_per_packet",
+        "orig_bytes_rate",
+        "orig_pkts_rate",
+        "spdp_ratio",
+        "tuple_repeat_ratio"
+      ],
+      "windows_outside": {
+        "burstiness": 5,
+        "conn_count": 4,
+        "conn_rate": 4,
+        "dominant_host_ratio": 4,
+        "dst_port_entropy": 3,
+        "interarrival_cv": 5,
+        "mean_bytes_per_packet": 4,
+        "orig_bytes_rate": 2,
+        "orig_pkts_rate": 1,
+        "spdp_ratio": 4,
+        "tuple_repeat_ratio": 1
+      }
+    },
+    "node_name_evasion": {
+      "beats_control": true,
+      "count": 10,
+      "violated_features": [
+        "burstiness",
+        "conn_count",
+        "conn_rate",
+        "dominant_host_ratio",
+        "interarrival_cv",
+        "mean_bytes_per_packet",
+        "orig_bytes_rate",
+        "orig_pkts_rate",
+        "spdp_ratio",
+        "tuple_repeat_ratio"
+      ],
+      "windows_outside": {
+        "burstiness": 2,
+        "conn_count": 4,
+        "conn_rate": 4,
+        "dominant_host_ratio": 2,
+        "interarrival_cv": 2,
+        "mean_bytes_per_packet": 2,
+        "orig_bytes_rate": 1,
+        "orig_pkts_rate": 1,
+        "spdp_ratio": 2,
+        "tuple_repeat_ratio": 1
+      }
+    },
+    "odom_spoof": {
+      "beats_control": true,
+      "count": 12,
+      "violated_features": [
+        "burstiness",
+        "conn_count",
+        "conn_rate",
+        "dominant_host_ratio",
+        "dominant_port_ratio",
+        "dst_port_entropy",
+        "interarrival_cv",
+        "mean_bytes_per_packet",
+        "orig_bytes_rate",
+        "orig_pkts_rate",
+        "spdp_ratio",
+        "tuple_repeat_ratio"
+      ],
+      "windows_outside": {
+        "burstiness": 4,
+        "conn_count": 4,
+        "conn_rate": 4,
+        "dominant_host_ratio": 3,
+        "dominant_port_ratio": 1,
+        "dst_port_entropy": 1,
+        "interarrival_cv": 4,
+        "mean_bytes_per_packet": 3,
+        "orig_bytes_rate": 1,
+        "orig_pkts_rate": 1,
+        "spdp_ratio": 3,
+        "tuple_repeat_ratio": 1
+      }
+    },
+    "spdp_flood": {
+      "beats_control": true,
+      "count": 10,
+      "violated_features": [
+        "burstiness",
+        "conn_count",
+        "conn_rate",
+        "dominant_host_ratio",
+        "interarrival_cv",
+        "mean_bytes_per_packet",
+        "orig_bytes_rate",
+        "orig_pkts_rate",
+        "spdp_ratio",
+        "tuple_repeat_ratio"
+      ],
+      "windows_outside": {
+        "burstiness": 4,
+        "conn_count": 4,
+        "conn_rate": 4,
+        "dominant_host_ratio": 4,
+        "interarrival_cv": 4,
+        "mean_bytes_per_packet": 4,
+        "orig_bytes_rate": 1,
+        "orig_pkts_rate": 1,
+        "spdp_ratio": 4,
+        "tuple_repeat_ratio": 1
+      }
+    },
+    "verify_flood": {
+      "beats_control": true,
+      "count": 12,
+      "violated_features": [
+        "burstiness",
+        "conn_count",
+        "conn_rate",
+        "dominant_host_ratio",
+        "dominant_port_ratio",
+        "dst_port_entropy",
+        "interarrival_cv",
+        "mean_bytes_per_packet",
+        "orig_bytes_rate",
+        "orig_pkts_rate",
+        "spdp_ratio",
+        "tuple_repeat_ratio"
+      ],
+      "windows_outside": {
+        "burstiness": 2,
+        "conn_count": 4,
+        "conn_rate": 4,
+        "dominant_host_ratio": 5,
+        "dominant_port_ratio": 1,
+        "dst_port_entropy": 1,
+        "interarrival_cv": 2,
+        "mean_bytes_per_packet": 4,
+        "orig_bytes_rate": 1,
+        "orig_pkts_rate": 1,
+        "spdp_ratio": 5,
+        "tuple_repeat_ratio": 1
+      }
+    }
+  },
+  "changes_shipped_catalog": false,
+  "control_max": 9,
+  "control_violations_per_normal": [
+    9,
+    2,
+    4
+  ],
+  "note": "v1 用整場 min/max 區間,被安靜視窗拉回正常範圍而全部判 0;v2 改逐視窗",
+  "schema_version": "sros2-firewall-network-exclusivity/v2",
+  "sessions_per_class": {
+    "baseline_poisoning": 1,
+    "node_churn": 1,
+    "node_name_evasion": 1,
+    "normal": 3,
+    "odom_spoof": 1,
+    "spdp_flood": 1,
+    "verify_flood": 1
+  },
+  "window_sec": 8.0
+}
