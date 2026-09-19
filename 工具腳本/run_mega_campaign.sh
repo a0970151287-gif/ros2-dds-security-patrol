@@ -81,6 +81,31 @@ stack_down() {   # $1 = mode
   return 1
 }
 
+quarantine_empty_sessions() {
+  # stack 若在一批中途死掉，campaign 仍會**繼續產生場次**——只是那些場次的
+  # 遙測是空的。而「零事件」與「防禦擋下了一切」在資料上長得一模一樣，
+  # 這個專案已經被同一個混淆咬過好幾次。
+  #
+  # 2026-09-20 實測發生過：一個壞掉的探針讓我誤判 campaign 已死，於是把
+  # stack 收掉，而 campaign 其實還活著，又寫了好幾場沒有防禦在跑的資料。
+  #
+  # 所以每一批之後掃一次，把遙測過小的場次**移到隔離區**（不是刪除——
+  # raw 證據不刪，這是專案的規矩）。
+  local void="${DATASET}_void"
+  local moved=0 d tel
+  mkdir -p "$void"
+  for d in "$DATASET"/*/; do
+    [ -d "$d" ] || continue
+    tel="$d/telemetry_events.jsonl"
+    if [ ! -s "$tel" ] || [ "$(stat -c %s "$tel" 2>/dev/null || echo 0)" -lt 2048 ]; then
+      mv "$d" "$void"/ 2>/dev/null && moved=$((moved + 1))
+    fi
+  done
+  if [ "$moved" -gt 0 ]; then
+    echo "  ⚠️ 隔離了 $moved 場遙測為空的場次 → $void" | tee -a "$LOG"
+  fi
+}
+
 round=0
 while :; do
   round=$((round + 1))
@@ -101,6 +126,7 @@ while :; do
       echo "  $mode $phase rc=$?" | tee -a "$LOG"
     done
     stack_down "$mode"
+    quarantine_empty_sessions
     n=$(ls -d "$DATASET"/*/ 2>/dev/null | wc -l)
     echo "  累計場次 = $n" | tee -a "$LOG"
   done
