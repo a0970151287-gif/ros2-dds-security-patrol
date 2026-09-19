@@ -87,14 +87,11 @@ def main():
     matched = wait_for_matched_subscriber(node, pub)
     if matched == 0:
         print(f'⛔ {topic} 上沒有任何 QoS 相容的訂閱者配對（等了 '
-              f'{DISCOVERY_TIMEOUT_SEC:.0f} 秒）。這次攻擊不會送達，不執行。
-'
+              f'{DISCOVERY_TIMEOUT_SEC:.0f} 秒）。這次攻擊不會送達，不執行。\n'
               f'   目前宣告 {reliability.name} / {durability.name}。'
-              f'相容性有兩個軸，兩個都要對：
-'
+              f'相容性有兩個軸，兩個都要對：\n'
               f'   第三個參數 reliability（be／reliable）、'
-              f'第四個參數 durability（volatile／transient_local）。
-'
+              f'第四個參數 durability（volatile／transient_local）。\n'
               f'   防守端的 /security/heartbeat 是 RELIABLE + TRANSIENT_LOCAL。',
               file=sys.stderr, flush=True)
         node.destroy_node()

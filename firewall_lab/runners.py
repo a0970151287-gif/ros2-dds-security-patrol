@@ -379,21 +379,25 @@ def build_attack_argv(
             f"{candidate_duration:.3f}",
             "--participants", str(int(round(10 + intensity * 50))),
         ]
-    if scenario.runner == "heartbeat_starvation":
-        # 打的不是某個 topic，是 monitor 那條**單執行緒**的預算：
-        # `_check_graph` → get_node_names_and_namespaces() 的成本隨 graph 成長，
-        # 而它與 `_publish_heartbeat`（2.0s）串在同一條執行緒上。
-        # 心跳落在守衛租約（5.0s）與 IDS 門檻（10.0s）之間時，機器人停住而
-        # 沒有告警。intensity 只調**爬升的上限**，爬升節奏固定——這一類要找的
-        # 是門檻在哪，節奏也跟著變的話就分不出是哪一個造成的。
+    if scenario.runner == "graph_overflow":
+        # 打的是 `_check_graph` 的 `_GRAPH_NODE_MAX`(256) 那道 fail-safe：
+        # 超過就記 overflow、緊急停止,然後提早 return——白名單比對不執行。
+        # intensity 只調**爬升的上限**,爬升節奏固定：這一類要找的是門檻在哪,
+        # 節奏也跟著變的話就分不出是哪一個造成的。
+        # 上限跨過 256 才有意義,所以 intensity 0.1 也給到 296。
         return [
             python,
-            _script(root, f"{poc}/N36_heartbeat_starvation.py"),
+            _script(root, f"{poc}/N36_graph_overflow.py"),
             f"{candidate_duration:.3f}",
-            "--start", "20",
-            "--step", "20",
+            # 一開始就衝到門檻附近,不要慢慢爬。
+            # 2026-09-19 兩輪實測:防守端的 graph 視圖有明顯延遲,溢位都要到
+            # 第 43–45 秒才被記錄,幾乎貼著場次尾端。而且建立節點在數量變多
+            # 之後會變慢(步距 3 秒,實際到 8 秒),慢慢爬會把時間全花在建立上。
+            # 維持才是重點:monitor 每 5 秒才輪詢一次,溢位要撐過至少一次。
+            "--start", "60",
+            "--step", "40",
             "--step-sec", "3.0",
-            "--max-nodes", str(int(round(80 + intensity * 320))),
+            "--max-nodes", str(int(round(288 + intensity * 192))),
         ]
     if scenario.runner == "insider_hmac_forgery":
         # 內鬼：持 /intelligent_defense_node 的合法憑證，但沒有 HMAC 金鑰。

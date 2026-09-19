@@ -157,3 +157,31 @@ def test_the_check_would_have_caught_the_2026_09_02_defect():
     assert "be" in historical_argv and hits, (
         "判準對 2026-09-02 的實際 argv 不會咬人，那它就沒有用"
     )
+
+
+# ── 2026-09-19 補上的缺口：這一整組測試都是「讀字串」 ──────────
+
+
+def test_every_poc_script_actually_parses():
+    """上面每一個測試都用 regex 讀原始碼,所以**一個連 parse 都過不了的檔案
+    照樣全部通過**。
+
+    2026-09-19 實測到的後果：`N20_verify_flood.py` 有一個
+    `SyntaxError: unterminated f-string literal`（某次修補把 `\n` 寫成了真正的
+    換行字元,把字串截斷成三段）。它在 2026-09-02、09-15、09-19 三輪 smoke 裡
+    都是「攻擊沒有執行」,而這一組測試每一輪都是綠的。
+
+    修補本身正確、測試也正確,只是兩者之間沒有人問過「這個檔案跑得起來嗎」。
+    """
+    import py_compile
+
+    root = pathlib.Path(__file__).resolve().parents[1]
+    scripts = sorted((root / "紅隊測試" / "PoC腳本").glob("*.py"))
+    assert scripts, "找不到任何 PoC 腳本——路徑變了?"
+    broken = []
+    for script in scripts:
+        try:
+            py_compile.compile(str(script), cfile=None, doraise=True)
+        except py_compile.PyCompileError as exc:
+            broken.append(f"{script.name}: {exc.msg.strip().splitlines()[-1]}")
+    assert not broken, "PoC 腳本語法錯誤：\n" + "\n".join(broken)

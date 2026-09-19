@@ -1,0 +1,19 @@
+{
+  "attack_class": "node_name_evasion",
+  "attack_evidence": "攻擊執行 30.0 秒，return_code=0",
+  "attack_ran": true,
+  "baseline_event_kinds": 76,
+  "baseline_sessions": [
+    "/home/jesse/candidate_smoke_20260919T171348Z/20260919T171434882129Z_normal_patrol_4d4cf2c3",
+    "/home/jesse/candidate_smoke_20260919T171348Z/20260919T171520512966Z_normal_patrol_c2f49f84",
+    "/home/jesse/candidate_smoke_20260919T171348Z/20260919T171606420436Z_normal_patrol_fbbba2b4"
+  ],
+  "candidate": "/home/jesse/candidate_smoke_20260919T171348Z/20260919T171737360062Z_node_name_evasion_6635638f",
+  "candidate_event_kinds": 77,
+  "exclusive_signals": {},
+  "min_count": 3,
+  "scenario_id": "node_name_evasion",
+  "schema_version": "sros2-firewall-evidence-exclusivity/v1",
+  "security_mode": "permissive",
+  "verdict": "reject_no_exclusive_evidence"
+}

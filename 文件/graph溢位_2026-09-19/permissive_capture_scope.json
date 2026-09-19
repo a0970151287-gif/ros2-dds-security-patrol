@@ -1,0 +1,169 @@
+{
+  "batch": "/home/jesse/candidate_smoke_20260919T171348Z",
+  "capture_interfaces": {
+    "lo": 7
+  },
+  "changes_shipped_features": false,
+  "min_unicast_ratio": 0.5,
+  "rows": [
+    {
+      "attack_class": "normal",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 262,
+      "packets_total": 1310,
+      "packets_unicast": 1048,
+      "security_mode": "permissive",
+      "session": "20260919T171434882129Z_normal_patrol_4d4cf2c3",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          1048
+        ],
+        [
+          "239.255.0.1",
+          262
+        ]
+      ],
+      "unicast_ratio": 0.8,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "normal",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 270,
+      "packets_total": 1350,
+      "packets_unicast": 1080,
+      "security_mode": "permissive",
+      "session": "20260919T171520512966Z_normal_patrol_c2f49f84",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          1080
+        ],
+        [
+          "239.255.0.1",
+          270
+        ]
+      ],
+      "unicast_ratio": 0.8,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "normal",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 270,
+      "packets_total": 1350,
+      "packets_unicast": 1080,
+      "security_mode": "permissive",
+      "session": "20260919T171606420436Z_normal_patrol_fbbba2b4",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          1080
+        ],
+        [
+          "239.255.0.1",
+          270
+        ]
+      ],
+      "unicast_ratio": 0.8,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "baseline_poisoning",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 300,
+      "packets_total": 3546,
+      "packets_unicast": 3246,
+      "security_mode": "permissive",
+      "session": "20260919T171652208433Z_baseline_poisoning_3bdb233d",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          3246
+        ],
+        [
+          "239.255.0.1",
+          300
+        ]
+      ],
+      "unicast_ratio": 0.915398,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "node_name_evasion",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 298,
+      "packets_total": 3310,
+      "packets_unicast": 3012,
+      "security_mode": "permissive",
+      "session": "20260919T171737360062Z_node_name_evasion_6635638f",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          3012
+        ],
+        [
+          "239.255.0.1",
+          298
+        ]
+      ],
+      "unicast_ratio": 0.90997,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "verify_flood",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 300,
+      "packets_total": 3965,
+      "packets_unicast": 3665,
+      "security_mode": "permissive",
+      "session": "20260919T171823315493Z_verify_flood_a2c673fa",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          3665
+        ],
+        [
+          "239.255.0.1",
+          300
+        ]
+      ],
+      "unicast_ratio": 0.924338,
+      "verdict": "ok"
+    },
+    {
+      "attack_class": "graph_overflow",
+      "capture_interface": "lo",
+      "packet_source": "packet_windows",
+      "packets_multicast": 596,
+      "packets_total": 78901,
+      "packets_unicast": 78305,
+      "security_mode": "permissive",
+      "session": "20260919T171908389204Z_graph_overflow_8c7b11d2",
+      "top_destinations": [
+        [
+          "127.0.0.1",
+          78305
+        ],
+        [
+          "239.255.0.1",
+          596
+        ]
+      ],
+      "unicast_ratio": 0.992446,
+      "verdict": "ok"
+    }
+  ],
+  "schema_version": "sros2-firewall-capture-scope/v1",
+  "sessions": 7,
+  "verdicts": {
+    "ok": 7
+  }
+}

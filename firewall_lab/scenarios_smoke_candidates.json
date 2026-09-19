@@ -58,12 +58,12 @@
       "requires_gazebo": true
     },
     {
-      "id": "heartbeat_starvation",
-      "attack_class": "heartbeat_starvation",
-      "runner": "heartbeat_starvation",
-      "description": "候選：N36_heartbeat_starvation.py。灌大 ROS graph 餓死 monitor 單執行緒的心跳，讓守衛在 5s 租約鎖定而 IDS 的 10s 門檻不觸發。policy 沒有對應規則。",
+      "id": "graph_overflow",
+      "attack_class": "graph_overflow",
+      "runner": "graph_overflow",
+      "description": "候選：N36_graph_overflow.py。node 數越過 _GRAPH_NODE_MAX(256) 讓 _check_graph 提早 return，白名單偵測整段停擺而證據極少。policy 沒有對應規則。",
       "default_security_mode": "permissive",
-      "duration_sec": 45,
+      "duration_sec": 75,
       "warmup_sec": 10,
       "cooldown_sec": 5,
       "intensity_min": 0.1,
