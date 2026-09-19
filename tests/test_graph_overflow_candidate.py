@@ -190,7 +190,8 @@ def test_the_candidate_is_not_in_the_shipping_catalog():
         (_ROOT / "firewall_lab" / "scenarios.json").read_text(encoding="utf-8"))
     ids = {s["id"] for s in shipping["scenarios"]}
     assert "graph_overflow" not in ids
-    assert len(ids) == 19
+    # 2026-09-20 verify_flood 升級之後是 20 支。
+    assert len(ids) == 20
 
 
 def test_it_is_not_a_credentialed_runner():

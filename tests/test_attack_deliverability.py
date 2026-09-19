@@ -77,8 +77,18 @@ def test_verify_flood_does_not_declare_best_effort():
 
     宣告 `be` 的話 DDS 直接不投遞，而腳本只數自己呼叫了幾次 publish()。
     """
-    argv = _argv_for(_CANDIDATE_CATALOG, "verify_flood")
-    assert argv is not None, "候選 catalog 裡找不到 verify_flood"
+    # 2026-09-20 升級進出貨 catalog；升級前在候選檔。兩邊都找，找不到才失敗
+    # ——這一條要守的是 QoS，不是它住在哪一個 catalog。
+    argv = None
+    for catalog in (_REPO / "firewall_lab" / "scenarios.json",
+                    _CANDIDATE_CATALOG):
+        try:
+            argv = _argv_for(catalog, "verify_flood")
+        except KeyError:
+            continue
+        if argv is not None:
+            break
+    assert argv is not None, "出貨與候選 catalog 都找不到 verify_flood"
     assert "/security/heartbeat" in argv
     assert "be" not in argv, (
         "verify_flood 又宣告成 BEST_EFFORT 了——對 RELIABLE 訂閱者一則都不會送達。"

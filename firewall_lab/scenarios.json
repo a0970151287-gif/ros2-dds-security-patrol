@@ -266,6 +266,20 @@
       "intensity_max": 1.0,
       "expected_action": "temporary_block",
       "requires_gazebo": true
+    },
+    {
+      "id": "verify_flood",
+      "attack_class": "verify_flood",
+      "runner": "verify_flood",
+      "description": "N20_verify_flood.py:對 /security/heartbeat 灌未簽章的驗證請求。2026-09-20 連續兩輪通過證據排他性 gate 後升級。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "temporary_block",
+      "requires_gazebo": true
     }
   ]
 }

@@ -520,6 +520,26 @@ def _attack_process_succeeded(
     return return_code == 0
 
 
+# ── 場次抖動（2026-09-20）─────────────────────────────────────────────
+#
+# 在這之前,orchestrator **只隨機化 intensity**;warmup／duration／cooldown
+# 全部照 catalog、每一類固定。後果是 2026-09-15 量到的
+# 「攻擊起始視窗 274／280（98%）固定在 window 1」——任何編碼「第幾個視窗」
+# 的東西都會有效,而那在攻擊時間任意的真實部署上不會轉移。
+#
+# ⚠️ 最重要的約束：**warmup 與 cooldown 對每一個類別（含 normal）抽自同一個
+# 分布**。若某一類的起點分布不同,模型會學到「起點 ⇒ 類別」,那是比原本更糟
+# 的混淆——原本至少是所有類別一起偏。
+#
+# duration 用**乘數**而不是絕對值,因為各類攻擊的機制需要的時間本來就不同
+# （graph_overflow 要 75 秒才跨得過 256 個 node,壓到 30 秒就什麼都沒發生）。
+# ⚠️ 代價是 duration 的分布**與類別相關**。這一點必須用「場次長度能不能預測
+# 類別」的對照去量,不能假設它無害。
+JITTER_WARMUP_SEC = (4.0, 28.0)      # 8 秒一個視窗 ⇒ 攻擊起點落在 window 0–3
+JITTER_COOLDOWN_SEC = (3.0, 12.0)
+JITTER_DURATION_SCALE = (0.6, 1.3)   # 乘在 catalog 宣告的 duration 上
+
+
 def run_session(
     *,
     scenario: Scenario,
@@ -531,16 +551,27 @@ def run_session(
     duration_override: float | None,
     capture_interface: str | None,
     ros_snapshots: bool,
+    jitter: bool = False,
 ) -> Path:
     rng = random.Random(seed)
     intensity = rng.uniform(
         scenario.intensity_min, scenario.intensity_max
     )
-    duration = (
-        float(duration_override)
-        if duration_override is not None
-        else scenario.duration_sec
-    )
+    if duration_override is not None:
+        duration = float(duration_override)
+    elif jitter:
+        duration = scenario.duration_sec * rng.uniform(*JITTER_DURATION_SCALE)
+    else:
+        duration = scenario.duration_sec
+    duration = max(1.0, min(duration, 300.0))
+    if jitter:
+        # 先抽 warmup 與 cooldown,順序固定——換順序會改變同一個 seed 抽到的值,
+        # 而 seed 是這一場唯一可重現的依據。
+        warmup = rng.uniform(*JITTER_WARMUP_SEC)
+        cooldown = rng.uniform(*JITTER_COOLDOWN_SEC)
+    else:
+        warmup = scenario.warmup_sec
+        cooldown = scenario.cooldown_sec
     if not 1.0 <= duration <= 300.0:
         raise ValueError("session duration must be in 1..300 seconds")
 
@@ -569,9 +600,15 @@ def run_session(
         randomization={
             "intensity": intensity,
             "duration_sec": duration,
-            "warmup_sec": scenario.warmup_sec,
-            "cooldown_sec": scenario.cooldown_sec,
+            "warmup_sec": warmup,
+            "cooldown_sec": cooldown,
             "requires_gazebo": scenario.requires_gazebo,
+            # 抖動開著時上面三個是**抽到的值**,不是 catalog 的宣告值。
+            # 沒有這個旗標的話,事後無從分辨哪一批是抖動過的。
+            "jitter": jitter,
+            "catalog_duration_sec": scenario.duration_sec,
+            "catalog_warmup_sec": scenario.warmup_sec,
+            "catalog_cooldown_sec": scenario.cooldown_sec,
         },
     )
     manifest_path = session_dir / "manifest.json"
@@ -656,7 +693,7 @@ def run_session(
             )
 
         events.emit("warmup_started", "warmup")
-        _phase_sleep(scenario.warmup_sec, mode)
+        _phase_sleep(warmup, mode)
         events.emit("warmup_completed", "warmup")
 
         attack_start = time.time_ns()
@@ -702,7 +739,7 @@ def run_session(
             attack_process = None
 
         events.emit("cooldown_started", "cooldown")
-        _phase_sleep(scenario.cooldown_sec, mode)
+        _phase_sleep(cooldown, mode)
         events.emit("cooldown_completed", "cooldown")
 
         if mode == "live" and ros_snapshots:
@@ -873,6 +910,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
+        "--jitter", action="store_true",
+        help="每一場另外抽 warmup／duration／cooldown。"
+             "warmup 與 cooldown 對所有類別用同一個分布；"
+             "duration 是乘在 catalog 宣告值上的乘數。")
+    parser.add_argument(
         "--mode",
         choices=("smoke", "live"),
         default="smoke",
@@ -963,6 +1005,7 @@ def main(argv: list[str] | None = None) -> int:
                 domain_id=domain,
                 seed=session_seed,
                 duration_override=args.duration,
+                jitter=args.jitter,
                 capture_interface=args.capture_interface,
                 ros_snapshots=args.ros_snapshots,
             )

@@ -92,49 +92,49 @@ def test_scenario_ids_are_unique_within_each_file():
     assert len(candidate_ids) == len(set(candidate_ids))
 
 
-def test_the_pre_promotion_catalog_hash_is_archived():
-    """升級改變 `scenarios.json` 的 SHA-256,而既有 campaign 的
-    `catalog_sha256` 釘著它。沒登記舊雜湊的話,那些已完成的 campaign 會變成
+def test_every_promotion_in_the_chain_is_archived_and_consistent():
+    """升級改變 `scenarios.json` 的 SHA-256，而既有 campaign 的
+    `catalog_sha256` 釘著它。沒登記舊雜湊的話，那些已完成的 campaign 會變成
     「不符合現行也不符合任何封存」——整個資料集的來源憑證失效。
     2026-09-01 為此出過一次事。
 
-    這一條守住的不是「有沒有登記」,是**登記的內容與當時的檔案逐項相同**。
+    這一條守的不是「有沒有登記」，是**整條升級鏈逐項對得起來**：
+    從現行 catalog 依序扣掉每一次升級新增的 scenario，必須逐一還原出
+    每一個封存表。只比對最後一次的話，多升一次就會對不上（2026-09-20
+    第一次跑就是這樣紅的）。
     """
     import hashlib
-    import subprocess
 
     from firewall_lab.campaign import ARCHIVED_COMPLETED_CATALOGS
 
-    # 2026-09-15 升級前的十七情境 catalog。
-    pre_promotion = (
-        "701ba0ae9767d7f0bf0ad3c7004649f0ef1318ec80e937b299e9e57c6be7e818"
-    )
-    assert pre_promotion in ARCHIVED_COMPLETED_CATALOGS, (
-        "升級前的 catalog 雜湊沒有登記進封存表"
+    # (升級**前**的雜湊, 那一次新增的 scenario)。由新到舊。
+    promotions = (
+        ("f466946b99e07baac3c7d3fc92c3ff0e7c4461ca5fcf51b4f133b7115cf4ef36",
+         {"verify_flood"}),                      # 2026-09-20
+        ("701ba0ae9767d7f0bf0ad3c7004649f0ef1318ec80e937b299e9e57c6be7e818",
+         {"spdp_flood", "odom_spoof"}),          # 2026-09-15
     )
 
     # 現行版本**不該**在封存表裡——封存是給已經不是現行的版本用的。
-    current = hashlib.sha256(
+    current_hash = hashlib.sha256(
         (WORKSPACE / "firewall_lab" / "scenarios.json").read_bytes()
     ).hexdigest()
-    assert current not in ARCHIVED_COMPLETED_CATALOGS
+    assert current_hash not in ARCHIVED_COMPLETED_CATALOGS
 
-    # 內容比對：用 git 取回當時的檔案,而不是相信註解。
-    try:
-        blob = subprocess.run(
-            ["git", "-C", str(WORKSPACE), "cat-file", "-p", f"{pre_promotion[:0]}HEAD"],
-            capture_output=True, text=True, check=True, timeout=30,
-        )
-    except Exception:  # pragma: no cover - 沒有 git 就只驗鍵存在
-        pytest.skip("git 不可用,跳過內容比對")
-    del blob
-    archived = ARCHIVED_COMPLETED_CATALOGS[pre_promotion]
     shipped_now = load_catalog()
-    promoted = {"spdp_flood", "odom_spoof"}
-    # 封存的那一版 = 現行版本扣掉這次升級的兩支。
-    assert set(archived) == set(shipped_now) - promoted, (
-        "封存表記的 scenario 集合與「現行扣掉本次升級」對不起來"
-    )
-    for scenario_id, (attack_class, action) in archived.items():
-        assert shipped_now[scenario_id].attack_class == attack_class
-        assert shipped_now[scenario_id].expected_action == action
+    expected = set(shipped_now)
+    for digest, added in promotions:
+        assert digest in ARCHIVED_COMPLETED_CATALOGS, (
+            f"升級前的 catalog 雜湊 {digest[:12]}… 沒有登記進封存表")
+        assert added <= expected, (
+            f"{sorted(added)} 不在現行 catalog 裡，升級鏈的宣告有誤")
+        expected -= added
+        archived = ARCHIVED_COMPLETED_CATALOGS[digest]
+        assert set(archived) == expected, (
+            f"{digest[:12]}… 的封存表與升級鏈推得的集合對不起來；"
+            f"只在封存表 {sorted(set(archived) - expected)}；"
+            f"只在推算值 {sorted(expected - set(archived))}")
+        # 內容也要一致,不只是鍵。
+        for scenario_id, (attack_class, action) in archived.items():
+            assert shipped_now[scenario_id].attack_class == attack_class
+            assert shipped_now[scenario_id].expected_action == action

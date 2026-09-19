@@ -45,6 +45,35 @@ MAX_CAMPAIGN_SESSIONS = 10_000
 # policy migration. Archived catalogs bind only the fields stored in a plan
 # and can never be used to execute pending work.
 ARCHIVED_COMPLETED_CATALOGS = {
+    # 2026-09-20 把 verify_flood 升級到出貨之前的十九情境 catalog。
+    # verify_flood 連續兩輪通過證據排他性 gate（9–12 個專屬訊號，
+    # 其中 5–6 個是機制綁定的:heartbeat 通道被 HMAC 拒絕），
+    # 而且與另外兩個候選都分得開。2026-09-02/09-15/09-19 三輪之所以
+    # 判「攻擊沒有執行」,是 N20 有一個 SyntaxError。
+    #
+    # 表的來源:升級腳本在改檔**之前**直接對磁碟取 sha256,並由同一份
+    # 內容產生下表,所以鍵與值必然一致。
+    "f466946b99e07baac3c7d3fc92c3ff0e7c4461ca5fcf51b4f133b7115cf4ef36": {
+        "normal_patrol": ("normal", "allow"),
+        "unauthorized_participant": ("identity_abuse", "deny_participant"),
+        "cmd_vel_injection": ("command_injection", "lock_velocity"),
+        "sensor_status_spoof": ("sensor_spoof", "drop_message"),
+        "parameter_tamper": ("parameter_tamper", "deny_participant"),
+        "oversized_scan": ("message_dos", "drop_message"),
+        "parameter_flood": ("service_dos", "temporary_block"),
+        "heartbeat_replay": ("replay", "drop_message"),
+        "alert_replay": ("replay_dos", "drop_message"),
+        "discovery_recon": ("discovery_recon", "alert"),
+        "insider_hmac_forgery": ("hmac_forgery", "drop_message"),
+        "insider_parameter_write": ("confused_deputy", "alert"),
+        "cross_channel_relay": ("cross_channel_relay", "drop_message"),
+        "scan_drift": ("scan_drift", "lock_velocity"),
+        "health_spoof": ("health_spoof", "drop_message"),
+        "mission_spoof": ("mission_spoof", "drop_message"),
+        "node_churn": ("node_churn", "temporary_block"),
+        "odom_spoof": ("odom_spoof", "lock_velocity"),
+        "spdp_flood": ("spdp_flood", "temporary_block"),
+    },
     # 2026-09-15 把 spdp_flood 與 odom_spoof 升級到出貨之前的十七情境
     # catalog。640 場 refresh campaign 釘著這個雜湊。
     #
@@ -518,6 +547,7 @@ def execute_campaign(
     capture_interface: str,
     limit: int | None = None,
     duration_override: float | None = None,
+    jitter: bool = False,
     ros_snapshots: bool = False,
     retry_failed: bool = False,
     confirm_isolated_lab: bool = False,
@@ -582,6 +612,7 @@ def execute_campaign(
                     domain_id=entry["domain_id"],
                     seed=entry["seed"],
                     duration_override=duration_override,
+                    jitter=jitter,
                     capture_interface=capture_interface,
                     ros_snapshots=ros_snapshots,
                 )
@@ -658,6 +689,9 @@ def build_parser() -> argparse.ArgumentParser:
     runner.add_argument("--capture-interface", required=True)
     runner.add_argument("--limit", type=int, default=None)
     runner.add_argument("--duration", type=float, default=None)
+    runner.add_argument(
+        "--jitter", action="store_true",
+        help="每一場另外抽 warmup／duration／cooldown，見 orchestrator")
     runner.add_argument("--ros-snapshots", action="store_true")
     runner.add_argument("--retry-failed", action="store_true")
     runner.add_argument(
@@ -697,6 +731,7 @@ def main(argv: list[str] | None = None) -> int:
         capture_interface=args.capture_interface,
         limit=args.limit,
         duration_override=args.duration,
+        jitter=args.jitter,
         ros_snapshots=args.ros_snapshots,
         retry_failed=args.retry_failed,
         confirm_isolated_lab=args.confirm_isolated_lab,
