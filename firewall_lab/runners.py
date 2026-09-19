@@ -193,6 +193,37 @@ def _script(root: Path, relative: str) -> str:
     return str(path)
 
 
+def build_adaptive_argv(
+    scenario: Scenario,
+    *,
+    workspace_root: str | Path,
+    duration_sec: float,
+    catalog_path: str | Path,
+    seed: int,
+) -> list[str] | None:
+    """把一場攻擊交給 N37 自適應驅動器,而不是直接跑固定參數的 PoC。
+
+    N37 會在場次內反覆「試探 → 觀察防禦反應 → 升級或退避」,而它**自己**
+    呼叫 `build_attack_argv` 取得每一個 burst 的 argv——所以參數對應表只有
+    一份,不會有第二份各自漂移（C2C-054 記過）。
+
+    ⚠️ 這裡刻意**不**呼叫 `build_attack_argv`：呼叫了就會與 N37 內部的呼叫
+    形成遞迴。`normal` 沒有攻擊行程,照樣回 None。
+    """
+    if scenario.runner == "normal":
+        return None
+    root = Path(workspace_root).resolve()
+    duration = max(5.0, min(float(duration_sec), 300.0))
+    return [
+        sys.executable,
+        _script(root, "紅隊測試/PoC腳本/N37_adaptive_attacker.py"),
+        f"{duration:.3f}",
+        "--scenario", scenario.scenario_id,
+        "--catalog", str(Path(catalog_path).resolve()),
+        "--seed", str(int(seed)),
+    ]
+
+
 def build_attack_argv(
     scenario: Scenario,
     *,

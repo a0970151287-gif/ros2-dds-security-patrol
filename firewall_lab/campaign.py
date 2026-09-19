@@ -548,6 +548,7 @@ def execute_campaign(
     limit: int | None = None,
     duration_override: float | None = None,
     jitter: bool = False,
+    adaptive: bool = False,
     ros_snapshots: bool = False,
     retry_failed: bool = False,
     confirm_isolated_lab: bool = False,
@@ -613,6 +614,11 @@ def execute_campaign(
                     seed=entry["seed"],
                     duration_override=duration_override,
                     jitter=jitter,
+                    adaptive=adaptive,
+                    # campaign 一律跑出貨 catalog（`plan` 的 catalog_sha256
+                    # 也是對它取的），所以直接指過去,不用再傳一層。
+                    catalog_path=str(
+                        Path(__file__).with_name("scenarios.json")),
                     capture_interface=capture_interface,
                     ros_snapshots=ros_snapshots,
                 )
@@ -690,6 +696,9 @@ def build_parser() -> argparse.ArgumentParser:
     runner.add_argument("--limit", type=int, default=None)
     runner.add_argument("--duration", type=float, default=None)
     runner.add_argument(
+        "--adaptive", action="store_true",
+        help="用 N37 自適應驅動器,見 orchestrator")
+    runner.add_argument(
         "--jitter", action="store_true",
         help="每一場另外抽 warmup／duration／cooldown，見 orchestrator")
     runner.add_argument("--ros-snapshots", action="store_true")
@@ -732,6 +741,7 @@ def main(argv: list[str] | None = None) -> int:
         limit=args.limit,
         duration_override=args.duration,
         jitter=args.jitter,
+        adaptive=args.adaptive,
         ros_snapshots=args.ros_snapshots,
         retry_failed=args.retry_failed,
         confirm_isolated_lab=args.confirm_isolated_lab,

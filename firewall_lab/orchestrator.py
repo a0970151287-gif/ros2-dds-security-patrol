@@ -29,7 +29,7 @@ from .evidence import (
     evidence_inventory,
     run_snapshot,
 )
-from .runners import build_attack_argv, session_environment
+from .runners import build_adaptive_argv, build_attack_argv, session_environment
 from .schema import (
     SessionManifest,
     atomic_write_json,
@@ -538,6 +538,13 @@ def _attack_process_succeeded(
 JITTER_WARMUP_SEC = (4.0, 28.0)      # 8 秒一個視窗 ⇒ 攻擊起點落在 window 0–3
 JITTER_COOLDOWN_SEC = (3.0, 12.0)
 JITTER_DURATION_SCALE = (0.6, 1.3)   # 乘在 catalog 宣告的 duration 上
+# 自適應模式需要更長的場次:一次「試探 → 觀察 → 決策」約 10 秒,
+# 要看得出適應至少要 4–6 個回合。實測 29 秒的場次只塞得下 1 個。
+# ⚠️ 這**不會**降低產出效率——場次長一倍產生的列數也接近一倍,
+# 而每場約 7 秒的固定開銷（擷取啟停）反而被攤薄。
+# 下限要保證塞得下 ≥3 個決策回合：(30×1.6 − 4) / (10 + 4) = 3.1。
+# 1.4 只有 2.7 個回合，2026-09-20 的測試抓到。
+JITTER_DURATION_SCALE_ADAPTIVE = (1.6, 2.6)
 
 
 def run_session(
@@ -552,6 +559,8 @@ def run_session(
     capture_interface: str | None,
     ros_snapshots: bool,
     jitter: bool = False,
+    adaptive: bool = False,
+    catalog_path: str | None = None,
 ) -> Path:
     rng = random.Random(seed)
     intensity = rng.uniform(
@@ -560,7 +569,9 @@ def run_session(
     if duration_override is not None:
         duration = float(duration_override)
     elif jitter:
-        duration = scenario.duration_sec * rng.uniform(*JITTER_DURATION_SCALE)
+        scale = (JITTER_DURATION_SCALE_ADAPTIVE if adaptive
+                 else JITTER_DURATION_SCALE)
+        duration = scenario.duration_sec * rng.uniform(*scale)
     else:
         duration = scenario.duration_sec
     duration = max(1.0, min(duration, 300.0))
@@ -606,6 +617,7 @@ def run_session(
             # 抖動開著時上面三個是**抽到的值**,不是 catalog 的宣告值。
             # 沒有這個旗標的話,事後無從分辨哪一批是抖動過的。
             "jitter": jitter,
+            "adaptive": adaptive,
             "catalog_duration_sec": scenario.duration_sec,
             "catalog_warmup_sec": scenario.warmup_sec,
             "catalog_cooldown_sec": scenario.cooldown_sec,
@@ -706,12 +718,24 @@ def run_session(
             },
         )
         if mode == "live":
-            argv = build_attack_argv(
-                scenario,
-                workspace_root=WORKSPACE_ROOT,
-                duration_sec=duration,
-                intensity=intensity,
-            )
+            if adaptive:
+                # 自適應驅動器自己決定每個 burst 的 intensity,所以這裡不傳。
+                # 它需要 catalog 路徑才能取回同一個 scenario 物件。
+                argv = build_adaptive_argv(
+                    scenario,
+                    workspace_root=WORKSPACE_ROOT,
+                    duration_sec=duration,
+                    catalog_path=catalog_path or (
+                        WORKSPACE_ROOT / "firewall_lab" / "scenarios.json"),
+                    seed=seed,
+                )
+            else:
+                argv = build_attack_argv(
+                    scenario,
+                    workspace_root=WORKSPACE_ROOT,
+                    duration_sec=duration,
+                    intensity=intensity,
+                )
             if argv is not None:
                 attack_process = ManagedProcess(
                     argv=argv,
@@ -910,6 +934,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
+        "--adaptive", action="store_true",
+        help="用 N37 自適應驅動器:場次內試探→觀察防禦→升級或退避")
+    parser.add_argument(
         "--jitter", action="store_true",
         help="每一場另外抽 warmup／duration／cooldown。"
              "warmup 與 cooldown 對所有類別用同一個分布；"
@@ -1006,6 +1033,8 @@ def main(argv: list[str] | None = None) -> int:
                 seed=session_seed,
                 duration_override=args.duration,
                 jitter=args.jitter,
+                adaptive=args.adaptive,
+                catalog_path=str(args.catalog),
                 capture_interface=args.capture_interface,
                 ros_snapshots=args.ros_snapshots,
             )
