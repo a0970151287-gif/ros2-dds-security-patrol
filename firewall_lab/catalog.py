@@ -53,6 +53,15 @@ ALLOWED_RUNNERS = frozenset(
         "node_name_evasion",
         "scan_drift",
         "verify_flood",
+        # 2026-09-19 的新候選，是讀程式找出來的、policy 裡**沒有對應規則**的
+        # 失效模式：monitor 是單執行緒（`rclpy.spin`，且不訂閱任何 topic），
+        # `_check_graph` 的成本隨 graph 大小成長，而守衛的心跳租約是 5.0 秒、
+        # IDS 的告警門檻是 10.0 秒。把 graph 灌大到心跳落在這兩者之間，
+        # 機器人會停住而沒有人發告警。既有 640 場裡 `monitor_lease_missing`
+        # 出現 0 次，所以這不是既有攻擊的副作用。
+        # ⚠️ 它沒有 policy 規則 ⇒ 若要納入計分，攻擊面覆蓋的分母會從 23 變 24，
+        # 百分比會**下降**。那是 Jesse 的決定，不在這裡做。
+        "heartbeat_starvation",
     }
 )
 ALLOWED_ACTIONS = frozenset(

@@ -55,6 +55,18 @@ source 工具腳本/load_ros_environment.sh
 | `audit_conformal_readiness.py` | session-level conformal 樣本是否足夠 |
 | `audit_defence_reaction_features.py` | **哪些特徵對繞過防禦的攻擊視而不見**（篩選＋留出內鬼消融，含陰性對照） |
 
+### 識別率：表述、模型與選型
+
+這四支是同一條線，後面的重用前面的 helper（不重寫，避免兩個版本各自漂移）。
+
+| 檔案 | 用途 |
+|---|---|
+| `evaluate_pooling_and_temporal.py` | 特徵矩陣、時序展開與場次池化的共用底層 |
+| `cross_validate_identification.py` | 依場次切折的識別率 CV ＋ 超參數網格（判讀用邊際平均） |
+| `compare_session_models.py` | 問題表述 × 24 個學習法。`session_aggregate` 就是在這裡勝出的 |
+| `select_identification_model.py` | **選型**。把單一固定折換成重複分層 CV，用**配對**統計比大小；三道強制對照（同源／打亂／test 不碰） |
+| `extend_session_features.py` | 場次聚合的統計量**加料**（分位數／端點／波動度），評估直接 import 上一支 |
+
 ## 資料集與特徵
 
 | 腳本 | 做什麼 |

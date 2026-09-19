@@ -56,6 +56,20 @@
       "intensity_max": 1.0,
       "expected_action": "temporary_block",
       "requires_gazebo": true
+    },
+    {
+      "id": "heartbeat_starvation",
+      "attack_class": "heartbeat_starvation",
+      "runner": "heartbeat_starvation",
+      "description": "候選：N36_heartbeat_starvation.py。灌大 ROS graph 餓死 monitor 單執行緒的心跳，讓守衛在 5s 租約鎖定而 IDS 的 10s 門檻不觸發。policy 沒有對應規則。",
+      "default_security_mode": "permissive",
+      "duration_sec": 45,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "alert",
+      "requires_gazebo": true
     }
   ]
 }

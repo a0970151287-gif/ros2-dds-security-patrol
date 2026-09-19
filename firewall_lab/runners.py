@@ -379,6 +379,22 @@ def build_attack_argv(
             f"{candidate_duration:.3f}",
             "--participants", str(int(round(10 + intensity * 50))),
         ]
+    if scenario.runner == "heartbeat_starvation":
+        # 打的不是某個 topic，是 monitor 那條**單執行緒**的預算：
+        # `_check_graph` → get_node_names_and_namespaces() 的成本隨 graph 成長，
+        # 而它與 `_publish_heartbeat`（2.0s）串在同一條執行緒上。
+        # 心跳落在守衛租約（5.0s）與 IDS 門檻（10.0s）之間時，機器人停住而
+        # 沒有告警。intensity 只調**爬升的上限**，爬升節奏固定——這一類要找的
+        # 是門檻在哪，節奏也跟著變的話就分不出是哪一個造成的。
+        return [
+            python,
+            _script(root, f"{poc}/N36_heartbeat_starvation.py"),
+            f"{candidate_duration:.3f}",
+            "--start", "20",
+            "--step", "20",
+            "--step-sec", "3.0",
+            "--max-nodes", str(int(round(80 + intensity * 320))),
+        ]
     if scenario.runner == "insider_hmac_forgery":
         # 內鬼：持 /intelligent_defense_node 的合法憑證，但沒有 HMAC 金鑰。
         # SROS2 放行、訊息真的抵達節點，被 HMAC 檢查擋下（C2C-019 的 11/0）。
