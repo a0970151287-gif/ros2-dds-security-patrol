@@ -30,13 +30,91 @@ CHUNK="${CHUNK:-40}"
 LOG="${LOG:-$HOME/mega_campaign.log}"
 mkdir -p "$DATASET"
 
+# stack 會起來的所有行程。`live_stack.sh` 用 pid 檔殺**行程群組**,那對它自己
+# 啟動的那一輪有效;但一輪 readiness 失敗、下一輪覆蓋掉 pid 檔之後,上一輪的
+# 殘留就**結構上再也殺不到**。2026-09-20 實測就是這樣一路累積:
+#   36 → 42 → 48 → 54 → 60 → 66 個行程,每輪 +6,連續 19 輪什麼都沒產出。
+# 所以監督器自己要有一道按名字的兜底清除。
+#
+# ⚠️ 只列**夠特定**的名字。`create`、`component_container` 這種通用字會誤殺
+# 使用者自己的行程,寧可漏殺也不要誤殺。
+STACK_PATTERNS='gz sim|gzserver|ros_gz_sim|ros_gz_bridge|parameter_bridge|
+robot_state_publisher|monitor_node|intelligent_defense|velocity_guard|
+patrol_node|sensor_hub|mission_manager|system_status_node|dumpcap|
+live_telemetry_collector|sros2_deny_adapter'
+STACK_PATTERNS=$(printf '%s' "$STACK_PATTERNS" | tr -d '
+')
+
+count_stack_processes() {
+  # ⚠️ 不要用 `pgrep -c ... || echo 0`。沒有命中時 `pgrep -c` **自己會印 0**
+  # 而且**退出碼是 1**，於是 `|| echo 0` 再印一次——回傳值變成兩行的 0 與 0，
+  # 下游的 `[ "$left" -eq 0 ]` 就炸成 `integer expression expected`。
+  # 2026-09-20 重啟監督器時第一輪就撞到。`wc -l` 永遠只印一個整數。
+  pgrep -u "$(id -u)" -f "$STACK_PATTERNS" 2>/dev/null | wc -l
+}
+
+clear_stale_dds_shm() {
+  # Fast DDS 的 SHM transport 會在 /dev/shm 開 port 檔並上鎖。行程被硬殺之後
+  # 鎖可能留著,下一次啟動就是滿螢幕的
+  #     RTPS_TRANSPORT_SHM Error: Failed init_port fastrtps_portNNNN:
+  #     open_and_lock_file failed
+  # 而**症狀是 readiness 失敗**,看起來像 Gazebo 或 monitor 壞了。
+  #
+  # ⚠️ 只在**完全沒有** stack 行程時清。有行程活著就清掉它正在用的段,
+  # 那是把一個還能救的 stack 弄死。
+  local left
+  left=$(count_stack_processes)
+  if [ "${left:-0}" -ne 0 ]; then return 0; fi
+  local n
+  n=$(ls /dev/shm 2>/dev/null | grep -c '^fastrtps' || true)
+  if [ "${n:-0}" -gt 0 ]; then
+    rm -f /dev/shm/fastrtps_* 2>/dev/null
+    echo "  ♻️ 清掉 $n 個殘留的 Fast DDS 共享記憶體段" | tee -a "$LOG"
+  fi
+  rm -f /tmp/fastrtps_* 2>/dev/null
+}
+
+assert_no_other_campaign() {
+  # `<plan>.lock` 防的是「兩個 campaign 同時寫同一份計畫」，但它只防得住
+  # **遵守它的人**。2026-09-20 我自己在重啟腳本裡 `rm -f` 掉那個鎖，理由寫著
+  # 「前面已確認沒有 campaign 行程」——而那一步只查了 `run_mega_campaign.sh`，
+  # 沒有查 `firewall_lab.campaign`。於是舊監督器留下的孤兒 campaign 還活著，
+  # 新的又起一個，**同一秒有兩場 session 都是 status=running**。
+  #
+  # 鎖不夠，因為刪鎖的人正是我。改成直接數行程：多於一個就不要開始這一批。
+  local mine others
+  mine=$$
+  others=$(pgrep -u "$(id -u)" -f "firewall_lab.campaign run" 2>/dev/null \
+           | grep -v "^${mine}$" | wc -l)
+  if [ "${others:-0}" -gt 0 ]; then
+    echo "  ⛔ 已經有 $others 個 campaign 行程在跑，這一批不啟動" | tee -a "$LOG"
+    pgrep -u "$(id -u)" -af "firewall_lab.campaign run" | sed 's/^/     /' \
+      | tee -a "$LOG"
+    return 1
+  fi
+  return 0
+}
+
 stack_up() {   # $1 = mode
-  bash firewall_lab/live_stack.sh start "$1" >/dev/null 2>&1 || return 1
+  clear_stale_dds_shm
+  local out="$HOME/.mega_stack_start.$1.log"
+  if ! bash firewall_lab/live_stack.sh start "$1" > "$out" 2>&1; then
+    echo "  ⛔ $1 live_stack.sh start 直接失敗：" | tee -a "$LOG"
+    tail -5 "$out" | sed 's/^/     /' | tee -a "$LOG"
+    return 1
+  fi
   for i in $(seq 1 40); do
     s=$(bash firewall_lab/live_stack.sh status "$1" 2>&1 | head -1)
     case "$s" in *readiness=ready*) return 0;; esac
     sleep 5
   done
+  # 逾時。把原因記下來——原本這裡整個 `>/dev/null`,所以日誌只會寫
+  # 「起不來」,而真正的原因（SHM 上鎖失敗）躺在另一個檔案裡沒人看。
+  echo "  ⛔ $1 readiness 逾時（200s）。stack 日誌最後幾行：" | tee -a "$LOG"
+  tail -4 "$HOME/.sros2_live_runtime/$1.log" 2>/dev/null     | cut -c1-160 | sed 's/^/     /' | tee -a "$LOG"
+  local shm
+  shm=$(ls /dev/shm 2>/dev/null | grep -c '^fastrtps' || true)
+  echo "     （/dev/shm 的 fastrtps 段：${shm:-0}；stack 行程：$(count_stack_processes)）"     | tee -a "$LOG"
   return 1
 }
 clear_stale_lock() {
@@ -67,17 +145,33 @@ stack_down() {   # $1 = mode
   # 下一批——C2C-044 記過，沒收乾淨的 stack 讓三輪 live 全部作廢，而症狀是
   # 「Gazebo readiness failed」，看起來像模擬器壞了。
   local left=0
-  for _ in $(seq 1 30); do
-    left=0
-    for p in "gz sim" gzserver monitor_node intelligent_defense \
-             velocity_guard patrol_node dumpcap sensor_hub mission_manager; do
-      n=$(pgrep -cf "$p" 2>/dev/null); n=${n:-0}
-      if [ "$n" -gt 0 ] 2>/dev/null; then left=$((left + n)); fi
-    done
-    if [ "$left" -eq 0 ]; then return 0; fi
+  for _ in $(seq 1 15); do
+    left=$(count_stack_processes)
+    if [ "${left:-0}" -eq 0 ]; then return 0; fi
     sleep 2
   done
-  echo "  ⚠️ 收尾逾時，仍有 $left 個行程——下一批可能受污染" | tee -a "$LOG"
+
+  # ⚠️ 到這裡代表 `live_stack.sh stop` 收不掉。它殺的是 pid 檔記錄的**行程
+  # 群組**，而上一輪 readiness 失敗、這一輪又覆蓋掉 pid 檔之後，舊的孤兒
+  # **結構上再也殺不到**，只會愈積愈多。2026-09-20 實測 36→42→48→54→60→66，
+  # 連續 19 輪、80 分鐘零產出。
+  #
+  # 所以按名字兜底：先 TERM 再 KILL，中間留時間讓它們自己收乾淨。
+  echo "  ⚠️ live_stack 收不乾淨（剩 $left 個），改用名字清除" | tee -a "$LOG"
+  pkill -u "$(id -u)" -TERM -f "$STACK_PATTERNS" 2>/dev/null || true
+  sleep 5
+  left=$(count_stack_processes)
+  if [ "${left:-0}" -gt 0 ]; then
+    pkill -u "$(id -u)" -KILL -f "$STACK_PATTERNS" 2>/dev/null || true
+    sleep 3
+  fi
+  left=$(count_stack_processes)
+  clear_stale_dds_shm
+  if [ "${left:-0}" -eq 0 ]; then
+    echo "  ✅ 名字清除成功，殘留 0" | tee -a "$LOG"
+    return 0
+  fi
+  echo "  ⛔ 連 SIGKILL 都還剩 $left 個行程——下一批一定受污染" | tee -a "$LOG"
   return 1
 }
 
@@ -107,14 +201,38 @@ quarantine_empty_sessions() {
 }
 
 round=0
+# 連續幾批「一場都沒完成」就停下來。
+#
+# 2026-09-20 的教訓：stack 起不來之後監督器**照樣每四分鐘再試一次**，連續
+# 19 輪、80 分鐘完全零產出，而日誌只寫「起不來」。無人值守的批次必須會
+# 大聲失敗（C2C-049 對跨主機批次就是這樣設計的，這支當初漏掉了）。
+#
+# 4 批 ≈ 16 分鐘。低於這個數會被單次偶發失敗誤觸；高於這個數就開始浪費夜。
+MAX_BARREN_BATCHES="${MAX_BARREN_BATCHES:-4}"
+barren=0
+
+session_count() { ls -d "$DATASET"/*/ 2>/dev/null | wc -l; }
+
 while :; do
   round=$((round + 1))
   for mode in permissive enforce; do
     echo "===== round $round / $mode / $(date -u +%H:%M:%SZ) =====" | tee -a "$LOG"
+    before=$(session_count)
     if ! stack_up "$mode"; then
       echo "  ⛔ $mode stack 起不來,跳過這一批" | tee -a "$LOG"
-      stack_down "$mode"; continue
+      stack_down "$mode"
+      barren=$((barren + 1))
+      if [ "$barren" -ge "$MAX_BARREN_BATCHES" ]; then
+        echo "⛔⛔ 連續 $barren 批沒有產出任何場次，停止監督器。" | tee -a "$LOG"
+        echo "    再試下去只會空轉。診斷順序：" | tee -a "$LOG"
+        echo "    1) ls /dev/shm | grep fastrtps   （殘留的 SHM 段）" | tee -a "$LOG"
+        echo "    2) pgrep -af 'monitor_node|gz sim'（殘留的 stack 行程）" | tee -a "$LOG"
+        echo "    3) tail -40 ~/.sros2_live_runtime/$mode.log" | tee -a "$LOG"
+        exit 3
+      fi
+      continue
     fi
+    if ! assert_no_other_campaign; then stack_down "$mode"; continue; fi
     if ! clear_stale_lock; then stack_down "$mode"; continue; fi
     # 計畫若把持證內鬼排進 Permissive，那一批會**整批**以 ValueError 中止
     # （`execute_campaign` 對場次失敗是 fail-closed 的,不是跳過一場）。
@@ -124,16 +242,22 @@ while :; do
     python3 -m firewall_lab.campaign repair --plan "$PLAN" >> "$LOG" 2>&1       || echo "  ⚠️ repair 跳過（拿不到鎖或計畫有更深的問題）" | tee -a "$LOG"
     for phase in "" "--retry-failed"; do
       # shellcheck disable=SC2086
-      python3 -m firewall_lab.campaign run \
-        --plan "$PLAN" --dataset "$DATASET" \
-        --security-mode "$mode" --capture-interface lo \
-        --limit "$CHUNK" --jitter --adaptive --confirm-isolated-lab $phase \
-        >> "$LOG" 2>&1
+      python3 -m firewall_lab.campaign run         --plan "$PLAN" --dataset "$DATASET"         --security-mode "$mode" --capture-interface lo         --limit "$CHUNK" --jitter --adaptive --confirm-isolated-lab $phase         >> "$LOG" 2>&1
       echo "  $mode $phase rc=$?" | tee -a "$LOG"
     done
     stack_down "$mode"
     quarantine_empty_sessions
-    n=$(ls -d "$DATASET"/*/ 2>/dev/null | wc -l)
+    n=$(session_count)
     echo "  累計場次 = $n" | tee -a "$LOG"
+    if [ "$n" -gt "$before" ]; then
+      barren=0
+    else
+      barren=$((barren + 1))
+      echo "  ⚠️ 這一批沒有新增場次（連續 $barren／$MAX_BARREN_BATCHES）"         | tee -a "$LOG"
+      if [ "$barren" -ge "$MAX_BARREN_BATCHES" ]; then
+        echo "⛔⛔ 連續 $barren 批沒有產出任何場次，停止監督器。" | tee -a "$LOG"
+        exit 3
+      fi
+    fi
   done
 done
