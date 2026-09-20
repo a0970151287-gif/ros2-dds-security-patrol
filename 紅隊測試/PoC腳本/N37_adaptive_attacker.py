@@ -100,6 +100,16 @@ CONTAINED_ZERO_FRACTION = 0.80  # /cmd_vel 的零速比例
 ESCALATE = 1.6
 BACK_OFF = 0.45
 TEARDOWN_RESERVE_SEC = 4.0
+# 收掉一個 burst 子行程的**硬上限**。
+#
+# 2026-09-20 實測：12 場被工廠 SIGKILL（rc=-9），而 rc=-9 與「沒有
+# DECISION_TRACE」完全一一對應——被砍掉的那些場次,自適應決策紀錄整份丟失。
+# 根因是這裡原本寫 `wait(timeout=5)` ×2：最壞情況 10 秒,而
+# `ManagedProcess.stop()` 的寬限期只有 **3 秒**。burst 結束得夠晚時,收子行程
+# 就把整個預留時間吃光。
+#
+# 1.0 + 1.0 = 2.0 秒,連同 rclpy 收尾都塞得進 4 秒的預留。
+CHILD_REAP_SEC = 1.0
 
 _STOP = False
 
@@ -255,10 +265,15 @@ def main() -> int:
                     observer.pump(burst)
                     proc.terminate()
                     try:
-                        rc = proc.wait(timeout=5)
+                        rc = proc.wait(timeout=CHILD_REAP_SEC)
                     except subprocess.TimeoutExpired:
                         proc.kill()
-                        rc = proc.wait(timeout=5)
+                        try:
+                            rc = proc.wait(timeout=CHILD_REAP_SEC)
+                        except subprocess.TimeoutExpired:
+                            # SIGKILL 之後還收不掉只可能是 D 狀態。再等下去
+                            # 就換成**我們**被 SIGKILL,連決策軌跡都留不下來。
+                            rc = "reap_timeout"
                 except Exception as exc:
                     print(f"   ⚠️ burst 起不來：{exc}", flush=True)
                     observer.pump(burst)

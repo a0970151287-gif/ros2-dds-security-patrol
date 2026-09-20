@@ -116,6 +116,12 @@ while :; do
       stack_down "$mode"; continue
     fi
     if ! clear_stale_lock; then stack_down "$mode"; continue; fi
+    # 計畫若把持證內鬼排進 Permissive，那一批會**整批**以 ValueError 中止
+    # （`execute_campaign` 對場次失敗是 fail-closed 的,不是跳過一場）。
+    # 2026-09-20 實測：160 個這種 entry 讓 12.4 小時裡 permissive 只完成
+    # 54 場而 enforce 有 136 場。產生器已經修好,這一行是給既有計畫的自癒,
+    # 沒東西可修時它什麼都不做。
+    python3 -m firewall_lab.campaign repair --plan "$PLAN" >> "$LOG" 2>&1       || echo "  ⚠️ repair 跳過（拿不到鎖或計畫有更深的問題）" | tee -a "$LOG"
     for phase in "" "--retry-failed"; do
       # shellcheck disable=SC2086
       python3 -m firewall_lab.campaign run \

@@ -192,3 +192,88 @@ def test_blind_mode_is_recorded_not_silently_ignored():
     source = _source()
     assert '"blind": not observer.ok' in source
     assert "盲打" in source
+
+
+# ── 訓練 gate 必須知道自適應模式下跑的是誰 ────────────────────
+
+
+def _catalog_scenario(runner: str):
+    import sys
+    sys.path.insert(0, str(_ROOT))
+    from firewall_lab.catalog import load_catalog
+
+    return next(
+        scenario for scenario in load_catalog().values()
+        if scenario.runner == runner
+    )
+
+
+def test_adaptive_sessions_are_judged_on_n37s_own_contract():
+    """`unauthorized_participant` 的 talker 專用規則在自適應下必須失效。
+
+    2026-09-20 實跑：13 場 `unauthorized_participant`,其中乾淨收尾的 7 場被
+    判不合格,被 SIGKILL、決策軌跡遺失的 5 場反而合格。規則寫的是 catalog 的
+    runner 名字,而自適應模式下實際執行的一律是 N37。
+    """
+    import sys
+    sys.path.insert(0, str(_ROOT))
+    from firewall_lab.orchestrator import _attack_process_succeeded
+
+    scenario = _catalog_scenario("unauthorized_participant")
+    clean = {"return_code": 0, "terminated_by_factory": False}
+    killed = {"return_code": -9, "terminated_by_factory": True}
+
+    # 自適應：N37 自己 os._exit(0) 才算數。
+    assert _attack_process_succeeded(scenario, clean, adaptive=True)
+    assert not _attack_process_succeeded(scenario, killed, adaptive=True)
+
+    # 非自適應：跑的是真的 talker,規則不變。
+    assert not _attack_process_succeeded(scenario, clean, adaptive=False)
+    assert _attack_process_succeeded(scenario, killed, adaptive=False)
+
+
+def test_the_gate_default_is_unchanged_for_every_other_runner():
+    """只有 talker 那一條是特例;其餘 runner 的判準兩個模式一樣。"""
+    import sys
+    sys.path.insert(0, str(_ROOT))
+    from firewall_lab.catalog import load_catalog
+    from firewall_lab.orchestrator import _attack_process_succeeded
+
+    for scenario in load_catalog().values():
+        if scenario.runner in {"normal", "unauthorized_participant"}:
+            continue
+        for adaptive in (False, True):
+            assert _attack_process_succeeded(
+                scenario, {"return_code": 0, "terminated_by_factory": True},
+                adaptive=adaptive)
+            assert not _attack_process_succeeded(
+                scenario, {"return_code": -9, "terminated_by_factory": True},
+                adaptive=adaptive)
+
+
+def test_the_child_reap_budget_fits_inside_the_factory_grace():
+    """N37 收子行程的上限 ×2 必須小於 `ManagedProcess.stop()` 的寬限期。
+
+    超過的話工廠會 SIGKILL N37,而 DECISION_TRACE 是在 `finally` 才印的——
+    決策紀錄整份遺失。2026-09-20 的 12 場 rc=-9 全部沒有軌跡。
+    """
+    import inspect
+    import sys
+    sys.path.insert(0, str(_ROOT))
+    from firewall_lab.evidence import ManagedProcess
+
+    source = _source()
+    reap = float(re.search(r"^CHILD_REAP_SEC\s*=\s*([0-9.]+)", source,
+                           re.MULTILINE).group(1))
+    reserve = float(re.search(r"^TEARDOWN_RESERVE_SEC\s*=\s*([0-9.]+)", source,
+                              re.MULTILINE).group(1))
+    grace = inspect.signature(ManagedProcess.stop).parameters[
+        "grace_sec"].default
+    assert 2 * reap < grace, (
+        f"收子行程最壞 {2 * reap}s，而工廠只等 {grace}s")
+    assert 2 * reap < reserve, (
+        f"收子行程最壞 {2 * reap}s，吃光了 {reserve}s 的預留")
+    # 收尾路徑不可以再有別的長 timeout。
+    # ⚠️ 用 `_body()` 不是 `_source()`：根因說明裡就寫著 `wait(timeout=5)`,
+    # 對原始碼比對會抓到那句註解。這個檔案開頭那個 helper 就是為了這件事。
+    assert "timeout=5" not in _body(), "還有沒改到的 5 秒等待"

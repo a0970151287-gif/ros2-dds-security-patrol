@@ -497,6 +497,8 @@ def _ros_snapshots(
 def _attack_process_succeeded(
     scenario: Scenario,
     result: dict[str, Any] | None,
+    *,
+    adaptive: bool = False,
 ) -> bool:
     """Return whether the allowlisted runner produced credible process evidence.
 
@@ -504,6 +506,18 @@ def _attack_process_succeeded(
     The ROS demo talker is intentionally long-running, so it is valid only when
     the factory terminated it at the window boundary.  A runner that crashes
     early must never leave an attack-labelled session training eligible.
+
+    ⚠️ 2026-09-20：那條 talker 專用規則在自適應模式下**把判定反過來了**。
+    開了 `--adaptive` 之後,被啟動的行程一律是 N37 驅動器,不是 catalog 宣告的
+    那支 runner——而 N37 的契約是「自己在視窗結束前 `os._exit(0)`」。於是
+    `unauthorized_participant` 的場次裡:
+
+    * 乾淨收尾的（rc=0、`terminated_by_factory=False`、有 DECISION_TRACE）
+      被判**不合格** —— 7 場;
+    * 被工廠 SIGKILL 的（rc=-9、決策軌跡整份遺失）反而判**合格** —— 5 場。
+
+    規則是按 `scenario.runner` 寫的,而在自適應模式下那個名字已經不代表實際
+    執行的東西。所以要問的是「這一場實際啟動了什麼」,不是「catalog 說它是誰」。
     """
     if scenario.runner == "normal":
         return result is None
@@ -512,6 +526,10 @@ def _attack_process_succeeded(
     return_code = result.get("return_code")
     if isinstance(return_code, bool) or not isinstance(return_code, int):
         return False
+    if adaptive:
+        # N37 自己收尾。rc=-9 代表它在寬限期內沒退出——那一場的
+        # DECISION_TRACE 一定是缺的,不可當成完整證據。
+        return return_code == 0
     if scenario.runner == "unauthorized_participant":
         return (
             result.get("terminated_by_factory") is True
@@ -809,7 +827,9 @@ def run_session(
             and isinstance(capture_result, dict)
             and capture_result.get("return_code") == 0
         )
-        attack_ok = _attack_process_succeeded(scenario, attack_result)
+        attack_ok = _attack_process_succeeded(
+            scenario, attack_result, adaptive=adaptive
+        )
         telemetry_ok = (
             mode == "live"
             and _telemetry_stream_succeeded(session_dir, telemetry_result)

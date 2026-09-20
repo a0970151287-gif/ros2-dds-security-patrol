@@ -314,6 +314,7 @@ def test_default_campaign_is_balanced_live_sessions():
     entry_id 與 seed 不重複。
     """
     from firewall_lab.catalog import load_catalog
+    from firewall_lab.runners import runner_requires_enforce
 
     attack_scenarios = [
         s for s in load_catalog().values() if s.attack_class != "normal"
@@ -327,9 +328,13 @@ def test_default_campaign_is_balanced_live_sessions():
     assert len({entry["seed"] for entry in plan["entries"]}) == expected
     assert {entry["status"] for entry in plan["entries"]} == {"pending"}
     assert {entry["domain_id"] for entry in plan["entries"]} == {30}
-    for counts in plan["requested_counts"].values():
-        assert counts["permissive"] == counts["enforce"]
+    for scenario_id, counts in plan["requested_counts"].items():
         assert counts["total"] == counts["permissive"] + counts["enforce"]
+        if runner_requires_enforce(load_catalog()[scenario_id].runner):
+            # 持證內鬼只在 Enforce 下有意義,所以它**不該**對半分。
+            assert counts["permissive"] == 0
+        else:
+            assert counts["permissive"] == counts["enforce"]
     assert plan["requested_counts"]["normal_patrol"]["total"] == 300
     for scenario_id, counts in plan["requested_counts"].items():
         if scenario_id != "normal_patrol":
@@ -1092,3 +1097,219 @@ def test_adding_a_network_feature_forces_a_synthetic_decision(monkeypatch):
 
     monkeypatch.setattr(features_mod, "NETWORK_COLUMNS", original)
     importlib.reload(synth)
+
+
+def test_plan_generator_never_schedules_an_insider_under_permissive():
+    """計畫產生器必須遵守 `runner_requires_enforce()`。
+
+    2026-09-20 的大型 campaign 實跑抓到的：產生器只問
+    `_security_modes(count)`（對半分），從來沒問過那個 runner 在 Permissive
+    下有沒有意義。於是 `insider_parameter_write` 與 `insider_hmac_forgery`
+    各拿到一半的 permissive entry，而 `session_environment` 會 fail-closed：
+
+        ValueError: runner 'insider_parameter_write' is a credentialed insider
+        and is only meaningful under Enforce; got security_mode='permissive'
+
+    那不是跳過一場——`execute_campaign` 的批次會整個中止,連帶浪費一次
+    stack 啟動。實測 12.4 小時裡 permissive 只完成 43 場而 enforce 有 147 場。
+
+    ⚠️ 這個斷言要**逐一檢查 entry**，不能只看 `requested_counts`：兩者
+    分開算,摘要對了而 entry 錯了正是最難發現的那一種。
+    """
+    from firewall_lab.catalog import load_catalog
+    from firewall_lab.runners import runner_requires_enforce
+
+    catalog = load_catalog()
+    insiders = {
+        scenario_id
+        for scenario_id, scenario in catalog.items()
+        if runner_requires_enforce(scenario.runner)
+    }
+    assert insiders, "catalog 裡沒有持證內鬼,這個測試會變成空轉"
+
+    plan = create_campaign_plan(
+        normal_sessions=4,
+        attack_sessions_per_scenario=4,
+        seed=20260920,
+    )
+    offenders = [
+        entry
+        for entry in plan["entries"]
+        if entry["scenario_id"] in insiders
+        and entry["security_mode"] != "enforce"
+    ]
+    assert not offenders, (
+        f"{len(offenders)} 個內鬼 entry 被排成 permissive："
+        f"{sorted({e['scenario_id'] for e in offenders})}"
+    )
+    # 而且場次沒有因此變少——是換模式,不是丟掉。
+    for scenario_id in insiders:
+        counts = plan["requested_counts"][scenario_id]
+        assert counts == {"total": 4, "permissive": 0, "enforce": 4}
+
+
+def test_the_insider_guard_the_plan_generator_must_obey_really_bites():
+    """變異測試：確認 `session_environment` 真的會擋。
+
+    如果那道守衛哪天被拿掉,上面的測試就只是在驗一個不痛不癢的偏好,
+    而不是在防一個會讓整批 campaign 死掉的錯誤。
+    """
+    from firewall_lab.catalog import load_catalog
+    from firewall_lab.runners import runner_requires_enforce, session_environment
+
+    catalog = load_catalog()
+    insider = next(
+        scenario
+        for scenario in catalog.values()
+        if runner_requires_enforce(scenario.runner)
+    )
+    with pytest.raises(ValueError, match="only meaningful under Enforce"):
+        session_environment(
+            insider,
+            domain_id=30,
+            duration_sec=30.0,
+            security_mode="permissive",
+        )
+
+
+def test_synthetic_gate_still_bites_when_an_insider_lands_in_permissive(
+    tmp_path, monkeypatch
+):
+    """合成資料集的模式平衡 gate 放寬過,所以要證明它還會咬人。
+
+    2026-09-20 把 `balanced_security_sessions_per_scenario` 從「每個類別對半
+    分」改成「內鬼情境的 permissive 必須是 0,其餘對半分」。那對內鬼**更嚴**,
+    但「更嚴」是需要證明的,不是宣稱的。
+
+    做法:謊報 `normal_patrol` 是持證內鬼。資料裡它有一半 permissive 場次,
+    所以 gate 必須失敗。gate 若退化成什麼都不檢查,這裡會安靜地通過。
+    """
+    from firewall_lab import synthetic_dataset
+
+    monkeypatch.setattr(
+        synthetic_dataset,
+        "_enforce_only_scenarios",
+        lambda: {"normal_patrol"},
+    )
+    plan = create_campaign_plan(
+        normal_sessions=4, attack_sessions_per_scenario=4, seed=7,
+    )
+    plan_path = tmp_path / "plan.json"
+    atomic_write_json(plan_path, plan)
+    with pytest.raises(RuntimeError, match="balanced_security_sessions"):
+        generate_synthetic_dataset(
+            plan_path=plan_path,
+            output_dir=tmp_path / "out",
+            windows_per_session=12,
+            split_seed=3,
+            extra_sessions_per_scenario=2,
+        )
+
+
+def _insider_plan(seed: int) -> tuple[dict, str, str]:
+    """做一份「內鬼被排成 permissive」的壞計畫,回傳 (plan, 情境, entry_id)。
+
+    直接改 entry 而不是找一份舊計畫：產生器已經修好了,要驗修復工具就得自己
+    造出那個壞狀態。
+    """
+    from firewall_lab.catalog import load_catalog
+    from firewall_lab.runners import runner_requires_enforce
+
+    catalog = load_catalog()
+    insider = next(
+        scenario_id
+        for scenario_id, scenario in catalog.items()
+        if runner_requires_enforce(scenario.runner)
+    )
+    plan = create_campaign_plan(
+        normal_sessions=4, attack_sessions_per_scenario=4, seed=seed,
+    )
+    broken = next(
+        entry for entry in plan["entries"]
+        if entry["scenario_id"] == insider
+    )
+    broken["security_mode"] = "permissive"
+    counts = plan["requested_counts"][insider]
+    counts["permissive"] += 1
+    counts["enforce"] -= 1
+    return plan, insider, broken["entry_id"]
+
+
+def test_plan_validation_rejects_an_insider_scheduled_under_permissive():
+    plan, _, entry_id = _insider_plan(seed=31)
+    with pytest.raises(SchemaError, match="credentialed insider"):
+        validate_campaign_plan(plan)
+    assert entry_id
+
+
+def test_repair_flips_pending_and_failed_insiders_but_keeps_progress(tmp_path):
+    from firewall_lab.campaign import repair_campaign_plan
+
+    plan, insider, entry_id = _insider_plan(seed=32)
+    broken = next(e for e in plan["entries"] if e["entry_id"] == entry_id)
+    broken["status"] = "failed"
+    broken["error"] = "ValueError: ... only meaningful under Enforce ..."
+    # 一場已完成的場次必須原封不動——修復不可以動到已經跑出來的資料。
+    done = next(
+        e for e in plan["entries"]
+        if e["scenario_id"] != insider and e["security_mode"] == "permissive"
+    )
+    done["status"] = "complete"
+    done["session_id"] = "20260920T000000000000Z_normal_patrol_deadbeef"
+
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+
+    report = repair_campaign_plan(plan_path, dry_run=True)
+    assert report["repaired"] == 1
+    assert json.loads(plan_path.read_text(encoding="utf-8")) == plan, (
+        "--dry-run 不可以寫檔")
+
+    report = repair_campaign_plan(plan_path)
+    assert report["repaired"] == 1
+
+    # 修完之後必須是一份**合法**的計畫,而不是只有那一欄被改掉。
+    fixed = load_campaign_plan(plan_path)
+    repaired_entry = next(
+        e for e in fixed["entries"] if e["entry_id"] == entry_id
+    )
+    assert repaired_entry["security_mode"] == "enforce"
+    assert repaired_entry["status"] == "pending"
+    assert repaired_entry["error"] is None
+    kept = next(e for e in fixed["entries"] if e["entry_id"] == done["entry_id"])
+    assert kept["status"] == "complete"
+    assert kept["session_id"] == done["session_id"]
+    assert not (tmp_path / "plan.json.lock").exists(), "修復後鎖沒有釋放"
+
+
+def test_repair_refuses_an_impossible_completed_insider(tmp_path):
+    """已完成的內鬼-permissive entry 在物理上不可能存在。
+
+    `session_environment` 會先以 ValueError 拒絕,所以看到一個就代表有更深的
+    問題（例如那道守衛被繞過）。安靜地改掉它會把證據洗掉。
+    """
+    from firewall_lab.campaign import repair_campaign_plan
+
+    plan, _, entry_id = _insider_plan(seed=33)
+    broken = next(e for e in plan["entries"] if e["entry_id"] == entry_id)
+    broken["status"] = "complete"
+    broken["session_id"] = "20260920T000000000000Z_insider_cafebabe"
+
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    with pytest.raises(SchemaError, match="impossible"):
+        repair_campaign_plan(plan_path)
+    # 拒絕的時候一個位元都不能寫。
+    assert json.loads(plan_path.read_text(encoding="utf-8")) == plan
+    assert not (tmp_path / "plan.json.lock").exists()
+
+
+def test_repair_will_not_run_while_a_campaign_holds_the_lock(tmp_path):
+    from firewall_lab.campaign import repair_campaign_plan
+
+    plan, _, _ = _insider_plan(seed=34)
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    (tmp_path / "plan.json.lock").write_text("pid=1\n", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="already locked"):
+        repair_campaign_plan(plan_path)

@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from .catalog import load_catalog
+from .runners import runner_requires_enforce
 from .orchestrator import (
     DEFAULT_OUTPUT,
     _prepare_output_root,
@@ -350,7 +351,18 @@ def create_campaign_plan(
     requested_counts: dict[str, dict[str, int]] = {}
     for scenario_id in sorted(counts):
         scenario = catalog[scenario_id]
-        modes = _security_modes(counts[scenario_id])
+        if runner_requires_enforce(scenario.runner):
+            # 持證內鬼在 Permissive 下沒有意義：SROS2 對誰都放行，竊得的憑證
+            # 不帶來任何額外能力，而 `session_environment` 會 fail-closed 拒絕。
+            #
+            # 2026-09-20 實跑抓到：計畫產生器沒有問過 `runner_requires_enforce`，
+            # 於是把內鬼場次也分給 Permissive。那些 entry 每次被排到就讓**整批**
+            # 以 ValueError 中止——不是跳過一場，是整批死掉，連帶浪費一次
+            # stack 啟動。實測 12 小時內 permissive 只跑到 43 場而 enforce 有
+            # 147 場，就是這樣來的。
+            modes = ["enforce"] * counts[scenario_id]
+        else:
+            modes = _security_modes(counts[scenario_id])
         requested_counts[scenario_id] = {
             "total": len(modes),
             "permissive": modes.count("permissive"),
@@ -474,6 +486,24 @@ def validate_campaign_plan(value: Any) -> dict[str, Any]:
         security_mode = entry["security_mode"]
         if security_mode not in {"permissive", "enforce"}:
             raise SchemaError("invalid campaign security_mode")
+        if (
+            current_catalog
+            and runner_requires_enforce(catalog[scenario_id].runner)
+            and security_mode != "enforce"
+        ):
+            # 持證內鬼在 Permissive 下沒有意義,而 `session_environment` 會以
+            # ValueError 拒絕——那個例外會讓**整批** campaign 中止(見
+            # `execute_campaign` 的 `raise`),不是跳過一場。
+            #
+            # 2026-09-20：`mega_plan.json` 有 160 個這種 entry,每一批
+            # permissive 都在撞到第一個時死掉。12.4 小時裡 permissive 只完成
+            # 54 場而 enforce 有 136 場。載入時就拒絕,比執行到一半才炸好。
+            # 修法是 `campaign repair`,不是放寬這條。
+            raise SchemaError(
+                f"campaign entry {entry['entry_id']} schedules credentialed "
+                f"insider {scenario_id!r} under {security_mode!r}; insiders "
+                "are only meaningful under Enforce (run `campaign repair`)"
+            )
         expected_domain = 30
         if entry["domain_id"] != expected_domain:
             raise SchemaError("campaign domain does not match security mode")
@@ -501,6 +531,109 @@ def validate_campaign_plan(value: Any) -> dict[str, Any]:
     if value["requested_counts"] != actual_counts:
         raise SchemaError("requested_counts do not match campaign entries")
     return value
+
+
+def repair_campaign_plan(
+    path: str | Path,
+    *,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    """把排錯模式的持證內鬼 entry 就地改成 Enforce,保住已完成的進度。
+
+    為什麼需要一支修復工具,而不是重新產生計畫:重新產生會丟掉
+    `status=complete` 與 `session_id`,而那是已經跑出來的 live 場次與計畫
+    entry 之間**唯一**的對應關係。190 場的進度不能為了修一個排程錯誤而作廢。
+
+    三條界線:
+
+    * **只動不可執行的 entry。** 已完成的內鬼-permissive entry 在物理上不可能
+      存在（`session_environment` 會先拒絕）,所以遇到一個就是有更深的問題,
+      直接 fail-closed,不要安靜地改掉它。
+    * **failed 一併回到 pending。** 它們的 error 正是那個 ValueError,
+      不是真的攻擊失敗;留著 failed 會讓 `--retry-failed` 之外的批次跳過它們。
+    * **`requested_counts` 要跟著重算。** 摘要與 entry 是分開算的,
+      `validate_campaign_plan` 會逐項比對——只改一邊會在下次載入時被擋下。
+      （這正是 2026-09-20 合成資料集 gate 的同一課:名字說 per_scenario 而
+      實際數 per_class,不一致的兩份計數遲早會量錯東西。）
+    """
+    plan_path = Path(path).expanduser()
+    if plan_path.is_symlink():
+        raise SchemaError("campaign plan may not be a symlink")
+    plan_path = plan_path.resolve()
+    catalog = load_catalog()
+
+    with _CampaignLock(plan_path):
+        # ⚠️ 刻意不走 `load_campaign_plan`:它現在會因為這個缺陷本身而拒絕
+        # 載入,修復工具不能依賴一個被它要修的東西擋住的入口。
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        if not isinstance(plan, dict) or not isinstance(
+            plan.get("entries"), list
+        ):
+            raise SchemaError("campaign plan is not a plan")
+
+        repaired: list[dict[str, str]] = []
+        impossible: list[str] = []
+        for entry in plan["entries"]:
+            scenario = catalog.get(entry.get("scenario_id"))
+            if scenario is None:
+                continue
+            if not runner_requires_enforce(scenario.runner):
+                continue
+            if entry.get("security_mode") == "enforce":
+                continue
+            if entry.get("status") == "complete":
+                impossible.append(str(entry.get("entry_id")))
+                continue
+            repaired.append(
+                {
+                    "entry_id": str(entry.get("entry_id")),
+                    "scenario_id": str(entry.get("scenario_id")),
+                    "was_mode": str(entry.get("security_mode")),
+                    "was_status": str(entry.get("status")),
+                }
+            )
+            entry["security_mode"] = "enforce"
+            if entry.get("status") == "failed":
+                entry["status"] = "pending"
+                entry["error"] = None
+
+        if impossible:
+            raise SchemaError(
+                "refusing to repair: these insider entries are marked complete "
+                "under a non-Enforce mode, which session_environment makes "
+                f"impossible — investigate before repairing: {impossible}"
+            )
+
+        counts: dict[str, dict[str, int]] = {}
+        for entry in plan["entries"]:
+            per = counts.setdefault(
+                entry["scenario_id"],
+                {"total": 0, "permissive": 0, "enforce": 0},
+            )
+            per["total"] += 1
+            per[entry["security_mode"]] += 1
+        plan["requested_counts"] = counts
+
+        validate_campaign_plan(plan)
+        if repaired and not dry_run:
+            atomic_write_json(plan_path, plan)
+
+    return {
+        "plan": str(plan_path),
+        "dry_run": dry_run,
+        "repaired": len(repaired),
+        "entries": repaired[:20],
+        "pending_enforce_after": sum(
+            entry["security_mode"] == "enforce"
+            and entry["status"] == "pending"
+            for entry in plan["entries"]
+        ),
+        "pending_permissive_after": sum(
+            entry["security_mode"] == "permissive"
+            and entry["status"] == "pending"
+            for entry in plan["entries"]
+        ),
+    }
 
 
 def load_campaign_plan(path: str | Path) -> dict[str, Any]:
@@ -713,6 +846,17 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     runner.add_argument("--confirm-isolated-lab", action="store_true")
+
+    repairer = subparsers.add_parser(
+        "repair",
+        help="把排成 Permissive 的持證內鬼 entry 改回 Enforce（保留進度）",
+    )
+    repairer.add_argument("--plan", type=Path, default=DEFAULT_PLAN)
+    repairer.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="只報告要改什麼，不寫檔",
+    )
     return parser
 
 
@@ -731,6 +875,24 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"✅ campaign plan：{len(plan['entries'])} sessions → {output}"
         )
+        return 0
+
+    if args.command == "repair":
+        report = repair_campaign_plan(args.plan, dry_run=args.dry_run)
+        verb = "會改" if args.dry_run else "已改"
+        print(
+            f"{'🔍' if args.dry_run else '✅'} {verb} {report['repaired']} "
+            f"個內鬼 entry → enforce；之後 pending："
+            f"enforce {report['pending_enforce_after']}／"
+            f"permissive {report['pending_permissive_after']}"
+        )
+        for item in report["entries"]:
+            print(
+                f"   {item['entry_id']} {item['scenario_id']} "
+                f"{item['was_mode']}/{item['was_status']} → enforce"
+            )
+        if report["repaired"] > len(report["entries"]):
+            print(f"   …另外 {report['repaired'] - len(report['entries'])} 個")
         return 0
 
     result = execute_campaign(

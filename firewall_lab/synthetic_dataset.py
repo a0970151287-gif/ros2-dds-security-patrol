@@ -1167,6 +1167,33 @@ def _write_text_atomic(path: Path, value: str) -> None:
             temporary.unlink(missing_ok=True)
 
 
+def _enforce_only_scenarios() -> set[str]:
+    """出貨 catalog 裡只在 Enforce 下有意義的**情境**。
+
+    從 catalog 推導,不寫死名字:新增一個持證內鬼 runner 時這裡要自動跟上,
+    否則 gate 會在下一次改 catalog 時無聲地退化成「什麼都不檢查」。
+
+    ⚠️ 回傳的是 scenario_id 不是 attack_class。`hmac_forgery` 與
+    `confused_deputy` 這兩個類別各自同時有一個內鬼情境與一個合成的外部者
+    情境（C2C-053 記過 N13 與內鬼同名不同物），按類別判會把合成那一半也
+    當成內鬼。
+    """
+    from .catalog import load_catalog
+    from .runners import runner_requires_enforce
+
+    return {
+        scenario_id
+        for scenario_id, scenario in load_catalog().items()
+        if runner_requires_enforce(scenario.runner)
+    }
+
+
+def _scenario_is_enforce_only(
+    scenario_id: str, enforce_only_scenarios: set[str]
+) -> bool:
+    return scenario_id in enforce_only_scenarios
+
+
 def _quality_report(
     *,
     rows: list[dict[str, Any]],
@@ -1174,6 +1201,7 @@ def _quality_report(
     expected_sessions: int,
     windows_per_session: int,
     expected_attack_classes: set[str],
+    enforce_only_scenarios: set[str],
 ) -> dict[str, Any]:
     groups: dict[str, set[str]] = defaultdict(set)
     class_modes: dict[str, set[str]] = defaultdict(set)
@@ -1231,11 +1259,40 @@ def _quality_report(
         campaign_modes[
             (session["attack_class"], session["security_mode"])
         ] += 1
+    # ⚠️ 這道檢查的名字是 `..._per_scenario`,但 2026-09-20 之前它數的是
+    # **類別**。在「一個類別只由一個情境產生」的時代兩者等價,現在不是了:
+    # `hmac_forgery` 與 `confused_deputy` 各自同時有一個出貨 catalog 的持證
+    # 內鬼情境與一個合成的外部者情境。名實不符的檢查在條件改變時會安靜地
+    # 量錯東西,所以改成真的按情境數。
+    #
+    # 持證內鬼在 Permissive 下沒有意義（`runners.runner_requires_enforce`）,
+    # 它們**只**會有 Enforce 場次。對這些情境要求「兩個模式各半」是要求一個
+    # 不存在的東西;改成要求 permissive 必須是 0，對它們反而**比對半分更嚴**
+    # ——任何一場內鬼被排進 Permissive 仍然會被抓到。
+    scenario_modes: Counter[tuple[str, str]] = Counter()
+    scenario_class: dict[str, str] = {}
+    for session in sessions:
+        scenario_modes[
+            (session["scenario_id"], session["security_mode"])
+        ] += 1
+        scenario_class[session["scenario_id"]] = session["attack_class"]
     balanced_modes = all(
-        campaign_modes[(attack_class, "permissive")]
-        == campaign_modes[(attack_class, "enforce")]
-        for attack_class in {"normal", *expected_attack_classes}
+        scenario_modes[(scenario_id, "permissive")] == 0
+        if _scenario_is_enforce_only(scenario_id, enforce_only_scenarios)
+        else (
+            scenario_modes[(scenario_id, "permissive")]
+            == scenario_modes[(scenario_id, "enforce")]
+        )
+        for scenario_id in scenario_class
     )
+    # 一個類別**至少**要在它的情境所能提供的每個模式上出現。內鬼情境只給
+    # enforce,而同名的合成情境仍給兩個,所以 union 才是正確的期望值。
+    expected_class_modes: dict[str, set[str]] = defaultdict(set)
+    for scenario_id, attack_class in scenario_class.items():
+        if _scenario_is_enforce_only(scenario_id, enforce_only_scenarios):
+            expected_class_modes[attack_class].add("enforce")
+        else:
+            expected_class_modes[attack_class] |= {"permissive", "enforce"}
     feature_statistics = {}
     for feature in FUSION_FEATURES:
         values = [float(row[feature]) for row in rows]
@@ -1265,8 +1322,8 @@ def _quality_report(
         "both_security_modes_per_class": (
             set(class_modes) == expected_classes
             and all(
-                modes == {"permissive", "enforce"}
-                for modes in class_modes.values()
+                modes == expected_class_modes[label]
+                for label, modes in class_modes.items()
             )
         ),
         "balanced_security_sessions_per_scenario": balanced_modes,
@@ -1597,6 +1654,7 @@ def generate_synthetic_dataset(
             for item in sessions
             if item["attack_class"] != "normal"
         },
+        enforce_only_scenarios=_enforce_only_scenarios(),
     )
     if not quality["passed"]:
         failed = [
