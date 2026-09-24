@@ -1,0 +1,116 @@
+{
+  "adversarial_holdouts": {
+    "discovery_recon/health_spoof": [
+      "max_softmax"
+    ],
+    "discovery_recon/identity_abuse": [
+      "mahalanobis"
+    ],
+    "identity_abuse/parameter_tamper": [
+      "isolation_forest"
+    ]
+  },
+  "changes_shipped_defaults": false,
+  "features": "/home/jesse/features_refresh_split/fusion_features_permissive.csv",
+  "holdout_size": 2,
+  "known_classes": [
+    "command_injection",
+    "cross_channel_relay",
+    "discovery_recon",
+    "health_spoof",
+    "identity_abuse",
+    "message_dos",
+    "mission_spoof",
+    "node_churn",
+    "parameter_tamper",
+    "replay",
+    "replay_dos",
+    "scan_drift"
+  ],
+  "leave_one_class_out_auc": {
+    "isolation_forest": {
+      "command_injection": 0.3429,
+      "cross_channel_relay": 0.3628,
+      "discovery_recon": 0.2843,
+      "health_spoof": 0.4466,
+      "identity_abuse": 0.2025,
+      "message_dos": 0.3138,
+      "mission_spoof": 0.5814,
+      "node_churn": 0.8713,
+      "parameter_tamper": 0.2503,
+      "replay": 0.7627,
+      "replay_dos": 0.3229,
+      "scan_drift": 0.4575
+    },
+    "mahalanobis": {
+      "command_injection": 0.4605,
+      "cross_channel_relay": 1.0,
+      "discovery_recon": 0.3362,
+      "health_spoof": 1.0,
+      "identity_abuse": 0.2681,
+      "message_dos": 1.0,
+      "mission_spoof": 1.0,
+      "node_churn": 1.0,
+      "parameter_tamper": 1.0,
+      "replay": 0.9987,
+      "replay_dos": 0.9129,
+      "scan_drift": 0.6523
+    },
+    "max_softmax": {
+      "command_injection": 0.9894,
+      "cross_channel_relay": 0.9999,
+      "discovery_recon": 0.9687,
+      "health_spoof": 0.844,
+      "identity_abuse": 0.9862,
+      "message_dos": 0.9925,
+      "mission_spoof": 1.0,
+      "node_churn": 0.9994,
+      "parameter_tamper": 0.9971,
+      "replay": 0.9978,
+      "replay_dos": 0.9894,
+      "scan_drift": 0.9991
+    }
+  },
+  "metrics": "/home/jesse/models_hier_refresh_maha/permissive/training_metrics.json",
+  "official_holdout_excluded": [
+    "sensor_spoof",
+    "service_dos"
+  ],
+  "results": {
+    "isolation_forest": {
+      "macro": 0.2714,
+      "per_holdout": {
+        "discovery_recon/health_spoof": 0.3801,
+        "discovery_recon/identity_abuse": 0.2296,
+        "identity_abuse/parameter_tamper": 0.2045
+      },
+      "worst": 0.2045
+    },
+    "mahalanobis": {
+      "macro": 0.5942,
+      "per_holdout": {
+        "discovery_recon/health_spoof": 0.6746,
+        "discovery_recon/identity_abuse": 0.4514,
+        "identity_abuse/parameter_tamper": 0.6566
+      },
+      "worst": 0.4514
+    },
+    "max_softmax": {
+      "macro": 0.9675,
+      "per_holdout": {
+        "discovery_recon/health_spoof": 0.9212,
+        "discovery_recon/identity_abuse": 0.9918,
+        "identity_abuse/parameter_tamper": 0.9894
+      },
+      "worst": 0.9212
+    }
+  },
+  "rows_used": {
+    "official_holdout": 0,
+    "test": 0,
+    "train": 1466,
+    "validation": 0
+  },
+  "schema_version": "sros2-firewall-ood-worst-case/v1",
+  "winner_by_worst_case": "max_softmax"
+}
