@@ -820,6 +820,39 @@ class SQLiteResponseState:
             for row in rows
         }
 
+    def revoke_desired(self, source: str, *, now_ns: int) -> bool:
+        """Drop one desired response ahead of its expiry.  Returns whether it existed.
+
+        Idempotent on purpose.  A revoke that crashed after committing and is
+        then retried must not raise, or the retry loop becomes the reason a
+        block outlives the decision to lift it.
+
+        One audit row is written either way, including for a source that was
+        not blocked.  An attempted revoke is a fact about what an operator did;
+        dropping it because nothing changed would make the log agree with the
+        state while disagreeing with history.
+        """
+
+        if not isinstance(source, str) or not source:
+            raise ValueError("source must be a non-empty string")
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            self._expire_desired_in_transaction(connection, now_ns=now_ns)
+            self._require_audit_capacity(connection)
+            cursor = connection.execute(
+                "DELETE FROM desired_responses WHERE source = ?", (source,)
+            )
+            existed = cursor.rowcount == 1
+            self._audit_insert(
+                connection,
+                occurred_at_ns=now_ns,
+                event="response_revoked",
+                outcome="removed" if existed else "not_present",
+                source=source,
+            )
+            connection.commit()
+        return existed
+
     def capacity_status(self) -> dict[str, Any]:
         """Return bounded durable-state usage without deleting any evidence."""
 
@@ -1148,6 +1181,89 @@ class ResponseBackend:
             expires_at_ns=desired.expires_at_ns,
             backend_id=desired.backend_id,
         )
+
+    def revoke_source(
+        self,
+        source: str,
+        *,
+        now_ns: int | None = None,
+        reason: str = "operator",
+    ) -> dict[str, Any]:
+        """Lift one block now, without waiting for its timeout.
+
+        Until 2026-09-24 this existed only for the DDS guard.  The nftables
+        path had two removal guarantees -- the kernel timeout and
+        reconcile-on-restart -- and no way for an operator to say "stop
+        blocking this address now".  Both existing guarantees are bounded by
+        the TTL, so the gap was not unbounded, but "wait up to the TTL" is not
+        a revocation, and the response chain's own definition of done names one.
+
+        Three decisions worth stating, because each could be argued the other
+        way:
+
+        **No ticket is required.**  Authorisation gates the block, not the
+        unblock.  Requiring a signed ticket to lift one would mean a lost or
+        rotated key leaves a host blocked until its TTL, and it would make the
+        safe direction depend on the same secret as the dangerous one.
+
+        **Durable state is cleared before the adapter.**  If the process dies
+        between the two, the kernel still holds a block whose durable record is
+        gone, and the next reconcile removes it; the TTL bounds that window
+        regardless.  The other order is worse: a crash would leave durable
+        state asserting a block that the kernel no longer has, and the next
+        reconcile would put it back -- a revoked block returning on its own.
+
+        **Verification fails closed.**  If the source is still in the adapter's
+        snapshot after reconciling, this raises rather than reporting success.
+        Reporting a removal the kernel did not perform is the one outcome that
+        would make the audit log actively misleading.
+        """
+
+        current = time.time_ns() if now_ns is None else now_ns
+        if isinstance(current, bool) or not isinstance(current, int) or current < 1:
+            raise TicketVerificationError("backend time must be a positive integer")
+        if not isinstance(source, str) or not source:
+            raise BackendApplyError("revoke requires a non-empty source")
+
+        audit_id = self.state.begin_audit(
+            event="operator_revoke",
+            now_ns=current,
+            source=source,
+            details={"reason": str(reason)[:128]},
+        )
+        try:
+            existed = self.state.revoke_desired(source, now_ns=current)
+            desired = self.state.active_desired(now_ns=current)
+            self.timeout_set.reconcile(desired, now_ns=current)
+            snapshot = self.timeout_set.snapshot(now_ns=current)
+        except BackendError as exc:
+            self.state.finish_audit(
+                audit_id,
+                outcome="failed_closed",
+                details={"reason": str(exc), "source": source},
+            )
+            raise
+        if source in snapshot:
+            self.state.finish_audit(
+                audit_id,
+                outcome="failed_closed",
+                details={"reason": "source is still present after reconcile"},
+            )
+            raise BackendApplyError(
+                f"{source} is still blocked after revocation; refusing to report success"
+            )
+        self.state.finish_audit(
+            audit_id,
+            outcome="revoked" if existed else "not_present",
+            details={"existed": existed, "active_count": len(snapshot)},
+        )
+        return {
+            "source": source,
+            "existed": existed,
+            "removed_from_adapter": True,
+            "active_count": len(snapshot),
+            "reason": str(reason)[:128],
+        }
 
     def reconcile(self, *, now_ns: int | None = None) -> dict[str, int]:
         current = time.time_ns() if now_ns is None else now_ns
