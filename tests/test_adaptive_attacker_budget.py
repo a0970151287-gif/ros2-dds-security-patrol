@@ -96,18 +96,23 @@ def test_the_budget_clock_is_taken_before_any_expensive_work():
     )
 
 
-def test_stop_by_is_measured_from_process_start_not_from_main():
-    """The defect: `t0 = time.monotonic()` inside main(), after the imports.
+def test_the_budget_is_never_measured_from_where_main_happens_to_be():
+    """Two defects, fixed in two steps; both are pinned here.
 
-    That put the whole 4-second reserve on the wrong side of start-up, so a
-    clean exit landed exactly on the factory's deadline instead of 4s short.
+    First `t0 = time.monotonic()` sat inside main() after the imports, which put
+    the whole reserve on the wrong side of start-up. Moving it to
+    `_PROCESS_START` fixed that but not the interpreter boot before the module
+    runs -- measured at 4.85s, more than the reserve itself. The budget now
+    comes from an absolute deadline the factory names; see
+    tests/test_attack_deadline_handoff.py.
     """
     body = _source()
-    assert re.search(r"^\s*t0 = _PROCESS_START\s*$", body, re.M), (
-        "t0 must be the process start, not the moment main() reached this line"
-    )
+    assert re.search(r"^\s*t0 = _PROCESS_START\s*$", body, re.M)
     assert not re.search(r"^\s*t0 = time\.monotonic\(\)\s*$", body, re.M)
-    assert "stop_by = t0 + duration - TEARDOWN_RESERVE_SEC" in body
+    assert "stop_by = deadline - TEARDOWN_RESERVE_SEC" in body, (
+        "the budget must come from the factory's deadline, not from t0"
+    )
+    assert "stop_by = t0 + duration - TEARDOWN_RESERVE_SEC" not in body
 
 
 def test_the_startup_cost_is_reported():

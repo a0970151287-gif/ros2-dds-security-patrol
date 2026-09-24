@@ -42,6 +42,9 @@ from .schema import (
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
+# CLOCK_MONOTONIC 的絕對期限,傳給自適應驅動器。見上面的說明。
+ATTACK_DEADLINE_ENV = "SROS2_ATTACK_DEADLINE_MONOTONIC"
+
 DEFAULT_OUTPUT = Path(__file__).resolve().parent / "dataset"
 POLICY_PATH = (
     WORKSPACE_ROOT / "展示指令" / "sros2_policy_least_privilege.xml"
@@ -755,10 +758,28 @@ def run_session(
                     intensity=intensity,
                 )
             if argv is not None:
+                attack_env = dict(env)
+                if adaptive:
+                    # 把**絕對期限**交給驅動器,而不是讓它自己從「我什麼時候
+                    # 開始跑」去推。
+                    #
+                    # 2026-09-24 實測:N37 自報在預算內 4.7 秒就結束,卻仍然被
+                    # SIGKILL。兩邊的時鐘起點不同——工廠從 Popen() 起算,N37 從
+                    # 模組第一行起算,而中間的直譯器開機加上從 /mnt/c 讀檔是
+                    # **4.85 秒**,比它整個 4 秒的收尾預留還多。那段時間在模組
+                    # 裡量不到,因為模組還沒開始跑。
+                    #
+                    # Linux 的 time.monotonic() 是 CLOCK_MONOTONIC,自開機起算
+                    # 且每個行程一致,所以父行程指得出子行程認得的同一個瞬間。
+                    # 開機的成本於是從攻擊視窗扣掉——那才是它該扣的地方——
+                    # 而不是無聲地從收尾預留裡扣。
+                    attack_env[ATTACK_DEADLINE_ENV] = repr(
+                        time.monotonic() + duration
+                    )
                 attack_process = ManagedProcess(
                     argv=argv,
                     cwd=WORKSPACE_ROOT,
-                    env=env,
+                    env=attack_env,
                     stdout_path=session_dir / "attack.stdout.log",
                     stderr_path=session_dir / "attack.stderr.log",
                 )

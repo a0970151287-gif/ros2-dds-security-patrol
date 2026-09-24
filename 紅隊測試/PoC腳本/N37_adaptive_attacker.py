@@ -83,6 +83,7 @@ import random
 import signal
 import subprocess
 import sys
+import threading
 import time
 
 # Taken before anything expensive runs, because the budget the factory grants
@@ -131,12 +132,115 @@ CHILD_REAP_SEC = 1.0
 # `destroy_node()` 會卡住」的那些,所以它們每次都用滿這 2 秒。
 BURST_EXIT_RESERVE_SEC = 2 * CHILD_REAP_SEC
 
+# 工廠在 duration 到期時送 SIGTERM,寬限 1 秒後 SIGKILL。提早 1.5 秒自己走,
+# 留下的時間足夠印完軌跡。
+# 與 firewall_lab/orchestrator.py 的 ATTACK_DEADLINE_ENV 相同。刻意重複定義
+# 而不是 import——PoC 是獨立行程,不該把相依綁到管線那一側。
+ATTACK_DEADLINE_ENV = "SROS2_ATTACK_DEADLINE_MONOTONIC"
+WATCHDOG_MARGIN_SEC = 1.5
+# `observer.close()` 是 rclpy 收尾。2026-09-24 實測它會卡,而 14 場被 SIGKILL
+# 的場次沒有一場走到它後面的那一行。仍然要收（殘留的 DDS 共享記憶體段會拖垮
+# 後續場次）,但要有界。
+CLOSE_BUDGET_SEC = 2.0
+
 _STOP = False
+# 模組層級,因為訊號處理器要看得到它。main() 直接往這一份 append。
+_TRACE: list[dict] = []
+_TRACE_PRINTED = False
+_WATCHDOG_REASON = ""
 
 
 def _on_terminate(_signum, _frame) -> None:
     global _STOP
     _STOP = True
+
+
+def _factory_deadline() -> float | None:
+    """工廠指定的 CLOCK_MONOTONIC 絕對期限,沒有就回 None。
+
+    Linux 的 time.monotonic() 自開機起算且每個行程一致,所以這個值直接可以跟
+    自己的 time.monotonic() 比。非 Linux 上不保證,所以只在 POSIX 採用。
+    """
+
+    raw = os.environ.get(ATTACK_DEADLINE_ENV)
+    if not raw or os.name != "posix":
+        return None
+    try:
+        value = float(raw)
+    except ValueError:
+        return None
+    # 期限必須在未來,而且不能離譜——一個過期或荒謬的值代表傳遞出了問題,
+    # 那時候退回自己推算比照著一個壞數字跑安全。
+    remaining = value - time.monotonic()
+    if not 0.0 < remaining <= MAX_DURATION_SEC:
+        print(f"   ⚠️ 忽略不合理的期限（剩 {remaining:.1f}s）", flush=True)
+        return None
+    return value
+
+
+def _emit_trace(step: int, elapsed: float) -> None:
+    """印出這一場的證據。可以被呼叫兩次,只有第一次會輸出。"""
+
+    global _TRACE_PRINTED
+    if _TRACE_PRINTED:
+        return
+    _TRACE_PRINTED = True
+    print(f"⏹ N37 結束：{step} 個 burst，歷時 {elapsed:.1f}s", flush=True)
+    print("DECISION_TRACE " + json.dumps(_TRACE, ensure_ascii=False), flush=True)
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+
+def _on_watchdog(_signum, _frame) -> None:
+    """時間到就走,不管當時卡在哪一行。
+
+    迴圈是在固定的幾個點檢查時鐘的,所以兩次檢查之間任何一段阻塞都會撐破預算,
+    而把每一個這樣的地方都找出來是打不完的仗。計時器不在乎程式在哪裡。
+    """
+
+    print(f"⏱ N37 watchdog：{_WATCHDOG_REASON}，強制結束", flush=True)
+    _emit_trace(len(_TRACE), float("nan"))
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)
+
+
+def _close_within(close, budget_sec: float) -> bool:
+    """Run `close` in a daemon thread and give it `budget_sec` to finish.
+
+    A signal cannot bound this. Python runs handlers between bytecodes, and
+    rclpy's shutdown blocks inside a C extension holding the GIL, so a SIGALRM
+    armed around it is simply never delivered -- measured on 2026-09-24, where
+    the watchdog fired in 0 of the 11 runs that hung here.
+
+    The main thread stays in ordinary bytecode and therefore always reaches the
+    exit. The close keeps its full chance to release DDS shared memory, which
+    has twice poisoned later sessions when it leaked; it just no longer decides
+    when this process ends.
+    """
+
+    done = threading.Event()
+
+    def _run() -> None:
+        try:
+            close()
+        except Exception as exc:  # noqa: BLE001 - teardown must never raise
+            print(f"   ⚠️ 收尾出錯：{exc}", flush=True)
+        finally:
+            done.set()
+
+    worker = threading.Thread(target=_run, name="n37-close", daemon=True)
+    worker.start()
+    return done.wait(budget_sec)
+
+
+def _arm_watchdog(seconds: float, *, reason: str) -> None:
+    """設一個 SIGALRM。seconds <= 0 代表已經逾期,立刻觸發。"""
+
+    global _WATCHDOG_REASON
+    _WATCHDOG_REASON = reason
+    signal.signal(signal.SIGALRM, _on_watchdog)
+    signal.setitimer(signal.ITIMER_REAL, max(seconds, 0.01))
 
 
 class Observer:
@@ -240,13 +344,31 @@ def main() -> int:
     # 而那段時間在 /mnt/c 上實測就是整個 TEARDOWN_RESERVE_SEC。
     t0 = _PROCESS_START
     startup_cost = time.monotonic() - _PROCESS_START
-    stop_by = t0 + duration - TEARDOWN_RESERVE_SEC
-    trace: list[dict] = []
+
+    # 工廠給的絕對期限優先。自己從 duration 推算看不到直譯器開機那一段,
+    # 而實測那一段是 4.85 秒——比整個收尾預留還多。
+    deadline = _factory_deadline()
+    if deadline is None:
+        deadline = t0 + duration
+        boot_cost = 0.0
+    else:
+        boot_cost = deadline - duration - t0
+    stop_by = deadline - TEARDOWN_RESERVE_SEC
+    trace = _TRACE
+
+    # 後備。正常路徑會在 stop_by 就離開迴圈,這個計時器永遠不觸發;觸發時它會
+    # 在軌跡裡留下記號,所以「它救了幾次」是看得到的而不是無聲的。
+    _arm_watchdog(
+        deadline - WATCHDOG_MARGIN_SEC - time.monotonic(),
+        reason="到達工廠期限前 "
+               f"{WATCHDOG_MARGIN_SEC:.1f}s 的硬期限",
+    )
 
     observer = Observer()
     print(f"☠️ N37 自適應攻擊者 | vector={scenario.scenario_id} "
           f"| {duration:.0f}s | seed={args.seed} "
-          f"| 啟動耗時 {startup_cost:.2f}s / 預留 {TEARDOWN_RESERVE_SEC:.0f}s",
+          f"| 啟動耗時 {startup_cost:.2f}s / 開機 {boot_cost:.2f}s "
+          f"/ 預留 {TEARDOWN_RESERVE_SEC:.0f}s",
           flush=True)
     if startup_cost >= TEARDOWN_RESERVE_SEC:
         # 不中止:資料還是有價值,但這一場的可用視窗被啟動吃掉了,要留下紀錄。
@@ -352,11 +474,12 @@ def main() -> int:
                 break
             observer.pump(min(pause, max(stop_by - time.monotonic(), 0.0)))
     finally:
-        observer.close()
-        print(f"⏹ N37 結束：{step} 個 burst，歷時 "
-              f"{time.monotonic() - t0:.1f}s", flush=True)
-        print("DECISION_TRACE " + json.dumps(trace, ensure_ascii=False),
-              flush=True)
+        # 先留證據再收資源。順序相反的時候,一次卡住的 rclpy 收尾就讓 14 場的
+        # 決策軌跡整份消失,而那些場次的攻擊其實跑得好好的。
+        _emit_trace(step, time.monotonic() - t0)
+        if not _close_within(observer.close, CLOSE_BUDGET_SEC):
+            print(f"   ⚠️ observer.close() 超過 {CLOSE_BUDGET_SEC:.0f}s 未回，"
+                  "不再等它", flush=True)
         sys.stdout.flush()
         sys.stderr.flush()
         os._exit(0)
