@@ -230,8 +230,28 @@ def _close_within(close, budget_sec: float) -> bool:
             done.set()
 
     worker = threading.Thread(target=_run, name="n37-close", daemon=True)
+    started = time.monotonic()
     worker.start()
-    return done.wait(budget_sec)
+    finished = done.wait(budget_sec)
+    waited = time.monotonic() - started
+    # ⚠️ 這一行是 2026-09-25 加的量測,不是裝飾。
+    #
+    # 那 137 場被 SIGKILL 的場次裡有 48 場**印完了決策軌跡**才被殺,而
+    # `process_wall − declared` 的中位數正好是 +3.07s ——工廠的寬限期。所以是
+    # 收尾超時,不是攻擊超時。但收尾理應被這個函式限制在 budget 之內。
+    #
+    # 假設是:daemon thread 幫不上忙。rclpy 的 shutdown 在 C 擴充裡**握著 GIL**,
+    # 那麼主執行緒連 `done.wait()` 都跑不動——這正是上面 docstring 說它在避免的
+    # 那個陷阱,只是換成執行緒之後仍然成立。若 waited 明顯大於 budget,假設成立。
+    #
+    # 用量到的數字決定下一步,不要再用推論的。
+    if waited > budget_sec * 1.2:
+        print(f"   ⏱ close 等了 {waited:.2f}s（預算 {budget_sec:.1f}s）"
+              f"——主執行緒被擋住,daemon thread 沒有把它框住", flush=True)
+    else:
+        print(f"   ⏱ close {'完成' if finished else '逾時'} {waited:.2f}s"
+              f"（預算 {budget_sec:.1f}s）", flush=True)
+    return finished
 
 
 def _arm_watchdog(seconds: float, *, reason: str) -> None:
@@ -476,12 +496,25 @@ def main() -> int:
     finally:
         # 先留證據再收資源。順序相反的時候,一次卡住的 rclpy 收尾就讓 14 場的
         # 決策軌跡整份消失,而那些場次的攻擊其實跑得好好的。
+        _teardown_started = time.monotonic()
         _emit_trace(step, time.monotonic() - t0)
+        _traced_at = time.monotonic()
         if not _close_within(observer.close, CLOSE_BUDGET_SEC):
             print(f"   ⚠️ observer.close() 超過 {CLOSE_BUDGET_SEC:.0f}s 未回，"
                   "不再等它", flush=True)
+        _closed_at = time.monotonic()
         sys.stdout.flush()
         sys.stderr.flush()
+        # 逐段計時。48 場「印完軌跡仍被殺」的場次告訴我們時間花在收尾,
+        # 但沒告訴我們花在哪一段。剩多少也一起印——負數代表已經超過工廠期限,
+        # 那時 SIGTERM 早就送出來了。
+        _left = (deadline - time.monotonic()) if deadline is not None else None
+        print(f"   ⏱ 收尾分段：trace {_traced_at - _teardown_started:.2f}s "
+              f"close {_closed_at - _traced_at:.2f}s "
+              f"合計 {time.monotonic() - _teardown_started:.2f}s "
+              f"距期限 {('%+.2fs' % _left) if _left is not None else 'n/a'}",
+              flush=True)
+        sys.stdout.flush()
         os._exit(0)
     return 0
 
