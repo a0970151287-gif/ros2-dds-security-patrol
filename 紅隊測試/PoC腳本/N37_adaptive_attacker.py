@@ -384,12 +384,27 @@ def main() -> int:
                f"{WATCHDOG_MARGIN_SEC:.1f}s 的硬期限",
     )
 
-    observer = Observer()
+    # ⚠️ 這一行必須在 `Observer()` **之前**。2026-09-25 量到 47 場被 SIGKILL 的
+    # 場次是**零位元組**——連這行橫幅都沒有——而它們的 `wall − declared` 是
+    # +3.07 秒,與其他被殺的場次一模一樣,也就是說它們活滿了整個視窗。
+    #
+    # 活滿一個視窗卻一個字都沒寫,只有一種可能:卡在第一個 flush 之前。而
+    # `Observer()` 會做 rclpy.init、建節點、等 discovery,那正是唯一擋在中間的
+    # 東西。SIGALRM 的 watchdog 救不了——它在 C 擴充裡不會被遞送(同一個 GIL
+    # 陷阱);工廠的 SIGTERM 也一樣,所以只剩 SIGKILL。
+    #
+    # 把橫幅移到前面不會修好那個卡住,但會讓它**看得見**:有橫幅沒有下一行,
+    # 就是卡在 Observer;兩行都沒有,才是更早的問題。這個專案記過太多次
+    # 「失敗是靜默的,看起來像證據不存在,實際是程式沒跑」。
     print(f"☠️ N37 自適應攻擊者 | vector={scenario.scenario_id} "
           f"| {duration:.0f}s | seed={args.seed} "
           f"| 啟動耗時 {startup_cost:.2f}s / 開機 {boot_cost:.2f}s "
           f"/ 預留 {TEARDOWN_RESERVE_SEC:.0f}s",
           flush=True)
+    _observer_started = time.monotonic()
+    observer = Observer()
+    print(f"   觀測者就緒 {time.monotonic() - _observer_started:.2f}s"
+          f"（可觀測={observer.ok}）", flush=True)
     if startup_cost >= TEARDOWN_RESERVE_SEC:
         # 不中止:資料還是有價值,但這一場的可用視窗被啟動吃掉了,要留下紀錄。
         print(f"   ⚠️ 啟動就吃掉了整個預留（{startup_cost:.2f}s ≥ "
