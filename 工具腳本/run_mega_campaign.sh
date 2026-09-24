@@ -19,7 +19,8 @@
 ROS_SETUP="${ROS_SETUP:-/opt/ros/jazzy/setup.bash}"
 . "$ROS_SETUP"
 set -u
-cd /home/jesse/ros2_ws || exit 1
+REPO="${REPO:-/home/jesse/ros2_ws}"
+cd "$REPO" || exit 1
 export PYTHONUTF8=1
 export FIREWALL_LIVE_RUNTIME="$HOME/.sros2_live_runtime"
 mkdir -p "$FIREWALL_LIVE_RUNTIME"
@@ -211,7 +212,27 @@ round=0
 MAX_BARREN_BATCHES="${MAX_BARREN_BATCHES:-4}"
 barren=0
 
+# 連續幾批「場次明顯變慢」就停下來。
+#
+# 2026-09-24 量出來的缺口：2026-09-19 那次 run 從約 95 秒一場退化成約 385 秒
+# 一場，連續 103 場、約十小時。上面那個熔斷器**完全看不到**——它數的是
+# 「有沒有產出場次」，而退化的 campaign 還是有在產出，只是慢四倍。
+#
+# 「什麼都沒產出」與「全部產出但太慢」是兩種失效，原本只守了第一種。
+#
+# 健康中位數：enforce 約 90 秒、permissive 約 99 秒；退化時是 385 秒。
+# 門檻取 200 秒，離兩邊都很遠。3 批 ≈ 12 分鐘。
+MAX_SLOW_BATCHES="${MAX_SLOW_BATCHES:-3}"
+SLOW_SESSION_SEC="${SLOW_SESSION_SEC:-200}"
+slow=0
+
 session_count() { ls -d "$DATASET"/*/ 2>/dev/null | wc -l; }
+
+# 回傳 0＝步調正常或資料不足，4＝明顯變慢。
+check_pace() {
+  python3 "$REPO/工具腳本/recent_session_pace.py"     --dataset "$DATASET" --window 10     --slow-threshold-sec "$SLOW_SESSION_SEC" 2>&1 | tee -a "$LOG"
+  return "${PIPESTATUS[0]}"
+}
 
 while :; do
   round=$((round + 1))
@@ -257,6 +278,21 @@ while :; do
       if [ "$barren" -ge "$MAX_BARREN_BATCHES" ]; then
         echo "⛔⛔ 連續 $barren 批沒有產出任何場次，停止監督器。" | tee -a "$LOG"
         exit 3
+      fi
+    fi
+
+    # 步調檢查刻意放在產出檢查**之後**：一批可能同時是「有產出」與「太慢」，
+    # 而那正是要抓的組合。
+    if check_pace; then
+      slow=0
+    else
+      slow=$((slow + 1))
+      echo "  ⚠️ 這一批的場次明顯變慢（連續 $slow／$MAX_SLOW_BATCHES）"         | tee -a "$LOG"
+      if [ "$slow" -ge "$MAX_SLOW_BATCHES" ]; then
+        echo "⛔⛔ 連續 $slow 批場次過慢，停止監督器。"           | tee -a "$LOG"
+        echo "    2026-09-19 的退化就是這個形態：場次照樣產出，只是慢四倍，"           | tee -a "$LOG"
+        echo "    十小時後才被人發現。殘留 SHM 段與孤兒行程是第一個要查的。"           | tee -a "$LOG"
+        exit 4
       fi
     fi
   done
