@@ -16,7 +16,7 @@ import pytest
 import firewall_lab.nft_backend_service as nft_module
 from firewall_lab.nft_backend_service import (
     ENABLEMENT_SCHEMA_VERSION,
-    EXPECTED_RULE_EXPRESSION,
+    expected_rule_expression,
     LIVE_ACCEPTANCE_APPROVAL,
     LIVE_ACCEPTANCE_PLAN_SCHEMA_VERSION,
     LIVE_SCOPE_ACK,
@@ -89,16 +89,16 @@ class MockNftRunner(NftRunner):
                         "type": "ipv4_addr",
                         "flags": ["timeout"],
                         "size": NFT_SET_SIZE,
-                        "timeout": MAX_RESPONSE_TTL_SEC * 1000,
-                        "gc-interval": NFT_GC_INTERVAL_SEC * 1000,
+                        "timeout": MAX_RESPONSE_TTL_SEC,
+                        "gc-interval": NFT_GC_INTERVAL_SEC,
                         "policy": "memory",
                         "comment": NFT_SET_COMMENT,
                         "elem": [
                             {
                                 "elem": {
                                     "val": source,
-                                    "timeout": ttl_sec * 1000,
-                                    "expires": ttl_sec * 1000,
+                                    "timeout": ttl_sec,
+                                    "expires": ttl_sec,
                                 }
                             }
                             for source, ttl_sec in sorted(self.entries.items())
@@ -123,7 +123,7 @@ class MockNftRunner(NftRunner):
                         "table": NFT_TABLE,
                         "chain": NFT_CHAIN,
                         "comment": NFT_RULE_COMMENT,
-                        "expr": EXPECTED_RULE_EXPRESSION,
+                        "expr": expected_rule_expression(),
                     }
                 },
             ]
@@ -603,7 +603,10 @@ def test_live_acceptance_plan_is_non_mutating_and_keeps_executor_blocked():
     assert plan["plan_only"] is True
     assert plan["host_firewall_modified"] is False
     assert plan["production_ready"] is False
-    assert plan["live_executor_implemented"] is False
+    # 2026-09-21: the bounded executor now exists, so this factual flag flipped
+    # to True. The safety gates it was standing in for are asserted explicitly
+    # below and on the next line, and none of them moved.
+    assert plan["live_executor_implemented"] is True
     assert plan["required_approval_phrase"] == LIVE_ACCEPTANCE_APPROVAL
     assert plan["production_source_gate"] is False
     assert plan["traffic_scope"] == NFT_TRAFFIC_SCOPE
@@ -623,7 +626,10 @@ def test_cli_live_acceptance_plan_never_calls_root_or_nft(monkeypatch, capsys):
     assert main(["plan-live-acceptance"]) == 0
     plan = json.loads(capsys.readouterr().out)
     assert plan["plan_only"] is True
-    assert plan["live_executor_implemented"] is False
+    # 2026-09-21: executor implemented; the plan command itself is still
+    # non-mutating, which is what this test is actually for.
+    assert plan["live_executor_implemented"] is True
+    assert plan["production_source_gate"] is False
 
 
 def test_cli_has_no_source_or_ttl_option_and_blocks_non_root(monkeypatch, capsys):

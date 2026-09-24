@@ -903,6 +903,18 @@ class TimeoutSetAdapter(ABC):
     def snapshot(self, *, now_ns: int) -> dict[str, int]:
         """Return active source-to-expiry state after automatic pruning."""
 
+    def expiry_matches(self, observed: int, expected: int) -> bool:
+        """Whether an observed expiry is the signed one, at this granularity.
+
+        Exact by default, because an adapter that stores what it was handed
+        should return it unchanged. Adapters whose backing store quantises time
+        override this: the kernel nft set reports whole seconds of remaining
+        lifetime, so a nanosecond comparison against durable state can never
+        hold and would turn every reconciliation into a fail-closed error.
+        """
+
+        return observed == expected
+
 
 class InMemoryTimeoutSetAdapter(TimeoutSetAdapter):
     """Deterministic fake kernel timeout set for tests and offline evidence."""
@@ -1160,7 +1172,13 @@ class ResponseBackend:
         expected = {
             source: response.expires_at_ns for source, response in desired.items()
         }
-        if snapshot != expected:
+        # The set of blocked sources must match exactly; only the instant is
+        # compared at the adapter's granularity. See expiry_matches().
+        drifted = set(snapshot) != set(expected) or any(
+            not self.timeout_set.expiry_matches(snapshot[source], expected[source])
+            for source in expected
+        )
+        if drifted:
             self.state.finish_audit(
                 audit_id,
                 outcome="failed_closed",

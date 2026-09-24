@@ -61,6 +61,22 @@ NFT_CHAIN_PRIORITY = -10
 NFT_TRAFFIC_SCOPE = "local_input_only_not_forward_gateway"
 NFT_SET_SIZE = 1024
 NFT_GC_INTERVAL_SEC = 5
+
+# nftables renders set and element timeouts in SECONDS. This was measured, not
+# assumed: on nftables v1.0.9 (json_schema_version 1), Linux 6.8.0-1048-raspi,
+# an element added with `timeout 12s` came back as {"timeout": 12, "expires": 8}
+# and the set itself as {"timeout": 300, "gc-interval": 5}.
+#
+# Reading those as milliseconds understates every expiry by a factor of 1000, so
+# this backend would have believed a 12-second block was still in force for more
+# than three hours after the kernel had already released it -- an error in the
+# direction of falsely believing the host is still protected.
+#
+# The schema version is therefore asserted rather than ignored. A different
+# version may carry different units, and the only safe response to a unit that
+# has not been measured is to fail closed.
+NFT_JSON_SCHEMA_VERSION = 1
+
 NFT_COMMAND_TIMEOUT_SEC = 5.0
 NFT_OUTPUT_LIMIT = 1024 * 1024
 NFT_BATCH_LIMIT = 128 * 1024
@@ -101,17 +117,55 @@ REQUIRED_LIVE_CHECKS = frozenset(
     }
 )
 
-EXPECTED_RULE_EXPRESSION = [
-    {
-        "match": {
-            "op": "in",
-            "left": {"payload": {"protocol": "ip", "field": "saddr"}},
-            "right": f"@{NFT_SET}",
-        }
-    },
-    {"counter": None},
-    {"drop": None},
-]
+# How the kernel renders the fixed rule, captured from nftables v1.0.9 on the
+# Raspberry Pi 5 on 2026-09-21. Two fields differ from the syntax the rule is
+# written in, and both differences were invisible offline because every fake nft
+# runner was fed this same constant and so only ever agreed with itself:
+#
+#   * `ip saddr @set` is entered as a membership test but renders as
+#     "op": "==", not "in";
+#   * `counter` is entered bare but renders as a dict carrying live totals.
+#
+# The counter totals are the one part that legitimately varies between reads, so
+# the contract is enforced by rule_expression_matches() instead of by equality.
+# Everything else stays exact: three expressions, no more, no fewer.
+EXPECTED_MATCH_EXPRESSION = {
+    "match": {
+        "op": "==",
+        "left": {"payload": {"protocol": "ip", "field": "saddr"}},
+        "right": f"@{NFT_SET}",
+    }
+}
+EXPECTED_DROP_EXPRESSION = {"drop": None}
+
+
+def expected_rule_expression(*, packets: int = 0, byte_count: int = 0) -> list:
+    """The rule exactly as the kernel renders it, for fixtures and fakes."""
+
+    return [
+        dict(EXPECTED_MATCH_EXPRESSION),
+        {"counter": {"packets": packets, "bytes": byte_count}},
+        dict(EXPECTED_DROP_EXPRESSION),
+    ]
+
+
+def rule_expression_matches(expression) -> bool:
+    """True only for the fixed drop rule; counter totals are free, nothing else."""
+
+    if not isinstance(expression, list) or len(expression) != 3:
+        return False
+    if expression[0] != EXPECTED_MATCH_EXPRESSION:
+        return False
+    counter = expression[1]
+    if not isinstance(counter, dict) or set(counter) != {"counter"}:
+        return False
+    totals = counter["counter"]
+    if not isinstance(totals, dict) or set(totals) != {"packets", "bytes"}:
+        return False
+    for value in totals.values():
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            return False
+    return expression[2] == EXPECTED_DROP_EXPRESSION
 
 
 def render_bootstrap_ruleset_for_review() -> str:
@@ -338,14 +392,18 @@ class NftablesTimeoutSetAdapter(TimeoutSetAdapter):
         if not isinstance(element, dict) or set(element) != {"val", "timeout", "expires"}:
             raise BackendApplyError("nft timed element metadata is incomplete")
         source = _canonical_ipv4(element["val"])
-        timeout_ms = element["timeout"]
-        expires_ms = element["expires"]
-        for raw, name in ((timeout_ms, "timeout"), (expires_ms, "expires")):
-            if isinstance(raw, bool) or not isinstance(raw, int) or raw < 1:
-                raise BackendApplyError(f"nft element {name} must be positive milliseconds")
-        if timeout_ms > MAX_RESPONSE_TTL_SEC * 1000 or expires_ms > timeout_ms:
+        timeout_sec = element["timeout"]
+        expires_sec = element["expires"]
+        if isinstance(timeout_sec, bool) or not isinstance(timeout_sec, int) or timeout_sec < 1:
+            raise BackendApplyError("nft element timeout must be positive seconds")
+        # `expires` counts down and legitimately reads 0 during the final second
+        # before the kernel collects the element, so zero is valid here even
+        # though a zero-second timeout never is.
+        if isinstance(expires_sec, bool) or not isinstance(expires_sec, int) or expires_sec < 0:
+            raise BackendApplyError("nft element expires must be non-negative seconds")
+        if timeout_sec > MAX_RESPONSE_TTL_SEC or expires_sec > timeout_sec:
             raise BackendApplyError("nft element timeout exceeds the signed response bound")
-        return source, now_ns + expires_ms * 1_000_000
+        return source, now_ns + expires_sec * 1_000_000_000
 
     @classmethod
     def _parse_snapshot(cls, text: str, *, now_ns: int) -> dict[str, int]:
@@ -366,15 +424,29 @@ class NftablesTimeoutSetAdapter(TimeoutSetAdapter):
             "chain": [],
             "rule": [],
         }
+        saw_metainfo = False
         for item in objects:
             if not isinstance(item, dict) or len(item) != 1:
                 raise BackendApplyError("nft JSON contains an invalid object")
             kind = next(iter(item))
             if kind == "metainfo":
+                metainfo = item[kind]
+                if not isinstance(metainfo, dict):
+                    raise BackendApplyError("nft JSON metainfo is not recognized")
+                if metainfo.get("json_schema_version") != NFT_JSON_SCHEMA_VERSION:
+                    raise BackendApplyError(
+                        "nft JSON schema version is not the one this contract "
+                        "was measured against; timeout units cannot be assumed"
+                    )
+                saw_metainfo = True
                 continue
             if kind not in recognized or not isinstance(item[kind], dict):
                 raise BackendApplyError("nft dedicated table contains an unexpected object")
             recognized[kind].append(item[kind])
+        if not saw_metainfo:
+            raise BackendApplyError(
+                "nft JSON carries no metainfo, so its timeout units are unknown"
+            )
         if any(len(recognized[kind]) != 1 for kind in recognized):
             raise BackendApplyError("nft dedicated namespace topology is not exact")
         table = recognized["table"][0]
@@ -388,8 +460,8 @@ class NftablesTimeoutSetAdapter(TimeoutSetAdapter):
             or nft_set.get("type") != "ipv4_addr"
             or nft_set.get("flags") != ["timeout"]
             or nft_set.get("size") != NFT_SET_SIZE
-            or nft_set.get("timeout") != MAX_RESPONSE_TTL_SEC * 1000
-            or nft_set.get("gc-interval") != NFT_GC_INTERVAL_SEC * 1000
+            or nft_set.get("timeout") != MAX_RESPONSE_TTL_SEC
+            or nft_set.get("gc-interval") != NFT_GC_INTERVAL_SEC
             or nft_set.get("policy") != "memory"
             or nft_set.get("comment") != NFT_SET_COMMENT
         ):
@@ -412,7 +484,7 @@ class NftablesTimeoutSetAdapter(TimeoutSetAdapter):
             or rule.get("table") != NFT_TABLE
             or rule.get("chain") != NFT_CHAIN
             or rule.get("comment") != NFT_RULE_COMMENT
-            or rule.get("expr") != EXPECTED_RULE_EXPRESSION
+            or not rule_expression_matches(rule.get("expr"))
         ):
             raise BackendApplyError("nft drop rule contract is not exact")
         elements = nft_set.get("elem", [])
@@ -485,6 +557,17 @@ class NftablesTimeoutSetAdapter(TimeoutSetAdapter):
         # Listing and applying consume time; never allow an expiry to extend
         # beyond the signed deadline by more than one rounding second.
         return expected - 2_000_000_000 <= actual <= expected + 1_000_000_000
+
+    def expiry_matches(self, observed: int, expected: int) -> bool:
+        """The granularity ResponseBackend.reconcile() must use for this adapter.
+
+        The kernel reports whole seconds remaining, so the durable nanosecond
+        deadline is never reproduced exactly. This is the same bound `apply()`
+        and `reconcile()` already enforce internally, exposed so the caller
+        stops applying a stricter one that no kernel can satisfy.
+        """
+
+        return self._expiry_matches(observed, expected)
 
     def apply(self, response: DesiredResponse, *, now_ns: int) -> None:
         self._root_if_production()
@@ -909,7 +992,12 @@ def live_acceptance_plan() -> dict[str, Any]:
         "simulation_only": True,
         "host_firewall_modified": False,
         "production_ready": False,
-        "live_executor_implemented": False,
+        # 2026-09-21: the bounded executor now exists as
+        # `工具腳本/run_nft_live_acceptance.py`. This flag is a statement of
+        # fact, not a safety gate -- leaving it False once the program exists
+        # would make this plan wrong. The gate that matters,
+        # LIVE_NFT_ACTIVATION_ALLOWED, is unchanged and still False.
+        "live_executor_implemented": True,
         "human_approval_required": True,
         "required_approval_phrase": LIVE_ACCEPTANCE_APPROVAL,
         "production_source_gate": LIVE_NFT_ACTIVATION_ALLOWED,
@@ -945,8 +1033,9 @@ def live_acceptance_plan() -> dict[str, Any]:
             "start the production ticket-only service and repeat restart reconciliation",
         ],
         "current_blocker": (
-            "bounded live executor is not implemented; this plan cannot create a "
-            "production-eligible report"
+            "no reviewed live acceptance report exists yet; run the bounded "
+            "executor on the owned isolated hosts, then review and pin its "
+            "SHA-256 before any source change to LIVE_NFT_ACTIVATION_ALLOWED"
         ),
     }
 
