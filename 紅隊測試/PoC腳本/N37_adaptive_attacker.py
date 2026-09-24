@@ -84,7 +84,19 @@ import signal
 import subprocess
 import sys
 import time
-from pathlib import Path
+
+# Taken before anything expensive runs, because the budget the factory grants
+# starts when this process starts, not when this process finishes importing.
+#
+# Measured 2026-09-24 over 406 adaptive sessions: clean exits overshot the
+# granted budget by a median of +0.01s while TEARDOWN_RESERVE_SEC promised a
+# 4.0s cushion. The cushion was entirely spent on start-up -- argument parsing
+# plus the firewall_lab imports, off /mnt/c where reads are slow -- so the
+# effective margin was zero and the child reap alone pushed 14.3% of sessions
+# past the deadline into SIGKILL.
+_PROCESS_START = time.monotonic()
+
+from pathlib import Path  # noqa: E402
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 if str(WORKSPACE) not in sys.path:
@@ -110,6 +122,14 @@ TEARDOWN_RESERVE_SEC = 4.0
 #
 # 1.0 + 1.0 = 2.0 秒,連同 rclpy 收尾都塞得進 4 秒的預留。
 CHILD_REAP_SEC = 1.0
+# 一個 burst 結束之後、`stop_by` 之前必須留下來收子行程的時間。
+#
+# 2026-09-24：burst 原本可以被切成「剩餘時間的全部」,於是 `observer.pump()`
+# 一結束就已經在 `stop_by` 上,而收子行程最壞還要 2 秒——必然超過。
+# `heartbeat_replay` 與 `unauthorized_participant` 是被砍最多的兩類,
+# 正是 C2C-024 記過「Enforce 下 RELIABLE writer 配不到訂閱者、
+# `destroy_node()` 會卡住」的那些,所以它們每次都用滿這 2 秒。
+BURST_EXIT_RESERVE_SEC = 2 * CHILD_REAP_SEC
 
 _STOP = False
 
@@ -216,13 +236,23 @@ def main() -> int:
     signal.signal(signal.SIGTERM, _on_terminate)
     signal.signal(signal.SIGINT, _on_terminate)
 
-    t0 = time.monotonic()
+    # 從**行程啟動**起算,不是從這一行起算。兩者差了 import 的時間,
+    # 而那段時間在 /mnt/c 上實測就是整個 TEARDOWN_RESERVE_SEC。
+    t0 = _PROCESS_START
+    startup_cost = time.monotonic() - _PROCESS_START
     stop_by = t0 + duration - TEARDOWN_RESERVE_SEC
     trace: list[dict] = []
 
     observer = Observer()
     print(f"☠️ N37 自適應攻擊者 | vector={scenario.scenario_id} "
-          f"| {duration:.0f}s | seed={args.seed}", flush=True)
+          f"| {duration:.0f}s | seed={args.seed} "
+          f"| 啟動耗時 {startup_cost:.2f}s / 預留 {TEARDOWN_RESERVE_SEC:.0f}s",
+          flush=True)
+    if startup_cost >= TEARDOWN_RESERVE_SEC:
+        # 不中止:資料還是有價值,但這一場的可用視窗被啟動吃掉了,要留下紀錄。
+        print(f"   ⚠️ 啟動就吃掉了整個預留（{startup_cost:.2f}s ≥ "
+              f"{TEARDOWN_RESERVE_SEC:.0f}s）——攻擊視窗會比宣告的短。",
+              flush=True)
     if not observer.ok:
         print(f"   ⚠️ 觀察不到任何東西（{observer.blind_reason or '訂閱收不到'}）"
               "——盲打模式。Enforce 下這是預期的。", flush=True)
@@ -243,7 +273,8 @@ def main() -> int:
     try:
         while not _STOP and time.monotonic() < stop_by:
             step += 1
-            remaining = stop_by - time.monotonic()
+            # 收子行程要花時間,而那段時間必須落在 `stop_by` **之前**。
+            remaining = stop_by - time.monotonic() - BURST_EXIT_RESERVE_SEC
             burst = min(rng.uniform(BURST_MIN_SEC, BURST_MAX_SEC), remaining)
             if burst < 2.0:
                 break

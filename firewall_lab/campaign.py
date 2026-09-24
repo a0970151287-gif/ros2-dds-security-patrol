@@ -36,7 +36,13 @@ from .schema import (
 
 
 CAMPAIGN_SCHEMA_VERSION = "sros2-firewall-campaign/v1"
-ENTRY_STATUSES = frozenset({"pending", "running", "complete", "failed"})
+# "ineligible": the session ran to completion but did not qualify for training.
+# Terminal within a run and within `repair` -- see repair_campaign_plan's
+# --reset-ineligible for why requeueing is a deliberate act rather than an
+# automatic one.
+ENTRY_STATUSES = frozenset(
+    {"pending", "running", "complete", "failed", "ineligible"}
+)
 DEFAULT_PLAN = Path(__file__).resolve().parent / "campaign_1100.json"
 DEFAULT_LIVE_OUTPUT = DEFAULT_OUTPUT.with_name("dataset_live")
 DEFAULT_MINIMUM_FREE_GIB = 8.0
@@ -537,6 +543,7 @@ def repair_campaign_plan(
     path: str | Path,
     *,
     dry_run: bool = False,
+    reset_ineligible: bool = False,
 ) -> dict[str, Any]:
     """把排錯模式的持證內鬼 entry 就地改成 Enforce,保住已完成的進度。
 
@@ -555,6 +562,9 @@ def repair_campaign_plan(
       `validate_campaign_plan` 會逐項比對——只改一邊會在下次載入時被擋下。
       （這正是 2026-09-20 合成資料集 gate 的同一課:名字說 per_scenario 而
       實際數 per_class,不一致的兩份計數遲早會量錯東西。）
+    * **`ineligible` 預設不動。** 它代表「場次跑完但不合格」,而監督器每一輪
+      都會呼叫 repair——自動重排會讓一個系統性壞掉的 scenario 無限重跑。
+      修好成因之後用 `reset_ineligible=True` 明確把它們放回 pending。
     """
     plan_path = Path(path).expanduser()
     if plan_path.is_symlink():
@@ -572,6 +582,7 @@ def repair_campaign_plan(
             raise SchemaError("campaign plan is not a plan")
 
         repaired: list[dict[str, str]] = []
+        requeued: list[str] = []
         impossible: list[str] = []
         for entry in plan["entries"]:
             scenario = catalog.get(entry.get("scenario_id"))
@@ -595,7 +606,19 @@ def repair_campaign_plan(
             entry["security_mode"] = "enforce"
             if entry.get("status") == "failed":
                 entry["status"] = "pending"
+            entry["error"] = None
+
+        # A separate pass, over *every* entry: an ineligible session is not an
+        # insider-scheduling problem and has nothing to do with the mode flip
+        # above. Folding it into that loop would have requeued only the handful
+        # of entries that also needed repairing, and said nothing about it.
+        if reset_ineligible:
+            for entry in plan["entries"]:
+                if entry.get("status") != "ineligible":
+                    continue
+                entry["status"] = "pending"
                 entry["error"] = None
+                requeued.append(str(entry.get("entry_id")))
 
         if impossible:
             raise SchemaError(
@@ -615,7 +638,9 @@ def repair_campaign_plan(
         plan["requested_counts"] = counts
 
         validate_campaign_plan(plan)
-        if repaired and not dry_run:
+        # `requeued` alone is a real change; gating the write on `repaired`
+        # would silently discard a --reset-ineligible pass.
+        if (repaired or requeued) and not dry_run:
             atomic_write_json(plan_path, plan)
 
     return {
@@ -623,6 +648,7 @@ def repair_campaign_plan(
         "dry_run": dry_run,
         "repaired": len(repaired),
         "entries": repaired[:20],
+        "requeued_ineligible": len(requeued),
         "pending_enforce_after": sum(
             entry["security_mode"] == "enforce"
             and entry["status"] == "pending"
@@ -672,6 +698,17 @@ class _CampaignLock:
         self.path.unlink(missing_ok=True)
 
 
+# A batch tolerates a few ineligible sessions and aborts on a bad rate.
+#
+# Both conditions must hold: at least this many, *and* above this share. The
+# count stops a three-session smoke run from aborting on its first miss; the
+# share is what actually detects a broken stack. The healthy ineligible rate
+# measured on 2026-09-24 was 7 in 406 (1.7%) once the N37 budget defect was
+# accounted for, so 25% is far above anything normal operation produces.
+MAX_INELIGIBLE_BEFORE_ABORT = 5
+MAX_INELIGIBLE_RATE = 0.25
+
+
 def execute_campaign(
     *,
     plan_path: str | Path,
@@ -709,6 +746,9 @@ def execute_campaign(
     output = _prepare_output_root(Path(dataset_root))
     catalog = load_catalog()
     completed: list[str] = []
+    # Entries whose session completed but did not qualify for training. They
+    # are recorded, not retried and not silently dropped.
+    ineligible: list[str] = []
     attempted = 0
     with _CampaignLock(path):
         plan = load_campaign_plan(path)
@@ -769,10 +809,40 @@ def execute_campaign(
                         manifest.get("result", {})
                         .get("training_gate", "unknown")
                     )
-                    raise RuntimeError(
+                    reason = (
                         "live session failed training gate: "
                         f"status={manifest.get('status')} gate={gate}"
                     )
+                    # The session is already on disk with
+                    # `training_eligible: false`, so it can never reach a
+                    # training set. Raising here would additionally destroy
+                    # every remaining entry in the batch and the stack startup
+                    # that paid for it.
+                    #
+                    # Measured 2026-09-24: 14.3% of adaptive sessions were
+                    # being SIGKILLed past their budget, so a 40-session batch
+                    # survived with probability 0.857^40 ~ 0.2%. Throughput
+                    # went from 69 sessions a round to 2.
+                    #
+                    # Still fail-closed, but on the rate: a run where most
+                    # sessions are ineligible is a broken stack, not bad luck.
+                    ineligible.append(entry["entry_id"])
+                    entry["status"] = "ineligible"
+                    entry["error"] = reason
+                    atomic_write_json(path, plan)
+                    print(f"⚠️ {entry['entry_id']} {reason}", flush=True)
+                    if len(ineligible) >= MAX_INELIGIBLE_BEFORE_ABORT and (
+                        len(ineligible) > MAX_INELIGIBLE_RATE * (
+                            len(completed) + len(ineligible)
+                        )
+                    ):
+                        raise RuntimeError(
+                            f"{len(ineligible)} of "
+                            f"{len(completed) + len(ineligible)} sessions "
+                            "failed the training gate; the stack is not "
+                            f"producing usable evidence. Last: {reason}"
+                        )
+                    continue
             except Exception as exc:
                 entry["status"] = "failed"
                 entry["error"] = (
@@ -857,6 +927,15 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="只報告要改什麼，不寫檔",
     )
+    repairer.add_argument(
+        "--reset-ineligible",
+        action="store_true",
+        help=(
+            "把 status=ineligible 的 entry 放回 pending。"
+            "只在修好造成不合格的成因之後才用——監督器每輪都會呼叫 repair，"
+            "自動重排會讓系統性的失敗無限重跑。"
+        ),
+    )
     return parser
 
 
@@ -878,7 +957,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "repair":
-        report = repair_campaign_plan(args.plan, dry_run=args.dry_run)
+        report = repair_campaign_plan(
+            args.plan,
+            dry_run=args.dry_run,
+            reset_ineligible=args.reset_ineligible,
+        )
         verb = "會改" if args.dry_run else "已改"
         print(
             f"{'🔍' if args.dry_run else '✅'} {verb} {report['repaired']} "
@@ -886,6 +969,11 @@ def main(argv: list[str] | None = None) -> int:
             f"enforce {report['pending_enforce_after']}／"
             f"permissive {report['pending_permissive_after']}"
         )
+        if report["requeued_ineligible"]:
+            print(
+                f"   ♻️ {report['requeued_ineligible']} 個 ineligible entry "
+                "放回 pending"
+            )
         for item in report["entries"]:
             print(
                 f"   {item['entry_id']} {item['scenario_id']} "
