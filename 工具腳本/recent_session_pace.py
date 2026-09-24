@@ -19,8 +19,21 @@ Exit codes are the interface:
 * ``0`` -- the pace is within bounds, or there are not yet enough sessions to
   judge. Not enough data is not a failure, but it is also not a pass, so the
   reason is printed either way.
-* ``4`` -- the median exceeds ``--slow-threshold-sec``.
+* ``4`` -- the median residual exceeds ``--slow-threshold-sec``.
 * ``2`` -- the dataset could not be read at all.
+
+Why a residual and not the wall clock. Session duration tracks how much traffic
+was captured -- measured over 502 sessions, ``inside ~ 85.7s + 0.376 s/MB``,
+running from 86s at 4MB to 453s at 750MB. An absolute threshold fires on any
+batch of heavy scenarios (300MB costs 198s on volume alone) and would stop a
+healthy campaign. What this guard is for is degradation: the same work taking
+longer. Residuals separate cleanly where raw durations do not:
+
+    2026-09-19 slow block   n=103  residual median +116.8s
+    everything else         n=400  residual median   -2.8s  (p75 +6.3s)
+
+The model was fitted on the sessions outside the slow block, so it is not shaped
+by the thing it is used to judge.
 """
 
 from __future__ import annotations
@@ -36,6 +49,13 @@ if str(_ROOT) not in sys.path:
 
 _TOOL = _ROOT / "工具腳本" / "measure_campaign_throughput.py"
 
+# Session wall clock against capture size, fitted over the 400 sessions outside
+# the 2026-09-19 slow block. Re-fit these with measure_campaign_throughput.py if
+# the capture pipeline changes; they describe this machine and this pipeline,
+# not a law.
+VOLUME_FIXED_SEC = 85.7
+VOLUME_SLOPE_SEC_PER_MB = 0.376
+
 
 def _load_sessions(dataset: pathlib.Path):
     import importlib.util
@@ -46,16 +66,40 @@ def _load_sessions(dataset: pathlib.Path):
     return module.load_sessions(dataset)
 
 
+def _capture_megabytes(directory: pathlib.Path) -> float:
+    pcap = directory / "traffic.pcapng"
+    try:
+        return pcap.stat().st_size / 1e6
+    except OSError:
+        return 0.0
+
+
+def expected_sec(megabytes: float) -> float:
+    """What a session of this capture size should cost when nothing is wrong."""
+
+    return VOLUME_FIXED_SEC + VOLUME_SLOPE_SEC_PER_MB * megabytes
+
+
 def recent_pace(dataset: pathlib.Path, window: int) -> dict:
     sessions, skipped = _load_sessions(dataset)
     recent = sessions[-window:] if window > 0 else sessions
     durations = [session["inside_sec"] for session in recent]
+    megabytes = [_capture_megabytes(session["directory"]) for session in recent]
+    residuals = [
+        duration - expected_sec(size)
+        for duration, size in zip(durations, megabytes)
+    ]
     return {
         "sessions_total": len(sessions),
         "sessions_considered": len(recent),
         "skipped": skipped,
         "median_sec": round(statistics.median(durations), 1) if durations else None,
         "max_sec": round(max(durations), 1) if durations else None,
+        "median_pcap_mb": round(statistics.median(megabytes), 1) if megabytes else None,
+        "median_residual_sec": (
+            round(statistics.median(residuals), 1) if residuals else None
+        ),
+        "max_residual_sec": round(max(residuals), 1) if residuals else None,
         "modes": sorted({s["security_mode"] for s in recent if s["security_mode"]}),
     }
 
@@ -69,11 +113,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--slow-threshold-sec",
         type=float,
-        default=200.0,
+        default=60.0,
         help=(
-            "median above this is a degraded campaign. The healthy medians are "
-            "~90s enforce and ~99s permissive; the observed degraded median was "
-            "385s, so 200s sits well clear of both."
+            "median residual above this is a degraded campaign. Residual is the "
+            "wall clock minus what the capture size predicts. Healthy runs sit "
+            "at -2.8s (p75 +6.3s); the 2026-09-19 degradation sat at +116.8s, "
+            "so 60s sits well clear of both."
         ),
     )
     parser.add_argument(
@@ -97,14 +142,15 @@ def main(argv: list[str] | None = None) -> int:
     modes = ",".join(pace["modes"]) or "unknown"
     line = (
         f"pace: newest {pace['sessions_considered']} of {pace['sessions_total']} "
-        f"median={pace['median_sec']}s max={pace['max_sec']}s modes={modes} "
-        f"threshold={args.slow_threshold_sec:g}s"
+        f"median={pace['median_sec']}s pcap={pace['median_pcap_mb']}MB "
+        f"residual={pace['median_residual_sec']:+}s modes={modes} "
+        f"threshold={args.slow_threshold_sec:+g}s"
     )
 
     if pace["sessions_considered"] < args.minimum_sessions:
         print(f"{line} (too few to judge)")
         return 0
-    if pace["median_sec"] > args.slow_threshold_sec:
+    if pace["median_residual_sec"] > args.slow_threshold_sec:
         print(f"{line} SLOW")
         return 4
     print(f"{line} ok")

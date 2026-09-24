@@ -1,21 +1,29 @@
 """N37 must finish inside the budget the session factory grants it.
 
-Measured on 2026-09-24 across 406 adaptive sessions:
+`attack_process.duration_sec` measures the *factory's* window, not N37's exit:
+the orchestrator sleeps for the granted duration and only then stops the
+process, so a clean exit records ~duration whether N37 finished early or late.
+An earlier version of this file inferred the margin from that number, which it
+cannot show.
 
-* clean exits overshot the granted budget by a median of **+0.01s**, not the
-  -4.0s that `TEARDOWN_RESERVE_SEC` promises. The entire cushion was being spent
-  on start-up, because the budget clock started after argument parsing and the
-  `firewall_lab` imports -- and this repository lives on /mnt/c, where those
-  reads are slow;
-* the 58 sessions that were SIGKILLed overshot by a median of **+2.81s**, which
-  is the child reap (up to 2 x CHILD_REAP_SEC) landing on top of a zero margin.
+What the data does show, measured 2026-09-24 across 406 adaptive sessions:
+
+* 58 sessions were SIGKILLed, overshooting by a median of **+2.81s**. That
+  overshoot is `stop()` escalating SIGTERM -> wait -> SIGKILL, which only
+  happens when the process is still running at the deadline;
+* the fix's own new telemetry then showed why: start-up costs **2.79s** of the
+  **4.0s** `TEARDOWN_RESERVE_SEC`, because the budget clock started after
+  argument parsing and the `firewall_lab` imports, off /mnt/c where reads are
+  slow. That leaves ~1.2s against a child reap that can take 2 x
+  CHILD_REAP_SEC.
 
 14.3% of adaptive sessions died this way, and because `execute_campaign` raised
 on the first one, a 40-session batch survived with probability 0.857^40 -- about
 0.2%.
 
-These are source-level assertions. A live run is the only thing that can confirm
-the timing actually holds, and the numbers above say what to look for.
+These are source-level assertions. Only a live run confirms the timing holds,
+and the numbers above say what to look for: the start-up line in
+attack.stdout.log, and an ineligible rate back near 1.7%.
 """
 
 from __future__ import annotations
@@ -157,19 +165,27 @@ def test_the_child_reap_budget_still_fits_the_factory_grace():
 # ── the measured numbers that motivated the change ───────────────────────────
 
 
-def test_the_observed_overshoot_exceeded_the_old_effective_margin():
-    """Stated as arithmetic so the reason stays legible after the fix.
+def test_the_old_margin_was_smaller_than_the_reap_it_had_to_absorb():
+    """The arithmetic that actually explains the SIGKILLs.
 
-    Clean exits landed at +0.01s, i.e. the effective margin was zero; the killed
-    ones overshot by a median of 2.81s, which is the reap.
+    Not the clean exits' +0.01s -- that is the factory's fixed sleep and says
+    nothing about N37. The margin comes from the measured start-up cost against
+    the declared reserve, and it was smaller than the worst-case reap.
     """
-    effective_margin_before = 0.01
-    killed_overshoot_median = 2.81
+    measured_startup_sec = 2.79
+    reserve = _constant_raw("TEARDOWN_RESERVE_SEC")
     reap_worst_case = 2 * _constant_raw("CHILD_REAP_SEC")
-    assert killed_overshoot_median > effective_margin_before
-    assert killed_overshoot_median > reap_worst_case * 0.5, (
-        "the overshoot should be the same order as the reap it is blamed on"
+
+    margin_before = reserve - measured_startup_sec
+    assert margin_before < reap_worst_case, (
+        f"the old margin was {margin_before:.2f}s against a {reap_worst_case}s "
+        "reap, which is why the process was still alive at the deadline"
     )
+
+    # After the fix the clock starts at process start, so the full reserve is
+    # margin again and the burst loop additionally stops short of the reap.
+    margin_after = reserve
+    assert margin_after > reap_worst_case
 
 
 def test_the_script_still_parses():

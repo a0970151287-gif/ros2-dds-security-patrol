@@ -50,7 +50,18 @@ def supervisor_source() -> str:
     return _SUPERVISOR_PATH.read_text(encoding="utf-8")
 
 
-def _write(root: pathlib.Path, index: int, inside_sec: float, mode: str = "enforce") -> None:
+def _write(
+    root: pathlib.Path,
+    index: int,
+    inside_sec: float,
+    mode: str = "enforce",
+    pcap_mb: float = 0.0,
+) -> None:
+    """One synthetic session, optionally with a capture of a given size.
+
+    The capture matters: the guard subtracts what that size predicts, so a
+    fixture without one only ever exercises the model's fixed term.
+    """
     start = EPOCH + dt.timedelta(seconds=index * 1000)
     end = start + dt.timedelta(seconds=inside_sec)
     directory = root / f"s{index:03d}"
@@ -65,6 +76,10 @@ def _write(root: pathlib.Path, index: int, inside_sec: float, mode: str = "enfor
         }),
         encoding="utf-8",
     )
+    if pcap_mb:
+        pcap = directory / "traffic.pcapng"
+        with pcap.open("wb") as handle:
+            handle.truncate(int(pcap_mb * 1e6))
 
 
 # ── the guard on the real numbers ────────────────────────────────────────────
@@ -196,3 +211,77 @@ def test_the_pace_check_propagates_the_tools_exit_code(supervisor_source):
     """`| tee` would otherwise return tee's status and the guard would never fire."""
     body = _code_only(supervisor_source)
     assert "PIPESTATUS[0]" in body, "the exit code is taken from tee, not the tool"
+
+# ── the guard judges the residual, not the raw wall clock ────────────────────
+
+# Session wall clock tracks capture size: measured over 502 sessions,
+# inside ~ 85.7s + 0.376 s/MB, from 86s at 4MB to 453s at 750MB. An absolute
+# threshold therefore fires on any batch of heavy scenarios, which is a false
+# positive that would stop a healthy campaign.
+
+
+def _expected(pcap_mb: float) -> float:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("_pace_for_model", _PACE_PATH)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.expected_sec(pcap_mb)
+
+
+def test_a_heavy_but_proportionate_batch_is_not_flagged(pace, tmp_path):
+    """The false positive an absolute threshold would produce.
+
+    400MB of capture costs about 236s on volume alone. Under the old 200s rule
+    every one of these sessions was 'slow'; none of them is.
+    """
+    heavy_mb = 400.0
+    for index in range(10):
+        _write(tmp_path, index, _expected(heavy_mb), pcap_mb=heavy_mb)
+    assert pace.main(["--dataset", str(tmp_path)]) == 0
+    assert _expected(heavy_mb) > 200.0, "the old absolute threshold would have fired"
+
+
+def test_a_light_batch_that_is_slow_is_still_flagged(pace, tmp_path):
+    """Degradation on a small capture must not hide behind the model."""
+    for index in range(10):
+        _write(tmp_path, index, _expected(5.0) + 120.0, pcap_mb=5.0)
+    assert pace.main(["--dataset", str(tmp_path)]) == 4
+
+
+def test_the_real_degradation_is_still_caught_at_its_real_capture_size(pace, tmp_path):
+    """The 2026-09-19 block: 385.2s median at a 393.7MB median capture.
+
+    Volume explains most of it, and the residual +116.8s is the part that is
+    actually a defect. The guard has to see that part.
+    """
+    for index in range(10):
+        _write(tmp_path, index, 385.2, pcap_mb=393.7)
+    assert pace.main(["--dataset", str(tmp_path)]) == 4
+
+
+def test_a_healthy_batch_at_the_same_capture_size_is_not_flagged(pace, tmp_path):
+    """Same 393.7MB, but only what the model predicts. Must stay quiet.
+
+    Paired with the test above, this is what separates 'heavy' from 'degraded'.
+    """
+    for index in range(10):
+        _write(tmp_path, index, _expected(393.7), pcap_mb=393.7)
+    assert pace.main(["--dataset", str(tmp_path)]) == 0
+
+
+def test_the_model_matches_the_measurement_it_came_from(pace):
+    """Three points from the measured deciles, within the spread of the fit."""
+    for megabytes, observed in ((4.0, 86.2), (51.2, 105.1), (750.0, 453.0)):
+        predicted = _expected(megabytes)
+        assert abs(predicted - observed) < 90.0, (
+            f"{megabytes}MB: model says {predicted:.0f}s, measured {observed:.0f}s"
+        )
+
+
+def test_a_missing_capture_does_not_credit_a_session_with_volume(pace, tmp_path):
+    """No pcap means no allowance; otherwise a broken capture would hide a stall."""
+    assert _expected(0.0) < _expected(1.0)
+    for index in range(10):
+        _write(tmp_path, index, _expected(0.0) + 120.0, pcap_mb=0.0)
+    assert pace.main(["--dataset", str(tmp_path)]) == 4
