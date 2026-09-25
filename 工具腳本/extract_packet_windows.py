@@ -173,14 +173,30 @@ def main() -> int:
     parser.add_argument("--jobs", type=int, default=6)
     parser.add_argument("--timeout", type=int, default=900)
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument(
+        "--only-missing", action="store_true",
+        help="只處理還沒有 packet_windows/packets.tsv.gz 的場次。"
+             "補跑時必要:這支工具原本會重做每一場,而重抽一份一模一樣的輸出"
+             "既花時間又會覆寫已經好的檔案。2026-09-25 要補 94 場逾時的場次,"
+             "而整批是 836 場。")
     parser.add_argument("--report", type=Path,
                         default=Path("文件/逐封包抽取_2026-08-31.json"))
     args = parser.parse_args()
 
     sessions = sorted(p for p in args.dataset.iterdir() if p.is_dir())
+    total = len(sessions)
+    if args.only_missing:
+        sessions = [
+            s for s in sessions
+            if not (s / OUT_DIR / "packets.tsv.gz").is_file()
+        ]
+        print(f"  --only-missing：{total} 場裡有 {len(sessions)} 場缺逐封包紀錄")
     if args.limit:
         sessions = sessions[: args.limit]
     print(f"  待處理 {len(sessions)} 場，{args.jobs} 個平行工作")
+    if not sessions:
+        print("  沒有需要處理的場次。")
+        return 0
 
     results: list[dict] = []
     started = time.monotonic()

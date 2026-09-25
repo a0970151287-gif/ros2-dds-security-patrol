@@ -418,6 +418,26 @@ def _extract_packet_windows(
     if tshark is None:
         return {"status": "skipped", "reason": "tshark_not_found"}
 
+    # 逾時要跟著擷取量走,不能是固定值。
+    #
+    # 2026-09-25 實測：836 場裡 **94 場**在這裡逾時,而它們的 pcap 是
+    # 126–795 MB（中位 263 MB、合計 28.4 GB）——全部是 `reason: timeout`,
+    # 沒有一場是別的原因。固定的 300 秒對小場次綽綽有餘,對大場次必然不夠,
+    # 所以它篩掉的不是「壞掉的場次」而是「流量大的場次」——那是一種會讓
+    # 資料集系統性偏斜的失效,而且偏掉的正好是攻擊最兇的那些。
+    #
+    # ⚠️ 這與同日加進訓練閘的 `packet_windows` 條件是一組的:閘會把逾時的
+    # 場次判為不合格,所以若逾時不跟著量體走,大 pcap 的場次會被系統性丟掉。
+    #
+    # 逾時的用途是攔住**卡死**的行程,不是排程——卡死的永遠不會結束,慢的會。
+    # 所以寧可寬。上限 3600 秒仍然擋得住真的卡死。
+    # ⚠️ 抽取在場次的牆鐘裡面,所以放寬會推高 `inside`,而步調熔斷器判的是
+    # 對擷取量模型（`inside ≈ 85.7s + 0.376 s/MB`,C2C-073）的殘差。
+    # 那個模型是在抽取**會被砍斷**的資料上配的,所以放寬之後殘差會系統性變大,
+    # 下一輪要重配它,否則熔斷器會對健康的 campaign 誤判。
+    size_mb = pcap.stat().st_size / 1e6
+    extract_timeout = min(3600.0, 300.0 + 2.0 * size_mb)
+
     out_dir = session_dir / "packet_windows"
     out_dir.mkdir(exist_ok=True)
     argv = [tshark, "-r", str(pcap), "-T", "fields"]
@@ -435,12 +455,18 @@ def _extract_packet_windows(
                 env=env,
                 stdout=handle,
                 stderr=subprocess.PIPE,
-                timeout=300,
+                timeout=extract_timeout,
                 check=False,
             )
     except subprocess.TimeoutExpired:
         raw.unlink(missing_ok=True)
-        return {"status": "failed", "reason": "timeout"}
+        # 記下當時給了多久與 pcap 多大,否則「逾時」看不出是設定太緊還是真卡住。
+        return {
+            "status": "failed",
+            "reason": "timeout",
+            "timeout_sec": round(extract_timeout, 1),
+            "pcap_mb": round(size_mb, 1),
+        }
     if completed.returncode != 0:
         raw.unlink(missing_ok=True)
         return {
@@ -855,11 +881,29 @@ def run_session(
             mode == "live"
             and _telemetry_stream_succeeded(session_dir, telemetry_result)
         )
+        # ⚠️ 2026-09-25 補上的第六項。它先前不在閘裡,而 `zeek` 的檢查
+        # （status ＋ return_code ＋ conn_log）就在隔壁——同樣形狀的檢查
+        # 對逐封包抽取就是沒寫。
+        #
+        # 實測 836 場裡 **94 場 `packet_windows: failed` 仍然
+        # `training_eligible=true`**。那不會偷偷污染特徵表——`features.py`
+        # 對「有 pcap 卻沒有 packets.tsv.gz」是 fail-closed 的——
+        # **但它會讓重訓時的特徵抽取在第一場就整個中止**,而那時候已經是
+        # 幾千場之後、離缺陷發生很遠了。閘是唯一能在當場擋下來的地方。
+        #
+        # 判準刻意與 `features.py:1479` **逐字對齊**：只有在 pcap 本身可用時
+        # 才要求逐封包紀錄。沒有 pcap 的場次由 `pcap` 那一項自己擋,
+        # 不需要在這裡重複判一次。
+        packet_windows_ok = (not pcap_ok) or (
+            packet_result.get("status") == "complete"
+            and packet_result.get("return_code") == 0
+        )
         gate_failures = [
             name
             for name, passed in (
                 ("pcap", pcap_ok),
                 ("zeek", zeek_ok),
+                ("packet_windows", packet_windows_ok),
                 ("capture_process", capture_ok),
                 ("attack_process", attack_ok),
                 ("runtime_telemetry", telemetry_ok),
