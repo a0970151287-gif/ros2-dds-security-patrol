@@ -86,14 +86,41 @@ SETTINGS: dict[str, dict] = {
         ),
     },
     "temporal_expansion": {
-        "value": "enabled",
+        "value": "d1_m3_x3",
         "rationale": (
             "2026-09-19 在修好的折上值 +0.0101。"
+            "⚠️ 2026-09-25 把它從 `enabled` 改成**確切的字串**："
+            "勝出的臂在 artifact 裡叫 `random_forest/full/d1_m3_x3`"
+            "（mean 0.6851、配對 CI [+0.0138, +0.0288]、12／12 全勝，"
+            "與本項理由的數字逐字相符），而 `compare_session_models.py` 的"
+            "**預設是 `d1_m3_x3_m5_x5`**——那是另一個設定。"
+            "「enabled」釘不住是哪一種展開，照它去重訓會用錯的那一個。"
         ),
         "evidence": "文件/識別模型選型_折的缺陷與重複分層CV_2026-09-19.md",
         "superseded_warning": (
             "⚠️ 這推翻了 2026-09-16 的「換表述之後時序展開幾乎多餘（+0.003）」。"
             "同樣是壞折的產物。"
+            "⚠️ 也取代同一天早先註冊的 `enabled`——**那個值不夠精確**，"
+            "而一份釘不住設定的註冊沒有達成它唯一的目的。"
+        ),
+    },
+    "feature_variant": {
+        "value": "full",
+        "rationale": (
+            "勝出的臂是 `random_forest/**full**/d1_m3_x3`。2026-09-19 宣告過七個"
+            "特徵變體（`full`、`drop_dead`、`stats_level`、`stats_shape`、"
+            "`stats_no_std`、`stats_no_minmax`、`stats_mean_max`），而七臂的差距"
+            "0.6742–0.6857 **全部落在 ±0.024 的雜訊地板裡**（地板是 2026-09-17 用"
+            "打亂對照量出來的），所以選 `full` 不是因為它顯著較好，"
+            "是因為它**不丟資訊**——在分不開的時候要選不做額外假設的那一個。"
+            "`full` 等於六個聚合統計量全用（mean／std／min／max／max_abs_delta／"
+            "trend）且不丟死欄位，也就是 `aggregate_sessions` 的原生行為。"
+        ),
+        "evidence": "文件/識別模型選型_折的缺陷與重複分層CV_2026-09-19.md",
+        "superseded_warning": (
+            "⚠️ 這一項 2026-09-25 才補進註冊。先前**完全沒有記**，"
+            "而它是勝出臂名字的一部分——漏掉它等於讓重訓可以在七個變體裡任選一個"
+            "而仍然自稱符合註冊。"
         ),
     },
     "ood_scorer_permissive": {
