@@ -671,24 +671,136 @@ def load_campaign_plan(path: str | Path) -> dict[str, Any]:
     )
 
 
+# 一個 campaign 行程的 cmdline 裡一定有這兩個之一。用來分辨「鎖的持有者還活著」
+# 與「那個 pid 被系統回收給了別人」——後者在 Linux 上是常態,pid 會繞回。
+_CAMPAIGN_CMDLINE_MARKERS = ("firewall_lab.campaign", "run_mega_campaign")
+
+
+def _lock_holder_pid(path: Path) -> int | None:
+    """讀出鎖裡登記的 pid。讀不出來就回 None——那與「沒有人持有」不同。"""
+    try:
+        raw = path.read_text(encoding="ascii", errors="replace")
+    except OSError:
+        return None
+    for line in raw.splitlines():
+        key, _, value = line.partition("=")
+        if key.strip() == "pid":
+            try:
+                pid = int(value.strip())
+            except ValueError:
+                return None
+            return pid if pid > 0 else None
+    return None
+
+
+def _campaign_process_alive(pid: int) -> bool:
+    """那個 pid 現在是不是一個活著的 campaign 行程。
+
+    兩道都要成立,因為 pid 會被回收：行程存在,**而且**它的 cmdline 看起來
+    真的是 campaign。只檢查「存在」會讓一個拿到同號碼的無關行程冒充持有者,
+    於是鎖永遠解不開——那正是這個函式要消除的死結。
+
+    ⚠️ 讀不到 `/proc`（非 Linux、或權限不足）時**保守回 True**：
+    分不出來的時候要當成「有人在跑」,fail-closed 比自作聰明安全。
+    """
+
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        # 存在但不屬於我們。分不出是不是 campaign,保守當成活的。
+        return True
+    except OSError:
+        return True
+
+    cmdline = Path(f"/proc/{pid}/cmdline")
+    try:
+        raw = cmdline.read_bytes().replace(b"\0", b" ").decode(
+            "utf-8", errors="replace"
+        )
+    except OSError:
+        return True  # 拿不到 cmdline 就不推論
+    return any(marker in raw for marker in _CAMPAIGN_CMDLINE_MARKERS)
+
+
 class _CampaignLock:
+    """計畫檔的互斥鎖,而且**認得自己的屍體**。
+
+    ## 為什麼不能只用 O_EXCL
+
+    原本的版本把 `pid=` 寫進鎖檔卻從來沒有人讀它,所以任何一次崩潰
+    （斷電、SIGKILL、OOM）留下的鎖會**永久**擋住之後每一次 campaign 與每一次
+    `repair`,而唯一的復原方式是 `rm -f`。
+
+    2026-09-25 實測到這件事：重開機之後 `mega_plan.json.lock` 記著
+    `pid=168734`,那個行程早就不存在,計畫因此完全動不了。
+
+    ⚠️ 而那個 `rm -f` 正是 C2C-069 記的那次事故的成因——因為鎖分不出死活,
+    「刪掉它」變成例行動作,於是我刪掉了一個**活著的**鎖,兩個 campaign
+    同時把記憶體裡的計畫寫回同一個檔案。**把判斷放進鎖裡,那條危險的路就
+    不再是例行動作。**
+
+    ## 三種情況,三種處置
+
+    | 鎖裡的 pid | 處置 |
+    |---|---|
+    | 活著且是 campaign | 拒絕（與原本相同） |
+    | 已死,或活著但不是 campaign（pid 被回收） | **接手**,並大聲記錄接手了誰 |
+    | 讀不出來 | **拒絕**,並明講要人工確認什麼 |
+
+    最後一種刻意不接手：一個被截斷的鎖沒辦法證明持有者死了,而猜錯的代價
+    是兩個 campaign 併寫。這一條讓 `rm -f` 仍然存在,但只留給真正罕見的情況,
+    而且錯誤訊息會說清楚「先確認沒有 campaign 行程」。
+    """
+
     def __init__(self, plan_path: Path):
         self.path = plan_path.with_suffix(plan_path.suffix + ".lock")
         self.fd: int | None = None
+        self.stole_from: int | None = None
 
-    def __enter__(self):
+    def _acquire(self) -> bool:
         try:
             self.fd = os.open(
                 self.path,
                 os.O_CREAT | os.O_EXCL | os.O_WRONLY,
                 0o600,
             )
-        except FileExistsError as exc:
-            raise RuntimeError(
-                f"campaign is already locked: {self.path}"
-            ) from exc
+        except FileExistsError:
+            return False
         os.write(self.fd, f"pid={os.getpid()}\n".encode("ascii"))
         os.fsync(self.fd)
+        return True
+
+    def __enter__(self):
+        if self._acquire():
+            return self
+
+        holder = _lock_holder_pid(self.path)
+        if holder is None:
+            raise RuntimeError(
+                f"campaign lock exists but names no readable pid: {self.path}. "
+                "Confirm no campaign process is running "
+                "(pgrep -af 'firewall_lab.campaign|run_mega_campaign') "
+                "before removing it by hand."
+            )
+        if _campaign_process_alive(holder):
+            raise RuntimeError(
+                f"campaign is already locked by live pid {holder}: {self.path}"
+            )
+
+        # 持有者死了。接手,並且記錄——一個安靜的接手會把「崩潰過」這件事藏起來。
+        print(
+            f"♻️ 接手已死的 campaign 鎖（原持有者 pid={holder} 已不存在）："
+            f"{self.path}",
+            flush=True,
+        )
+        self.path.unlink(missing_ok=True)
+        if not self._acquire():
+            raise RuntimeError(
+                f"campaign lock reappeared while taking it over: {self.path}"
+            )
+        self.stole_from = holder
         return self
 
     def __exit__(self, exc_type, exc, traceback):
