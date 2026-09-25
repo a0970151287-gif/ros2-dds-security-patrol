@@ -45,8 +45,16 @@ train 列對模型**同樣是未見的**——它們只是被丟掉了。
         --features ~/features_refresh_split/fusion_features_permissive.csv \\
         --metrics ~/models_hier_refresh_maha/permissive/training_metrics.json \\
         --attack-ood-scorer mahalanobis \\
-        --reference 文件/未知攻擊場次池化_permissive_maha_2026-09-15.json \\
+        --seed 20260825 --n-estimators 80 \\
+        --reference 文件/未知攻擊場次池化_permissive_2026-09-15.json \\
         --output 文件/未知攻擊全解析度_permissive.json
+
+⚠️ `--seed 20260825 --n-estimators 80` 不是裝飾。等價檢查比對的是
+`sweep_unknown_session_pooling.py` 產生的 artifact，而那兩個值是**它的**預設；
+用本工具自己的預設（20260915／300）會擬合出不同的模型，等價檢查因此失敗，
+**而失敗訊息看起來像「重建有分岔」**。2026-09-25 為此查了二十分鐘，先後排除
+了非確定性、venv 版本漂移與資料變動（逐折的場次數與列數完全相同），
+最後才發現是設定沒被記下來。參照的檔名也更正了（原本多寫一個 `_maha`）。
 """
 
 from __future__ import annotations
@@ -156,7 +164,8 @@ def k_of_n_rate(groups, flagged, k: int) -> float:
 
 
 def run(features: Path, metrics_path: Path, *, scorer: str, n_estimators: int,
-        seed: int, maximum_normal_fpr: float, maximum_known_attack_ood_fpr: float):
+        seed: int, maximum_normal_fpr: float, maximum_known_attack_ood_fpr: float,
+        pooling_k: int = POOLING_K):
     import numpy as np
     import pandas as pd
     from sklearn.ensemble import RandomForestClassifier
@@ -308,16 +317,16 @@ def run(features: Path, metrics_path: Path, *, scorer: str, n_estimators: int,
                 "rows": int(len(unk_val)),
                 "row_recall": codex._weighted_rate(frame, unk_val, flag_val),
                 "any_recall": codex._event_rate(frame, unk_val, flag_val),
-                f"k{POOLING_K}_recall": k_of_n_rate(
-                    groups[unk_val], flag_val, POOLING_K),
+                f"k{pooling_k}_recall": k_of_n_rate(
+                    groups[unk_val], flag_val, pooling_k),
             },
             "full_resolution": {
                 "sessions": len(set(groups[unk_full])),
                 "rows": int(len(unk_full)),
                 "row_recall": codex._weighted_rate(frame, unk_full, flag_full),
                 "any_recall": codex._event_rate(frame, unk_full, flag_full),
-                f"k{POOLING_K}_recall": k_of_n_rate(
-                    groups[unk_full], flag_full, POOLING_K),
+                f"k{pooling_k}_recall": k_of_n_rate(
+                    groups[unk_full], flag_full, pooling_k),
             },
             "gate_paths": {
                 # OOD 頭自己的上限:它拒絕了多少。閘門只能比這個少。
@@ -337,17 +346,17 @@ def run(features: Path, metrics_path: Path, *, scorer: str, n_estimators: int,
                 "sessions": len(set(groups[nor_i])),
                 "row_false_unknown_rate": codex._weighted_rate(
                     frame, nor_i, flag_normal),
-                f"k{POOLING_K}_false_unknown_rate": k_of_n_rate(
-                    groups[nor_i], flag_normal, POOLING_K),
+                f"k{pooling_k}_false_unknown_rate": k_of_n_rate(
+                    groups[nor_i], flag_normal, pooling_k),
             },
         })
 
     return folds, test_rows_used
 
 
-def summarise(folds, key: str) -> dict:
+def summarise(folds, key: str, pooling_k: int = POOLING_K) -> dict:
     out = {}
-    for metric in ("row_recall", "any_recall", f"k{POOLING_K}_recall"):
+    for metric in ("row_recall", "any_recall", f"k{pooling_k}_recall"):
         values = [fold[key][metric] for fold in folds]
         out[metric] = {
             "macro": round(statistics.mean(values), 4),
@@ -402,6 +411,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--features", required=True)
     parser.add_argument("--metrics", required=True)
     parser.add_argument("--attack-ood-scorer", default="mahalanobis")
+    parser.add_argument(
+        "--pooling-k", type=int, default=POOLING_K,
+        help="一場要有 ≥k 個視窗喊未知才算。預設 3 是 C2C-060 在 "
+             "mahalanobis／isolation_forest 上選的；2026-09-25 量到 "
+             "max_softmax 的最佳 k 不同，所以它必須可以指定。")
     parser.add_argument("--n-estimators", type=int, default=300)
     parser.add_argument("--seed", type=int, default=20260915)
     parser.add_argument("--maximum-normal-fpr", type=float, default=0.02)
@@ -428,6 +442,7 @@ def main(argv: list[str] | None = None) -> int:
         scorer=args.attack_ood_scorer, n_estimators=args.n_estimators,
         seed=args.seed, maximum_normal_fpr=args.maximum_normal_fpr,
         maximum_known_attack_ood_fpr=args.maximum_known_attack_ood_fpr,
+        pooling_k=args.pooling_k,
     )
     if args.reference:
         equivalence = check_equivalence(folds, Path(args.reference).expanduser())
@@ -449,10 +464,19 @@ def main(argv: list[str] | None = None) -> int:
         "features": str(args.features),
         "metrics": str(args.metrics),
         "attack_ood_scorer": args.attack_ood_scorer,
+        # ⚠️ 這兩個必須記進產物。2026-09-25 花了二十分鐘以為這支工具漂移了：
+        # 用它自己的預設（seed 20260915、n_estimators 300）重現不了 09-24 的
+        # artifact，而正確的值是 `--seed 20260825 --n-estimators 80`，也就是
+        # 產生參照的那支掃描工具的預設。**一個沒有記下設定的產物，即使當時
+        # 等價檢查通過，也沒有人能第二次重跑它**——而「重現不了」與「結果變了」
+        # 在錯誤訊息上完全一樣。
+        "seed": args.seed,
+        "n_estimators": args.n_estimators,
         "test_rows_used": test_rows,
         "equivalence_check": equivalence,
-        "validation_only": summarise(folds, "validation_only"),
-        "full_resolution": summarise(folds, "full_resolution"),
+        "pooling_k": args.pooling_k,
+        "validation_only": summarise(folds, "validation_only", args.pooling_k),
+        "full_resolution": summarise(folds, "full_resolution", args.pooling_k),
         "normal_reference": {
             fold["held_family"]: fold["normal_reference"] for fold in folds
         },
@@ -473,7 +497,7 @@ def main(argv: list[str] | None = None) -> int:
         block = report[key]
         print(f"=== {label} ===")
         print(f"  每個 family 的場次數: {block['sessions_per_family']}")
-        for metric in ("row_recall", "any_recall", f"k{POOLING_K}_recall"):
+        for metric in ("row_recall", "any_recall", f"k{args.pooling_k}_recall"):
             item = block[metric]
             print(f"  {metric:<12} macro={item['macro']:.4f}  worst={item['worst']:.4f}")
             print(f"               {item['per_family']}")

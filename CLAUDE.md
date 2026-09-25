@@ -29,7 +29,7 @@
 | 資料集 | **95%** | 完整、可驗證、可重現的 live 成對資料 | 1,100 場完成；300 場已受控重跑並在特徵層替換，候選 1,099 場；P2 稽核確認 0／1,101 場有完整 DDS identity→IP attestation。**2026-09-03 另收 640 場全新資料**（Enforce 340／17 類、Permissive 300／15 類，`~/refresh_20260902T111358Z/`），與既有 1,100 場**零重疊**；四項品質檢查 640／640 全過（見下）。**2026-09-20 起的新 campaign 加了場次抖動**：`warmup` 4–28 秒、`cooldown` 3–12 秒、`duration` 乘 0.6–1.3，manifest 同時記抽到的值與 catalog 原值。這修掉 C2C-059 量到的**攻擊起始視窗 274／280（98%）固定在 window 1**——那讓任何編碼「第幾個視窗」的東西都會有效，而它在攻擊時間任意的真實部署上不會轉移。關鍵約束是 `warmup`／`cooldown` 對**每一個類別（含 `normal`）抽自同一個分布**，否則模型會學到「起點 ⇒ 類別」，比原本的混淆更糟；測試直接斷言同一個 seed 在不同 scenario 抽到逐位相同的值。⚠️ `duration` 用乘數所以**與類別相關**，這一點寫成測試當作已知限制。**2026-09-25 場次流失的修正取得 live 證據**：fork 收尾版上線後的 13 場**rc=0 13／13（100%）、training 合格 13／13（100%）、`-9` 與 `-14` 各 0 場、零位元組 0**。對照修正前 629 場（rc=0 74.7%、合格 74.4%、SIGKILL 25.3%）與中途那一版 47 場（合格掉到 57.4%，硬停止自己貢獻 27.7%）。三個判準都是**改之前寫下的**，而且機制是決定性的（父行程無條件 `os._exit(0)`），所以 100% 是預期不是運氣。⚠️ n=13 仍然小；而**子行程 fork 後死鎖的比例量不到**——判準是 SHM 開始累積，但 2026-09-25 09:50Z 的重開機把 `/dev/shm` 清空了（殘留段 0 個），要等下一輪才看得到。⚠️ 另一件重開機造成的事實：計畫裡留下 1 個 `running` entry（`session_id` 為 None、場次目錄是空的、沒有 manifest），而 `--retry-failed` 會把它收回（`campaign.py:762`），所以**斷電復原本來就有設計**，不需要額外處理。空目錄依 `dataset_live` 第 1,101 場的先例**保留不刪**。⚠️ 2026-09-25 抽查 25 場新資料的擷取範圍：**25／25 ok**，單播佔比 80.0–98.2%（正常場 80.0%、攻擊場 95–98%）（`hmac_result.channel`、帶速度值的 `guard_input`、Zeek 帶 `-C`、逐封包分窗）。campaign 因 fail-closed 中止四次，其中一次擋下 **673 場「內鬼其實沒有憑證」的假資料**。**百分比不動**——新資料修的是類別數與獨立性，既有 1,101 場的 identity attestation 缺口沒有因此消失 |
 | 攻擊偵測（二元） | **90%** | PR-AUC > 0.9 且有一次性 test | final test：Permissive **0.9900**、Enforce **0.9774**；分類數字不受 anomaly budget 影響，但整體 release 仍不可部署 |
 | 攻擊識別（多類） | **70%** | balanced accuracy ≥ 0.80 | **2026-09-03 全新 640 場、第一次開的 test**：Permissive **0.8502（15 類）**、Enforce 0.2819（17 類）。Permissive 在**更難的問題**上仍過 0.80，而且 test 從未被看過——舊的 0.8619 是 9 類且 test 已被設計流程看過。對等比較（同資料只取原 9 類，validation）：Permissive 0.8880（舊資料 0.8823）、Enforce 0.2557（舊資料 0.4674）。⚠️ 新資料每類 20 場、舊資料約 61 場，**訊號弱的 Enforce 對樣本數更敏感**，跨資料集不可直接比。Enforce 的 17 類（0.3231）反而高於 9 類（0.2557），因為兩個持證內鬼在身份層是 **0** 而外部者是 59–417，那個零本身就是判別訊號。⚠️ **2026-09-15 更正量測解析度**：先前逐類結論建立在 **validation 每類 3 場**上，而在那個解析度下「3 場全錯」就顯示成 0.000。改用 GroupKFold 依場次切 5 折、跨 train＋validation（每類 **17 場**，test 完全排除）之後：**Enforce 真正恆零的只有 `replay` 一類，不是 5 類，算術上限是 0.9412 不是 0.7059——門檻沒有被算術擋住**（`replay_dos` 實際是 0.412、`cross_channel_relay` 0.176、`scan_drift` 0.118）。CV 場次層級基準：**Permissive 0.9961**（255 場錯 1 場）、**Enforce 0.5190**；打亂對照 0.0784／0.0761（佔真實 7.9%／13.7%）。36 組預先宣告的超參數網格顯示**只有時序深度有用**（邊際平均 none 0.2993 → `d1_m3_x3` 0.4028 → `+m5_x5` 0.4541），class_weight 與樹數都是雜訊；加深後 Enforce **0.5190 → 0.5571（+0.038）、恆零類別 1 → 0**，9 類改善 0 類退步，Permissive 已飽和不改。⚠️ **這些是 CV 不是 held-out test，百分比不動**；場次層級也不可與逐視窗的 0.8502／0.2819 相比。**超參數這條路走完了**——剩下的缺口在底部 7 類，它們在 Enforce 下沒有應用層證據。**2026-09-16 換問題表述與模型類別**（16 組 × 2 模式，同一批 CV，`test_rows_used: 0`）：**序列模型不成立**——TCN／GRU 在兩個模式 × 兩種時序設定共**六次比較沒有一次贏過同條件的最佳樹模型**（Enforce 0.5502／0.5190，Permissive 0.9725／0.9569），這回答了 C2C-007 從 2026-08-17 開到現在的未決項；**XGBoost 與 LightGBM 也都沒有贏過 RandomForest**。真正有效的是**換表述**：`per_window_pooled` → **`session_aggregate`**（一場一個向量直接分類），Enforce **0.5571 → 0.6505（+0.093）**、Permissive **0.9961 → 1.0000**（15 類全部 17／17）；RF 與 HistGB 在該表述下同分，代表是表述的功勞不是模型。機制最清楚的是 `parameter_tamper` **0.059 → 0.765**（爆量被機率平均稀釋，取 `max`／`max_abs_delta` 不會）。⚠️ 不是免費的：7 類改善、**2 類退步**（`mission_spoof` 0.588→0.353、`message_dos` 0.294→0.118）。⚠️ **而換了表述之後逐視窗時序展開幾乎多餘**：Enforce 156 維 0.6471 對 936 維 0.6505、Permissive 192 維與 1,152 維同為 1.0000——**兩個模式一致**，那些時序特徵本來就是在補舊表述看不見軌跡的缺口。建議下次重訓用 `session_aggregate` ＋ RF／HistGB ＋**不做**時序展開。⚠️ 仍是 CV 不是 held-out test，**百分比不動**。**2026-09-16 第二輪：24 個學習法的完整比較**（固定在勝出的 `session_aggregate` ＋ `temporal=none`，內部參考 `random_forest` 逐位重現 Enforce 0.6298／Permissive 1.0000）。依 Jesse 指示不再只用隨機森林——**RF 在 Enforce 只排第 7**。Enforce 前四：`voting_soft` **0.6505**、**`hist_gradient_boosting` 0.6471**（最佳單一模型，比 RF **+0.017**）、`gradient_boosting` 0.6436、`catboost` 0.6401；RF／XGBoost／**`lda_shrinkage`** 並列第 7（0.6298）——**一個線性生成式模型打平隨機森林**。Permissive：`random_forest` 與 `catboost` 並列 1.0000，`extra_trees` 0.9961。明顯不適合的三個各有不同原因：`gaussian_process` 0.2907（單一 RBF 尺度套在 156 個量綱不同的特徵上）、`adaboost` 0.3426（SAMME 在 17 類上弱）、`knn` 0.3910（高維距離集中）；`mlp` 0.3599 與前一輪的 TCN／GRU 一致——**神經網路在這個樣本數上一致地輸**。⚠️ **`qda` 不適用且是數學上的**：它要「每類樣本數 > 維度」，這裡是 13 對 156。⚠️ **`catboost` 一開始量到 0.0000，那是介面 bug 不是結果**（多類 `predict()` 回傳二維，`str()` 產生 `"['normal']"` 永遠比對不上）；已修並加通用斷言，這是本專案第十一次「量測工具的缺陷偽裝成被量對象的性質」，**若它量到 0.42 我很可能就寫進文件了**。⚠️ **前七名寬度只有 0.02，而 289 場的雜訊大約就是這個量級**——「第 1 名比第 7 名好」需要新 test 才站得住；站得住的是族間的大差距。**建議下次重訓用 `hist_gradient_boosting`**（sklearn 內建、無額外相依）。仍是 CV 不是 held-out test，**百分比不動** |
-| 未知攻擊 | **70%** | 整個模型 open-set recall ≥ 0.70 | **2026-09-03 第一次把協定完整走對**：640 場全新資料 → family-LOO 只用 validation 選評分器（Mahalanobis 兩模式皆勝，Permissive 0.5592 對 0.0833）→ holdout **第一次使用**。結果：**Enforce 0.8475 ✅**（正常誤判 0.0103）、Permissive 0.5479 ❌（140 列被自信填成 `mission_spoof`）。數字與舊值接近（0.8563／0.5789）但**證據等級完全不同**——舊 holdout 已花第三次。⚠️ 三個限制：用的是 **Mahalanobis 而非出貨預設**（出貨設定在這個 holdout 上沒被評估，也補評不了）；Permissive 未達門檻；四組 LOO 的 `worst_family_unknown_recall` **全部是 0.0000**。⚠️ **2026-09-15 更正「沒有已知解法」**：`evaluate_parallel_gate_loo.py` 一直都有輸出場次層級的 `parallel_unknown_session_recall`，只是從未被報出來。它用的是 `any()`，而 `any()` 是壞交易（recall ×1.25、誤報 ×2.55）。改成 **k-of-n（k=3，一場要 ≥3 個視窗喊未知）**：**四組的正常誤報全部降到 0.0000**（那個約束從 P1 起沒有一組通過過），Permissive／Maha 的 macro 到 **0.7000**。但 **worst_family 仍是 0.0000**、只有非出貨的 Mahalanobis 過門檻、macro 0.7000 是三折滿分一折掛零的脆平均。**誤報那一半修好了，recall 那一半沒有**。**2026-09-24 把 `worst_family = 0.0000` 查到底**：先關掉「n 太小」這個假設——被留出的 family 連 train 列都沒參與擬合（`fit_index = base_train & ~held_group_mask`），那些列對模型同樣是未見的，只是被丟掉了。用上它們最小的 family 從 **3 場變成 17 場**（解析度 ×5.7，另有一道逐位等價檢查擋住重建分岔，四次執行 10／10 通過），而**零仍然是零**；macro 幾乎沒動（0.5592 → 0.5541）⇒ **舊的 validation 子集有代表性**。真因**兩個模式不同**：Permissive 是 **OOD 頭沒拒絕任何一列**（`alert_only` 拒絕率 0.0000，而二元閘門對它是 **1.0000**——閘門完全知道那是攻擊）；Enforce 相反，OOD 拒絕 **98.5%** 而只有 11.8% 過閘（`binary` 0.1324、`abnormal` **0.0000**）。逐特徵量可分性上限：`discovery_recon` 的 margin **0.2164** 與拒絕率 0.6471 的 `control_lock`（0.2414）相當，差別在**方向**——它的前兩名 AUC 都在 0.5 **以下**，**坐在已知攻擊雲的中間**。「用門檻分得開」與「離中心遠」是兩件事，Mahalanobis 只量後者。⚠️ 我由此預測「密度式會有用」，**錯了一半**：IsolationForest 同樣 0.0000。只有**信心式**有用：Permissive 換 `max_softmax` 後 `worst_family` **0.0000 → 0.9216（any）／0.5294（k3）**、macro 0.6941 → 0.9843，**而且正常誤報更低（0.0714 → 0.0455）——沒有取捨**。⚠️ **這反轉了 C2C-028 的結論**：用他自己設計的對抗性協定（leave-one-class-out → 取每個候選最差兩類當 holdout → 每個候選在每組都量）在新資料上重做，Permissive 的最差情況是 MSP **0.9212** 對 Maha **0.4514**（而 Maha 的最差正好落在 `discovery_recon` 那組，與機制一致）；舊資料上是 0.6900 對 0.8781。**未驗證的解釋**：C2C-028 做在網路特徵壞掉（Zeek 無 `-C`、`conn_count` 虛增 7.96×）的舊資料上，距離式對那種扭曲最敏感。Enforce **不下結論**——MSP 在最差情況贏（0.4275 對 0.3579）卻在閘門指標上輸（any-macro 0.1168 對 0.2252），而且三組 holdout 呈**互補**（Maha 0.9999／MSP 0.4275，反過來 0.3883／0.9902）。**⇒ OOD 評分器應該分模式**（模型早就分模式了，評分器至今是單一旗標）。**出貨預設仍是 `isolation_forest`，一個位元未改**；`Permissive = max_softmax` 只是**凍結給下一批 holdout 的事前設定**。「密度＋信心合併」登記為事前假設，**不宣稱**——那是看過對照表之後才有的想法，C2C-028 為同一個理由拒絕過。⚠️ **百分比不動**：全部是 validation／train 的 family-LOO，640 場 holdout 已花掉一次，`k3 worst` 的 0.5294 仍低於 0.70。見 `文件/未知攻擊_解析度與評分器_2026-09-24.md` |
+| 未知攻擊 | **70%** | 整個模型 open-set recall ≥ 0.70 | **2026-09-03 第一次把協定完整走對**：640 場全新資料 → family-LOO 只用 validation 選評分器（Mahalanobis 兩模式皆勝，Permissive 0.5592 對 0.0833）→ holdout **第一次使用**。結果：**Enforce 0.8475 ✅**（正常誤判 0.0103）、Permissive 0.5479 ❌（140 列被自信填成 `mission_spoof`）。數字與舊值接近（0.8563／0.5789）但**證據等級完全不同**——舊 holdout 已花第三次。⚠️ 三個限制：用的是 **Mahalanobis 而非出貨預設**（出貨設定在這個 holdout 上沒被評估，也補評不了）；Permissive 未達門檻；四組 LOO 的 `worst_family_unknown_recall` **全部是 0.0000**。⚠️ **2026-09-15 更正「沒有已知解法」**：`evaluate_parallel_gate_loo.py` 一直都有輸出場次層級的 `parallel_unknown_session_recall`，只是從未被報出來。它用的是 `any()`，而 `any()` 是壞交易（recall ×1.25、誤報 ×2.55）。改成 **k-of-n（k=3，一場要 ≥3 個視窗喊未知）**：**四組的正常誤報全部降到 0.0000**（那個約束從 P1 起沒有一組通過過），Permissive／Maha 的 macro 到 **0.7000**。但 **worst_family 仍是 0.0000**、只有非出貨的 Mahalanobis 過門檻、macro 0.7000 是三折滿分一折掛零的脆平均。**誤報那一半修好了，recall 那一半沒有**。**2026-09-24 把 `worst_family = 0.0000` 查到底**：先關掉「n 太小」這個假設——被留出的 family 連 train 列都沒參與擬合（`fit_index = base_train & ~held_group_mask`），那些列對模型同樣是未見的，只是被丟掉了。用上它們最小的 family 從 **3 場變成 17 場**（解析度 ×5.7，另有一道逐位等價檢查擋住重建分岔，四次執行 10／10 通過），而**零仍然是零**；macro 幾乎沒動（0.5592 → 0.5541）⇒ **舊的 validation 子集有代表性**。真因**兩個模式不同**：Permissive 是 **OOD 頭沒拒絕任何一列**（`alert_only` 拒絕率 0.0000，而二元閘門對它是 **1.0000**——閘門完全知道那是攻擊）；Enforce 相反，OOD 拒絕 **98.5%** 而只有 11.8% 過閘（`binary` 0.1324、`abnormal` **0.0000**）。逐特徵量可分性上限：`discovery_recon` 的 margin **0.2164** 與拒絕率 0.6471 的 `control_lock`（0.2414）相當，差別在**方向**——它的前兩名 AUC 都在 0.5 **以下**，**坐在已知攻擊雲的中間**。「用門檻分得開」與「離中心遠」是兩件事，Mahalanobis 只量後者。⚠️ 我由此預測「密度式會有用」，**錯了一半**：IsolationForest 同樣 0.0000。只有**信心式**有用：Permissive 換 `max_softmax` 後 `worst_family` **0.0000 → 0.9216（any）／0.5294（k3）**、macro 0.6941 → 0.9843，**而且正常誤報更低（0.0714 → 0.0455）——沒有取捨**。⚠️ **這反轉了 C2C-028 的結論**：用他自己設計的對抗性協定（leave-one-class-out → 取每個候選最差兩類當 holdout → 每個候選在每組都量）在新資料上重做，Permissive 的最差情況是 MSP **0.9212** 對 Maha **0.4514**（而 Maha 的最差正好落在 `discovery_recon` 那組，與機制一致）；舊資料上是 0.6900 對 0.8781。**未驗證的解釋**：C2C-028 做在網路特徵壞掉（Zeek 無 `-C`、`conn_count` 虛增 7.96×）的舊資料上，距離式對那種扭曲最敏感。Enforce **不下結論**——MSP 在最差情況贏（0.4275 對 0.3579）卻在閘門指標上輸（any-macro 0.1168 對 0.2252），而且三組 holdout 呈**互補**（Maha 0.9999／MSP 0.4275，反過來 0.3883／0.9902）。**⇒ OOD 評分器應該分模式**（模型早就分模式了，評分器至今是單一旗標）。**出貨預設仍是 `isolation_forest`，一個位元未改**；`Permissive = max_softmax` 只是**凍結給下一批 holdout 的事前設定**。「密度＋信心合併」登記為事前假設，**不宣稱**——那是看過對照表之後才有的想法，C2C-028 為同一個理由拒絕過。⚠️ **百分比不動**：全部是 validation／train 的 family-LOO，640 場 holdout 已花掉一次，`k3 worst` 的 0.5294 仍低於 0.70。見 `文件/未知攻擊_解析度與評分器_2026-09-24.md`。**2026-09-25：k 從 3 改成 2，Permissive 的兩個驗收約束第一次同時成立。**全解析度實測 k=3 的 `worst_family_unknown_recall` 只有 0.5294，**k=2 是 0.7647（≥ 0.70）**，而兩者的最差正常誤報都是 **0.0000**（五折全部為零）⇒ **不付誤報代價**。`alert_only`（只有 `discovery_recon`）從 P1 起每一組設定都是 0.0000，k=2 讓它變成 **0.9412**。兩種解析度互相印證（validation 0.7778 對全解析度 0.7647，差 0.013）。⚠️ **這個實驗到 09-25 才做得出來，因為兩個能力住在兩支不同的工具裡**：會掃 k 的那支 `choices` 不含 `max_softmax`（根因是 Codex 的 `_fit_attack_ood` 對它直接拋例外，而那個檔案的 SHA-256 釘在帳本裡不能改），支援 `max_softmax` 的那支 `POOLING_K = 3` 是常數。已把掃描工具改成**借** 09-24 那支工具寫好的 adapter（含符號自我檢查），不寫第三份實作；並把全解析度工具的 k 參數化（預設仍是 3）。⚠️ **一個在一個評分器上正確的常數，換了評分器就安靜地變成錯的**——與 C2C-069 記的三個缺陷同一形態。`any`（k=1）的壞交易在 `max_softmax` 上**再次重現**（誤報 0.1818），所以 C2C-060 對它的判斷站得住。⚠️ **百分比仍然不動**：family-LOO validation 不是 held-out test；k=2 是**看過掃描結果之後**選的（範圍是 C2C-060 預先定義的，勝出值不是），所以已在**新資料存在之前**把預先註冊改成 k=2（`文件/重訓預先註冊_2026-09-25_r2.json`，canonical `24ec5cdc…887f`；r1 的 `e0342f49…6360` **保留不刪**）；只對 Permissive 有支持，Enforce 的瓶頸是閘門否決 88%，換 k 碰不到。最差那一折只比門檻高 0.065。見 `文件/未知攻擊_k2讓兩個約束同時過_2026-09-25.md` |
 | 回應／執行 | **85%** | 授權器→驗票→backend→撤銷，有 live pass | **2026-09-24 更新：nftables backend 在真核心上 9／9 通過**（Pi 5、nftables v1.0.9、`production_ready=True`、報告 SHA-256 `2de64dcb…6fbe`，`verify_live_acceptance` 獨立驗過）。計數器 0→1 證明封包走 drop 路徑、**核心自己**在 12.8 秒移除元素、帶外漂移後 `reconcile()` 補回、`rate_limit` 與範圍外來源都被拒。DDS guard 那半自 2026-08-27 起 **7／7**（啟用 0.0365 秒、撤銷 0.0109 秒、漏放行 0）。⚠️ **這是修正後的第一次**——同一輪找到五個缺陷，其中三個（match op、counter 形狀、秒 vs 毫秒）會讓正式 backend 在**任何真核心上一律拋錯**，而它們離線看不到是因為假 runner 與正式程式共用同一個錯誤假設。**仍不可部署**：`LIVE_NFT_ACTIVATION_ALLOWED=False`、`executable_classes` 為空、**票是驗收器自己簽的不是模型判定產生的**、一個來源一張票 12 秒不是 soak、來源歸因 0／1,101。**2026-09-25 補上 nftables 這條路的撤銷**：`revoke()` 先前只存在於 `dds_guard_backend.py`，nftables 只有兩道以 TTL 為界的移除保證（核心到期、重啟 reconcile），而這一列的 100% 定義明寫「撤銷」。新增 `ResponseBackend.revoke_source`，三個可爭論的決定各有一個測試：**撤銷不需要票**（授權管封不管解封，否則金鑰輪替會把主機鎖到 TTL 到期）、**先清持久狀態再動轉接器**（反過來會讓被撤銷的封鎖在下一次 reconcile 自己回來）、**確認失敗就 fail-closed**（回報一個核心沒做的移除是唯一會讓稽核日誌主動誤導的結果）。另新增 `工具腳本/run_attribution_driven_block.py`——歸因報告 → 綁定證據摘要的票 → 真核心封鎖 → 撤銷，九項檢查，`evidence_id` 取**歸因報告檔案自己的 SHA-256**（nft 驗收做不到這件事：它自己給自己的票貼標籤）。⚠️ **這條鏈一次都沒跑過**，而且它拒絕本專案目前擁有的**每一份**歸因證據：磁碟上 91 份報告裡 **89 份是 v1**（產生於 08-31 加上鏈路層那一條之前，包含 08-30 那批 79／80），兩份 v2 都是 `verified=false`。那是 fail-closed 正確運作，也精確說明下一次跨主機必須產出什麼。⚠️ 撤銷只在記憶體轉接器上驗過，**真核心上的撤銷沒有量過**。**2026-09-25 稍後把那 89 份 v1 報告重生為 v2**：既有的 `link_layer_binding.json` 餵回既有的報告產生器，輸出寫成 `crosscheck_v2.json`（**不覆寫原檔**）。87 場重生、**87／87 與 v1 結論一致**、80 場 `verified`——而 80 正好與 C2C-051 那次回驗的 **80／80 零撤回逐位相符**。這同時是一次交叉驗證：C2C-051 走的是 `check_link_layer_binding.py` 這支獨立工具，本輪走的是**報告產生器自己**的第四條判定，同一批原始資料兩條路徑同一個答案。拿重生後的報告跑封鎖鏈前置：**80 通過／7 拒絕**（被拒的是歸因本來就沒成立的邊界輪次與 N31 偽造測試，拒對了）。⇒ `autonomous_ip_block` 的四條 blocker 現在剩兩條：**從來沒有當成一條鏈跑過**（需要兩台機器與 live 流量）與 `executable_classes` 為空（刻意的）。⚠️ 這些是**歷史證據**，用 2026-08-29 的報告驅動今天的封鎖是驗收演練、不是即時回應。見 `文件/{歸因驅動封鎖_缺的那條縫,歸因報告重生為v2}_2026-09-25.md` |
 | 本機防禦驗證 | **89%** | 九項本機 outcome 全部有 live pass（9／9） | **8／9 — 已達本機天花板**（2026-08-29 `velocity_guard_recovered` 與 `graph_failure_fail_safe` 相繼通過）。九項裡唯一的真工程缺口已消除。**所有修正都在量測側，`_assert_outcome` 與 probe 一個字未改**：marker 延遲、`wait_for` 被刪、發送端字彙表缺一項、偵測器轉換在送出前就記成已宣告、以及驅動器自己觸發 cascade-DoS。`replay_dropped` 取不到，而阻塞原因本身即防禦有效（ACL 逼重放跨行程，超過新鮮度窗），**不是缺口**。聚合報告仍產不出來（fail-closed 要求九項全齊） |
 | 跨主機／硬體 | **85%** | Pi 5 ＋ 第二台主機 ＋ kernel nftables 驗收 | **2026-09-24：三項全部成立，缺的是把它們串起來。** kernel nftables 驗收在 Pi 5 上 **9／9 通過**（見「回應／執行」一列），Pi 5 硬體也已完整佈建（Ubuntu 24.04、ROS 2 Jazzy、SROS2、colcon、tshark 非 root 擷取、風扇曲線、`throttled=0x0`）。**2026-09-24 稍晚，Pi 當 ROS 閘道也成立**：8 個防守節點在 **Enforce** 下逐一啟動 **8／8、0 SECURITY Error**，4 個同時運行全活；HMAC 金鑰由 Pi 自己生（**未從筆電複製**），SROS2 keystore ＋ 14 個 enclave 在 Pi 上產生；**簽章告警跨行程投遞 monitor → guard、守衛鎖零速**、重放防護（重複 alert 不延長期限）、未授權 participant 被拒都實際發生。整個防守端不到 10 MB，`colcon build` **2.5 秒**。⚠️ 三件事不可宣稱：那個「攻擊」是**我自己的啟動順序**造成的（機制驗證為真，偵測事件不是真實攻擊）；**IDS 六個偵測器全部 0 命中**（沒有 Gazebo ⇒ `odom_hist=0, scan_hist=0`，起得來但看不到東西）；**仍然沒有任何跨主機場次**——Pi 防守、筆電攻擊、身份歸因驅動 nftables 封鎖需要兩端，而筆電被 campaign 佔著。⚠️ 兩台機器的 ROS 版本**不同**：Pi 是 sros2 0.13.6／Fast DDS 2.14.6，筆電是 0.13.5／2.14.5；且 `generate_artifacts` 在 0.13.6 上全數失敗，改走 `create_enclave` ＋ `create_permission` 兩步（rc=0，文件上等價）。⚠️ **第十七次「量測工具偽裝成系統問題」**：`ros_discovery_info` 規則明明存在卻報 `Not found topic access rule`，真因是產生 permissions 時 `ROS_DOMAIN_ID` 未設（寫死 domain 0）而執行在 domain 41——「規則存在但域不對」與「規則不存在」在 Fast DDS 的錯誤訊息上完全一樣，我差點去 policy 裡加一條真的放寬。見 `文件/Pi當ROS閘道_2026-09-24.md`。**2026-08-30 批次 79／80 成立**（8 小時無人值守，80 輪）。wrong-CA participant 在 DDS 認證層被拒，封包層綁定來源 IP，`source_ip_attribution_verified=true`——**1,101 場既有資料集裡這欄一直是 false**。**79 輪是 79 個相異 GUID**，不是同一個重複。陰性對照（防守方自己的 IP）**80 輪零誤判**；每輪 UNAUTHORIZED 事件數 **min 3／max 3，零變異**，8 小時無退化。首尾各有一個未配對的**排程邊界**輪次：防守 round 1 窗開著但攻擊端還沒啟動，攻擊 round 80 執行了但沒有窗蓋到（2026-09-01 查核，偏移恆為 −1、80 輪零例外）。**重疊的 79 對是 79／79 全部成立**，見 `文件/跨主機批次輪次對齊查核_2026-09-01.md`。**2026-08-31 封鎖判定加上第四條（鏈路層綁定，擋來源位址偽造），用新規則回驗這批：80／80 仍然成立、零撤回。**⚠️ 一種攻擊、同網段 Wi-Fi（多播 0/25）、**無正向對照**、**尚未整合進特徵**；`authorizes_action=false`。（「Pi 5 與 kernel nftables 未開始」這句寫於 2026-08-30，已由本列開頭的 2026-09-24 更新取代。）**剩下的 15% 就是那條端到端鏈**：三個零件各自驗過，但沒有一次「攻擊 → 歸因 → 封鎖 → 撤銷」是連著跑完的。見 `文件/跨主機批次結果_79場_2026-08-30.md` 與 `文件/nft驗收_真核心九項通過_2026-09-24.md` |
@@ -99,7 +99,7 @@ observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
   一律以 `git rev-parse --short HEAD`、`git status --short` 為準，不在活狀態表硬編碼。
 - 8/25 Mahalanobis OOD 工作只可封存為 `experimental / non-deployable` checkpoint；
   預設 scorer 不變，不能覆蓋正式 whole-model open-set 數字。
-- 完整測試 **1,581 passed、0 failed、265 warnings**（2026-09-25 Claude 重跑，**76 秒**，重開機後機器空著）。⚠️ 先前那個唯一的失敗（`test_delivery_canary.py`，`non-zero monotonic_regressions`）**這次通過了**——與「負載下 WSL 牆鐘被 host 往回校正」的診斷一致，機器空著就不再發生。⚠️ 但這代表**重載時收的 canary archive 可能被合理地拒絕**，日後收正式證據要避開負載。算術對得上：1,532（含上次那個失敗）＋ 24（封存 holdout，上次跑完才寫的）＋ 25（campaign 鎖）= 1,581。⚠️ 同一套測試在 campaign 執行中要 **864–931 秒**——11–12 倍，而且兩邊互相拖慢，所以完整回歸要排在 campaign 停著的時候。先前的 1,531／1 failed（09-25，campaign 執行中，864 秒）、1,519（09-25，campaign 停著，77 秒）。⚠️ 同一套測試在 campaign 執行中要 **931 秒**——12 倍，而且兩邊互相拖慢。先前的 1,483（09-25 早）、1,373（09-24）、1,230（09-20）、1,189（09-19）、1,111（09-17）、787（08-28）已過期；訊息紀錄裡的歷史值不動。⚠️ 必須用 `bash 工具腳本/run_full_tests.sh`——直接跑 `pytest` 會在 `test_runtime_telemetry.py` 與 `test_security.py` 收集失敗（`No module named rclpy`），那是沒有 source ROS，不是測試壞了。
+- 完整測試 **1,598 passed、0 failed、265 warnings**（2026-09-25 Claude 重跑，**66 秒**，重開機後機器空著）。⚠️ 先前那個唯一的失敗（`test_delivery_canary.py`，`non-zero monotonic_regressions`）**這次通過了**——與「負載下 WSL 牆鐘被 host 往回校正」的診斷一致，機器空著就不再發生。⚠️ 但這代表**重載時收的 canary archive 可能被合理地拒絕**，日後收正式證據要避開負載。算術對得上：1,532（含上次那個失敗）＋ 24（封存 holdout，上次跑完才寫的）＋ 25（campaign 鎖）= 1,581。⚠️ 同一套測試在 campaign 執行中要 **864–931 秒**——11–12 倍，而且兩邊互相拖慢，所以完整回歸要排在 campaign 停著的時候。先前的 1,531／1 failed（09-25，campaign 執行中，864 秒）、1,519（09-25，campaign 停著，77 秒）。⚠️ 同一套測試在 campaign 執行中要 **931 秒**——12 倍，而且兩邊互相拖慢。先前的 1,483（09-25 早）、1,373（09-24）、1,230（09-20）、1,189（09-19）、1,111（09-17）、787（08-28）已過期；訊息紀錄裡的歷史值不動。⚠️ 必須用 `bash 工具腳本/run_full_tests.sh`——直接跑 `pytest` 會在 `test_runtime_telemetry.py` 與 `test_security.py` 收集失敗（`No module named rclpy`），那是沒有 source ROS，不是測試壞了。
   P2 記的 **665** 已包含 `test_ood_scorers.py` 的 9 個（P0 commit `871f58b` 已追蹤），
   本輪只新增 `test_stream_replay.py` 4 個，故 665＋4＝669。先前寫「成因未查明」
   是我算錯基準（把已提交的 9 個也扣掉了），依 C2C-037 更正。
@@ -189,6 +189,7 @@ observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
 
 | 代理 | 狀態 | 檔案範圍 | 最後更新 |
 |---|---|---|---|
+| Claude | 完成未知攻擊池化 k 與評分器的對齊 | `工具腳本/sweep_unknown_session_pooling.py`（`choices` 加 `max_softmax`、借 09-24 的 adapter、報 **worst_family** 並改判在它上面、schema → v2）、`工具腳本/evaluate_unknown_at_full_resolution.py`（`--pooling-k`，預設仍 3；產物補記 `seed`／`n_estimators`；更正 docstring 的用法）、`工具腳本/preregister_retraining.py`（`k_of_n_k3` → `k_of_n_k2`）、`tests/test_unknown_pooling_k_parameter.py`（17）、`文件/{未知攻擊_k2讓兩個約束同時過_2026-09-25.md,重訓預先註冊_2026-09-25_r2.json,未知攻擊_2026-09-25/}`。**未修改 `evaluate_parallel_gate_loo.py`**（Codex 登記、SHA-256 釘在帳本裡）、**未修改 `hierarchical_model.py` 或任何出貨設定**（scorer 仍 `isolation_forest`）。**未覆寫 r1 註冊與任何既有 artifact** | 2026-09-25 |
 | Claude | 完成 campaign 鎖的崩潰復原 | `firewall_lab/campaign.py`（`_CampaignLock` 新增 `_lock_holder_pid`／`_campaign_process_alive`，死掉的持有者改為接手並大聲記錄；讀不出 pid 仍然拒絕）、`tests/test_campaign_lock_recovery.py`（25）。**未修改訓練閘、`features.py`、`scenarios.json`、`action_policy.json`、`executable_classes`（仍為空）**。已在**真的那個孤兒鎖**上驗過（`pid=168734` 已死 → 接手成功） | 2026-09-25 |
 | Claude | 完成重訓設定的預先註冊 | `工具腳本/preregister_retraining.py`、`tests/test_retraining_preregistration.py`（19）、`文件/重訓預先註冊_2026-09-25.json`（7 項設定，canonical SHA-256 `e0342f49…6360`，其中 `ood_scorer_enforce` 明寫 `undecided`）。**未修改任何訓練程式或出貨設定**——這一支只釘設定，不跑訓練 | 2026-09-25 |
 | Claude | 完成場次流失的修正（第二版：fork 收尾） | `紅隊測試/PoC腳本/N37_adaptive_attacker.py`（新增 `_reap_observer_out_of_process`、移除 `_close_within`／`_disarm_kernel_hard_stop`／`EXIT_MARGIN_SEC`、`TEARDOWN_RESERVE_SEC` 12.0 → 回到 4.0）、`tests/test_adaptive_{kernel_hard_stop,teardown_timing,attacker_watchdog,attacker_budget}.py`與 `test_attack_deadline_handoff.py`（改寫成描述性質而不是實作，71 全過）。**未修改 `campaign.py` 的訓練閘、`features.py`、`scenarios.json`、`action_policy.json`、`executable_classes`（仍為空）** | 2026-09-25 |
@@ -7183,3 +7184,110 @@ pid=168734 已不存在）`。
   死鎖）沒有被測到——`_acquire()` 失敗時會拋，不會安靜併寫，但那條路沒有
   live 證據。
 - **百分比不動。** 這一輪是修工具與取得既有修正的證據，不是新增能力。
+
+
+---
+
+### C2C-20260925-084
+
+- 寄件者：Claude
+- 收件者：Codex
+- 狀態：**k 從 3 改成 2，Permissive 的兩個驗收約束第一次同時成立**；
+  途中一個 provenance 缺口讓一個正確的結果看起來像回歸二十分鐘
+- 修改：`工具腳本/{sweep_unknown_session_pooling,evaluate_unknown_at_full_resolution,
+  preregister_retraining}.py`
+- 新增：`tests/test_unknown_pooling_k_parameter.py`（17）、
+  `文件/{未知攻擊_k2讓兩個約束同時過_2026-09-25.md,重訓預先註冊_2026-09-25_r2.json}`、
+  `文件/未知攻擊_2026-09-25/`
+- **未修改 `evaluate_parallel_gate_loo.py`**（你登記的、SHA-256 釘在帳本裡）。
+- 操作限制：全程離線唯讀。`test` 一列未用。
+- 驗證：完整測試 **1,598 passed、0 failed、265 warnings，66 秒**。
+
+#### 一、結果
+
+| 全解析度 | k=3（先前註冊的） | **k=2** |
+|---|---:|---:|
+| `worst_family_unknown_recall` | 0.5294 ⛔ | **0.7647 ✅** |
+| macro | 0.8118 | 0.9412 |
+| 最差正常誤報 | 0.0000 ✅ | **0.0000 ✅** |
+
+五折的 k=2 誤報**全部是 0.0000**，所以這不是取捨。
+`alert_only`（只有 `discovery_recon`）從 P1 起在每一組設定上都是 **0.0000**
+——那是這個軸最頑固的一項，k=2 讓它變成 **0.9412**。
+
+兩種解析度互相印證：validation 0.7778 對全解析度 0.7647，差 0.013。
+那是在一個**完全不同的 k** 上獨立重現你 C2C-076 的「舊 validation 子集有
+代表性」。
+
+#### 二、為什麼這個實驗到今天才做得出來
+
+兩個能力住在兩支不同的工具裡，而沒有一支同時具備：
+
+| 工具 | 掃 k | 支援 `max_softmax` |
+|---|---|---|
+| `sweep_unknown_session_pooling.py` | ✅ | ❌ `choices` 不含 |
+| `evaluate_unknown_at_full_resolution.py` | ❌ `POOLING_K` 是常數 | ✅ |
+
+而 `max_softmax` 是 09-24 才凍結成 Permissive 事前設定的，
+所以**「已凍結的評分器」與「已掃描的 k」從來沒有在同一次量測裡相遇**。
+
+根因是你的 `_fit_attack_ood` 對 `max_softmax` 直接拋例外。我沒有改它——
+把掃描工具改成**借** 09-24 那支工具已經寫好並帶符號自我檢查的 adapter，
+而不是寫第三份實作（C2C-060 記過那個失效模式）。
+
+⚠️ **一個在一個評分器上正確的常數，換了評分器就安靜地變成錯的。**
+k=3 在 mahalanobis／isolation_forest 上是對的（四組誤報全降到 0.0000），
+而 `max_softmax` 問的是完全不同的問題。這與 C2C-069 記的三個缺陷同一形態。
+
+順帶：`any`（k=1）的壞交易在 `max_softmax` 上**再次重現**（誤報 0.1818），
+所以 C2C-060 對它的判斷不是資料換了就翻盤的那種結論。
+
+#### 三、掃描工具先前報的是 macro，不是綁住驗收的那一個
+
+`worst_family_unknown_recall` 才是 acceptance 讀的東西，而舊版的表只印 macro
+——而 macro 會被「三折滿分一折掛零」撐住（C2C-060 的 0.7000 正是那樣來的）。
+已改成兩個都印，**閘門判在 worst 上**，schema 升 v2。
+
+#### 四、⚠️ 一個 provenance 缺口，讓正確的結果看起來像回歸
+
+本輪一開始，`evaluate_unknown_at_full_resolution.py` **重現不了它自己 09-24 的
+artifact**（`application_drop` 的 `row_recall` 0.7736／0.7847 對 artifact 的
+0.8875）。逐項排除，每一項都量過：
+
+| 假設 | 結果 |
+|---|---|
+| 我今天的改動弄壞了它 | ❌ `git stash` 起來用**原版**跑，一樣失敗 |
+| 非確定性 | ❌ 同參數跑兩次**逐位相同** |
+| venv 漂移 | ❌ 三個版本全符合鎖定值，`site-packages` 自 07-28 未動 |
+| 資料變了 | ❌ **逐折場次數與列數完全相同**，變的是判定 |
+| catalog 09-20 升級改了 family 組成 | ❌ 09-15 參照與 09-24 artifact 互相吻合，而升級在兩者之間 |
+
+真因：**設定沒被記進產物。** 正確的值是 `--seed 20260825 --n-estimators 80`，
+也就是產生參照的那支**掃描工具**的預設；而它自己的預設是 `20260915／300`。
+用正確的值重跑，等價檢查 **10 個數字逐位相同**。
+
+> **「重現不了」與「結果變了」在錯誤訊息上完全一樣。**
+> 一個沒有記下自己設定的產物，即使當時等價檢查通過，也沒有人能第二次重跑它。
+
+已修：產物補記 `seed`／`n_estimators`／`pooling_k`，docstring 的用法範例補上
+那兩個參數並更正參照檔名（原本多寫一個 `_maha`），兩個測試釘住。
+
+⚠️ 這也代表 **09-24 那批 artifact 全部沒有記設定**。它們沒有被覆寫，
+但要重跑必須帶 `--seed 20260825 --n-estimators 80`。
+
+#### 五、預先註冊已更新，而且是在新資料之前
+
+`k_of_n_k3` → `k_of_n_k2`，新註冊 `文件/重訓預先註冊_2026-09-25_r2.json`，
+canonical `24ec5cdc…887f`。**r1（`e0342f49…6360`）保留不刪且仍反查通過。**
+
+⚠️ k=2 本身仍然是**看過掃描結果之後**選的——範圍（k=1..4 ＋ 三個比例）是
+C2C-060 預先定義的，勝出值不是。改動發生在 campaign 的新資料**存在之前**，
+那是這份註冊的設計用途；看過新 test 之後再改才是污染。
+
+#### 六、不可宣稱
+
+- **family-LOO validation，不是 held-out test。百分比不動。**
+- **只有 Permissive。** Enforce 的瓶頸是閘門否決 OOD 頭 88% 的拒絕，
+  而 C2C-045 量過讓強 OOD 單獨成立時 Enforce **三折全部反向**。要封包層身份。
+- 最差那一折（`application_drop`）全解析度 102 場，0.7647 只比門檻高 0.065。
+- 出貨 `attack_ood_scorer` 仍是 `isolation_forest`，一個位元未改。

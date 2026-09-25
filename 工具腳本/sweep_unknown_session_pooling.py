@@ -78,6 +78,35 @@ def load_codex_module():
     return module
 
 
+def load_scorer_adapter():
+    """借 2026-09-24 那支工具寫好的 `fit_attack_ood`,**不要寫第三份**。
+
+    Codex 的 `_fit_attack_ood` 對 `max_softmax` 直接拋例外（它只認得
+    mahalanobis 與 isolation_forest）,而他的檔案 SHA-256 釘在帳本裡不能改。
+    `evaluate_unknown_at_full_resolution.py` 已經接好那一條**而且帶符號自我
+    檢查**（把擬合列大幅擾動之後必須更異常,方向錯了就不輸出）。
+
+    自己再實作一次會變成兩份會各自漂移的程式——那正是 C2C-060 記過的失效模式。
+    """
+
+    path = ROOT / "工具腳本" / "evaluate_unknown_at_full_resolution.py"
+    spec = importlib.util.spec_from_file_location("full_resolution", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    if not hasattr(module, "fit_attack_ood"):
+        raise SweepError(
+            "evaluate_unknown_at_full_resolution.py 沒有 fit_attack_ood"
+            "——介面變了，請先對齊"
+        )
+    return module.fit_attack_ood
+
+
+# 這兩個有 Codex 產生的參照 artifact 可以做逐位等價檢查；`max_softmax` 沒有,
+# 所以跑它之前要先用其中一個證明重建的 fold 迴圈沒有分岔（見 `main`）。
+SCORERS_WITH_REFERENCE = ("isolation_forest", "mahalanobis")
+EQUIVALENCE_PROXY = "mahalanobis"
+
+
 def k_of_n_rate(groups, flagged, k: int) -> float:
     """每場需要 ≥k 個視窗被標記才算。k=1 等於 `any()`。"""
     import collections
@@ -185,8 +214,8 @@ def run(features: Path, metrics_path: Path, *, scorer: str, n_estimators: int,
         normality = _fit_isolation_detector(
             matrix[normal_fit], _session_equal_weights(frame, normal_fit),
             seed=seed + 100 + offset, n_estimators=n_estimators)
-        attack_ood = cx._fit_attack_ood(
-            scorer, matrix[attack_fit], labels[attack_fit],
+        attack_ood = load_scorer_adapter()(
+            cx, scorer, matrix[attack_fit], labels[attack_fit],
             _session_equal_weights(frame, attack_fit),
             seed=seed + 200 + offset, n_estimators=n_estimators)
 
@@ -280,7 +309,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--reference", type=Path, required=True,
                    help="Codex 既有的 artifact，用來做等價檢查")
     p.add_argument("--attack-ood-scorer", default="mahalanobis",
-                   choices=("isolation_forest", "mahalanobis"))
+                   choices=("isolation_forest", "mahalanobis", "max_softmax"))
     p.add_argument("--n-estimators", type=int, default=80)
     p.add_argument("--seed", type=int, default=20260825)
     p.add_argument("--maximum-normal-fpr", type=float, default=0.02)
@@ -291,31 +320,53 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _sweep(args, scorer: str):
+    return run(args.features, args.metrics, scorer=scorer,
+               n_estimators=args.n_estimators, seed=args.seed,
+               maximum_normal_fpr=args.maximum_normal_fpr,
+               maximum_known_attack_ood_fpr=args.maximum_known_attack_ood_fpr,
+               ks=args.k, fractions=args.fraction)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     import numpy as np
 
+    scorer = args.attack_ood_scorer
     try:
-        folds = run(args.features, args.metrics, scorer=args.attack_ood_scorer,
-                    n_estimators=args.n_estimators, seed=args.seed,
-                    maximum_normal_fpr=args.maximum_normal_fpr,
-                    maximum_known_attack_ood_fpr=args.maximum_known_attack_ood_fpr,
-                    ks=args.k, fractions=args.fraction)
+        if scorer in SCORERS_WITH_REFERENCE:
+            folds = _sweep(args, scorer)
+            proxy_folds = folds
+            proxy_note = scorer
+        else:
+            # `max_softmax` 沒有 Codex 產生的參照,所以先跑一次有參照的評分器,
+            # 在**同一個行程、同一批資料、同一條程式路徑**上證明重建的 fold
+            # 迴圈忠於他的評估器。那個性質與評分器無關,所以通過之後換評分器
+            # 的數字才有同樣的可信度。代價是多跑一輪,值得。
+            proxy_folds = _sweep(args, EQUIVALENCE_PROXY)
+            proxy_note = EQUIVALENCE_PROXY
+            folds = _sweep(args, scorer)
     except (SweepError, ValueError, KeyError) as exc:
         print(f"⛔ {exc}")
         return 2
 
-    problems = check_equivalence(folds, args.reference)
+    problems = check_equivalence(proxy_folds, args.reference)
     if problems:
         print("⛔ 重建與 Codex 的 artifact 對不上——本輪的新數字不可引用：")
         for p in problems[:10]:
             print("   " + p)
         return 3
-    print("✅ 等價檢查通過：列層級與 any() 兩個指標逐位重現 Codex 的 artifact")
+    print(f"✅ 等價檢查通過（以 {proxy_note} 為代理）："
+          "列層級與 any() 兩個指標逐位重現 Codex 的 artifact")
+    if scorer not in SCORERS_WITH_REFERENCE:
+        print(f"   ⇒ fold 迴圈已證明忠實，{scorer} 的數字走同一條路徑")
     print()
 
     def macro(getter):
         return float(np.mean([getter(f) for f in folds]))
+
+    def worst_recall(getter):
+        return float(np.min([getter(f) for f in folds]))
 
     def worst_fpr(getter):
         return float(np.max([getter(f) for f in folds]))
@@ -327,22 +378,33 @@ def main(argv: list[str] | None = None) -> int:
                (lambda fr: (lambda f: f["fraction"][str(fr)]))(fr))
               for fr in args.fraction]
 
-    print("  %-24s %12s %14s" % ("規則", "未知 recall", "最差正常誤報"))
+    # ⚠️ 綁住驗收的是 **worst_family**,不是 macro。舊版只印 macro,而 macro
+    # 會被「三折滿分一折掛零」撐住（C2C-060 記過 0.7000 就是那樣來的）。
+    # 兩個都印,而閘門判在 worst 上。
+    print("  %-24s %10s %10s %14s" % (
+        "規則", "worst", "macro", "最差正常誤報"))
     table = {}
     for name, getter in rules:
+        worst = worst_recall(lambda f: getter(f)["unknown_recall"])
         rec = macro(lambda f: getter(f)["unknown_recall"])
         fpr = worst_fpr(lambda f: getter(f)["normal_false_unknown_rate"])
-        table[name] = {"macro_unknown_recall": round(rec, 4),
+        table[name] = {"worst_family_unknown_recall": round(worst, 4),
+                       "macro_unknown_recall": round(rec, 4),
                        "worst_normal_false_unknown_rate": round(fpr, 4)}
-        gate = "✅" if rec >= 0.70 else "  "
+        gate = "✅" if worst >= 0.70 else "  "
         budget = "✅" if fpr <= args.maximum_normal_fpr else "⛔"
-        print("  %-24s %12.4f %s %12.4f %s" % (name, rec, gate, fpr, budget))
+        print("  %-24s %10.4f %s %8.4f %12.4f %s" % (
+            name, worst, gate, rec, fpr, budget))
 
     report = {
-        "schema_version": "sros2-firewall-unknown-session-pooling/v1",
+        # v2 多了 `worst_family_unknown_recall`（綁住驗收的那一個）與
+        # `equivalence_proxy_scorer`。舊版讀者不該把新報告當成同一種東西:
+        # v1 的 summary 只有 macro,而 macro 會被一折掛零的平均撐住。
+        "schema_version": "sros2-firewall-unknown-session-pooling/v2",
         "features_table": str(args.features),
         "reference_artifact": str(args.reference),
         "equivalence_verified": True,
+        "equivalence_proxy_scorer": proxy_note,
         "attack_ood_scorer": args.attack_ood_scorer,
         "maximum_normal_fpr": args.maximum_normal_fpr,
         "minimum_unknown_recall": 0.70,
