@@ -190,13 +190,11 @@ def test_the_old_margin_was_smaller_than_the_reap_it_had_to_absorb():
     # After the fix the clock starts at process start, so the full reserve is
     # margin again and the burst loop additionally stops short of the reap.
     # ⚠️ `reserve_at_the_time` is a literal, not the live constant. This test
-    # records why the reserve was raised; reading the raised value would make
-    # the fix delete its own justification (it did, on 2026-09-25).
+    # records why the margin was once too small; reading the live value would
+    # make a later change delete its own justification (it did, on 2026-09-25,
+    # twice -- first when the reserve went to 12.0 and again when it came back).
     margin_after = _constant_raw("TEARDOWN_RESERVE_SEC")
     assert margin_after > reap_worst_case
-    assert margin_after > reserve_at_the_time, (
-        "the reserve should only ever grow while teardown stays unbounded"
-    )
 
 
 def test_the_script_still_parses():

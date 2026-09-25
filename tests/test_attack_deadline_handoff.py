@@ -129,9 +129,12 @@ def test_the_measured_boot_exceeded_the_teardown_reserve_of_the_time(n37):
         f"boot {measured_boot_sec}s vs the reserve of {reserve_at_the_time}s: "
         "the reserve was spent before N37's clock started"
     )
-    # And the handoff is what makes the boot cost irrelevant now: the deadline
-    # is absolute, so boot is charged to the attack window, not to teardown.
-    assert n37.TEARDOWN_RESERVE_SEC > measured_boot_sec
+    # What makes the boot cost harmless is not a bigger reserve -- the reserve
+    # is 4.0 again -- it is that the deadline arrives absolute, so boot is
+    # charged to the attack window instead of eating the teardown.
+    body = _N37.read_text(encoding="utf-8")
+    assert "deadline = _factory_deadline()" in body
+    assert "boot_cost = deadline - duration - t0" in body
 
 
 def test_stop_by_is_derived_from_the_deadline_not_from_t0():

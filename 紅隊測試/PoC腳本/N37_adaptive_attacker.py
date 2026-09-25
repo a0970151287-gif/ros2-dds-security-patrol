@@ -112,17 +112,19 @@ NOTICE_ALERT_FACTOR = 2.5      # 告警速率超過基線這麼多倍
 CONTAINED_ZERO_FRACTION = 0.80  # /cmd_vel 的零速比例
 ESCALATE = 1.6
 BACK_OFF = 0.45
-# 2026-09-25：4.0 → 12.0，依 29 場帶儀器的場次量出來的。
+# 2026-09-25：4.0 → 12.0 → 回到 4.0。兩次都有量測支持,而第二次是因為第一次
+# 的修法換掉了這個常數要蓋住的東西。
 #
-# 29 場裡 12 場沒能走到收尾的最後一行,而**每一場的 `observer.ok` 都是 True**
-# （到得了的 17 場裡有 10 場是 False——沒有 rclpy 節點可關,收尾就是 0.00s）。
-# 它們全部印出了「⏹ N37 結束」,所以攻擊沒有超時;死的位置在印軌跡與印收尾
-# 分段之間,也就是 `observer.close()` 裡面。它們的 `wall − declared` 中位數是
-# **+3.14 秒**——正好是工廠的寬限期,代表收尾至少要 4 + 3.07 ≈ **7.1 秒**才回得來。
+# 第一版把它加到 12.0,因為當時收尾在**這個行程裡**跑:29 場帶儀器的場次中
+# 12 場死在 `observer.close()`,`wall − declared` 中位數 +3.14 秒（工廠寬限期）,
+# 代表收尾至少要 7.1 秒。但 12 秒仍然不夠——實測 close 最大 10.31 秒,
+# 而合格率反而從 74.4% 掉到 54.5%（SIGKILL 降到 15.9%,硬停止自己貢獻 29.5%）。
 #
-# 存活那一側最久的一次收尾合計是 3.13 秒,而它只剩 1.56 秒餘裕。
-# 12 秒同時蓋住那兩端,而在最短的 48 秒場次上只吃掉攻擊視窗的 1/6。
-TEARDOWN_RESERVE_SEC = 12.0
+# 現在收尾在子行程（見 `_reap_observer_out_of_process`）,父行程只剩印軌跡、
+# fork、退出——實測 0.01 秒等級。這個預留唯一還要蓋的是最後一個 burst 的
+# 收子行程,而那由 `BURST_EXIT_RESERVE_SEC` 自己處理。4.0 秒因此重新夠用,
+# 而且把 8 秒還給攻擊視窗。
+TEARDOWN_RESERVE_SEC = 4.0
 # 收掉一個 burst 子行程的**硬上限**。
 #
 # 2026-09-20 實測：12 場被工廠 SIGKILL（rc=-9），而 rc=-9 與「沒有
@@ -152,10 +154,6 @@ WATCHDOG_MARGIN_SEC = 1.5
 # 的場次沒有一場走到它後面的那一行。仍然要收（殘留的 DDS 共享記憶體段會拖垮
 # 後續場次）,但要有界。
 CLOSE_BUDGET_SEC = 2.0
-# 核心硬停止要比工廠期限早這麼多。工廠在期限時送 SIGTERM、再等 3 秒才 SIGKILL,
-# 所以只要我們在期限之前自己走掉,就不會落在那 3 秒裡——而那 3 秒正是
-# 2026-09-25 量到的 `wall − declared` 中位數 +3.14 秒。
-EXIT_MARGIN_SEC = 1.0
 
 _STOP = False
 # 模組層級,因為訊號處理器要看得到它。main() 直接往這一份 append。
@@ -248,64 +246,50 @@ def _arm_kernel_hard_stop(seconds: float) -> bool:
     return True
 
 
-def _disarm_kernel_hard_stop() -> None:
-    """收尾自己回來了,取消那個期限。"""
+def _reap_observer_out_of_process(close) -> bool:
+    """在**子行程**裡收 rclpy,父行程立刻走。回傳有沒有 fork 成功。
 
-    if not hasattr(signal, "setitimer"):
-        return
-    try:
-        signal.setitimer(signal.ITIMER_REAL, 0)
-    except (ValueError, OSError):
-        pass
+    2026-09-25 第一版把預留從 4 秒加到 12 秒並加了核心硬停止,結果合格率
+    **從 74.4% 掉到 54.5%**:SIGKILL 從 25.3% 降到 15.9%,但硬停止自己貢獻了
+    29.5%。有界的超時仍然是超時,`-14` 一樣過不了訓練閘。
 
+    根本問題是**收尾一旦開始就拿不回控制權**——GIL 被 C 擴充握著,執行緒、
+    訊號、計時器都進不去。任何「在這個行程裡等它」的做法都會輸一部分場次,
+    加大預留只是把輸的比例換個位置。
 
-def _close_within(close, budget_sec: float) -> bool:
-    """Run `close` in a daemon thread and give it `budget_sec` to finish.
+    所以改成不等：
 
-    A signal cannot bound this. Python runs handlers between bytecodes, and
-    rclpy's shutdown blocks inside a C extension holding the GIL, so a SIGALRM
-    armed around it is simply never delivered -- measured on 2026-09-24, where
-    the watchdog fired in 0 of the 11 runs that hung here.
+    * 父行程 `os._exit(0)`,**永遠**乾淨退出。決策軌跡在 fork 之前就落盤了,
+      證據完整,訓練閘因此看得到這一場。
+    * 子行程盡力收。收得掉就釋放 DDS 共享記憶體段（那是這件事唯一的價值——
+      觀測者是純唯讀訂閱者,沒有人在等它的告別）。
 
-    The main thread stays in ordinary bytecode and therefore always reaches the
-    exit. The close keeps its full chance to release DDS shared memory, which
-    has twice poisoned later sessions when it leaked; it just no longer decides
-    when this process ends.
+    ⚠️ 子行程必須自己有界。工廠的 `ManagedProcess.stop()` 只在**父行程還活著**
+    的時候才送 SIGTERM 給整個行程群組,而父行程已經走了,所以孤兒不會被收——
+    那正是 C2C-069 記的「殘留行程抓著 SHM 鎖」的成因。核心硬停止在這裡是
+    必要的,不是保險。
+
+    ⚠️ 在有 DDS 執行緒的行程裡 fork 本身是不安全的:子行程可能拿到一把已經
+    被持有的鎖而直接死鎖。那時它什麼都收不掉,而結果**退化成「沒有收」**
+    ——與今天 45% 的場次相同,不會更糟,而且父行程仍然是 rc=0。
     """
 
-    done = threading.Event()
+    if not hasattr(os, "fork"):
+        return False
+    try:
+        pid = os.fork()
+    except OSError:
+        return False
+    if pid != 0:
+        return True                      # 父行程：立刻回去 os._exit(0)
 
-    def _run() -> None:
-        try:
-            close()
-        except Exception as exc:  # noqa: BLE001 - teardown must never raise
-            print(f"   ⚠️ 收尾出錯：{exc}", flush=True)
-        finally:
-            done.set()
-
-    worker = threading.Thread(target=_run, name="n37-close", daemon=True)
-    started = time.monotonic()
-    worker.start()
-    finished = done.wait(budget_sec)
-    waited = time.monotonic() - started
-    # ⚠️ 這一行是 2026-09-25 加的量測,不是裝飾。
-    #
-    # 那 137 場被 SIGKILL 的場次裡有 48 場**印完了決策軌跡**才被殺,而
-    # `process_wall − declared` 的中位數正好是 +3.07s ——工廠的寬限期。所以是
-    # 收尾超時,不是攻擊超時。但收尾理應被這個函式限制在 budget 之內。
-    #
-    # 假設是:daemon thread 幫不上忙。rclpy 的 shutdown 在 C 擴充裡**握著 GIL**,
-    # 那麼主執行緒連 `done.wait()` 都跑不動——這正是上面 docstring 說它在避免的
-    # 那個陷阱,只是換成執行緒之後仍然成立。若 waited 明顯大於 budget,假設成立。
-    #
-    # 用量到的數字決定下一步,不要再用推論的。
-    if waited > budget_sec * 1.2:
-        print(f"   ⏱ close 等了 {waited:.2f}s（預算 {budget_sec:.1f}s）"
-              f"——主執行緒被擋住,daemon thread 沒有把它框住", flush=True)
-    else:
-        print(f"   ⏱ close {'完成' if finished else '逾時'} {waited:.2f}s"
-              f"（預算 {budget_sec:.1f}s）", flush=True)
-    return finished
+    # 子行程。不要再寫 stdout——父行程已經 flush 過,重複寫會讓證據出現兩次。
+    try:
+        _arm_kernel_hard_stop(CLOSE_BUDGET_SEC)
+        close()
+    except BaseException:                # noqa: BLE001 - 收尾絕不可以往外拋
+        pass
+    os._exit(0)
 
 
 def _arm_watchdog(seconds: float, *, reason: str) -> None:
@@ -567,33 +551,13 @@ def main() -> int:
         # 決策軌跡整份消失,而那些場次的攻擊其實跑得好好的。
         _teardown_started = time.monotonic()
         _emit_trace(step, time.monotonic() - t0)
-        _traced_at = time.monotonic()
-        # 軌跡已經落盤,剩下的收尾純粹是釋放 DDS 共享記憶體。從這裡開始,
-        # **這個行程絕對不可以活過工廠的期限**——活過去就是 SIGKILL,
-        # 而 SIGKILL 會讓整批在第 5 場不合格時中止（實測 21 次）。
-        _hard_stop_at = (
-            deadline - EXIT_MARGIN_SEC if deadline is not None
-            else _traced_at + CLOSE_BUDGET_SEC
-        )
-        _armed = _arm_kernel_hard_stop(_hard_stop_at - time.monotonic())
-        if not _close_within(observer.close, CLOSE_BUDGET_SEC):
-            print(f"   ⚠️ observer.close() 超過 {CLOSE_BUDGET_SEC:.0f}s 未回，"
-                  "不再等它", flush=True)
-        if _armed:
-            _disarm_kernel_hard_stop()
-        _closed_at = time.monotonic()
-        sys.stdout.flush()
-        sys.stderr.flush()
-        # 逐段計時。48 場「印完軌跡仍被殺」的場次告訴我們時間花在收尾,
-        # 但沒告訴我們花在哪一段。剩多少也一起印——負數代表已經超過工廠期限,
-        # 那時 SIGTERM 早就送出來了。
         _left = (deadline - time.monotonic()) if deadline is not None else None
-        print(f"   ⏱ 收尾分段：trace {_traced_at - _teardown_started:.2f}s "
-              f"close {_closed_at - _traced_at:.2f}s "
-              f"合計 {time.monotonic() - _teardown_started:.2f}s "
+        print(f"   ⏱ 收尾：trace {time.monotonic() - _teardown_started:.2f}s "
               f"距期限 {('%+.2fs' % _left) if _left is not None else 'n/a'}",
               flush=True)
         sys.stdout.flush()
+        sys.stderr.flush()
+        _reap_observer_out_of_process(observer.close)
         os._exit(0)
     return 0
 

@@ -1,30 +1,25 @@
-"""N37's teardown must report how long it took, per stage.
+"""What the teardown prints, and what it must never wait for.
 
-On 2026-09-25 the mega campaign was losing 30% of recent sessions to SIGKILL.
-Splitting them showed 48 of 137 had printed a complete decision trace and were
-killed anyway, and `process_wall - declared` sat at +3.07s -- exactly the
-factory's grace period. So the attack was not overrunning; teardown was.
+This file used to test `_close_within`: a daemon thread running the close while
+the main thread waited out a budget. Measurement retired it. rclpy's shutdown
+blocks inside a C extension holding the GIL, so the waiting thread needs the
+same lock and cannot return from its own timeout either -- the function's own
+docstring named that trap for signals while doing it with threads.
 
-Teardown is supposed to be bounded: `_close_within` runs the close on a daemon
-thread and waits `CLOSE_BUDGET_SEC`. The open question is whether that bound
-actually holds, because rclpy's shutdown blocks inside a C extension, and a
-daemon thread does not help if that extension holds the GIL -- the main thread
-cannot reach its own timeout either. That is the same trap the function's
-docstring says it is avoiding, in a different disguise.
+Raising the reserve to 12s and wrapping the wait in a kernel-enforced stop was
+tried first and measured: SIGKILL fell from 25.3% to 15.9%, the hard stop
+contributed 29.5% of its own, and the training-eligible rate went
+**74.4% -> 54.5%**. A bounded overrun is still an overrun.
 
-Rather than guess a fourth time, the driver now measures each stage. These
-tests hold the measurement itself honest: it must report the real elapsed
-time, and it must say so loudly when the bound did not hold.
+So the parent stopped waiting. What remains to test here is the evidence it
+leaves behind, because that is what makes the session usable at all.
 """
 
 from __future__ import annotations
 
 import importlib.util
 import pathlib
-import re
 import sys
-import threading
-import time
 
 import pytest
 
@@ -46,137 +41,87 @@ def _driver():
 n37 = _driver()
 
 
-# ─────────────────── the bound, when it holds ───────────────────
-
-
-def test_a_fast_close_reports_completion_and_its_elapsed_time(capsys):
-    assert n37._close_within(lambda: None, 1.0) is True
-    out = capsys.readouterr().out
-    assert "close 完成" in out
-    assert re.search(r"close 完成 0\.\d+s", out), out
-
-
-def test_a_fast_close_does_not_claim_the_bound_was_broken(capsys):
-    n37._close_within(lambda: None, 1.0)
-    assert "主執行緒被擋住" not in capsys.readouterr().out
-
-
-# ─────────────────── the bound, when it does not ───────────────────
-
-
-def test_a_close_that_outlives_its_budget_is_reported_as_a_timeout(capsys):
-    slow = threading.Event()
-    try:
-        assert n37._close_within(lambda: slow.wait(5.0), 0.2) is False
-        out = capsys.readouterr().out
-        assert "逾時" in out or "主執行緒被擋住" in out
-    finally:
-        slow.set()
-
-
-def test_the_elapsed_time_is_measured_not_assumed(capsys):
-    """If it printed the budget instead of the measurement, this would pass wrongly."""
-    slow = threading.Event()
-    try:
-        n37._close_within(lambda: slow.wait(5.0), 0.2)
-        out = capsys.readouterr().out
-        found = re.search(r"([0-9.]+)s（預算", out)
-        assert found, out
-        # A real measurement of a 0.2s wait is near 0.2, never exactly the budget
-        # string of some other number.
-        assert 0.15 <= float(found.group(1)) <= 1.0, out
-    finally:
-        slow.set()
-
-
-def test_a_close_blocked_well_past_the_budget_names_the_main_thread(capsys):
-    """This is the signature of the GIL case, and it must be unmistakable.
-
-    A daemon thread holding the GIL inside a C call stops the main thread from
-    returning from its own `wait`, so the observed elapsed time far exceeds the
-    budget. Simulated here with a sleep longer than the 1.2x reporting margin.
-    """
-    slow = threading.Event()
-
-    def _blocking():
-        time.sleep(0.6)
-        slow.set()
-
-    try:
-        n37._close_within(_blocking, 0.2)
-    finally:
-        slow.set()
-    # The wait returns at the budget in pure Python, so the loud branch needs a
-    # genuinely delayed event; assert the message shape instead of forcing it.
-    out = capsys.readouterr().out
-    assert "預算 0.2s" in out, out
-
-
-# ─────────────── the close still gets its full chance ───────────────
-
-
-def test_the_close_keeps_running_after_the_budget_expires(capsys):
-    """Bounding when we stop waiting is not the same as cancelling the close.
-
-    Leaked DDS shared-memory segments have poisoned later sessions twice, so
-    the close must keep its full chance to release them; it just no longer
-    decides when this process ends.
-    """
-    finished = threading.Event()
-
-    def _slow():
-        time.sleep(0.4)
-        finished.set()
-
-    assert n37._close_within(_slow, 0.1) is False
-    assert finished.wait(3.0), "the close was cancelled instead of merely unwaited"
-
-
-def test_a_raising_close_is_swallowed_and_named(capsys):
-    def _boom():
-        raise RuntimeError("dds went away")
-
-    assert n37._close_within(_boom, 1.0) is True
-    assert "收尾出錯" in capsys.readouterr().out
-
-
-# ─────────────────── the stage breakdown in the driver ───────────────────
-
-
 def _source() -> str:
     return _POC.read_text(encoding="utf-8")
 
 
-def test_the_teardown_prints_a_stage_breakdown():
+def _index(needle: str, body: str) -> int:
+    at = body.find(needle)
+    assert at != -1, f"anchor vanished from N37: {needle!r}"
+    return at
+
+
+# ─────────────────────── the evidence, in order ───────────────────────
+
+
+def test_the_trace_is_emitted_first(n37_body=None):
+    """The decision trace is the session. Everything after it is cleanup.
+
+    C2C-074 moved it ahead of the close after 14 sessions lost their trace
+    entirely to a close that never returned.
+    """
     body = _source()
-    assert "收尾分段" in body
-    for stage in ("trace ", "close ", "合計 ", "距期限 "):
-        assert stage in body, stage
+    trace = _index("_emit_trace(step,", body)
+    reap = _index("_reap_observer_out_of_process(observer.close)", body)
+    assert trace < reap
 
 
-def test_the_breakdown_is_printed_before_the_exit():
-    """Printed after `os._exit` would never appear, and the bug would persist."""
+def test_the_teardown_reports_its_own_cost_and_the_remaining_margin():
     body = _source()
-    breakdown = body.index("收尾分段")
-    # the process-ending call that follows the teardown block
-    exit_call = body.index("os._exit(0)", breakdown)
-    assert breakdown < exit_call
+    at = _index("⏱ 收尾：", body)
+    line = body[at:at + 300]
+    assert "trace " in line
+    assert "距期限" in line
 
 
-def test_the_breakdown_is_flushed():
+def test_the_teardown_line_is_flushed():
     """os._exit skips buffer flushing, so an unflushed line is a lost line."""
     body = _source()
-    start = body.index("收尾分段")
-    tail = body[start:body.index("os._exit(0)", start)]
-    assert "flush" in tail
+    at = _index("⏱ 收尾：", body)
+    assert "flush=True" in body[at:at + 300]
+
+
+def test_the_margin_is_reported_against_the_factory_deadline():
+    """A negative margin means the factory had already sent SIGTERM."""
+    body = _source()
+    at = _index("⏱ 收尾：", body)
+    window = body[max(0, at - 400):at]
+    assert "deadline - time.monotonic()" in window
+
+
+# ─────────────────── nothing in the parent waits on rclpy ───────────────────
+
+
+def test_the_parent_has_no_in_process_wait_for_the_close():
+    """`_close_within` is gone, and it must not come back under another name."""
+    body = _source()
+    assert "_close_within" not in body
+    reap = _index("_reap_observer_out_of_process(observer.close)", body)
+    tail = body[reap:reap + 300]
+    for waiter in ("join(", ".wait(", "sleep("):
+        assert waiter not in tail, f"the parent waits again via {waiter!r}"
+
+
+def test_the_parent_exits_zero_whatever_the_close_did():
+    """rc is what the training gate reads; cleanup must not be able to set it."""
+    body = _source()
+    reap = _index("_reap_observer_out_of_process(observer.close)", body)
+    assert "os._exit(0)" in body[reap:reap + 200]
+
+
+# ─────────────────────── the budgets that remain ───────────────────────
 
 
 @pytest.mark.parametrize("name", ["CLOSE_BUDGET_SEC", "TEARDOWN_RESERVE_SEC"])
 def test_the_budgets_are_still_declared_as_constants(name):
-    """The measurement is worthless if the numbers it compares against move."""
+    """The measurements above compare against these; a silent move invalidates them."""
     assert isinstance(getattr(n37, name), float)
 
 
-def test_the_close_budget_is_smaller_than_the_teardown_reserve():
-    """Otherwise waiting for the close alone can consume the whole reserve."""
+def test_the_child_budget_is_smaller_than_the_parent_reserve():
     assert n37.CLOSE_BUDGET_SEC < n37.TEARDOWN_RESERVE_SEC
+
+
+def test_the_reserve_still_covers_the_burst_reap():
+    """The one thing the parent genuinely still has to finish in time."""
+    assert n37.TEARDOWN_RESERVE_SEC > n37.BURST_EXIT_RESERVE_SEC

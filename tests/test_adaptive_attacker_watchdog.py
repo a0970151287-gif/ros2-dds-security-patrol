@@ -79,13 +79,18 @@ def test_the_watchdog_fires_before_the_factory_kills(n37):
     )
 
 
-def test_the_close_budget_fits_inside_the_watchdog_margin_plus_grace(n37):
+def test_the_close_budget_fits_inside_the_factory_grace(n37):
+    """The child must be gone before the factory finishes with the group.
+
+    It is the child's own kernel stop that enforces this now; the parent has
+    already exited, so `ManagedProcess.stop()` will not signal the group at all.
+    """
     import inspect
 
     from firewall_lab.evidence import ManagedProcess
 
     grace = inspect.signature(ManagedProcess.stop).parameters["grace_sec"].default
-    assert n37.CLOSE_BUDGET_SEC <= n37.WATCHDOG_MARGIN_SEC + grace + 1.0
+    assert n37.CLOSE_BUDGET_SEC <= grace
 
 
 # ── evidence is printed before anything is released ──────────────────────────
@@ -95,18 +100,21 @@ def test_the_trace_is_printed_before_the_shutdown(n37):
     """The defect: `observer.close()` came first and could hang forever."""
     body = _source()
     emit = body.index("_emit_trace(step,")
-    close = body.index("observer.close()", emit - 4000)
-    assert emit < close, "the trace must be printed before the shutdown is attempted"
+    reap = body.index("_reap_observer_out_of_process(observer.close)", emit - 4000)
+    assert emit < reap, "the trace must be printed before the shutdown is attempted"
 
 
 def test_the_shutdown_is_still_attempted(n37):
-    """Skipping it would leak DDS shared memory, which poisons later sessions.
+    """Skipping it entirely would leak DDS shared memory on every session.
 
-    The campaign has already been brought down twice by accumulated segments, so
-    the fix bounds the close rather than removing it.
+    The campaign has already been brought down twice by accumulated segments,
+    so the close is still called -- just in a forked child, where it cannot
+    decide when this process ends.
     """
-    assert "observer.close()" in _source()
-    assert "CLOSE_BUDGET_SEC" in _source()
+    body = _source()
+    assert "observer.close" in body
+    assert "_reap_observer_out_of_process" in body
+    assert "CLOSE_BUDGET_SEC" in body
 
 
 def test_emitting_the_trace_twice_prints_it_once(n37, capsys):
@@ -248,7 +256,7 @@ def test_the_trace_survives_even_with_an_empty_decision_list():
     assert result.returncode == 0
     assert "DECISION_TRACE []" in result.stdout
 
-# ── the shutdown is bounded by a thread, because a signal cannot reach it ────
+# ── the close is no longer bounded here at all ───────────────────────────────
 
 # Measured 2026-09-24, 16 adaptive sessions after the watchdog landed: the trace
 # survived (0/28 -> 7/11 of the killed runs) and the residual fell from +210.9s
@@ -256,79 +264,18 @@ def test_the_trace_survives_even_with_an_empty_decision_list():
 # them. Python runs signal handlers between bytecodes, and rclpy's shutdown
 # blocks inside a C extension holding the GIL, so the SIGALRM was never
 # delivered. A timer cannot bound a call that stops the interpreter from running
-# timers.
+# timers -- and neither can a daemon thread, which needs the same lock to
+# return from its own wait.
+#
+# 2026-09-25 tried bounding it anyway, with a 12s reserve and a kernel-enforced
+# stop: SIGKILL fell 25.3% -> 15.9% but the stop contributed 29.5% of its own,
+# and the eligible rate went 74.4% -> 54.5%. A bounded overrun is still an
+# overrun. The close now runs in a forked child and the parent never waits;
+# that design is tested in test_adaptive_kernel_hard_stop.py.
 
 
-def test_a_prompt_shutdown_reports_success(n37):
-    calls = []
-    assert n37._close_within(lambda: calls.append("closed"), 5.0) is True
-    assert calls == ["closed"]
-
-
-def test_a_hung_shutdown_gives_up_and_says_so(n37):
-    import time
-
-    started = time.monotonic()
-    assert n37._close_within(lambda: time.sleep(30), 0.5) is False
-    assert time.monotonic() - started < 5.0, "it waited for the hung close"
-
-
-def test_a_shutdown_that_raises_is_not_allowed_to_propagate(n37):
-    """Teardown must never turn into an exception that skips the exit."""
-
-    def explode():
-        raise RuntimeError("rclpy said no")
-
-    assert n37._close_within(explode, 5.0) is True
-
-
-def test_the_finally_block_no_longer_relies_on_a_signal_for_the_close():
-    """The mutation this replaced: `_arm_watchdog` around `observer.close()`."""
+def test_the_parent_no_longer_waits_for_the_close_here():
+    """Kept as a tripwire: the retired design must not quietly return."""
     body = _source()
-    assert "_close_within(observer.close" in body
-    assert '_arm_watchdog(CLOSE_BUDGET_SEC' not in body, (
-        "a SIGALRM cannot interrupt a C call that holds the GIL"
-    )
-
-
-def test_the_close_runs_on_a_daemon_thread(n37):
-    """A non-daemon thread would keep the interpreter alive past os._exit."""
-    body = _source()
-    assert "daemon=True" in body
-
-
-@posix_only
-def test_the_process_exits_on_time_even_when_the_shutdown_never_returns():
-    """The end-to-end case, in a real child.
-
-    A C-level hang cannot be simulated from Python, so this uses `time.sleep`,
-    which a signal *could* interrupt. The test is therefore about the ordering
-    and the exit path, not about proving GIL behaviour: the process must leave
-    on its own, with a non-empty trace, without anything killing it.
-    """
-    result = _run("""
-        import time
-        n37._TRACE.append({"step": 3, "decision": "escalate"})
-        n37._emit_trace(3, 42.0)
-        ok = n37._close_within(lambda: time.sleep(60), 1.0)
-        print("CLOSE_RETURNED", ok)
-        import os, sys
-        sys.stdout.flush()
-        os._exit(0)
-    """, timeout=20.0)
-    assert result.returncode == 0
-    assert "CLOSE_RETURNED False" in result.stdout
-    assert "DECISION_TRACE" in result.stdout
-    assert "escalate" in result.stdout
-
-
-@posix_only
-def test_without_the_bound_the_same_shutdown_would_hold_the_process():
-    """The mutation: call the hanging close directly. Must not finish in time."""
-    with pytest.raises(subprocess.TimeoutExpired):
-        _run("""
-            import time
-            n37._TRACE.append({"step": 3, "decision": "escalate"})
-            n37._emit_trace(3, 42.0)
-            time.sleep(60)
-        """, timeout=6.0)
+    assert "_close_within" not in body
+    assert "_reap_observer_out_of_process" in body
