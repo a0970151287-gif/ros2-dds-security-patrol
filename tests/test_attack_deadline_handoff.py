@@ -114,13 +114,24 @@ def test_no_deadline_falls_back_to_the_duration(n37, monkeypatch):
 # ── the arithmetic this replaced ─────────────────────────────────────────────
 
 
-def test_the_measured_boot_exceeded_the_whole_teardown_reserve(n37):
-    """Stated so the reason for the handoff stays legible after the fix."""
+def test_the_measured_boot_exceeded_the_teardown_reserve_of_the_time(n37):
+    """Stated so the reason for the handoff stays legible after the fix.
+
+    ⚠️ Both numbers are literals on purpose. The first version of this test
+    compared the measured boot against the *live* `TEARDOWN_RESERVE_SEC`, so
+    raising that constant on 2026-09-25 made the test fail -- a regression test
+    that documents a past defect must not read a value the fix is allowed to
+    change, or fixing the defect breaks the record of it.
+    """
     measured_boot_sec = 4.85
-    assert measured_boot_sec > n37.TEARDOWN_RESERVE_SEC, (
-        f"boot {measured_boot_sec}s vs reserve {n37.TEARDOWN_RESERVE_SEC}s: the "
-        "reserve was spent before N37's clock started"
+    reserve_at_the_time = 4.0
+    assert measured_boot_sec > reserve_at_the_time, (
+        f"boot {measured_boot_sec}s vs the reserve of {reserve_at_the_time}s: "
+        "the reserve was spent before N37's clock started"
     )
+    # And the handoff is what makes the boot cost irrelevant now: the deadline
+    # is absolute, so boot is charged to the attack window, not to teardown.
+    assert n37.TEARDOWN_RESERVE_SEC > measured_boot_sec
 
 
 def test_stop_by_is_derived_from_the_deadline_not_from_t0():

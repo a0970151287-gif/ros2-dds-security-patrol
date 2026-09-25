@@ -112,7 +112,17 @@ NOTICE_ALERT_FACTOR = 2.5      # 告警速率超過基線這麼多倍
 CONTAINED_ZERO_FRACTION = 0.80  # /cmd_vel 的零速比例
 ESCALATE = 1.6
 BACK_OFF = 0.45
-TEARDOWN_RESERVE_SEC = 4.0
+# 2026-09-25：4.0 → 12.0，依 29 場帶儀器的場次量出來的。
+#
+# 29 場裡 12 場沒能走到收尾的最後一行,而**每一場的 `observer.ok` 都是 True**
+# （到得了的 17 場裡有 10 場是 False——沒有 rclpy 節點可關,收尾就是 0.00s）。
+# 它們全部印出了「⏹ N37 結束」,所以攻擊沒有超時;死的位置在印軌跡與印收尾
+# 分段之間,也就是 `observer.close()` 裡面。它們的 `wall − declared` 中位數是
+# **+3.14 秒**——正好是工廠的寬限期,代表收尾至少要 4 + 3.07 ≈ **7.1 秒**才回得來。
+#
+# 存活那一側最久的一次收尾合計是 3.13 秒,而它只剩 1.56 秒餘裕。
+# 12 秒同時蓋住那兩端,而在最短的 48 秒場次上只吃掉攻擊視窗的 1/6。
+TEARDOWN_RESERVE_SEC = 12.0
 # 收掉一個 burst 子行程的**硬上限**。
 #
 # 2026-09-20 實測：12 場被工廠 SIGKILL（rc=-9），而 rc=-9 與「沒有
@@ -142,6 +152,10 @@ WATCHDOG_MARGIN_SEC = 1.5
 # 的場次沒有一場走到它後面的那一行。仍然要收（殘留的 DDS 共享記憶體段會拖垮
 # 後續場次）,但要有界。
 CLOSE_BUDGET_SEC = 2.0
+# 核心硬停止要比工廠期限早這麼多。工廠在期限時送 SIGTERM、再等 3 秒才 SIGKILL,
+# 所以只要我們在期限之前自己走掉,就不會落在那 3 秒裡——而那 3 秒正是
+# 2026-09-25 量到的 `wall − declared` 中位數 +3.14 秒。
+EXIT_MARGIN_SEC = 1.0
 
 _STOP = False
 # 模組層級,因為訊號處理器要看得到它。main() 直接往這一份 append。
@@ -203,6 +217,46 @@ def _on_watchdog(_signum, _frame) -> None:
     sys.stdout.flush()
     sys.stderr.flush()
     os._exit(0)
+
+
+def _arm_kernel_hard_stop(seconds: float) -> bool:
+    """讓**核心**在 `seconds` 之後終止這個行程。回傳有沒有武裝成功。
+
+    這是唯一一種「rclpy 卡在 C 擴充裡握著 GIL」時仍然有效的期限。
+    Python 的訊號處理器在 bytecode 之間才跑,daemon thread 的
+    `Event.wait()` 也要拿 GIL——2026-09-25 量到 12 場因此死在工廠的寬限期
+    之後,`wall − declared` 中位數 +3.14 秒。
+
+    把 SIGALRM 的**處置**設回 `SIG_DFL`,它的預設動作是終止行程,而那是核心
+    做的,不經過直譯器。所以即使整個 Python 停住,期限仍然會到。
+
+    代價要寫清楚:真的觸發時這一場的 rc 是 `-14` 而不是 0,訓練閘仍然會判它
+    不合格。**但那一場本來就會被工廠 SIGKILL 成 `-9`**,而且是在工廠期限
+    **之後**——那才是會拖垮整批的部分。這裡換到的是「在我們自己選的時間點死,
+    而且死在工廠期限之前」,決策軌跡早已落盤。
+    """
+
+    if not hasattr(signal, "SIGALRM") or not hasattr(signal, "setitimer"):
+        return False
+    if seconds <= 0:
+        return False
+    try:
+        signal.signal(signal.SIGALRM, signal.SIG_DFL)
+        signal.setitimer(signal.ITIMER_REAL, seconds)
+    except (ValueError, OSError):
+        return False
+    return True
+
+
+def _disarm_kernel_hard_stop() -> None:
+    """收尾自己回來了,取消那個期限。"""
+
+    if not hasattr(signal, "setitimer"):
+        return
+    try:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+    except (ValueError, OSError):
+        pass
 
 
 def _close_within(close, budget_sec: float) -> bool:
@@ -514,9 +568,19 @@ def main() -> int:
         _teardown_started = time.monotonic()
         _emit_trace(step, time.monotonic() - t0)
         _traced_at = time.monotonic()
+        # 軌跡已經落盤,剩下的收尾純粹是釋放 DDS 共享記憶體。從這裡開始,
+        # **這個行程絕對不可以活過工廠的期限**——活過去就是 SIGKILL,
+        # 而 SIGKILL 會讓整批在第 5 場不合格時中止（實測 21 次）。
+        _hard_stop_at = (
+            deadline - EXIT_MARGIN_SEC if deadline is not None
+            else _traced_at + CLOSE_BUDGET_SEC
+        )
+        _armed = _arm_kernel_hard_stop(_hard_stop_at - time.monotonic())
         if not _close_within(observer.close, CLOSE_BUDGET_SEC):
             print(f"   ⚠️ observer.close() 超過 {CLOSE_BUDGET_SEC:.0f}s 未回，"
                   "不再等它", flush=True)
+        if _armed:
+            _disarm_kernel_hard_stop()
         _closed_at = time.monotonic()
         sys.stdout.flush()
         sys.stderr.flush()
