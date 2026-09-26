@@ -277,7 +277,26 @@ def run(features: Path, metrics_path: Path, *, scorer: str, n_estimators: int,
 def check_equivalence(folds, reference: Path):
     """重建必須與 Codex 的 artifact 逐位相同，否則本輪不可引用。"""
     ref = json.loads(reference.read_text(encoding="utf-8"))
-    ref_folds = {f["held_family"]: f["metrics"] for f in ref["folds"]}
+    # ⚠️ 這個名字不可以叫 `folds`。2026-09-27 我第一版就是那樣寫的,於是它
+    # **遮蔽掉函式參數 `folds`**（重建出來的那些）,後面的迴圈改成走參照的
+    # fold,得到 `KeyError: 'row'`。而第一次執行沒有咬到,因為那個行程在我改檔
+    # 之前就載入了模組——與 C2C-069 記的「改一個正在被執行的檔案」同一類。
+    reference_folds = ref.get("folds")
+    if not isinstance(reference_folds, list) or not reference_folds:
+        raise SweepError(f"參照裡沒有 folds：{reference}")
+    if "metrics" not in reference_folds[0]:
+        # 2026-09-27 踩到:傳了本工具**自己**先前的輸出當參照,得到的是
+        # `KeyError: 'metrics'`——一個看起來像程式壞掉的訊息,而實際上只是
+        # 參照給錯種類。這個專案被誤導性的錯誤訊息咬過太多次(C2C-048、
+        # C2C-051、C2C-075),所以這裡要講清楚要的是哪一種檔案。
+        raise SweepError(
+            f"參照的形狀不對：{reference.name} 的 fold 沒有 `metrics`。"
+            f"它看起來是 {ref.get('schema_version', '未知 schema')}。"
+            "本工具的等價檢查要比對的是 **family-LOO 的 artifact**"
+            "（`文件/盲點特徵_對familyLOO的影響_2026-09-04/<mode>_<scorer>_full.json`），"
+            "不是本工具自己先前的池化輸出。"
+        )
+    ref_folds = {f["held_family"]: f["metrics"] for f in reference_folds}
     problems = []
     for fold in folds:
         fam = fold["held_family"]

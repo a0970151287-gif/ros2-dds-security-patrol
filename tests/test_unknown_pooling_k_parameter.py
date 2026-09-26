@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import importlib.util
 import inspect
+import json
 import pathlib
 import sys
 
@@ -253,3 +254,74 @@ def test_the_documented_command_passes_the_settings_it_needs():
     named = "文件/未知攻擊場次池化_permissive_2026-09-15.json"
     assert named in usage
     assert (_ROOT / named).is_file()
+
+
+# ─────────────── a wrong reference must say so, not traceback ───────────────
+
+
+def test_a_pooling_artifact_used_as_a_reference_is_rejected_clearly(tmp_path):
+    """Passing the tool's own previous output gave `KeyError: 'metrics'`.
+
+    That reads like broken code rather than a wrong argument, and this project
+    has lost time to misleading failure messages repeatedly (C2C-048, C2C-051,
+    C2C-075). The message now names the kind of file the check actually wants.
+    """
+    wrong = tmp_path / "pooling.json"
+    wrong.write_text(json.dumps({
+        "schema_version": "sros2-firewall-unknown-session-pooling/v1",
+        "folds": [{"held_family": "alert_only",
+                   "row": {"unknown_recall": 0.0},
+                   "any": {"unknown_recall": 0.0}}],
+    }), encoding="utf-8")
+    with pytest.raises(sweep.SweepError) as excinfo:
+        sweep.check_equivalence([], wrong)
+    message = str(excinfo.value)
+    assert "family-LOO" in message
+    assert "unknown-session-pooling/v1" in message
+
+
+def test_a_reference_without_folds_is_rejected(tmp_path):
+    empty = tmp_path / "empty.json"
+    empty.write_text(json.dumps({"folds": []}), encoding="utf-8")
+    with pytest.raises(sweep.SweepError, match="沒有 folds"):
+        sweep.check_equivalence([], empty)
+
+
+def test_the_check_compares_the_rebuilt_folds_not_the_reference_ones(tmp_path):
+    """The bug this catches: a local named `folds` shadowing the parameter.
+
+    2026-09-27 the schema guard above was first written as
+    `folds = ref.get("folds")`, which shadowed the rebuilt folds passed in, so
+    the loop compared the reference against itself and raised
+    `KeyError: 'row'`. Every existing test still passed, because none of them
+    called `check_equivalence` with a non-empty fold list -- the two tests above
+    pass `[]`, so the loop body never ran.
+
+    This one passes real rebuilt folds and a real reference, and disagrees on
+    purpose: the mismatch has to be reported, which is only possible if the
+    rebuilt values were the ones read.
+    """
+    reference = tmp_path / "family_loo.json"
+    reference.write_text(json.dumps({
+        "schema_version": "sros2-firewall-parallel-gate-family-loo/v1",
+        "folds": [{
+            "held_family": "alert_only",
+            "metrics": {
+                "parallel_unknown_recall": 0.25,
+                "normal_false_unknown_rate": 0.0,
+                "parallel_unknown_session_recall": 0.5,
+                "normal_false_unknown_session_rate": 0.0,
+            },
+        }],
+    }), encoding="utf-8")
+
+    rebuilt = [{
+        "held_family": "alert_only",
+        "row": {"unknown_recall": 0.99, "normal_false_unknown_rate": 0.0},
+        "any": {"unknown_recall": 0.5, "normal_false_unknown_rate": 0.0},
+    }]
+    problems = sweep.check_equivalence(rebuilt, reference)
+    assert any("parallel_unknown_recall" in p for p in problems), problems
+
+    rebuilt[0]["row"]["unknown_recall"] = 0.25
+    assert sweep.check_equivalence(rebuilt, reference) == []
