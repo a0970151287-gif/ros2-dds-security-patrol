@@ -56,6 +56,32 @@ _TOOL = _ROOT / "工具腳本" / "measure_campaign_throughput.py"
 VOLUME_FIXED_SEC = 85.7
 VOLUME_SLOPE_SEC_PER_MB = 0.376
 
+# 這個模型對大擷取量已經失效,而且是結構性的。
+#
+# 它是在逐封包抽取被 **300 秒固定逾時砍斷**的資料上配的（2026-09-24）。
+# 2026-09-25 把逾時改成跟著量體走之後,抽取會跑到完,`inside` 因此變長,
+# 而模型不知道這件事。
+#
+# 量了才知道有多嚴重。180 場補跑（四路併行、機器沒跑 campaign）實測
+# `extraction_sec ≈ 17.2 + 0.533 × MB`（R² 0.767）：
+#
+#     pcap    舊模型對**整場**的預測    光抽取一步就要
+#     263 MB        184.6s                 157.4s
+#     500 MB        273.7s                 283.7s   ← 在這裡交叉
+#     795 MB        384.6s                 441.0s
+#
+# **在 500 MB 以上,抽取一個步驟就超過模型對整場的預測。** 那時候殘差不再
+# 是「有沒有退化」的度量,而是「模型錯得多離譜」的度量,拿它當熔斷器會對
+# 健康的 campaign 誤判——而那正是 2026-09-24 把絕對中位數換成殘差要修的
+# 同一種錯誤,只是換了一個方向。
+#
+# ⚠️ 為什麼不直接配一個新的:配不出來。補跑是四路併行、而且機器上沒有
+# campaign 在跑;campaign 裡抽取是序列的但要跟 ROS stack、Gazebo、Zeek、
+# dumpcap 搶。兩個效應方向相反且都量不到——**同一批 pcap 在補跑時只有
+# 14／180 超過 300 秒,在 campaign 裡卻逾時了 94 場**,所以慢的不是 tshark,
+# 是 campaign 自己的負載。真正的重配需要新 campaign 的場次。
+MODEL_INVALID_ABOVE_MB = 500.0
+
 
 def _load_sessions(dataset: pathlib.Path):
     import importlib.util
@@ -101,6 +127,10 @@ def recent_pace(dataset: pathlib.Path, window: int) -> dict:
         ),
         "max_residual_sec": round(max(residuals), 1) if residuals else None,
         "modes": sorted({s["security_mode"] for s in recent if s["security_mode"]}),
+        "model_applicable": (
+            bool(megabytes)
+            and statistics.median(megabytes) <= MODEL_INVALID_ABOVE_MB
+        ),
     }
 
 
@@ -149,6 +179,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if pace["sessions_considered"] < args.minimum_sessions:
         print(f"{line} (too few to judge)")
+        return 0
+    if not pace["model_applicable"]:
+        # 拒絕判斷,而不是套一個已知失效的模型。沉默地套下去會在大擷取量的
+        # 批次上把健康的 campaign 停掉,而停掉的訊息會看起來完全合理。
+        print(f"{line} 模型不適用（中位 pcap > {MODEL_INVALID_ABOVE_MB:g}MB，"
+              "抽取一步就超過模型對整場的預測；需要新場次重配）")
         return 0
     if pace["median_residual_sec"] > args.slow_threshold_sec:
         print(f"{line} SLOW")

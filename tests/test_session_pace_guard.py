@@ -285,3 +285,72 @@ def test_a_missing_capture_does_not_credit_a_session_with_volume(pace, tmp_path)
     for index in range(10):
         _write(tmp_path, index, _expected(0.0) + 120.0, pcap_mb=0.0)
     assert pace.main(["--dataset", str(tmp_path)]) == 4
+
+
+# ── the model is known invalid above a measured size ─────────────────────────
+
+# The volume model was fitted while per-packet extraction was truncated at a
+# fixed 300s. Once the timeout scales with capture size (2026-09-25) extraction
+# runs to completion and `inside` grows, but the model does not know that.
+#
+# Measured over the 180-session recovery run:
+#     extraction_sec ~ 17.2 + 0.533 s/MB   (R2 0.767, 4-way parallel)
+#
+#     pcap     model's whole-session prediction     extraction alone
+#     263MB              184.6s                          157.4s
+#     500MB              273.7s                          283.7s   <- crossover
+#     795MB              384.6s                          441.0s
+#
+# Above the crossover the residual stops measuring degradation and starts
+# measuring how wrong the model is, so the guard must decline rather than fire.
+# That is the same class of error the residual itself was introduced to fix on
+# 2026-09-24, pointing the other way.
+
+_EXTRACTION_FIXED_SEC = 17.2
+_EXTRACTION_SLOPE_SEC_PER_MB = 0.533
+
+
+def _extraction_sec(pcap_mb: float) -> float:
+    return _EXTRACTION_FIXED_SEC + _EXTRACTION_SLOPE_SEC_PER_MB * pcap_mb
+
+
+def test_the_invalidity_threshold_is_where_extraction_overtakes_the_model(pace):
+    """The constant is measured, not chosen.
+
+    Below it the model still leaves room for the rest of the session; above it
+    one step already costs more than the model allows for all of them.
+    """
+    limit = pace.MODEL_INVALID_ABOVE_MB
+    assert _extraction_sec(limit) >= _expected(limit) * 0.95
+    assert _extraction_sec(limit * 0.5) < _expected(limit * 0.5)
+    assert _extraction_sec(limit * 1.5) > _expected(limit * 1.5)
+
+
+def test_a_batch_above_the_limit_is_not_judged(pace, tmp_path):
+    """Declining is the point: a stale model must not stop a healthy campaign."""
+    heavy_mb = 700.0
+    for index in range(10):
+        # Far beyond the stale model, yet entirely explained by extraction.
+        _write(tmp_path, index, _expected(heavy_mb) + 300.0, pcap_mb=heavy_mb)
+    assert pace.main(["--dataset", str(tmp_path)]) == 0
+
+
+def test_declining_says_so_rather_than_reporting_ok(pace, tmp_path, capsys):
+    """"ok" would claim the campaign was checked. It was not."""
+    for index in range(10):
+        _write(tmp_path, index, _expected(700.0) + 300.0, pcap_mb=700.0)
+    pace.main(["--dataset", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert "模型不適用" in out
+    assert "ok" not in out.split("\n")[-2]
+
+
+def test_the_guard_does_not_go_soft_below_the_limit(pace, tmp_path):
+    """The mutation that would matter: declining everywhere instead of above it.
+
+    A 400MB batch is under the crossover, so a genuine +200s stall must still
+    abort the campaign.
+    """
+    for index in range(10):
+        _write(tmp_path, index, _expected(400.0) + 200.0, pcap_mb=400.0)
+    assert pace.main(["--dataset", str(tmp_path)]) == 4
