@@ -36,6 +36,18 @@ def _index(needle: str, body: str) -> int:
     return at
 
 
+# ⚠️ Anchor on the print STATEMENT, not on the phrase.
+#
+# These tests used to search for the bare phrase 觀測者就緒. On 2026-10-02 the
+# constructor gained a comment that explains this very line, so the first
+# occurrence of the phrase moved into prose that sits *above* the construction
+# -- and two tests failed while the property they guard was still true. A
+# text-anchored check on a phrase that also appears in commentary is the same
+# weakness that let a SyntaxError through a whole suite of regex tests
+# (C2C-068).
+_READY_STATEMENT = 'print(f"   觀測者就緒 {'
+
+
 def test_the_banner_is_printed_before_the_observer_is_built():
     """The whole point. If this flips back, 47 sessions go silent again."""
     body = _source()
@@ -58,12 +70,12 @@ def test_the_banner_is_flushed():
 def test_the_observer_reports_how_long_it_took():
     """Banner then silence localises the hang; without this it only narrows it."""
     body = _source()
-    assert "觀測者就緒" in body
+    assert _READY_STATEMENT in body
 
 
 def test_the_observer_timing_line_is_flushed():
     body = _source()
-    at = _index("觀測者就緒", body)
+    at = _index(_READY_STATEMENT, body)
     tail = body[at:at + 300]
     assert "flush=True" in tail, tail[:200]
 
@@ -72,7 +84,7 @@ def test_the_observer_timing_line_comes_after_construction():
     """It reports elapsed time, so printing it first would report zero."""
     body = _source()
     construct = _index("observer = Observer()", body)
-    reported = _index("觀測者就緒", body)
+    reported = _index(_READY_STATEMENT, body)
     assert construct < reported
 
 

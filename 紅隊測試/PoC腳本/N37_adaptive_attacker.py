@@ -307,26 +307,83 @@ class Observer:
     def __init__(self) -> None:
         self.ok = False
         self.blind_reason = ""
+        self.steps: list[tuple[str, float]] = []
         self._node = None
         self._alerts = 0
         self._cmd_total = 0
         self._cmd_zero = 0
+        # ⚠️ 逐步計時,因為一個**卡住**在這裡與一個**例外**長得完全不一樣,
+        # 而先前只量得到後者。
+        #
+        # 2026-10-02 稽核 600 場攻擊場次:75 場被 SIGKILL,其中 **73 場只印了
+        # 橫幅就死了**——沒有外面那行「觀測者就緒」。而那行印在本建構子
+        # **返回之後**,所以例外會被下面的 except 接住、`ok=False`、那行**仍然
+        # 會印**（實測有 1 場是 `可觀測=False`）。73 場連那行都沒有 ⇒ 建構子
+        # 沒有返回 ⇒ **是阻塞不是例外**,而 Python 層的 watchdog 救不了
+        # （C 擴充握著 GIL,C2C-082 量過）。
+        #
+        # 既然擋不住,就要讓它**說出卡在哪一步**。每一步完成就記一筆並立刻
+        # flush;下一輪若再卡住,最後一筆就是卡住的那一步。
+        def mark(label: str, since: float) -> float:
+            now = time.monotonic()
+            self.steps.append((label, now - since))
+            print(f"   觀測者·{label} {now - since:.2f}s", flush=True)
+            return now
+
         try:
+            t = time.monotonic()
             import rclpy
             from geometry_msgs.msg import TwistStamped
             from rclpy.node import Node
+            from rclpy.parameter import Parameter
             from rclpy.qos import QoSProfile, ReliabilityPolicy
             from std_msgs.msg import String
+            t = mark("import", t)
 
             rclpy.init()
             self._rclpy = rclpy
-            self._node = Node("n37_probe")
+            t = mark("rclpy.init", t)
+
+            # 三個開關缺一不可。這是本專案已定案的寫法,N29／N32／N33／N34／N35
+            # 五支腳本都用它,而 **N37 的 Observer 先前一個都沒有**。
+            #
+            #   start_parameter_services=False  → 關掉六個參數服務
+            #   start_type_description_service  → 只能在建構當下用 overrides 關
+            #   enable_rosout=False             → 否則每筆 log 都會上 /rosout
+            #
+            # 漏掉 type description 那個的錯誤訊息是「Failed to initialize type
+            # description service」,**一個字都不提你少關了什麼**（C2C-019 §3
+            # 記成「同一個陷阱第三次出現」）。
+            #
+            # ⚠️ 這一步對本觀測者是**獨立成立的衛生要求**,不是為了修卡住而猜:
+            # 它的 docstring 寫著「只訂閱公開 topic」,而那 14 個服務端點既不被
+            # 使用、又會送流量,讓「被動」這個前提失效。
+            #
+            # ⚠️ 它**有可能**同時是卡住的成因（Enforce 的卡住率是 Permissive 的
+            # 4.5 倍,而那些端點要對 8 個安全節點逐一嘗試配對並失敗）,
+            # 但**本輪沒有證據**,所以不宣稱。上面的逐步計時就是為了判定它。
+            self._node = Node(
+                "n37_probe",
+                start_parameter_services=False,
+                enable_rosout=False,
+                parameter_overrides=[
+                    Parameter(
+                        "start_type_description_service",
+                        Parameter.Type.BOOL,
+                        False,
+                    )
+                ],
+            )
+            t = mark("Node", t)
+
             best_effort = QoSProfile(
                 depth=20, reliability=ReliabilityPolicy.BEST_EFFORT)
             self._node.create_subscription(
                 String, "/security/alerts", self._on_alert, 20)
+            t = mark("sub:alerts", t)
             self._node.create_subscription(
                 TwistStamped, "/cmd_vel", self._on_cmd, best_effort)
+            mark("sub:cmd_vel", t)
             self.ok = True
         except Exception as exc:                     # pragma: no cover
             self.blind_reason = f"{type(exc).__name__}: {exc}"
