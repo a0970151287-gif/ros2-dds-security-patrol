@@ -143,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--slow-threshold-sec",
         type=float,
-        default=60.0,
+        default=90.0,
         help=(
             "median residual above this is a degraded campaign. Residual is the "
             "wall clock minus what the capture size predicts. Healthy runs sit "

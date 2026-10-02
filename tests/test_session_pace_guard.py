@@ -408,8 +408,13 @@ _BINNED_RESIDUALS_POST_0926 = (
 _SHIPPED_AT_MEASUREMENT_FIXED_SEC = 85.7
 _SHIPPED_AT_MEASUREMENT_SLOPE_SEC_PER_MB = 0.376
 
-# The guard's own default, which is what the supervisor passes.
-_GUARD_THRESHOLD_SEC = 60.0
+# The bound the binned residuals were measured against, and the bound the model
+# must stay inside. It deliberately does NOT follow the guard's configured
+# threshold: relaxing the alarm must not licence a more biased model, or the two
+# chase each other and the residual stops meaning "degradation". Raising this to
+# follow the 2026-10-02 relaxation would have silently stopped the OLS mutation
+# test from biting (the refit's error at 200MB is -68.9s, inside 90 but not 60).
+_MODEL_BIAS_BOUND_SEC = 60.0
 
 
 def _observed_sec(pcap_mb: float, residual_sec: float) -> float:
@@ -429,7 +434,7 @@ def test_the_model_stays_unbiased_in_both_directions_where_the_data_lives(pace):
     for megabytes, residual, count in _BINNED_RESIDUALS_POST_0926:
         assert count >= 50, "a thin bin cannot pin a constant"
         error = _observed_sec(megabytes, residual) - pace.expected_sec(megabytes)
-        assert abs(error) < _GUARD_THRESHOLD_SEC, (
+        assert abs(error) < _MODEL_BIAS_BOUND_SEC, (
             f"{megabytes}MB: the model is off by {error:+.1f}s against "
             f"{count} measured sessions, which is at or past the threshold the "
             "guard fires on"
@@ -452,7 +457,7 @@ def test_the_ols_refit_is_refuted_by_the_binned_residuals(pace):
         "the OLS fit and the binned median must disagree, or this test pins "
         "nothing"
     )
-    assert measured_residual < _GUARD_THRESHOLD_SEC / 2
+    assert measured_residual < _MODEL_BIAS_BOUND_SEC / 2
 
 
 def test_the_healthy_calibration_does_not_cover_the_heavy_range(pace):
@@ -471,4 +476,107 @@ def test_the_healthy_calibration_does_not_cover_the_heavy_range(pace):
     assert pinned_max_mb < pace.MODEL_INVALID_ABOVE_MB, (
         "the pinned bins must sit below the limit; a bin above it is not "
         "evidence about a range the guard declines to judge"
+    )
+
+
+# ── 2026-10-02: the threshold was relaxed 60 -> 90 on Jesse's authorisation ───
+#
+# This is a relaxation of a pass criterion, so the basis is pinned here rather
+# than left in a commit message. Measured on 2026-10-02 over dataset_mega:
+#
+#   population                      windows   >+60s        >+90s
+#   certified healthy (restart+)         80   1 (1.2%)     0 (0.0%)
+#   the rest (health uncertified)      1510   458 (30.3%)  371 (24.6%)
+#
+# "Certified healthy" means certified WITHOUT reference to duration -- rc=0
+# 44/44, 98.1% eligible, batches completing 40/40 -- so using it to calibrate a
+# duration threshold is not circular.
+#
+# The cost: 87 windows in the uncertified population fall in (60, 90], residual
+# +60.0 to +89.3. Whether those are misfires or real degradation is NOT known.
+#
+# What makes the relaxation safe is the margin on the degradation this guard
+# exists to catch, which sits far above the new threshold.
+_CONFIGURED_THRESHOLD_SEC = 90.0
+_PREVIOUS_THRESHOLD_SEC = 60.0
+
+# C2C-073's degraded block, and the extraction-cutoff sessions that turned out
+# to BE that degradation (2026-10-02: n=178, residual median +256.0s).
+_KNOWN_DEGRADATION_RESIDUAL_SEC = 116.8
+_EXTRACTION_CUTOFF_RESIDUAL_SEC = 256.0
+
+# Highest windowed median seen on the certified-healthy segment.
+_HEALTHY_WORST_WINDOW_SEC = 69.1
+
+
+def test_the_configured_threshold_is_the_authorised_value(pace):
+    """The tool's default and the supervisor's default must be the same number.
+
+    Two files, one decision. 2026-10-02 (C2C-091) is the precedent: a value was
+    changed at the caller and the consumer rejected it, because nothing checked
+    that the two ends agreed.
+    """
+    parser = pace.build_parser() if hasattr(pace, "build_parser") else None
+    if parser is not None:
+        default = parser.get_default("slow_threshold_sec")
+    else:
+        source = _PACE_PATH.read_text(encoding="utf-8")
+        match = re.search(r'"--slow-threshold-sec",\s*\n\s*type=float,\s*\n\s*'
+                          r'default=([0-9.]+),', source)
+        assert match, "could not read the parser default"
+        default = float(match.group(1))
+    assert default == _CONFIGURED_THRESHOLD_SEC
+
+    supervisor = _SUPERVISOR_PATH.read_text(encoding="utf-8")
+    match = re.search(r"SLOW_SESSION_SEC=\"\$\{SLOW_SESSION_SEC:-([0-9.]+)\}\"",
+                      supervisor)
+    assert match, "could not read the supervisor default"
+    assert float(match.group(1)) == _CONFIGURED_THRESHOLD_SEC, (
+        "the supervisor and the tool disagree about the threshold"
+    )
+
+
+def test_the_threshold_still_sits_below_the_degradation_it_exists_to_catch():
+    """The test that must fail if the threshold is ever raised too far.
+
+    Relaxing towards +116.8s would make the guard unable to see the only
+    degradation it has ever been shown to detect. A 20% margin is required so
+    the next relaxation has to re-measure rather than creep.
+    """
+    assert _CONFIGURED_THRESHOLD_SEC < _KNOWN_DEGRADATION_RESIDUAL_SEC / 1.2, (
+        f"+{_CONFIGURED_THRESHOLD_SEC:.0f}s leaves only "
+        f"{_KNOWN_DEGRADATION_RESIDUAL_SEC - _CONFIGURED_THRESHOLD_SEC:+.1f}s "
+        "of margin on the measured degradation"
+    )
+    # And far below the sessions that turned out to be that degradation.
+    assert _CONFIGURED_THRESHOLD_SEC < _EXTRACTION_CUTOFF_RESIDUAL_SEC / 2
+
+
+def test_the_relaxation_is_above_the_healthy_segments_worst_window():
+    """Why 90 and not 70: the point of the change was to clear the misfire.
+
+    The certified-healthy segment's worst windowed median is +69.1s, which is
+    what produced the single 1/80 misfire at +60s. A threshold between those two
+    values would not have fixed anything.
+    """
+    assert _PREVIOUS_THRESHOLD_SEC < _HEALTHY_WORST_WINDOW_SEC
+    assert _HEALTHY_WORST_WINDOW_SEC < _CONFIGURED_THRESHOLD_SEC
+    headroom = _CONFIGURED_THRESHOLD_SEC - _HEALTHY_WORST_WINDOW_SEC
+    assert headroom > 15.0, "too little headroom for a relaxation to be worth it"
+
+
+def test_the_relaxation_did_not_follow_through_to_the_model_bias_bound():
+    """The bound the binned residuals were measured against must not move.
+
+    If the bias bound tracked the alarm threshold, every relaxation would also
+    licence a more biased model and the residual would stop meaning anything.
+    Concretely: the rejected OLS refit is off by -68.9s at 200MB, which is
+    inside 90 but outside 60 -- so following the relaxation here would have
+    silently disarmed test_the_model_stays_unbiased_in_both_directions.
+    """
+    assert _MODEL_BIAS_BOUND_SEC == _PREVIOUS_THRESHOLD_SEC
+    assert _MODEL_BIAS_BOUND_SEC < _CONFIGURED_THRESHOLD_SEC
+    ols_error_at_200mb = 68.9
+    assert ols_error_at_200mb > _MODEL_BIAS_BOUND_SEC, (
+        "the mutation this bound exists to catch no longer exceeds it"
     )

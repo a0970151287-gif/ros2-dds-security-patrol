@@ -230,7 +230,7 @@ barren=0
 # 沿用舊的 200 會讓閘門放寬三倍多——那個數字是為絕對時間選的,拿來當殘差門檻
 # 就連 09-19 那次都抓不到。3 批 ≈ 12 分鐘。
 MAX_SLOW_BATCHES="${MAX_SLOW_BATCHES:-3}"
-SLOW_SESSION_SEC="${SLOW_SESSION_SEC:-60}"
+SLOW_SESSION_SEC="${SLOW_SESSION_SEC:-90}"
 slow=0
 
 session_count() { ls -d "$DATASET"/*/ 2>/dev/null | wc -l; }
