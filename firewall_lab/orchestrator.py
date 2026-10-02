@@ -917,9 +917,16 @@ def run_session(
             "telemetry_process": telemetry_result,
             "sros2_adapter_process": sros_adapter_result,
             "zeek": zeek_result,
-            # 刻意不列入 training gate：抽取失敗時 Zeek 證據仍然有效，只是
-            # 不能用封包分窗建表。讓一個後處理步驟否決掉一場真實 live 資料
-            # 是不成比例的。
+            # ⚠️ 這段註解在 2026-10-02 之前聲稱這一項被刻意留在閘外,
+            # 而 2026-09-25 已經把 `packet_windows` **加進**閘裡（見上面的
+            # 第六項,並由 tests/test_packet_windows_gate.py 釘住）。
+            # 一個說出程式相反行為的註解,比沒有註解更糟:它會讓下一個人
+            # 以為抽取失敗不影響合格,然後去別的地方找原因。
+            #
+            # 原本那個理由（「讓一個後處理步驟否決掉一場真實 live 資料
+            # 是不成比例的」）被一個量測推翻:缺紀錄不是「少一張表」,
+            # 而是 features.py 對整個資料集 fail-closed,而且會在幾千場
+            # 之後才中止。閘是唯一能在當場擋下來的地方。
             "packet_windows": packet_result,
             "label_interval_written": True,
             "training_gate": (

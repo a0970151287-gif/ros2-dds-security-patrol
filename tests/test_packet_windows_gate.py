@@ -154,3 +154,23 @@ def test_a_failing_extraction_marks_the_session_ineligible_not_the_batch():
     source = inspect.getsource(campaign.execute_campaign)
     assert 'status"] = "ineligible"' in source or "'ineligible'" in source
     assert "MAX_INELIGIBLE_RATE" in inspect.getsource(campaign)
+
+def test_the_module_does_not_claim_packet_windows_is_outside_the_gate():
+    """A comment must not state the opposite of the code beside it.
+
+    Until 2026-10-02 the manifest-assembly block carried a comment saying
+    packet_windows was "刻意不列入 training gate" -- deliberately left out
+    of the gate -- while the gate had included it since 2026-09-25 and
+    test_packet_windows_is_one_of_the_gate_conditions pinned that. A comment
+    that contradicts its own code is worse than no comment: the next reader
+    concludes a failed extraction cannot affect eligibility and goes looking
+    somewhere else. Pin the two statements together.
+    """
+    source = _ORCH.read_text(encoding="utf-8")
+    claims_excluded = "刻意不列入 training gate" in source
+    in_gate = '("packet_windows", packet_windows_ok),' in source
+    assert not (claims_excluded and in_gate), (
+        "the module says packet_windows is deliberately kept out of the "
+        "training gate while the gate lists it -- one of the two is a lie"
+    )
+
