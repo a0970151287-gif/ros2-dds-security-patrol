@@ -92,9 +92,25 @@ start_node /intelligent_defense_node intelligent_defense_node
 echo "→ 等待 Gazebo/bridge/RSP 五條必要資料流..."
 (
   ENFORCE
-  timeout --signal=TERM 130 ros2 run dds_security_monitor \
+# ⚠️ 三層等待窗必須 probe < wrapper < 監督器,否則外層那一層永遠用不到。
+#
+# 2026-09-28 實測:Gazebo 的 launch 在 **118 秒內一個 `process started` 都沒有**,
+# probe 在 120 秒上限放棄,stack 於是 fail-closed 停掉整組——而監督器的輪詢窗是
+# 200 秒,它從來沒有機會等到。症狀是 `⛔ enforce stack 起不來`,而 stack 其實
+# 起得來:七個節點全部正常、HMAC 指紋一致。
+#
+# `gazebo.launch.py` 的 docstring 自己寫了為什麼慢:那些 IncludeLaunchDescription
+# 「會掃過每一個已安裝的 ROS 套件來組 Gazebo 路徑,在 WSL 掛載的工作區上特別慢」。
+# C2C-062 量過它要 39 秒,而那是機器輕鬆的時候。
+#
+# ⚠️ 「為什麼會逐輪變慢」仍然是未解的(drvfs 快取、357 個 ~/.ros/log 目錄、
+# SHM 洩漏都是候選),但**不必先回答它就能修**:把窗放大之後,Gazebo 慢一點不再
+# 等於整批報廢,而真正起不來的時候失敗會落在監督器看得見的那一層。
+#
+# 數字的關係由 tests/test_readiness_window_layers.py 釘住,不要單獨改一個。
+  timeout --signal=TERM 250 ros2 run dds_security_monitor \
     security_readiness_probe --ros-args \
-    --enclave /security_readiness_probe -p timeout_sec:=120.0
+    --enclave /security_readiness_probe -p timeout_sec:=240.0
 ) || {
   echo "⛔ Enforce readiness 失敗；不宣告系統可用，正在停止整組" >&2
   exit 1

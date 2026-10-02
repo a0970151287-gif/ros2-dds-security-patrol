@@ -104,7 +104,7 @@ stack_up() {   # $1 = mode
     tail -5 "$out" | sed 's/^/     /' | tee -a "$LOG"
     return 1
   fi
-  for i in $(seq 1 40); do
+  for i in $(seq 1 60); do
     s=$(bash firewall_lab/live_stack.sh status "$1" 2>&1 | head -1)
     case "$s" in *readiness=ready*) return 0;; esac
     sleep 5
