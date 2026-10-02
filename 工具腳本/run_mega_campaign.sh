@@ -111,7 +111,7 @@ stack_up() {   # $1 = mode
   done
   # 逾時。把原因記下來——原本這裡整個 `>/dev/null`,所以日誌只會寫
   # 「起不來」,而真正的原因（SHM 上鎖失敗）躺在另一個檔案裡沒人看。
-  echo "  ⛔ $1 readiness 逾時（200s）。stack 日誌最後幾行：" | tee -a "$LOG"
+  echo "  ⛔ $1 readiness 逾時（300s）。stack 日誌最後幾行：" | tee -a "$LOG"
   tail -4 "$HOME/.sros2_live_runtime/$1.log" 2>/dev/null     | cut -c1-160 | sed 's/^/     /' | tee -a "$LOG"
   local shm
   shm=$(ls /dev/shm 2>/dev/null | grep -c '^fastrtps' || true)

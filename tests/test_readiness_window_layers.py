@@ -250,3 +250,24 @@ def test_the_running_copy_matches_the_source_copy():
     assert build_copy.read_bytes() == _PROBE_NODE.read_bytes(), (
         "build/ and src/ copies of the readiness probe differ; the running "
         "code is not the code in git -- rebuild the package")
+
+def test_the_timeout_message_states_the_real_window():
+    """The timeout log line must name the window the loop actually waits.
+
+    It said 200s while the loop waited 300s -- the message kept the number
+    from before 2026-10-02 widened the poll. A diagnostic that reports a
+    value the code no longer uses is the cheapest kind of lie to ship and
+    the most expensive to read: on 2026-10-02 four such interfaces in a row
+    sent me after the wrong cause. Derive the expected value from the loop
+    itself so this cannot go stale again the next time the window moves.
+    """
+    text = _SUPERVISOR.read_text(encoding="utf-8")
+    block = text[text.index("stack_up()"):]
+    stated = re.search(r"readiness 逾時（(\d+)s）", block)
+    assert stated, "timeout message not found; it should state how long it waited"
+    assert float(stated.group(1)) == _supervisor_seconds(), (
+        f"the message says {stated.group(1)}s but the loop waits "
+        f"{_supervisor_seconds()}s -- a diagnostic that reports a number the "
+        "code no longer uses is a lie the next reader pays for"
+    )
+
