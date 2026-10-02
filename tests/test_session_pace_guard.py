@@ -354,3 +354,121 @@ def test_the_guard_does_not_go_soft_below_the_limit(pace, tmp_path):
     for index in range(10):
         _write(tmp_path, index, _expected(400.0) + 200.0, pcap_mb=400.0)
     assert pace.main(["--dataset", str(tmp_path)]) == 4
+
+
+# ── 2026-10-02: the re-fit C2C-087 asked for, and why it must not be adopted ──
+#
+# C2C-087 left the model unrefittable: the only completed-extraction data came
+# from a 4-way-parallel backfill with no campaign on the machine, which is the
+# wrong regime. The restarted run supplied the right one -- in-campaign, serial
+# extraction, the volume-scaled timeout -- so the re-fit was finally possible.
+#
+# An ordinary least squares fit on the 733 post-2026-09-26 sessions gives
+#
+#     inside ~ 91.0 + 0.780 s/MB     (R2 0.260)
+#
+# which is more than double the shipped slope, and the obvious reading is that
+# the shipped model now underpredicts. Binning the same sessions by capture size
+# and taking the median residual against the SHIPPED model refutes that reading:
+#
+#     pcap bin (MB)   n    median residual vs shipped model
+#       0-25         156        +7.0s
+#      25-50          74        +7.5s
+#      50-75          61       +52.2s
+#      75-100        127       +11.2s
+#     100-135        141        +5.7s
+#     135-175         92       +15.1s
+#     175-225         61       +17.2s
+#     225-300         16       +64.0s
+#     300-400          5       +99.5s
+#
+# A 0.780 slope would put the 100-135MB bin near +46s. It measures +5.7s. So the
+# OLS slope is an artifact of a handful of high-leverage heavy sessions, and the
+# binned view is the trustworthy one: the shipped model is close to unbiased
+# across the range where the data actually lives.
+#
+# These tests exist so that a future re-fit has to argue with the measurement
+# rather than quietly replace the constants.
+
+# (pcap MB at the bin's midpoint, measured median residual, sessions in the bin)
+_BINNED_RESIDUALS_POST_0926 = (
+    (12.5, 7.0, 156),
+    (37.5, 7.5, 74),
+    (62.5, 52.2, 61),
+    (87.5, 11.2, 127),
+    (117.5, 5.7, 141),
+    (155.0, 15.1, 92),
+    (200.0, 17.2, 61),
+)
+
+# The constants the residuals above were measured against. They are literals on
+# purpose: a historical measurement must not read the value a later change is
+# allowed to move, or fixing the model would erase the evidence about it. That
+# mistake was made on 2026-09-25 and corrected in C2C-081.
+_SHIPPED_AT_MEASUREMENT_FIXED_SEC = 85.7
+_SHIPPED_AT_MEASUREMENT_SLOPE_SEC_PER_MB = 0.376
+
+# The guard's own default, which is what the supervisor passes.
+_GUARD_THRESHOLD_SEC = 60.0
+
+
+def _observed_sec(pcap_mb: float, residual_sec: float) -> float:
+    """The wall clock those sessions actually took, reconstructed."""
+    return (_SHIPPED_AT_MEASUREMENT_FIXED_SEC
+            + _SHIPPED_AT_MEASUREMENT_SLOPE_SEC_PER_MB * pcap_mb
+            + residual_sec)
+
+
+def test_the_model_stays_unbiased_in_both_directions_where_the_data_lives(pace):
+    """Both directions, because each one breaks the guard differently.
+
+    Under-predicting makes it fire on healthy heavy batches. Over-predicting is
+    worse and quieter: it absorbs a real stall, so the guard reports ok while
+    the campaign crawls. Adopting the 0.780 OLS slope fails this at 200MB.
+    """
+    for megabytes, residual, count in _BINNED_RESIDUALS_POST_0926:
+        assert count >= 50, "a thin bin cannot pin a constant"
+        error = _observed_sec(megabytes, residual) - pace.expected_sec(megabytes)
+        assert abs(error) < _GUARD_THRESHOLD_SEC, (
+            f"{megabytes}MB: the model is off by {error:+.1f}s against "
+            f"{count} measured sessions, which is at or past the threshold the "
+            "guard fires on"
+        )
+
+
+def test_the_ols_refit_is_refuted_by_the_binned_residuals(pace):
+    """The decisive arithmetic, kept so the refutation need not be redone.
+
+    If the true slope were the OLS value, the shipped model's residual at
+    117.5MB would be around +46s. It is measured at +5.7s, so the OLS fit is an
+    artifact of the few high-leverage heavy sessions.
+    """
+    ols_fixed, ols_slope = 91.0, 0.780
+    megabytes, measured_residual, _ = _BINNED_RESIDUALS_POST_0926[4]
+    implied_residual = ((ols_fixed + ols_slope * megabytes)
+                        - (_SHIPPED_AT_MEASUREMENT_FIXED_SEC
+                           + _SHIPPED_AT_MEASUREMENT_SLOPE_SEC_PER_MB * megabytes))
+    assert implied_residual > 3 * measured_residual, (
+        "the OLS fit and the binned median must disagree, or this test pins "
+        "nothing"
+    )
+    assert measured_residual < _GUARD_THRESHOLD_SEC / 2
+
+
+def test_the_healthy_calibration_does_not_cover_the_heavy_range(pace):
+    """Why the invalidity limit stays even though the light bins look fine.
+
+    The segment whose health is certified without reference to duration --
+    rc=0 36/36, 97.8% eligible, batches completing 40/40 -- spans only
+    3.3-165.8MB of capture. A limit below that range would decline to judge
+    exactly where the guard has been shown to work.
+    """
+    certified_max_mb = 165.8
+    assert pace.MODEL_INVALID_ABOVE_MB > certified_max_mb
+    # And the measurement cannot be used to lower it: the bins that cross the
+    # threshold hold 16 and 5 sessions.
+    pinned_max_mb = max(mb for mb, _, _ in _BINNED_RESIDUALS_POST_0926)
+    assert pinned_max_mb < pace.MODEL_INVALID_ABOVE_MB, (
+        "the pinned bins must sit below the limit; a bin above it is not "
+        "evidence about a range the guard declines to judge"
+    )
