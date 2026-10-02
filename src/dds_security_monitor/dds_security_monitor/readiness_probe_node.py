@@ -34,15 +34,40 @@ class ReadinessProbe(Node):
             description="Fail-closed wall-clock readiness timeout in seconds",
             read_only=True,
         )
+        # ⚠️ 上限 2026-10-02 從 120 提到 300,因為 120 已經小於 Gazebo 實際需要的時間。
+        #
+        # 實測（09-28 的失敗批次）：`gazebo.launch.py` 起來之後 **118 秒內一個
+        # `process started` 都沒有**（它的 launch.log 只有 204 bytes、兩行），
+        # 而這個 probe 在 120 秒上限放棄,stack 於是 fail-closed 停掉整組。
+        # 症狀是監督器寫 `⛔ stack 起不來`,而 stack 其實起得來:
+        # 七個節點全部正常、HMAC 指紋一致。
+        #
+        # 慢的原因 `gazebo.launch.py` 的 docstring 自己寫了:那些
+        # `IncludeLaunchDescription`「會掃過每一個已安裝的 ROS 套件來組 Gazebo
+        # 路徑,在 WSL 掛載的工作區上特別慢」——而那個成本付在**建 launch
+        # description 的時候**,也就是任何行程啟動**之前**,正好對應我們看到的
+        # 「橫幅印了、urdf 印了、然後什麼都沒有」。
+        #
+        # ⚠️ 這是治症狀不是治本。真正的修法是讓那個掃描不要發生（明確給
+        # `GZ_SIM_RESOURCE_PATH`、不走 include),但那會改動 launch 的結構。
+        # 放寬上限先讓「Gazebo 慢一點」不再等於整批報廢。
+        #
+        # ⚠️ 上限仍然必須存在:它是 fail-closed 的界線。300 秒 × 4 個空轉批次
+        # ≈ 20 分鐘,監督器的 MAX_BARREN_BATCHES 仍然會大聲停下來（C2C-049）。
+        #
+        # ⚠️ 2026-10-02 的教訓:我先前把呼叫端的 `timeout_sec` 改成 240 卻**沒有
+        # 查這裡的範圍**,於是 probe 立刻 `failed closed: timeout_sec must be a
+        # finite value in 1..120`,整次重啟報廢。
+        # `tests/test_readiness_window_layers.py` 現在會比對這兩端。
         self.declare_parameter("timeout_sec", 45.0, descriptor)
         timeout = self.get_parameter("timeout_sec").value
         if (
             isinstance(timeout, bool)
             or not isinstance(timeout, (int, float))
             or not math.isfinite(timeout)
-            or not 1.0 <= float(timeout) <= 120.0
+            or not 1.0 <= float(timeout) <= 300.0
         ):
-            raise ValueError("timeout_sec must be a finite value in 1..120")
+            raise ValueError("timeout_sec must be a finite value in 1..300")
         self.timeout_sec = float(timeout)
         self.seen: set[str] = set()
         # Do not shadow Node._subscriptions: rclpy owns that internal list.
