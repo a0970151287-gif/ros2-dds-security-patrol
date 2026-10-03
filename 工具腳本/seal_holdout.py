@@ -71,8 +71,27 @@ def _sha256_sessions(sessions: list[str]) -> str:
     return hashlib.sha256(joined.encode("utf-8")).hexdigest()
 
 
-def read_test_sessions(features: Path) -> list[str]:
-    """特徵表裡 `split == test` 的場次。不載入 pandas——只讀兩欄。"""
+# ── 兩個 holdout 是兩件不同的東西（2026-10-03）───────────────────────
+#
+# 識別那一半的 holdout 是 `split == test`:場次層級,每一類都在裡面。
+# 未知攻擊那一半的 holdout 是 `novelty_role == novelty_holdout_candidate`:
+# **整個類別**被留出,而它散在 train／validation／test 三處
+# （實測 refresh permissive:test 45 場、novelty 40 場、**交集只有 6 場**）。
+#
+# 所以它們既不是同一批場次,也不是不相交的兩半——`novelty_role` 與 `split`
+# 是**正交**的。一個封印綁一個 scope,兩個封印因此可以並存而互不擋住對方,
+# 而「只開一次」這個性質不必被鬆成「每個消費者各開一次」。
+#
+# ⚠️ 缺 `scope` 欄的封印一律當成 `test`——那不是「未知就猜」,那是 provenance:
+# 這個欄位 2026-10-03 才加,之前的封印在定義上就只封 test。
+# 而**不認識的** scope 一律拒絕,絕不退回預設（測試釘住這兩條的差別）。
+LEGACY_SCOPE = "test"
+HOLDOUT_ROLE = "novelty_holdout_candidate"
+
+
+def _sessions_where(features: Path, columns: tuple[str, ...],
+                    keep, description: str) -> list[str]:
+    """掃兩三欄挑出場次。不載入 pandas。"""
     import csv
 
     sessions: set[str] = set()
@@ -80,20 +99,61 @@ def read_test_sessions(features: Path) -> list[str]:
         reader = csv.DictReader(handle)
         if reader.fieldnames is None:
             raise SealError("特徵表沒有標題列")
-        for column in ("split", "group_id"):
+        for column in columns:
             if column not in reader.fieldnames:
                 raise SealError(f"特徵表缺少 {column} 欄")
         for row in reader:
-            if (row.get("split") or "").strip() == "test":
+            if keep(row):
                 group = (row.get("group_id") or "").strip()
                 if group:
                     sessions.add(group)
     if not sessions:
-        raise SealError("特徵表裡沒有任何 split=test 的列——沒有東西可以封")
+        raise SealError(f"特徵表裡沒有任何{description}的列——沒有東西可以封")
     return sorted(sessions)
 
 
-def create_seal(features: Path, registration: Path) -> dict:
+def read_test_sessions(features: Path) -> list[str]:
+    """特徵表裡 `split == test` 的場次——識別那一半的 holdout。"""
+    return _sessions_where(
+        features, ("split", "group_id"),
+        lambda row: (row.get("split") or "").strip() == "test",
+        " split=test",
+    )
+
+
+def read_novelty_holdout_sessions(features: Path) -> list[str]:
+    """`novelty_role == novelty_holdout_candidate` 的場次。
+
+    那是未知攻擊那一半的 holdout:**整個類別**被留出,所以它跨越三個 split。
+    """
+    return _sessions_where(
+        features, ("novelty_role", "group_id"),
+        lambda row: (row.get("novelty_role") or "").strip() == HOLDOUT_ROLE,
+        f" novelty_role={HOLDOUT_ROLE}",
+    )
+
+
+SCOPE_READERS = {
+    "test": read_test_sessions,
+    "novelty_holdout": read_novelty_holdout_sessions,
+}
+
+
+def scope_of(seal: dict) -> str:
+    """封印的 scope。缺欄是 provenance（舊封印只封 test）,不認識的一律拒絕。"""
+    scope = seal.get("scope", LEGACY_SCOPE)
+    if scope not in SCOPE_READERS:
+        raise SealError(
+            f"不認識的封印 scope：{scope!r}。"
+            "絕不退回預設——一個讀不懂的封印不可以被當成某個已知的封印。"
+        )
+    return scope
+
+
+def create_seal(features: Path, registration: Path,
+                scope: str = LEGACY_SCOPE) -> dict:
+    if scope not in SCOPE_READERS:
+        raise SealError(f"不認識的 scope：{scope!r}（可用：{sorted(SCOPE_READERS)}）")
     if not features.is_file():
         raise SealError(f"特徵表不存在：{features}")
     if not registration.is_file():
@@ -104,9 +164,10 @@ def create_seal(features: Path, registration: Path) -> dict:
     if not isinstance(reg_sha, str) or len(reg_sha) != 64:
         raise SealError("預先註冊裡沒有合法的 registration_sha256")
 
-    sessions = read_test_sessions(features)
+    sessions = SCOPE_READERS[scope](features)
     return {
         "schema_version": SCHEMA,
+        "scope": scope,
         "sealed_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "features_path": str(features),
         "features_sha256": _sha256_file(features),
@@ -119,8 +180,8 @@ def create_seal(features: Path, registration: Path) -> dict:
         "opened_utc": None,
         "opened_reason": None,
         "note": (
-            "封印綁 test 場次清單、特徵表與預先註冊三者。開封是一次性的，"
-            "而評估器必須先開封才准讀 test 列。"
+            f"封印綁 {scope} 場次清單、特徵表與預先註冊三者。開封是一次性的，"
+            "而評估器必須先開封才准讀那些列。"
         ),
     }
 
@@ -129,6 +190,7 @@ def verify_seal(seal: dict, features: Path | None = None) -> dict:
     """封印還成立嗎。給了 features 就一併確認資料沒有被換掉。"""
     if seal.get("schema_version") != SCHEMA:
         raise SealError(f"未知的 schema：{seal.get('schema_version')!r}")
+    scope = scope_of(seal)
 
     problems = []
     recorded = seal["test_sessions_sha256"]
@@ -144,13 +206,14 @@ def verify_seal(seal: dict, features: Path | None = None) -> dict:
             if _sha256_file(features) != seal["features_sha256"]:
                 problems.append("特徵表已經變動——這份封印不適用於這批資料")
             else:
-                current = read_test_sessions(features)
+                current = SCOPE_READERS[scope](features)
                 if _sha256_sessions(current) != recorded:
-                    problems.append("特徵表裡的 test 場次與封印不同")
+                    problems.append(f"特徵表裡的 {scope} 場次與封印不同")
 
     return {
         "valid": not problems,
         "problems": problems,
+        "scope": scope,
         "opened": bool(seal.get("opened")),
         "test_session_count": seal["test_session_count"],
     }
@@ -180,12 +243,23 @@ def open_once(seal_path: Path, reason: str) -> dict:
     return seal
 
 
-def require_unopened(seal_path: Path) -> dict:
-    """評估器在讀 test 列**之前**呼叫這個。已開過就拋。"""
+def require_unopened(seal_path: Path, *, expected_scope: str | None = None) -> dict:
+    """評估器在讀 holdout 列**之前**呼叫這個。已開過就拋。
+
+    `expected_scope` 擋住一個具體的失誤:拿識別那一半的封印去跑 open-set
+    （或反過來）。兩個封印的 schema 相同,所以沒有這道檢查的話它們可以互換,
+    而那會讓一個評估器燒掉另一個評估器的 holdout。
+    """
     seal = json.loads(Path(seal_path).read_text(encoding="utf-8"))
+    scope = scope_of(seal)
+    if expected_scope is not None and scope != expected_scope:
+        raise SealError(
+            f"封印的 scope 是 {scope!r}，而這個評估器要的是 {expected_scope!r}。"
+            "拿錯封印會燒掉另一半的 holdout。"
+        )
     if seal.get("opened"):
         raise SealError(
-            f"holdout 已於 {seal.get('opened_utc')} 開封，不可再讀 test 列"
+            f"holdout 已於 {seal.get('opened_utc')} 開封，不可再讀 {scope} 列"
         )
     return seal
 
@@ -198,6 +272,11 @@ def main(argv: list[str] | None = None) -> int:
     make.add_argument("--features", type=Path, required=True)
     make.add_argument("--registration", type=Path, required=True)
     make.add_argument("--output", type=Path, required=True)
+    make.add_argument(
+        "--scope", choices=sorted(SCOPE_READERS), default=LEGACY_SCOPE,
+        help="要封哪一個 holdout。test＝識別那一半（split==test）；"
+             "novelty_holdout＝未知攻擊那一半（整個類別被留出，跨三個 split）。",
+    )
 
     status = sub.add_parser("status", help="查封印狀態")
     status.add_argument("--seal", type=Path, required=True)
@@ -213,7 +292,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.output.exists():
             print(f"⛔ 封印已存在，拒絕覆寫：{args.output}", file=sys.stderr)
             return 2
-        seal = create_seal(args.features, args.registration)
+        seal = create_seal(args.features, args.registration, args.scope)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
             json.dumps(seal, ensure_ascii=False, indent=2, sort_keys=True) + "\n",

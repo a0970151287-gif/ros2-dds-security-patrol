@@ -1,6 +1,26 @@
 #!/usr/bin/env python3
 """N37 — 自適應攻擊者：會看防禦反應並改變行為的驅動器。
 
+⚠️ **「會看」對持證內鬼不成立。** 2026-10-03 量測：整個 dataset_mega 裡
+`insider_parameter_write` **22／22**、`insider_hmac_forgery` **17／17**
+的觀測者都建不起來（`RCLError: couldn't find all security files!`），
+而其餘 17 個 scenario 的 790 場可判定場次**全部是 0**。那些場次走的是
+`盲打：固定節奏`——**從來不升級**，因為升級的條件是「沒被注意」而一個
+看不到告警的攻擊者永遠無法確認那件事（場次內 intensity sd 0.0454 對
+看得見的 0.3351，第 6 步中位強度 0.414 對 1.280）。
+
+機制與直覺相反——**有憑證才會瞎**：無憑證外部者走 `attacker_environment`
+（沒有 keystore）所以安全層整個不啟用、`Node()` 成功；持證內鬼走
+`insider_environment`（有 keystore）所以 Enforce 下 `Node("n37_probe")`
+要一個那 14 個 enclave 裡沒有的 `/n37_probe` ⇒ fail-closed。
+
+⚠️ **那是威脅模型在正確運作，不是缺陷**：偷到節點 X 憑證的人不可能同時是
+`n37_probe`。所以**不要**為了讓它看得見而在 policy 裡加那條 enclave——
+那會給攻擊者一個它在這個威脅模型下不該有的視野。已做的是**記錄**：
+manifest 的 `result.adaptive_observer` 逐場記 `blind`／`blind_steps`／
+`observer_error`，而 `工具腳本/audit_adaptive_blindness.py` 對既有場次
+唯讀地推導同一件事。
+
 ## 為什麼需要它
 
 2026-09-20 查出來的事實：**27 支 PoC 沒有任何一支有內部隨機性**。同一類的

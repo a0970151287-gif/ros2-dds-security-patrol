@@ -210,6 +210,26 @@ def test_the_flag_is_actually_wired_into_the_manifest():
     assert '"adaptive_observer": adaptive_observer,' in source
 
 
+def test_the_adaptive_claim_is_qualified_where_it_is_made():
+    """"Adaptive attacker" is unqualified in two places, and false in both.
+
+    N37's own docstring said it "watches the defence and changes behaviour",
+    and the campaign supervisor described the whole run as adaptive. Measured
+    across dataset_mega, the two credentialed-insider scenarios are 22/22 and
+    17/17 blind while every other scenario is 0/790 -- so the claim has never
+    held for them. The recording now makes that auditable per session, but an
+    unqualified claim at the top of the file is what the next reader sees
+    first. Pin the qualification where the claim is made.
+    """
+    for path in (_ROOT / "紅隊測試" / "PoC腳本" / "N37_adaptive_attacker.py",
+                 _ROOT / "工具腳本" / "run_mega_campaign.sh"):
+        head = path.read_text(encoding="utf-8")[:4000]
+        assert "insider" in head, f"{path.name} 沒有提到內鬼的例外"
+        assert "adaptive_observer" in head, (
+            f"{path.name} 沒有指向逐場記錄的那個欄位"
+        )
+
+
 # ------------------- decision 3: never raises -------------------
 
 @pytest.mark.parametrize("stdout", [

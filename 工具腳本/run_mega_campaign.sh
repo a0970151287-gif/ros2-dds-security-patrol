@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # 大型資料集 campaign 的監督器（自適應攻擊者 ＋ 場次抖動）。⚠️ 會產生 live 攻擊流量，需要 Jesse 的授權。
 #
+# ⚠️ 「自適應」對**兩個持證內鬼類別不成立**（2026-10-03 量測）：`insider_parameter_write`
+# 與 `insider_hmac_forgery` 的觀測者在 Enforce 下 100% 建不起來（整個 dataset_mega
+# 22／22 與 17／17，而其餘 17 個 scenario 790 場可判定全部 0），所以那些場次是
+# **盲打**。原因是 `insider_environment` 給了 keystore 而 14 個 enclave 裡沒有
+# `/n37_probe` ⇒ fail-closed——**那是威脅模型在正確運作**（偷到節點 X 憑證的人
+# 不可能同時是 `n37_probe`），不是缺陷。manifest 的 `result.adaptive_observer`
+# 逐場記錄它。
+#
 # 用法（背景執行，脫離目前的 shell）：
 #     nohup bash 工具腳本/run_mega_campaign.sh > ~/mega_supervisor.log 2>&1 &
 #
