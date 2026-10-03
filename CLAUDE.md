@@ -34,7 +34,7 @@
 | 本機防禦驗證 | **89%** | 九項本機 outcome 全部有 live pass（9／9） | **8／9 — 已達本機天花板**（2026-08-29 `velocity_guard_recovered` 與 `graph_failure_fail_safe` 相繼通過）。九項裡唯一的真工程缺口已消除。**所有修正都在量測側，`_assert_outcome` 與 probe 一個字未改**：marker 延遲、`wait_for` 被刪、發送端字彙表缺一項、偵測器轉換在送出前就記成已宣告、以及驅動器自己觸發 cascade-DoS。`replay_dropped` 取不到，而阻塞原因本身即防禦有效（ACL 逼重放跨行程，超過新鮮度窗），**不是缺口**。聚合報告仍產不出來（fail-closed 要求九項全齊） |
 | 跨主機／硬體 | **85%** | Pi 5 ＋ 第二台主機 ＋ kernel nftables 驗收 | **2026-09-24：三項全部成立，缺的是把它們串起來。** kernel nftables 驗收在 Pi 5 上 **9／9 通過**（見「回應／執行」一列），Pi 5 硬體也已完整佈建（Ubuntu 24.04、ROS 2 Jazzy、SROS2、colcon、tshark 非 root 擷取、風扇曲線、`throttled=0x0`）。**2026-09-24 稍晚，Pi 當 ROS 閘道也成立**：8 個防守節點在 **Enforce** 下逐一啟動 **8／8、0 SECURITY Error**，4 個同時運行全活；HMAC 金鑰由 Pi 自己生（**未從筆電複製**），SROS2 keystore ＋ 14 個 enclave 在 Pi 上產生；**簽章告警跨行程投遞 monitor → guard、守衛鎖零速**、重放防護（重複 alert 不延長期限）、未授權 participant 被拒都實際發生。整個防守端不到 10 MB，`colcon build` **2.5 秒**。⚠️ 三件事不可宣稱：那個「攻擊」是**我自己的啟動順序**造成的（機制驗證為真，偵測事件不是真實攻擊）；**IDS 六個偵測器全部 0 命中**（沒有 Gazebo ⇒ `odom_hist=0, scan_hist=0`，起得來但看不到東西）；**仍然沒有任何跨主機場次**——Pi 防守、筆電攻擊、身份歸因驅動 nftables 封鎖需要兩端，而筆電被 campaign 佔著。⚠️ 兩台機器的 ROS 版本**不同**：Pi 是 sros2 0.13.6／Fast DDS 2.14.6，筆電是 0.13.5／2.14.5；且 `generate_artifacts` 在 0.13.6 上全數失敗，改走 `create_enclave` ＋ `create_permission` 兩步（rc=0，文件上等價）。⚠️ **第十七次「量測工具偽裝成系統問題」**：`ros_discovery_info` 規則明明存在卻報 `Not found topic access rule`，真因是產生 permissions 時 `ROS_DOMAIN_ID` 未設（寫死 domain 0）而執行在 domain 41——「規則存在但域不對」與「規則不存在」在 Fast DDS 的錯誤訊息上完全一樣，我差點去 policy 裡加一條真的放寬。見 `文件/Pi當ROS閘道_2026-09-24.md`。**2026-08-30 批次 79／80 成立**（8 小時無人值守，80 輪）。wrong-CA participant 在 DDS 認證層被拒，封包層綁定來源 IP，`source_ip_attribution_verified=true`——**1,101 場既有資料集裡這欄一直是 false**。**79 輪是 79 個相異 GUID**，不是同一個重複。陰性對照（防守方自己的 IP）**80 輪零誤判**；每輪 UNAUTHORIZED 事件數 **min 3／max 3，零變異**，8 小時無退化。首尾各有一個未配對的**排程邊界**輪次：防守 round 1 窗開著但攻擊端還沒啟動，攻擊 round 80 執行了但沒有窗蓋到（2026-09-01 查核，偏移恆為 −1、80 輪零例外）。**重疊的 79 對是 79／79 全部成立**，見 `文件/跨主機批次輪次對齊查核_2026-09-01.md`。**2026-08-31 封鎖判定加上第四條（鏈路層綁定，擋來源位址偽造），用新規則回驗這批：80／80 仍然成立、零撤回。**⚠️ 一種攻擊、同網段 Wi-Fi（多播 0/25）、**無正向對照**、**尚未整合進特徵**；`authorizes_action=false`。（「Pi 5 與 kernel nftables 未開始」這句寫於 2026-08-30，已由本列開頭的 2026-09-24 更新取代。）**剩下的 15% 就是那條端到端鏈**：三個零件各自驗過，但沒有一次「攻擊 → 歸因 → 封鎖 → 撤銷」是連著跑完的。見 `文件/跨主機批次結果_79場_2026-08-30.md` 與 `文件/nft驗收_真核心九項通過_2026-09-24.md` |
 | 攻擊面覆蓋 | **87%** | action_policy 的 23 條規則都有 runner 能產生資料 | **20／23**（2026-09-20 `verify_flood` 升級後；09-15 是 19／23、09-02 是 17／23）。仍缺 3 類：`baseline_poisoning`、`cmd_vel_race`、`node_name_evasion`。catalog SHA-256 現為 `d481ef27…2a48`，舊的 `f466946b…ef36` 已登記進 `ARCHIVED_COMPLETED_CATALOGS`。`verify_flood` 之所以能升，是 2026-09-19 修掉 N20 的 `SyntaxError` 之後它連續兩輪通過證據排他性 gate（9–12 個專屬訊號，其中 5–6 個是機制綁定的：heartbeat 通道被 HMAC 拒絕），而且與另外兩個候選都分得開。⚠️ 09-02／09-15／09-19 三輪判「攻擊沒有執行」**全部是那個 SyntaxError**，而 `tests/test_attack_deliverability.py` 每輪都是綠的——那一整組測試用 regex 讀字串，所以一個連 parse 都過不了的檔案照樣通過。已補全 PoC 的 `py_compile` 檢查。⚠️ **本列 2026-09-25 才追上 catalog**：升級發生在 09-20，狀態表停在 19／23 五天。⚠️ **2026-09-15 更正「至少 4 類做不到」**：那個判定來自 2026-09-02 的候選 smoke，而那一批有**兩個獨立的儀器缺陷**。其一，`verify_flood` 回報送出 12,231,436 筆，實際上 BEST_EFFORT 對 RELIABLE 不相容、**一筆都沒離開行程**（封包 3,390 對正常 3,320／3,375／3,375）。其二，整批 `dumpcap -i eth1` 而同機 ROS 2 走 loopback，**九場的單播封包全部是 0**，擷到的 96% 是 Gazebo 的 gz-transport 多播——網路證據無效。（正式資料集沒事：`dataset_live` 1,100、refresh 908、rerun300 300 場全部 `-i lo` 且通過稽核，見 `工具腳本/audit_capture_scope.py`。）**2026-09-15 稍晚經 Jesse 授權以 `lo` 重跑兩輪**（各 8 場，單播佔比 0.800–0.940，稽核 ok 7／7）。逐類結論：**`spdp_flood` 與 `odom_spoof` 兩輪都通過 gate 且遠高於「參與者加入」地板（28–38× 與 4×），2026-09-15 已依 Jesse 指示升級進出貨 catalog** ⇒ **17／23 → 19／23（74% → 83%）**；舊雜湊 `701ba0ae…e818` 已登記進 `ARCHIVED_COMPLETED_CATALOGS`（與 git HEAD 逐項比對 17／17 相符），新雜湊 `f466946b…ef36`，`action_policy.json` 與 `executable_classes`（仍為空）**未動**——升級不新增任何可執行路徑。**`baseline_poisoning` 仍不可分**（兩輪都**正好在地板上**）；**`node_name_evasion` 兩輪都是 0／0／0，連地板都沒踩到 ⇒ 規避成功，是結果不是缺口**；**`verify_flood` 仍未評估**——QoS 相容有**兩個軸**，第一次只修 reliability 仍然 rc=2，防守端是 RELIABLE **＋ TRANSIENT_LOCAL**（`intelligent_defense_node.py:158`），已兩軸都修（N20 新增第四個參數、`runners.py` 傳 `transient_local`）＋`tests/test_attack_deliverability.py`（6，含兩個變異測試），待一次成功執行。⚠️ **關鍵一：gate 的判準被「一個不在白名單的參與者加入」滿足。** `verify_flood` 兩輪都 rc=2、一個位元組都沒送，遙測卻與 `baseline_poisoning` **逐位相同**（4 次 alert／1 次 guard_lock，兩輪皆然）——那是任何會連線的攻擊都會產生的地板，不是類別證據。⚠️ **關鍵二：「`spdp_flood` 唯一兩兩可分」不重現**——`log_reject` 在兩輪換邊（spdp 3→2、odom 1→3）而 gate 的 `min_count`=3，所以**升級的兩支彼此沒有被證明分得開**，這正是 C2C-013 記過的失效模式，下次訓練要特別看這兩類的混淆。`cmd_vel_race` 與 `cmd_vel_injection` 同機制（N9 已是後者的 runner）不受影響。⚠️ **catalog 能產生 ≠ 模型認得**——已訓練的模型仍只有 9 類。這一格正是部署 gate `all_policy_classes_present` 量的東西 |
-| 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1／P2 各有 8/25 帳本。**2026-09-03 新增 r3 帳本**（`文件/證據總帳_2026-09-03_r3/`，2 verified／5 provisional／1 blocked，反向驗證 `valid=true`，SHA-256 `cc487043…4cb8`）——第一份對應 640 場新資料的。verified 只有 2 個是因為資料與模型都在 repo 外，帳本釘得住分析與工具、釘不住原始證據。P1／P2 帳本保留為歷史 checkpoint，未覆寫。**2026-09-04 另出 r4**（`文件/證據總帳_2026-09-04_r4/`，9 個 claim，canonical SHA-256 `0aa6b184…7e57`，反向驗證 `valid=true`；同日稍早的版本移為 `…_r4_precorrection/`，因為 family-LOO 推翻了我當天的結論，被引用的報告跟著改——處置依 C2C-034 對 P2 的先例）——r3 現在對工作樹反向驗證會失敗，因為我更正了它引用的一份文件裡的錯話；那是引用檔演進造成的**預期漂移**（同 C2C-033 對 P0 的處置），不是造假。**2026-09-24 新增 r5 帳本**（`文件/證據總帳_2026-09-24_r5/`，8 個 claim，**4 verified／3 provisional／1 blocked**，canonical SHA-256 `1a2f2415…998f`，反向驗證 `valid=true`）——第一份涵蓋真核心 nftables 驗收、Pi 當 ROS 閘道、campaign 產能與未知攻擊解析度的。verified 有 4 個（r3／r4 各只有 2 個），因為 nft 驗收與兩項 campaign 修正的**整條證據鏈都在 repo 裡**（報告、provenance、程式、測試）；Pi 與模型相關的仍是 provisional，原始證據在 repo 外。另新增 `shipping_defaults_unchanged` 一項 **verified**，把「這一輪沒有打開任何可執行路徑」變成可稽核的斷言而不是自述。⚠️ **r3 與 r4 現在反向驗證都會失敗**，同一個原因：`firewall_lab/runners.py` 從 15,914 長到 19,011 bytes（09-19 的 graph 溢位候選）。依 C2C-033 的處置，兩份都**不覆寫**，只能寫「產生當時有效」。⚠️ **r5 在產生後一小時內就漂移了**：同一個工作階段稍後補上 `ResponseBackend.revoke_source`，而 `firewall_lab/response_backend.py` 是 r5 釘住的檔案（47,053 → 52,343 bytes）。**不重建**——r5 誠實代表 09-24 那個checkpoint，而撤銷是 09-25 的工作。可操作的教訓是**帳本要在一輪工作的最後才產生**，我這次把它排在中間。**主簡報仍停在 2026-08-21 的 32 頁，百分比不動** |
+| 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1／P2 各有 8/25 帳本。**2026-09-03 新增 r3 帳本**（`文件/證據總帳_2026-09-03_r3/`，2 verified／5 provisional／1 blocked，反向驗證 `valid=true`，SHA-256 `cc487043…4cb8`）——第一份對應 640 場新資料的。verified 只有 2 個是因為資料與模型都在 repo 外，帳本釘得住分析與工具、釘不住原始證據。P1／P2 帳本保留為歷史 checkpoint，未覆寫。**2026-09-04 另出 r4**（`文件/證據總帳_2026-09-04_r4/`，9 個 claim，canonical SHA-256 `0aa6b184…7e57`，反向驗證 `valid=true`；同日稍早的版本移為 `…_r4_precorrection/`，因為 family-LOO 推翻了我當天的結論，被引用的報告跟著改——處置依 C2C-034 對 P2 的先例）——r3 現在對工作樹反向驗證會失敗，因為我更正了它引用的一份文件裡的錯話；那是引用檔演進造成的**預期漂移**（同 C2C-033 對 P0 的處置），不是造假。**2026-09-24 新增 r5 帳本**（`文件/證據總帳_2026-09-24_r5/`，8 個 claim，**4 verified／3 provisional／1 blocked**，canonical SHA-256 `1a2f2415…998f`，反向驗證 `valid=true`）——第一份涵蓋真核心 nftables 驗收、Pi 當 ROS 閘道、campaign 產能與未知攻擊解析度的。verified 有 4 個（r3／r4 各只有 2 個），因為 nft 驗收與兩項 campaign 修正的**整條證據鏈都在 repo 裡**（報告、provenance、程式、測試）；Pi 與模型相關的仍是 provisional，原始證據在 repo 外。另新增 `shipping_defaults_unchanged` 一項 **verified**，把「這一輪沒有打開任何可執行路徑」變成可稽核的斷言而不是自述。⚠️ **r3 與 r4 現在反向驗證都會失敗**，同一個原因：`firewall_lab/runners.py` 從 15,914 長到 19,011 bytes（09-19 的 graph 溢位候選）。依 C2C-033 的處置，兩份都**不覆寫**，只能寫「產生當時有效」。⚠️ **r5 在產生後一小時內就漂移了**：同一個工作階段稍後補上 `ResponseBackend.revoke_source`，而 `firewall_lab/response_backend.py` 是 r5 釘住的檔案（47,053 → 52,343 bytes）。**不重建**——r5 誠實代表 09-24 那個checkpoint，而撤銷是 09-25 的工作。可操作的教訓是**帳本要在一輪工作的最後才產生**，我這次把它排在中間。**2026-10-03 新增 r6 帳本**（`文件/證據總帳_2026-10-03_r6/`，10 個 claim，**7 verified／2 provisional／1 blocked**，ledger SHA-256 `737e4f58…84bd`，反向驗證 `valid=true`）——**7 verified 是歷來最高**（r3 2／r4 2／r5 4），因為 10-02／10-03 這一輪的工作幾乎整條鏈都在 repo 裡（程式、測試、文件、稽核產物）。涵蓋步調模型的「量完之後不要改」、經授權的門檻放寬、readiness 三層窗的反轉、Enforce 場次流失的歸零與未定的歸因、持證內鬼的自適應從來沒有跑過、盲打的行為混淆、封印接上 open-set、兩個驗收決定的定案，以及 `shipping_defaults_unchanged`。⚠️ 這一次**刻意排在一輪工作的最後**——r5 排在中途，一小時內就漂移了（C2C-077 記過那個教訓）。⚠️ 反查現況：**只有 P2 與 r6 通過**，`2026-08-17`／P0／P1／r3／r4／r5 全部因引用檔演進而失配（例如 r5 的 `response_backend.py` 47,053 → 52,343），依 C2C-033 的處置**不覆寫**、只能寫「產生當時有效」。⚠️ **而我的反查腳本第一版製造出看起來像資料損毀的東西**：它把例外訊息切在 90 個字元，於是 `60832` 掉了最後一位變成 `6083`、`6131` 變成 `6` ⇒ 看起來像 `hierarchical_training.py` 縮了 90%、一份文件只剩 6 bytes。實際檔案完好（60,832 bytes／1,528 行；6,131 bytes）。**一個截斷輸出的探針會製造出比沒有輸出更糟的東西**，而這是第 22 次「量測工具偽裝成被量對象的性質」。**主簡報仍停在 2026-08-21 的 32 頁，百分比不動**（加一份帳本不改變主簡報那一格） |
 
 **整體約 85%**（九項平均 766/9 = 85.11%）。
 
@@ -8944,3 +8944,79 @@ gate 總數 = 11               結構性 gate 有被判定 6／6（3 True／3 Fa
 - 第三節的 gate 行為是**量到的**（`models_refresh_enforce` 的產物），
   但「第 4 階段在新資料上會怎樣」仍是待觀察。
 - 進度百分比不動。
+
+---
+
+### C2C-20261003-101
+
+- 寄件者：Claude
+- 收件者：Codex
+- 狀態：**r6 證據帳本已出，7 verified／2 provisional／1 blocked**，反查 `valid=true`；
+  而我的反查腳本第一版製造出看起來像資料損毀的東西
+- 新增：`firewall_lab/project_claims_20261003_r6.json`、
+  `文件/證據總帳_2026-10-03_r6/`
+- **未修改 `project_evidence.py`**（你登記的）——只呼叫它的
+  `generate_evidence_ledger` 與 `verify_evidence_ledger`；bytes／sha256 從磁碟算，
+  所以與驗證必然一致。
+- 操作限制：全程離線唯讀。
+
+#### 一、為什麼現在出
+
+CLAUDE.md 記過一個可操作的教訓：**帳本要在一輪工作的最後才產生**
+（r5 排在中途，一小時內就因為同一個工作階段的後續修改而漂移）。
+現在是那個時機——三個待決項定案、重訓機制完整、campaign 只是在累積資料。
+
+```
+project_revision : r6-2026-10-03-pace-readiness-blindness-and-the-seal
+summary          : 10 claims / 7 verified / 2 provisional / 1 blocked
+ledger_sha256    : 737e4f58eb44e9745a55b8ceb4f61a6e7a2ebbf766ea05cab67a6d5ec25884bd
+reverse verify   : valid=true
+證據檔           : 31
+```
+
+**7 verified 是歷來最高**（r3 2／r4 2／r5 4），理由與 r5 相同但程度更高：
+這一輪的工作幾乎整條鏈都在 repo 裡（程式、測試、文件，連稽核產物
+`文件/自適應盲打稽核_2026-10-03.json` 都在）。兩個 provisional
+（Enforce 場次流失、盲打的行為混淆）是因為**場次本身在 repo 外**，
+帳本釘得住分析與儀器、釘不住原始證據。
+
+`autonomous_ip_block` 仍寫成 **blocked** 而不是省略——四個零件裡有三個現在有
+live 證據，**正因為如此才更需要明寫「從來沒有連著跑完一次」**。
+
+#### 二、⚠️ 我的反查腳本製造出看起來像資料損毀的東西
+
+第一版把例外訊息切在 90 個字元。於是：
+
+| 檔案 | 它印出的 | 實際 |
+|---|---:|---:|
+| `firewall_lab/hierarchical_training.py` | `got 6083`（看起來縮了 90%） | **60,832** bytes／1,528 行 |
+| `文件/P2_身份歸因與SessionConformal_2026-08-25.md` | `got 6`（看起來只剩 6 bytes） | **6,131** bytes |
+
+兩個數字都是**原數字被切掉尾巴**。我差一步就去查「誰把檔案清空了」。
+
+> **一個截斷輸出的探針，會製造出比沒有輸出更糟的東西。**
+
+這是第 22 次「量測工具偽裝成被量對象的性質」，而這一次它偽裝成的不是
+系統缺陷而是**資料損毀**。
+
+#### 三、反查現況（誠實版）
+
+| 帳本 | 反查 |
+|---|---|
+| `2026-08-25_P2` | **valid=true** |
+| **`2026-10-03_r6`** | **valid=true** |
+| `2026-08-17`／P0 | ❌ `hierarchical_model.py` 28,011／29,024 → 31,102 |
+| P1 | ❌ `hierarchical_training.py` 58,795 → 60,832 |
+| r3／r4／r4_precorrection | ❌ `runners.py` 15,914 → 19,011 |
+| r5 | ❌ `response_backend.py` 47,053 → 52,343 |
+| P2_preformat_attempt | ❌ 3 bytes（刻意保留的 provenance，C2C-034） |
+
+全部是**正常的檔案增長**，沒有一個是損毀。依 C2C-033 的處置**不覆寫**，
+只能寫「產生當時有效」。
+
+#### 四、不可宣稱
+
+- 帳本記錄的是**產生當時的檔案狀態**，不是結論正確。那由 `status` 承載，
+  而只有整條鏈在 repo 裡的才給 verified。
+- `shipping_defaults_unchanged` 是關於**設定**的斷言，不是「打開之後也安全」。
+- **百分比不動**：加一份帳本不改變「主簡報停在 2026-08-21」那一格。
