@@ -1,0 +1,1035 @@
+{
+  "affects_training_gate": false,
+  "blind": 113,
+  "blind_rate_of_determinable": 0.0741,
+  "blind_sessions": [
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260919T200819522453Z_insider_parameter_write_194fe306",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260919T201452912532Z_insider_parameter_write_9d16ab4d",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260919T202648163546Z_insider_hmac_forgery_ff5c7153",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260919T211924764367Z_insider_parameter_write_b7b5b517",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260919T214031335405Z_insider_hmac_forgery_77aff93a",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260919T214605176611Z_insider_parameter_write_a4aba166",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260919T220324571121Z_insider_hmac_forgery_edee074c",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260919T225205502462Z_insider_hmac_forgery_2f681619",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260919T230542531000Z_insider_hmac_forgery_ccd48111",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260919T231444932091Z_insider_parameter_write_689dbaa6",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260919T232242130115Z_insider_parameter_write_8d876855",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260920T003730134267Z_insider_hmac_forgery_1e6849d7",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T032035067892Z_insider_parameter_write_65b0a136",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T032649522794Z_insider_parameter_write_0931271b",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260920T042817288591Z_insider_hmac_forgery_0d781a19",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T045823147669Z_insider_parameter_write_1efc954f",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T050302620770Z_insider_parameter_write_97e02a2d",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T054704801300Z_insider_parameter_write_2eeed9ce",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260920T055118987506Z_insider_hmac_forgery_91999809",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T072548056491Z_insider_parameter_write_515c2a0b",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T082308957271Z_insider_parameter_write_4636f326",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260920T082438242216Z_insider_hmac_forgery_00ec98ec",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260920T082618047858Z_insider_hmac_forgery_5029066e",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T082750827510Z_insider_parameter_write_a886b2ae",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T082919054594Z_insider_parameter_write_8c375c7c",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260920T083048018207Z_insider_hmac_forgery_6ba445f7",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260920T083214280190Z_insider_hmac_forgery_07d6eb52",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T083330495586Z_insider_parameter_write_bdf64efc",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T083450569431Z_insider_parameter_write_33c115ec",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T083617533976Z_insider_parameter_write_4985da0e",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T083741701950Z_insider_parameter_write_12df802e",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T083919713518Z_insider_parameter_write_2eeac2ea",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260920T084059988624Z_insider_parameter_write_46eca5a0",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260920T084214495365Z_insider_hmac_forgery_c6ff5828",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260920T084345512219Z_insider_hmac_forgery_516d0e14",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260920T090318415198Z_insider_hmac_forgery_73b2dce2",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260923T193554089197Z_insider_hmac_forgery_f7263eb8",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260923T193831672019Z_insider_parameter_write_34b38de3",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260923T194049609533Z_insider_parameter_write_30156f58",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T012012216414Z_insider_hmac_forgery_7962dc2d",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T014801208913Z_insider_hmac_forgery_925e9382",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260924T021006423120Z_insider_parameter_write_914ac959",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260924T052036610960Z_insider_parameter_write_76fb12df",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T082419880286Z_insider_hmac_forgery_bf647b21",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T095404094639Z_insider_hmac_forgery_2e4228d4",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T112457749693Z_insider_hmac_forgery_b085629d",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T114222244391Z_insider_hmac_forgery_3ecefb49",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T165729613681Z_insider_hmac_forgery_97d4d294",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 3,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T180639612303Z_insider_hmac_forgery_5431aca9",
+      "total_steps": 3
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T190149326089Z_insider_hmac_forgery_5cd97fa2",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T194338214968Z_insider_hmac_forgery_90c11dc9",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T195807518989Z_insider_hmac_forgery_c4e696ed",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 3,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T203948466830Z_insider_hmac_forgery_8cf0e2db",
+      "total_steps": 3
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T212203385413Z_insider_hmac_forgery_76e319a4",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 3,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260924T220413366278Z_insider_parameter_write_0c71c48f",
+      "total_steps": 3
+    },
+    {
+      "blind_steps": 2,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T221807556285Z_insider_hmac_forgery_4b800e2b",
+      "total_steps": 2
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260924T230720876905Z_insider_parameter_write_0205c0ba",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T232753224803Z_insider_hmac_forgery_14c00cd9",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20260924T233441233624Z_insider_hmac_forgery_0ae3cbec",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260925T051401655832Z_insider_parameter_write_dfee28a8",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20260927T101828213197Z_insider_parameter_write_410d5443",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T095255743609Z_insider_parameter_write_6daee2fd",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T095526571397Z_insider_hmac_forgery_eb476019",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T100123627741Z_insider_parameter_write_d28e413b",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T105720532319Z_insider_parameter_write_ab332c10",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T114545974731Z_insider_hmac_forgery_e7300453",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T115624343930Z_insider_parameter_write_f8c417b9",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T120219363667Z_insider_parameter_write_fc804fe8",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T121621424722Z_insider_parameter_write_88e010de",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T122031258189Z_insider_hmac_forgery_8bc95a07",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T162705610159Z_insider_hmac_forgery_e2370987",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T163200635226Z_insider_parameter_write_d859a401",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T164254936491Z_insider_parameter_write_f4d1d5ff",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T170118929199Z_insider_parameter_write_1175b4aa",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T170800860631Z_insider_hmac_forgery_4fffca31",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T172355151305Z_insider_hmac_forgery_9247c5d2",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T172558225300Z_insider_hmac_forgery_43dc25b7",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T172947172879Z_insider_parameter_write_c567e9d5",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T173129388224Z_insider_parameter_write_251f2589",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T173342104366Z_insider_parameter_write_dd31043e",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T180814226185Z_insider_parameter_write_88edd5af",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T181027490093Z_insider_parameter_write_d3f48c87",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T181609055260Z_insider_parameter_write_40fb651b",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T182915127236Z_insider_hmac_forgery_f8396939",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T183242389345Z_insider_parameter_write_a803662c",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T183656752972Z_insider_parameter_write_3c63b641",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T184242771486Z_insider_hmac_forgery_d37d1b65",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T184449547014Z_insider_parameter_write_267cf73b",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T203652796072Z_insider_hmac_forgery_841f4a2e",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T203840266492Z_insider_parameter_write_e9b1faeb",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T204110299169Z_insider_hmac_forgery_002f1359",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T204316093523Z_insider_parameter_write_4b237886",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T204541579854Z_insider_hmac_forgery_3b76a083",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T211356452124Z_insider_parameter_write_8e05d477",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T211936661334Z_insider_parameter_write_72467e57",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T214313847970Z_insider_parameter_write_f3b2b311",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T215706303206Z_insider_parameter_write_5248dbba",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T215836445384Z_insider_parameter_write_02bb822b",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T220934232064Z_insider_hmac_forgery_7bdbd9af",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T221844496642Z_insider_parameter_write_946e695c",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T222655993582Z_insider_parameter_write_c886d0f3",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261002T223654800810Z_insider_parameter_write_7edb0e50",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 4,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T224856477738Z_insider_hmac_forgery_410d529c",
+      "total_steps": 4
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T225019539031Z_insider_hmac_forgery_ff14961f",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261002T230250444979Z_insider_hmac_forgery_c8e9f42f",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261003T013558618127Z_insider_hmac_forgery_c24126c7",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261003T014814191002Z_insider_hmac_forgery_467ff1b5",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261003T015025363353Z_insider_hmac_forgery_bee22940",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_parameter_write",
+      "security_mode": "enforce",
+      "session": "20261003T015516050956Z_insider_parameter_write_c58981a5",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261003T020534291545Z_insider_hmac_forgery_94dfdae5",
+      "total_steps": 5
+    },
+    {
+      "blind_steps": 6,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261003T024048871638Z_insider_hmac_forgery_9effb5c9",
+      "total_steps": 6
+    },
+    {
+      "blind_steps": 7,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261003T025628486869Z_insider_hmac_forgery_d85387fe",
+      "total_steps": 7
+    },
+    {
+      "blind_steps": 5,
+      "observer_error": "⚠️ 觀察不到任何東西（RCLError: error creating node: couldn't find all security files!, at ./src/participant.cpp:360, at ./src/rcl/node.c:252）——盲打模式。Enforce 下這是預期的。",
+      "scenario": "insider_hmac_forgery",
+      "security_mode": "enforce",
+      "session": "20261003T032310201589Z_insider_hmac_forgery_26b59041",
+      "total_steps": 5
+    }
+  ],
+  "dataset": "/home/jesse/dataset_mega",
+  "determinable": 1524,
+  "per_scenario": {
+    "alert_replay": {
+      "observed": 84,
+      "sighted": 84,
+      "unknown": 18
+    },
+    "cmd_vel_injection": {
+      "observed": 73,
+      "sighted": 73,
+      "unknown": 13
+    },
+    "cross_channel_relay": {
+      "observed": 75,
+      "sighted": 75,
+      "unknown": 11
+    },
+    "discovery_recon": {
+      "observed": 80,
+      "sighted": 80,
+      "unknown": 5
+    },
+    "health_spoof": {
+      "observed": 91,
+      "sighted": 91,
+      "unknown": 10
+    },
+    "heartbeat_replay": {
+      "observed": 86,
+      "sighted": 86,
+      "unknown": 20
+    },
+    "insider_hmac_forgery": {
+      "blind": 55,
+      "observed": 55
+    },
+    "insider_parameter_write": {
+      "blind": 58,
+      "observed": 58
+    },
+    "mission_spoof": {
+      "observed": 79,
+      "sighted": 79,
+      "unknown": 11
+    },
+    "node_churn": {
+      "observed": 96,
+      "sighted": 96,
+      "unknown": 11
+    },
+    "normal_patrol": {
+      "not_applicable": 335
+    },
+    "odom_spoof": {
+      "observed": 87,
+      "sighted": 87,
+      "unknown": 11
+    },
+    "oversized_scan": {
+      "observed": 70,
+      "sighted": 70,
+      "unknown": 10
+    },
+    "parameter_flood": {
+      "observed": 82,
+      "sighted": 82,
+      "unknown": 12
+    },
+    "parameter_tamper": {
+      "observed": 83,
+      "sighted": 83,
+      "unknown": 8
+    },
+    "scan_drift": {
+      "observed": 83,
+      "sighted": 83,
+      "unknown": 7
+    },
+    "sensor_status_spoof": {
+      "observed": 79,
+      "sighted": 79,
+      "unknown": 7
+    },
+    "spdp_flood": {
+      "observed": 94,
+      "sighted": 94,
+      "unknown": 13
+    },
+    "unauthorized_participant": {
+      "observed": 87,
+      "sighted": 87,
+      "unknown": 14
+    },
+    "verify_flood": {
+      "observed": 82,
+      "sighted": 82,
+      "unknown": 13
+    }
+  },
+  "per_security_mode": {
+    "enforce": {
+      "blind": 113,
+      "not_applicable": 99,
+      "observed": 514,
+      "sighted": 401,
+      "unknown": 125
+    },
+    "permissive": {
+      "not_applicable": 236,
+      "observed": 1010,
+      "sighted": 1010,
+      "unknown": 69
+    }
+  },
+  "schema": "sros2-firewall-adaptive-blindness-audit/v1",
+  "sessions_complete": 2053,
+  "undeterminable": 529,
+  "undeterminable_reasons": {
+    "decision_trace_empty": 2,
+    "no_attack_process": 335,
+    "no_decision_trace": 192
+  },
+  "wrote_to_session_directories": false
+}

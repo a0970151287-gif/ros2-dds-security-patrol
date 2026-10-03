@@ -496,6 +496,99 @@ def _extract_packet_windows(
     return {"status": "complete", "return_code": 0, "packets": kept}
 
 
+# ── 自適應觀測者的盲打旗標（2026-10-03）───────────────────────────────
+#
+# N37 已經誠實地記了三次:`盲打={not observer.ok}`、決策軌跡裡每一步的
+# `"blind"`、以及一行帶原因的警告。**而沒有人讀。** 實測整個 dataset_mega:
+# `insider_parameter_write` 22／22、`insider_hmac_forgery` 17／17 全部盲打,
+# 其餘 17 個 scenario、790 場可判讀全部 0——而 manifest、訓練閘與特徵表
+# 都不知道這件事,所以「自適應攻擊者」這個標籤對那兩個類別從來沒有成立過。
+#
+# 機制與直覺相反:**有憑證才會瞎**。無憑證外部者走 `attacker_environment`
+# （沒有 keystore）所以安全層整個不啟用、`Node()` 成功;持證內鬼走
+# `insider_environment`（有 keystore）所以 Enforce 下 `Node("n37_probe")`
+# 要一個那 14 個 enclave 裡沒有的 `/n37_probe` ⇒ fail-closed。
+#
+# ⚠️ 那是威脅模型在**正確運作**:偷到節點 X 憑證的人不可能同時是 `n37_probe`。
+# 所以這裡記錄它,**不是**去 policy 裡加一條 enclave 讓攻擊者看得見——那會給
+# 攻擊者一個它在這個威脅模型下不該有的視野。
+#
+# 三個刻意的決定,各有一個測試:
+#
+# 1. **三值,不是布林。** 判不出來時 `blind` 是 `None`,因為「缺紀錄」
+#    **不可以**讀成「觀測者是好的」——那正是這整件事的失效形態。
+# 2. **不進 `gate_failures`。** 記錄不是放寬;盲打場次的攻擊本身是真的執行了,
+#    判它不合格會丟掉真實證據。要不要影響閘是另一個決定。
+# 3. **永不拋。** 一份壞掉的日誌不可以毀掉一場 live 場次。
+#
+# `any()` 而不是 `all()`:`observer.ok` 在建構時就定了,所以每一步應該一致;
+# 真的不一致時「曾經瞎過」是保守的讀法,而 `blind_steps`／`total_steps`
+# 讓混合情形看得見,不被折疊掉。
+_DECISION_TRACE_MARKER = "DECISION_TRACE "
+_BLIND_WARNING_MARKER = "盲打模式"
+
+
+def _read_adaptive_blindness(
+    session_dir: Path,
+    *,
+    adaptive: bool,
+    attack_result: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """從攻擊者的決策軌跡讀出它有沒有盲打。純觀測,不影響任何判定。"""
+    if not adaptive:
+        return {"status": "not_applicable", "reason": "not_adaptive", "blind": None}
+    if attack_result is None:
+        return {"status": "not_applicable", "reason": "no_attack_process",
+                "blind": None}
+
+    log = session_dir / "attack.stdout.log"
+    if not log.is_file():
+        return {"status": "unknown", "reason": "missing_stdout_log", "blind": None}
+    try:
+        text = log.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:  # pragma: no cover - 防禦性
+        return {"status": "unknown",
+                "reason": f"unreadable_stdout_log:{exc.__class__.__name__}",
+                "blind": None}
+
+    observer_error = None
+    for line in text.splitlines():
+        if _BLIND_WARNING_MARKER in line:
+            observer_error = line.strip()[:200]
+            break
+
+    index = text.rfind(_DECISION_TRACE_MARKER)
+    if index < 0:
+        return {"status": "unknown", "reason": "no_decision_trace",
+                "blind": None, "observer_error": observer_error}
+    payload = text[index + len(_DECISION_TRACE_MARKER):].splitlines()
+    try:
+        steps = json.loads(payload[0]) if payload else None
+    except (json.JSONDecodeError, ValueError):
+        return {"status": "unknown", "reason": "decision_trace_not_json",
+                "blind": None, "observer_error": observer_error}
+    if not isinstance(steps, list) or not steps:
+        return {"status": "unknown", "reason": "decision_trace_empty",
+                "blind": None, "observer_error": observer_error}
+
+    flags = [step.get("blind") for step in steps if isinstance(step, dict)]
+    present = [flag for flag in flags if isinstance(flag, bool)]
+    if len(present) != len(steps):
+        return {"status": "unknown", "reason": "steps_missing_blind_flag",
+                "blind": None, "total_steps": len(steps),
+                "observer_error": observer_error}
+
+    blind_steps = sum(1 for flag in present if flag)
+    return {
+        "status": "observed",
+        "blind": blind_steps > 0,
+        "blind_steps": blind_steps,
+        "total_steps": len(present),
+        "reason": None,
+        "observer_error": observer_error,
+    }
+
+
 def _ros_snapshots(
     *,
     prefix: str,
@@ -857,6 +950,9 @@ def run_session(
             if mode == "live"
             else {"status": "skipped", "reason": "smoke"}
         )
+        adaptive_observer = _read_adaptive_blindness(
+            session_dir, adaptive=adaptive, attack_result=attack_result
+        )
         pcap = session_dir / "traffic.pcapng"
         pcap_ok = (
             mode == "live"
@@ -928,6 +1024,10 @@ def run_session(
             # 而是 features.py 對整個資料集 fail-closed,而且會在幾千場
             # 之後才中止。閘是唯一能在當場擋下來的地方。
             "packet_windows": packet_result,
+            # ⚠️ 純觀測，**刻意不在 `gate_failures` 裡**（見
+            # `_read_adaptive_blindness` 的決定 2）。它記錄的是「這一場的
+            # 自適應迴圈到底有沒有回饋」，而那在持證內鬼場次上一直是沒有的。
+            "adaptive_observer": adaptive_observer,
             "label_interval_written": True,
             "training_gate": (
                 "eligible"
