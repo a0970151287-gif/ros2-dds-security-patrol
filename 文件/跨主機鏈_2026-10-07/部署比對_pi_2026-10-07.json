@@ -1,0 +1,62 @@
+{
+  "schema": "sros2-firewall-remote-deployment-check/v1",
+  "remote": "jesse@fe80::2ecf:67ff:fe12:1f47%7",
+  "remote_root": "/home/jesse/sros2",
+  "all_match": true,
+  "findings": [
+    {
+      "path": "firewall_lab/response_backend.py",
+      "verdict": "match",
+      "local_sha256": "e59e86a30dd02cbfd68fd309718538a6f5a8f3bb7470b0030e376ebf5148483a",
+      "remote_sha256": "e59e86a30dd02cbfd68fd309718538a6f5a8f3bb7470b0030e376ebf5148483a"
+    },
+    {
+      "path": "firewall_lab/nft_backend_service.py",
+      "verdict": "match",
+      "local_sha256": "951ccfeaff539701f6aea222763c42a26158a597df5141cf9780c4a59e0c5bfc",
+      "remote_sha256": "951ccfeaff539701f6aea222763c42a26158a597df5141cf9780c4a59e0c5bfc"
+    },
+    {
+      "path": "firewall_lab/response_authorizer.py",
+      "verdict": "match",
+      "local_sha256": "552c9143651dd26d2d07c8c14abd45759bf02e13821e34c142a394b9fb0e4076",
+      "remote_sha256": "552c9143651dd26d2d07c8c14abd45759bf02e13821e34c142a394b9fb0e4076"
+    },
+    {
+      "path": "工具腳本/run_nft_live_acceptance.py",
+      "verdict": "match",
+      "local_sha256": "a278b4d9a9f40628b405d8e289ee556447eff6cce058ea7ce2fa850e37ffa515",
+      "remote_sha256": "a278b4d9a9f40628b405d8e289ee556447eff6cce058ea7ce2fa850e37ffa515"
+    },
+    {
+      "path": "工具腳本/run_attribution_driven_block.py",
+      "verdict": "match",
+      "local_sha256": "637d3d569abde3df5ef1289866af433da42e41b61ff55cbcec9001b2b79b7c3c",
+      "remote_sha256": "637d3d569abde3df5ef1289866af433da42e41b61ff55cbcec9001b2b79b7c3c"
+    },
+    {
+      "path": "工具腳本/crosscheck_identity_attribution.py",
+      "verdict": "match",
+      "local_sha256": "35791acb01d24a1b05be4cbf75fdd26e1f1ec17b30ff1b430244408fd9420a41",
+      "remote_sha256": "35791acb01d24a1b05be4cbf75fdd26e1f1ec17b30ff1b430244408fd9420a41"
+    },
+    {
+      "path": "工具腳本/check_link_layer_binding.py",
+      "verdict": "match",
+      "local_sha256": "e68f6a3d153791da50992290febdaee8ec7017ef2397068a0829076611a27c50",
+      "remote_sha256": "e68f6a3d153791da50992290febdaee8ec7017ef2397068a0829076611a27c50"
+    },
+    {
+      "path": "工具腳本/decode_rtps_identity.py",
+      "verdict": "match",
+      "local_sha256": "305b2cf7cd7168c59a099acdd4488c044f7b49c2fa34a64e8575552427e1ad24",
+      "remote_sha256": "305b2cf7cd7168c59a099acdd4488c044f7b49c2fa34a64e8575552427e1ad24"
+    },
+    {
+      "path": "firewall_lab/features.py",
+      "verdict": "match",
+      "local_sha256": "5644b540b731759a1222aa572e24f8d3691fd701cb2251681619e21c525b1f95",
+      "remote_sha256": "5644b540b731759a1222aa572e24f8d3691fd701cb2251681619e21c525b1f95"
+    }
+  ]
+}
