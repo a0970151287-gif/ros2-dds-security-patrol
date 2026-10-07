@@ -1,0 +1,70 @@
+{
+  "attribution": {
+    "report_authorizes_action": false,
+    "report_path": "/home/jesse/crosshost/20261007T181614806024Z_crosshost_62c47459/crosscheck.json",
+    "report_sha256": "6475d6ff86cbfeb0602e543d87bdfa0246d42168d733aa377b681dd3f3307284",
+    "target": "192.168.0.141"
+  },
+  "authorization": {
+    "authority_came_from": "human approval phrase on stdin",
+    "human_phrase_supplied": true,
+    "note": "The attribution report sets authorizes_action=false. It says the evidence supports naming this address; it does not say anything may be done about it. The authority for this run is the operator's phrase, and nothing here changes executable_classes or LIVE_NFT_ACTIVATION_ALLOWED.",
+    "subject_came_from": "attribution evidence digest"
+  },
+  "checks": {
+    "attribution_report_schema_v2": {
+      "detail": "schema_version='sros2-firewall-identity-crosscheck/v2' expected='sros2-firewall-identity-crosscheck/v2'",
+      "passed": true
+    },
+    "attribution_verified_and_single_target": {
+      "detail": "single blockable target 192.168.0.141",
+      "passed": true
+    },
+    "block_applied_to_kernel": {
+      "detail": "set elements={'192.168.0.141': 89}",
+      "passed": true
+    },
+    "packets_dropped": {
+      "detail": "counter packets 0->1 (+1), bytes 0->84",
+      "passed": true
+    },
+    "post_revocation_packets_pass": {
+      "detail": "counter packets 1->1 (+0), bytes 84->84; expected +0 after revocation",
+      "passed": true
+    },
+    "revocation_removed_element": {
+      "detail": "existed=True active_count=0 set elements={}",
+      "passed": true
+    },
+    "target_independently_reblockable": {
+      "detail": "has_rejection_record=True, link_layer_consistent=True, no_authorized_identity=True, summary_agrees=True, unique_guid=True",
+      "passed": true
+    },
+    "target_is_not_self_or_gateway": {
+      "detail": "ssh_peers=['fe80::4fa2:6f:c1f7:1309'] source=proc-net-tcp(1) local=['127.0.0.1', '192.168.0.145', '192.168.137.2'] gateway=192.168.137.1",
+      "passed": true
+    },
+    "ticket_bound_to_evidence_digest": {
+      "detail": "evidence_id=6475d6ff86cbfeb0602e543d87bdfa0246d42168d733aa377b681dd3f3307284 report_sha256=6475d6ff86cbfeb0602e543d87bdfa0246d42168d733aa377b681dd3f3307284 source=192.168.0.141 report=crosscheck.json",
+      "passed": true
+    }
+  },
+  "schema_version": "sros2-firewall-attribution-driven-block/v1",
+  "shipping_defaults_unchanged": true,
+  "summary": {
+    "all_passed": true,
+    "all_required_present": true,
+    "chain_demonstrated": true,
+    "required": [
+      "attribution_report_schema_v2",
+      "attribution_verified_and_single_target",
+      "target_independently_reblockable",
+      "target_is_not_self_or_gateway",
+      "ticket_bound_to_evidence_digest",
+      "block_applied_to_kernel",
+      "packets_dropped",
+      "revocation_removed_element",
+      "post_revocation_packets_pass"
+    ]
+  }
+}

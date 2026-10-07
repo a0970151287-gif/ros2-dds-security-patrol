@@ -1,0 +1,95 @@
+{
+  "capture": "/home/jesse/crosshost/20261007T181614806024Z_crosshost_62c47459/traffic.pcapng",
+  "capture_sha256": "cbd9cd59babac8e1fc5eb469366334580d76ee05fd152d7fee6336a34427a6fc",
+  "checker_sha256": "e68f6a3d153791da50992290febdaee8ec7017ef2397068a0829076611a27c50",
+  "display_filter": "",
+  "frames_examined": 561,
+  "per_ip": {
+    "192.168.0.107": {
+      "bidirectional": false,
+      "frames_from": 10,
+      "frames_to": 0,
+      "link_layer_consistent": false,
+      "mac_claims_multiple_addresses": false,
+      "notes": [],
+      "other_ips_on_same_mac": [],
+      "reasons_inconsistent": [
+        "沒有送往此位址的單播流量，取不到 ARP 解析出的 MAC（無法驗證，不是驗證通過）"
+      ],
+      "resolved_macs": [],
+      "source_macs": [
+        "a6:cf:41:b8:75:b3"
+      ],
+      "verdict": "unverifiable"
+    },
+    "192.168.0.140": {
+      "bidirectional": false,
+      "frames_from": 6,
+      "frames_to": 0,
+      "link_layer_consistent": false,
+      "mac_claims_multiple_addresses": false,
+      "notes": [],
+      "other_ips_on_same_mac": [],
+      "reasons_inconsistent": [
+        "沒有送往此位址的單播流量，取不到 ARP 解析出的 MAC（無法驗證，不是驗證通過）"
+      ],
+      "resolved_macs": [],
+      "source_macs": [
+        "24:55:9a:25:94:79"
+      ],
+      "verdict": "unverifiable"
+    },
+    "192.168.0.141": {
+      "bidirectional": true,
+      "frames_from": 50,
+      "frames_to": 441,
+      "link_layer_consistent": true,
+      "mac_claims_multiple_addresses": false,
+      "notes": [],
+      "other_ips_on_same_mac": [],
+      "reasons_inconsistent": [],
+      "resolved_macs": [
+        "e8:65:38:20:23:2f"
+      ],
+      "source_macs": [
+        "e8:65:38:20:23:2f"
+      ],
+      "verdict": "consistent"
+    },
+    "192.168.0.142": {
+      "bidirectional": false,
+      "frames_from": 18,
+      "frames_to": 0,
+      "link_layer_consistent": false,
+      "mac_claims_multiple_addresses": false,
+      "notes": [],
+      "other_ips_on_same_mac": [],
+      "reasons_inconsistent": [
+        "沒有送往此位址的單播流量，取不到 ARP 解析出的 MAC（無法驗證，不是驗證通過）"
+      ],
+      "resolved_macs": [],
+      "source_macs": [
+        "28:92:00:62:4e:bd"
+      ],
+      "verdict": "unverifiable"
+    },
+    "192.168.0.145": {
+      "bidirectional": true,
+      "frames_from": 441,
+      "frames_to": 48,
+      "link_layer_consistent": true,
+      "mac_claims_multiple_addresses": false,
+      "notes": [],
+      "other_ips_on_same_mac": [],
+      "reasons_inconsistent": [],
+      "resolved_macs": [
+        "2c:cf:67:12:1f:48"
+      ],
+      "source_macs": [
+        "2c:cf:67:12:1f:48"
+      ],
+      "verdict": "consistent"
+    }
+  },
+  "schema_version": "sros2-firewall-link-layer-binding/v1"
+}
