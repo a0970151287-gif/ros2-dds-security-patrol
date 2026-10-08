@@ -221,3 +221,26 @@ def test_the_supervisor_still_does_not_restart_itself_preventively(source: str) 
     code = _code_only(source)
     assert "MAX_BATCHES_BEFORE_RESTART" not in code
     assert "preventive_restart" not in code
+
+
+def test_shm_cleanup_also_removes_the_lock_not_just_the_port_file(source: str) -> None:
+    """清除必須涵蓋 sem.fastrtps_portNNNN_mutex —— 那個「鎖」就是它。
+
+    2026-10-08 的根因:clear_stale_dds_shm 原本只配 `^fastrtps` 與
+    `fastrtps_*`,而 Fast DDS 的 port **鎖**叫 sem.fastrtps_portNNNN_mutex,
+    前綴是 `sem.`。於是 port 檔清了、鎖留著 —— 而這支函式自己的註解就寫著
+    「鎖可能留著 …… 而症狀是 readiness 失敗」。
+
+    實測殘留 82 個,最舊 01:19、最新 19:40(18 小時持續累積),port 範圍
+    14949-15117 正好是 domain 30 的 SPDP 埠(7400 + 250*30)。連計數也低報:
+    日誌寫「清掉 2 個」而實際留著 90 個。
+
+    變異:把 rm 改回只有 fastrtps_*,或把 grep 改回 '^fastrtps',這一條要咬。
+    """
+    code = _code_only(source)
+    assert "sem.fastrtps_*" in code, "rm 沒有涵蓋鎖"
+    assert "(sem" in code and "fastrtps" in code, "計數沒有涵蓋鎖"
+    # 計數與刪除必須一致:只刪不數會讓日誌繼續低報
+    i_count = code.index("grep -cE")
+    i_rm = code.index("rm -f /dev/shm/")
+    assert i_count < i_rm, "計數要在刪除之前,否則數到的是刪完的結果"

@@ -75,10 +75,18 @@ clear_stale_dds_shm() {
   left=$(count_stack_processes)
   if [ "${left:-0}" -ne 0 ]; then return 0; fi
   local n
-  n=$(ls /dev/shm 2>/dev/null | grep -c '^fastrtps' || true)
+  # ⚠️ 2026-10-08：這段原本只配 `^fastrtps`，而**鎖本身叫 `sem.fastrtps_portNNNN_mutex`**
+  # ——前綴是 `sem.`，所以上面那段註解描述的那個鎖，從來沒有被清掉過。
+  # 實測殘留 82 個，最舊 01:19、最新 19:40（18 小時持續累積），port 範圍
+  # 14949–15117 正好是 domain 30 的 SPDP 埠（7400 + 250×30）。
+  # 連計數也低報：日誌寫「清掉 2 個」而實際留著 90 個。
+  #
+  # 那是半套的清除：port 檔清了，鎖留著。而這支函式自己的註解就寫著
+  # 「鎖可能留著 …… 而症狀是 readiness 失敗」。
+  n=$(ls /dev/shm 2>/dev/null | grep -cE '^(sem\.)?fastrtps' || true)
   if [ "${n:-0}" -gt 0 ]; then
-    rm -f /dev/shm/fastrtps_* 2>/dev/null
-    echo "  ♻️ 清掉 $n 個殘留的 Fast DDS 共享記憶體段" | tee -a "$LOG"
+    rm -f /dev/shm/fastrtps_* /dev/shm/sem.fastrtps_* 2>/dev/null
+    echo "  ♻️ 清掉 $n 個殘留的 Fast DDS 段與鎖" | tee -a "$LOG"
   fi
   rm -f /tmp/fastrtps_* 2>/dev/null
 }
