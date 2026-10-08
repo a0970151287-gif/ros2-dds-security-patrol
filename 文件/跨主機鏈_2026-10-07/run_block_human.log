@@ -1,0 +1,33 @@
+  ✅ attribution_report_schema_v2: schema_version='sros2-firewall-identity-crosscheck/v2' expected='sros2-firewall-identity-crosscheck/v2'
+  ✅ attribution_verified_and_single_target: single blockable target 192.168.0.141
+  ✅ target_independently_reblockable: has_rejection_record=True, link_layer_consistent=True, no_authorized_identity=True, summary_agrees=True, unique_guid=True
+  ✅ target_is_not_self_or_gateway: ssh_peers=['fe80::4fa2:6f:c1f7:1309'] source=proc-net-tcp(1) local=['127.0.0.1', '192.168.0.145', '192.168.137.2'] gateway=192.168.137.1
+
+前置四項通過，目標 = 192.168.0.141
+⚠️ 本程式不會自行產生攻擊流量——第 7 與第 9 項需要攻擊端配合，
+   而那是另一端、另一次授權。這裡只會提示並等待計數器。
+
+  ✅ ticket_bound_to_evidence_digest: evidence_id=6475d6ff86cbfeb0602e543d87bdfa0246d42168d733aa377b681dd3f3307284 report_sha256=6475d6ff86cbfeb0602e543d87bdfa0246d42168d733aa377b681dd3f3307284 sour
+  ✅ block_applied_to_kernel: set elements={'192.168.0.141': 89}
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │ SEND TRAFFIC NOW from 192.168.0.141                          │
+  │ waiting up to 45s                                          │
+  └──────────────────────────────────────────────────────────────┘
+  ✅ packets_dropped: counter packets 0->1 (+1), bytes 0->84
+  ✅ revocation_removed_element: existed=True active_count=0 set elements={}
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │ SEND TRAFFIC AGAIN from 192.168.0.141 (must NOT be dropped)  │
+  │ waiting up to 45s                                          │
+  └──────────────────────────────────────────────────────────────┘
+  ✅ post_revocation_packets_pass: counter packets 2->2 (+0), bytes 168->168; expected +0 after revocation
+  teardown: deleted table inet sros2_ticket_guard
+  teardown: 專用規則集已移除
+
+報告：/home/jesse/chain_block_20261007_human.json
+chain_demonstrated = True
+
+這一次是**人核准的驗收**，不是自動封鎖。
+`executable_classes` 仍為空清單，`LIVE_NFT_ACTIVATION_ALLOWED` 仍為 False。
+--- 結束,rc=0 ---

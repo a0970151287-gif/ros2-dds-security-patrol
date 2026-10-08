@@ -1,0 +1,43 @@
+{
+  "schema": "sros2-firewall-crosshost-chain-provenance/v1",
+  "generated_utc": "2026-10-08T13:57:00Z",
+  "what_this_is": "同一條鏈的第二次執行,差別只有一個:核准片語由 Jesse 親手輸入",
+  "supersedes_limitation_in": "文件/跨主機鏈_2026-10-07/provenance.json 的 MUST_BE_DISCLOSED.approval_phrase_was_typed_by_claude",
+  "run": {
+    "wrapper": "/home/jesse/run_block_human.sh",
+    "output": "/home/jesse/chain_block_20261007_human.json",
+    "utc": "2026-10-08T13:56Z",
+    "checks_passed": 9,
+    "chain_demonstrated": true,
+    "rc": 0
+  },
+  "the_one_difference": {
+    "approval_phrase_typed_by": "Jesse, by hand, into the waiting tty",
+    "why_it_matters": "那道閘的設計意圖是『在執行的那一刻有一個人類確認』。第一次的授權是真的,但它發生在對話層;這一次發生在 stdin 層,也就是閘本來要求的地方。",
+    "how_we_know": "Claude 在這一次完全沒有碰那個行程:它由 Jesse 在自己的 ssh session 啟動,Claude 只在旁邊獨立監看核心狀態(nft 表數 1 -> 0)與事後讀取產物。",
+    "what_the_program_cannot_tell": "chain_block.json 的 authorization 區塊在兩次執行中逐字相同(authority_came_from='human approval phrase on stdin'、human_phrase_supplied=true)。程式無從分辨誰按下去,所以這份 provenance 是唯一承載那個差別的地方。"
+  },
+  "independent_observation": {
+    "by": "Claude, 從管理通道 (eth0 link-local) 唯讀監看",
+    "nft_tables": "13:56:47Z-13:57:07Z 為 1,13:57:12Z 起為 0",
+    "meaning": "核心確實裝上了專用規則集又移除,與工具自己的報告吻合"
+  },
+  "measurements": {
+    "block_applied": "set elements={'192.168.0.141': 89}",
+    "packets_dropped": "counter packets 0->1 (+1), bytes 0->84",
+    "revocation": "existed=True active_count=0 set elements={}",
+    "post_revocation": "counter packets 2->2 (+0), bytes 168->168",
+    "traffic_source": "Pi 主動 ping 桌機;桌機的 ICMP echo reply 來源即 192.168.0.141"
+  },
+  "still_not_claimable": [
+    "第 7、9 項仍然是 ICMP 不是攻擊流量 —— 那一段驗的是核心的 drop 路徑,攻擊流量的歸因由階段 1-3 提供。",
+    "一次、一個目標、一張票、TTL 90 秒 —— 不是 soak。",
+    "一種攻擊 (N28 wrong-CA),沒有正向對照。",
+    "沒有任何模型判定參與:票的對象來自歸因證據,權限來自人的片語。",
+    "executable_classes 仍為空,LIVE_NFT_ACTIVATION_ALLOWED 仍為 False。"
+  ],
+  "artifacts": {
+    "chain_block_human.json": "ca6226d29a9fd4b020a9d54961cc1b82cd8c1eb167023dcad87f613ab6eb9f83",
+    "run_block_human.log": "1a512140de10ba0c1874041c57593c8ef43816b0b22f86d2bfc06d51d4d7a1f7"
+  }
+}
