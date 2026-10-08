@@ -297,10 +297,14 @@ while :; do
     # 變成 4.38s（5.7 倍），而 campaign 一停就回到 0.27s ⇒ 與 writeback 壓力
     # 一致（每場寫 100–300 MB 的 pcap）。
     #
-    # `sync` 是無害的：它只是把已經要寫的東西寫完，不丟棄任何快取。
+    # ⚠️ 2026-10-08 稍晚：這裡原本有一行 `sync`，理由是「writeback 壓力」。
+    # 量完之後**那個假設是錯的**——readiness 逾時當下 /proc/pressure/io 的
+    # some avg10 是 **0.00**，full 也是 0.00，而 CPU 壓力是 9.70。
+    # I/O 完全沒有壓力，所以 sync 不解決任何問題，只是每批多一次 I/O 突波。
+    # 已移除；遙測留著，因為它正是這麼快排除 writeback 的原因。
+    #
     # 這裡**刻意不做預防性重啟**——還不知道要重啟什麼，而沒有根據的行為
-    # 變更會讓下一次的歸因更難。下面的遙測就是為了讓下一次爬升可被歸因。
-    sync
+    # 變更會讓下一次的歸因更難。
     {
       echo "  batch_telemetry round=$round mode=$mode"
       echo "    shm_fastrtps=$(ls /dev/shm 2>/dev/null | grep -c fastrtps)"

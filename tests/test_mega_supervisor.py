@@ -181,20 +181,24 @@ def test_batch_telemetry_is_wired_after_stack_down(source: str) -> None:
     """
     code = _code_only(source)
     assert "batch_telemetry" in code, "遙測不在腳本裡"
-    assert re.search(r"^\s*sync\s*$", code, re.M), "沒有 sync"
+    # ⚠️ 翻面:原本斷言「要有 sync」。2026-10-08 稍晚量到 readiness 逾時當下
+    #    /proc/pressure/io 的 some avg10 是 0.00 ⇒ writeback 假設錯了,
+    #    sync 不解決任何問題。這一條現在守的是「不要再加回去」。
+    assert not re.search(r"^\s*sync\s*$", code, re.M), (
+        "sync 已於 2026-10-08 移除:I/O 壓力實測為 0,它只是多一次突波"
+    )
 
     # 用 4 空格縮排定位：腳本裡有三個 stack_down "$mode"，另外兩個在失敗
     # 路徑（6 空格縮排，或與 if 寫在同一行）。第一版用 index 抓到的是前者，
     # 於是斷言比的是兩個不相干的位置——測試正確地咬住了那個錯誤。
     i_down = code.index('\n    stack_down "$mode"\n')
-    i_sync = code.index("\n    sync\n")
     i_tel = code.index("batch_telemetry")
     # ⚠️ 同樣要定位到**呼叫**而不是函式定義——第一版抓到的是第 116 行的
     #    quarantine_empty_sessions() 定義,於是 i_quar 比迴圈裡的一切都早,
     #    而 chained assert 只顯示失敗的那一對,讓我誤以為是 i_down < i_sync。
     i_quar = code.index('\n    quarantine_empty_sessions\n')
-    assert i_down < i_sync < i_tel < i_quar, (
-        "順序不對:sync 與遙測必須夾在 stack_down 與 quarantine 之間"
+    assert i_down < i_tel < i_quar, (
+        "順序不對:遙測必須夾在 stack_down 與 quarantine 之間"
     )
 
 
