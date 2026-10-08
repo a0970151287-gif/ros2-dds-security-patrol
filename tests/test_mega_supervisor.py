@@ -165,3 +165,59 @@ def test_a_second_campaign_is_refused_even_without_the_lock(source: str) -> None
     assert "assert_no_other_campaign" in loop
     assert loop.index("assert_no_other_campaign") < loop.index(
         "firewall_lab.campaign run"), "檢查必須在啟動 campaign 之前"
+
+
+def test_batch_telemetry_is_wired_after_stack_down(source: str) -> None:
+    """每批之後要 sync 並記下系統狀態,而且必須真的在迴圈裡。
+
+    2026-10-08 量到「場次越跑越慢」:同一個 pcap 量體下 import 從 0.77s 變成
+    4.38s(5.7 倍),而 stack 與 campaign 的 python 本來就每批起停 ⇒ 累積的
+    不在它們裡面。這組遙測是為了讓下一次爬升可以被歸因 —— 而這個專案記過
+    太多次「寫好、有測試、然後沒有人接上去」(stream_replay.py 一個月、
+    --scope 加了沒傳給 create_seal、expected_scope 的變異第一次沒咬住)。
+
+    所以這一條釘的是**位置**:遙測必須出現在 stack_down 之後、
+    quarantine_empty_sessions 之前,也就是真的在每批的路徑上。
+    """
+    code = _code_only(source)
+    assert "batch_telemetry" in code, "遙測不在腳本裡"
+    assert re.search(r"^\s*sync\s*$", code, re.M), "沒有 sync"
+
+    # 用 4 空格縮排定位：腳本裡有三個 stack_down "$mode"，另外兩個在失敗
+    # 路徑（6 空格縮排，或與 if 寫在同一行）。第一版用 index 抓到的是前者，
+    # 於是斷言比的是兩個不相干的位置——測試正確地咬住了那個錯誤。
+    i_down = code.index('\n    stack_down "$mode"\n')
+    i_sync = code.index("\n    sync\n")
+    i_tel = code.index("batch_telemetry")
+    # ⚠️ 同樣要定位到**呼叫**而不是函式定義——第一版抓到的是第 116 行的
+    #    quarantine_empty_sessions() 定義,於是 i_quar 比迴圈裡的一切都早,
+    #    而 chained assert 只顯示失敗的那一對,讓我誤以為是 i_down < i_sync。
+    i_quar = code.index('\n    quarantine_empty_sessions\n')
+    assert i_down < i_sync < i_tel < i_quar, (
+        "順序不對:sync 與遙測必須夾在 stack_down 與 quarantine 之間"
+    )
+
+
+def test_batch_telemetry_reads_the_fields_the_diagnosis_needs(source: str) -> None:
+    """遙測要讀的是 writeback 那條線索,不是隨便幾個數字。
+
+    campaign 一停 import 就回到 0.27s,而 /dev/shm 的 117 段與兩萬個 log
+    目錄都還在 ⇒ 累積的是執行時的東西,writeback 壓力是目前最合理的候選
+    (每場寫 100-300 MB 的 pcap)。這幾個欄位就是為了證實或推翻它。
+    """
+    code = _code_only(source)
+    for field in ("Dirty:", "Writeback:", "MemAvailable:", "loadavg", "shm_fastrtps"):
+        assert field in code, f"遙測少了 {field}"
+
+
+def test_the_supervisor_still_does_not_restart_itself_preventively(source: str) -> None:
+    """刻意**沒有**預防性重啟 —— 不知道要重啟什麼之前,那是沒有根據的行為變更。
+
+    2026-10-08 一度打算加它,然後發現 stack 與 campaign 的 python 本來就
+    每批起停,唯一長駐的是監督器自己的 bash 迴圈,而 bash 不會讓
+    import rclpy 從 0.52s 變成 4.36s。這一條守住那個克制:
+    若日後要加,應該先有歸因,而這個測試會逼人把它拿掉並說明理由。
+    """
+    code = _code_only(source)
+    assert "MAX_BATCHES_BEFORE_RESTART" not in code
+    assert "preventive_restart" not in code

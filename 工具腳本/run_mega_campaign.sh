@@ -282,6 +282,26 @@ while :; do
       echo "  $mode $phase rc=$?" | tee -a "$LOG"
     done
     stack_down "$mode"
+
+    # ── 每批之後：把 dirty pages 寫回，並記下系統狀態 ──────────────────
+    # 2026-10-08 量到「場次越跑越慢」，而 stack 與 campaign 的 python **本來
+    # 就每批起停** ⇒ 累積的不在它們裡面。同一個 pcap 量體下 import 從 0.77s
+    # 變成 4.38s（5.7 倍），而 campaign 一停就回到 0.27s ⇒ 與 writeback 壓力
+    # 一致（每場寫 100–300 MB 的 pcap）。
+    #
+    # `sync` 是無害的：它只是把已經要寫的東西寫完，不丟棄任何快取。
+    # 這裡**刻意不做預防性重啟**——還不知道要重啟什麼，而沒有根據的行為
+    # 變更會讓下一次的歸因更難。下面的遙測就是為了讓下一次爬升可被歸因。
+    sync
+    {
+      echo "  batch_telemetry round=$round mode=$mode"
+      echo "    shm_fastrtps=$(ls /dev/shm 2>/dev/null | grep -c fastrtps)"
+      echo "    dirty_kb=$(awk '/^Dirty:/{print $2}' /proc/meminfo)"
+      echo "    writeback_kb=$(awk '/^Writeback:/{print $2}' /proc/meminfo)"
+      echo "    mem_available_kb=$(awk '/^MemAvailable:/{print $2}' /proc/meminfo)"
+      echo "    loadavg=$(cut -d' ' -f1-3 /proc/loadavg)"
+    } | tee -a "$LOG"
+
     quarantine_empty_sessions
     n=$(session_count)
     echo "  累計場次 = $n" | tee -a "$LOG"
