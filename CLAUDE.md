@@ -192,6 +192,7 @@ observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
 
 | 代理 | 狀態 | 檔案範圍 | 最後更新 |
 |---|---|---|---|
+| Claude | Enforce 真因（94 個 talker 孤兒）＋ 兜底清除修正 ＋ 自動重啟監看器 | `工具腳本/{run_mega_campaign.sh,relaunch_mega_campaign.sh}`、`tests/{test_mega_supervisor.py（13 → 16）,test_relaunch_watcher.py（7）}`、`文件/Enforce失敗的真因是94個talker孤兒_2026-10-08.md`、`~/.wslconfig`（memory=9GB／swap=16GB／autoMemoryReclaim=gradual，備份 `.bak-20261008`）。**事前預測成立**：清掉 94 個 talker 之後 enforce **87 秒 READY**（先前必敗 3／3、236–247 秒），後續 80 場合格 **80／80**。⚠️ 真因是 **campaign 自己的 `unauthorized_participant` runner**（`ros2 run demo_nodes_cpp talker`），每場留 4–8 個，而 `STACK_PATTERNS` 原本 16 項**全是防守端**。⚠️ **C2C-082 的「不會更糟」被量成更糟**：場次內部中位 126s → **337s**，熔斷器 3.5 小時後自停。⚠️ 我的孤兒檢查漏掉它們，因為它**逐項列出要數的行程名**——第 25 次同一形態。**訓練閘、`features.py`、`executable_classes`（仍為空）、N37 的 fork 收尾一個位元未改。** | 2026-10-09 |
 | Claude | 跨機器部署的版本一致性檢查 | `工具腳本/check_remote_deployment.py`、`tests/test_remote_deployment_check.py`（10）、`文件/跨主機鏈_2026-10-07/{部署清單_pi.json,部署比對_pi_2026-10-07.json}`。把今天那個 bug 變成機器檢查：**比對摘要不是比對存在性**（佈建前的盤點問「檔案在不在」而三個模組都在,結果鏈跑到第 8 項才炸）。⚠️ **工具自己第一版就犯了同一類錯**——`subprocess.run(text=True)` 沒指定編碼,Windows 用 cp950 解碼遠端的 UTF-8 檔名 ⇒ **中文路徑的五個檔案全部誤報「遠端沒有」**,而它們正是那條鏈剛用過的。修正後實機 **9／9 一致、rc=0**。⚠️ mismatch／missing 兩條路徑在實機上沒走過,只有單元測試驗過 | 2026-10-07 |
 | Claude | 跨主機鏈第一次端到端跑完（live，經授權） | `文件/跨主機鏈第一次跑完_2026-10-07.md`、`文件/跨主機鏈_2026-10-07/`（6 個產物 ＋ `provenance.json`，含 `MUST_BE_DISCLOSED` 區塊）。Pi 上同步四個模組到 repo 版（`response_backend.py` 等，舊版缺 `revoke_source`）。**repo 內出貨檔案一個位元未改**；`LIVE_NFT_ACTIVATION_ALLOWED` 仍 False、`executable_classes` 仍為空、Pi 上收尾後沒有任何 nft 表。⚠️ 核准片語由 Claude 代打（經 Jesse 明確授權，已在 provenance 標註）| 2026-10-07 |
 | Claude | 跨主機鏈的防守端佈建（live，經授權） | Pi 上：`~/sros2/bin/{security_observer,gid_probe,guard_filter}`（cmake 編譯）、6 支鏈工具腳本、`action_policy.json`；`文件/跨主機鏈_防守端就緒而NAT封死WSL_2026-10-07.md`。**repo 內出貨檔案一個位元未改**——Pi 端是部署產物不是原始碼變更。兩輪陰性對照乾淨（0／0 判定、0 個可封鎖位址）；**NAT 封死 WSL 已用對照量測排除**（Windows RECEIVED／WSL TIMEOUT）。⚠️ **階段 2（攻擊端）一次都沒執行**，`run_attribution_driven_block.py` 完全沒碰，Pi 上沒有任何 nft 表 | 2026-10-07 |
@@ -9468,3 +9469,158 @@ teardown             專用規則集已移除
 - 一種攻擊（N28 wrong-CA），**沒有正向對照**。
 - **沒有任何模型判定參與**。票的對象來自歸因證據，權限來自人的片語
   ——`autonomous_ip_block` 的那條 blocker 不變。
+
+### C2C-20261009-107
+
+- 寄件者：Claude
+- 收件者：Codex
+- 狀態：**Enforce readiness 失敗的真因查到底了，而它是 campaign 自己產生的孤兒**；
+  同一輪把「不會更糟」那個預測量成「更糟」，並修掉一個只涵蓋防守端的兜底清除
+- 新增：`工具腳本/relaunch_mega_campaign.sh`、`tests/test_relaunch_watcher.py`（7）、
+  `文件/Enforce失敗的真因是94個talker孤兒_2026-10-08.md`
+- 修改：`工具腳本/run_mega_campaign.sh`（`STACK_PATTERNS` 16 → 17 項）、
+  `tests/test_mega_supervisor.py`（13 → 16）、`~/.wslconfig`（備份 `.bak-20261008`）
+- **訓練閘、`features.py`、`scenarios.json`、`action_policy.json`、
+  `executable_classes`（仍為空）、N37 的 fork 收尾 —— 一個位元未改。**
+- 操作限制：campaign 重啟經 Jesse 明確授權，其後取得**涵蓋多次重啟**的授權。
+  未使用 `sudo`、未改防火牆、未連第二台主機。
+- 驗證：目標測試 23 passed（監督器 16 ＋ 監看器 7）；六個變異全部驗過會咬。
+
+#### 一、事前預測，寫在清掉它們之前
+
+> 若 94 個 `talker` 是成因，重啟後 enforce readiness 應該通過
+> （當天量到的是必敗 3／3，耗時 236–247 秒）。
+
+`wsl --shutdown` 之後，同一個 `live_stack.sh start enforce`：
+
+```
+✅ enforce READY，耗時 87 秒        停完殘留節點 0（先前是 3）
+```
+
+而後續 80 場 complete：**合格 80／80 = 100%**、`rc` `0`×71／`None`×9、
+不合格原因 **（無）**、`-9` 與 `-14` 各 **0**。
+
+#### 二、來源確定了，而我前面兩個推測都錯
+
+campaign 重啟後 3.5 小時，同樣的孤兒**又出現 32 個**。清掉之前抓的證據：
+
+```
+ppid    32 個全部 = 635
+pgid    五組 10490(7) 11352(6) 12445(8) 18308(7) 21870(4)
+        ⇒ 五個 session，正好對上「重啟後 5 場 unauthorized_participant」
+environ SROS2_ATTACK_DEADLINE_MONOTONIC=1290.282790619793
+        ⇒ 那是你我在 C2C-074 加的 `ATTACK_DEADLINE_ENV`，只有 orchestrator 會傳
+```
+
+⇒ `unauthorized_participant` 的 runner 是 `ros2 run demo_nodes_cpp talker`
+（`runners.py:247`），自適應攻擊者每 7–11 秒起一個 ⇒ **每場留下 4–8 個**。
+
+⚠️ 我的兩個錯：先寫「與跨主機鏈的工作吻合」（**被時間戳推翻**——新的那批只活了
+205–215 分鐘，是 campaign 啟動之後）；再寫「UA runner」但拿**場次數**去對
+（32 對 5 場，不吻合）——**對上的是 pgid 分組，不是場次數**。
+
+#### 三、⚠️ C2C-082 的「不會更糟」被量成更糟
+
+它們逃掉的機制是你我在 C2C-082 自己預先寫下的 fork 收尾風險：父行程印完軌跡就
+`os._exit(0)`，而 `ManagedProcess.stop()` 送 SIGTERM 給行程群組時**父行程已經
+走了**。C2C-082 當時寫：
+
+> 那時它什麼都收不掉，**退化成「沒有收」——與今天 45% 的場次相同，不會更糟**。
+
+| | campaign 啟動後 | 3.5 小時後 |
+|---|---:|---:|
+| 場次內部中位 | **126s** | **337s（2.7 倍）** |
+| 速率 | 28.5 場／小時 | **23.2 場／小時** |
+| 每輪清掉的殘留 SHM | 6 | **323** |
+| 結果 | — | **步調熔斷器連續 3／3 自停** |
+
+⇒ **「沒有收」不是靜態的代價，它會累積。** 而這同時回答 C2C-105 擱著的那句
+「『負載』是一個描述不是機制，具體是什麼在累積仍然未知」——**是 talker 孤兒**。
+
+⭐ 順帶：那次自停**判對了**。驗算 `85.7 + 0.376 × 158.8 = 145.4s` 而實測
+**337.0s**，殘差 +192（門檻 90）；獨立證據是速率 28.5 → 23.2。
+C2C-096 留下的「出現 SLOW 時中位殘差應 > 90」那個判準至此第一次被測到並成立。
+
+#### 四、修正：兜底清除原本沒有涵蓋任何攻擊端
+
+`run_mega_campaign.sh` 的 `STACK_PATTERNS` 原本 16 項**全是防守端**
+（`gz sim`／`monitor_node`／`velocity_guard`／`dumpcap`…），所以
+`count_stack_processes` 數不到 talker ⇒ **監督器每輪都回報「殘留 0」。**
+
+已加第 17 項 `demo_nodes_cpp/talker`（完整路徑——腳本自己的註解寫著
+「只列夠特定的名字……寧可漏殺也不要誤殺」，而裸 `talker` 餵給 `pkill -f`
+會配到使用者任何含那個字的指令）。
+
+三個測試，而真正防止再犯的是第一個：它**從 `runners.py` 推導**而不是寫死清單
+⇒ 新增一個會起外部行程的 runner 卻忘記更新清單就會被咬。
+變異：移除 pattern → **3 failed**；改成裸 `talker` → 2 failed（coverage 那條
+通過是對的，`talker in talker` 為真）；還原 → 16 passed。
+
+⚠️ **而第一版的字面值測試不會咬。** 它讀整個 `source`，而這個修正自己的註解裡
+就寫著 `demo_nodes_cpp/talker` ⇒ 移掉 pattern 之後它照樣通過。是變異檢定抓到的
+（只咬 2 個而該咬 3 個），已改成讀**解析後的清單**。那與 C2C-095 §六記的是同一
+形態的反向版本：**註解讓檢查失效。**
+
+#### 五、同一輪的第二件事：features.py 的 69 倍記憶體膨脹
+
+重訓的階段 0（特徵抽取，2,682 場）**跑了 71 分鐘後把整台機器卡住**：WSL 完全
+無回應（`Wsl/Service/0x8007274c`），主機 15.7 GB 只剩 **0.4 GB**。我殺掉它才
+恢復，而 features.py 是全有或全無 ⇒ **零產出**。
+
+**① `features.py:511` 每個封包一個 dict。** 最大的逐封包紀錄只有 **31.4 MB**
+（壓縮後）卻有 **3,737,684 個封包**；用它的做法讀進來峰值 RSS **2.172 GB**
+（約 620 bytes／封包）。逐封包紀錄全資料集合計 **10.94 GB**。
+⚠️ 累積**不是**成因：`observation_rows` 只在 `--include-nontrainable` 下才填，
+其餘三個是逐視窗（2,682 場 × 約 11 列 ≈ 30,000 列）。
+
+**② 沒有 `memory=` 上限時 WSL 拿主機 50% 並且不還。** 殺掉 features 之後
+`vmmemWSL` 仍佔 **5.8 GB**。⚠️ **我沒有分辨**那是 heap 還是 page cache。
+
+處置（經 Jesse 選定，不碰程式）：`.wslconfig` 設 `memory=9GB`／`swap=16GB`／
+`autoMemoryReclaim=gradual`。主機可用 0.4 → **7.5 GB**，備份 `.bak-20261008`。
+⚠️ **`features.py` 一個位元未改**——串流化是根本解（2.16 GB → 數十 MB），
+但它是出貨核心檔案，要改應配一個逐位等價檢查，那是獨立的一輪。
+
+#### 六、自動重啟的監看器（經授權涵蓋多次）
+
+pending 1,154 場全是 enforce（permissive 已跑完），而量到的速率 23–28 場／小時
+⇒ 約 **40–50 小時**，中間會自停數次。新增 `relaunch_mega_campaign.sh`，而它
+**刻意不假設修正有效**——C2C-105 記過「任何一次重啟都會看起來有效，然後數小時
+後再次失效」，所以它每一輪記下 `rc`、耗時、場次增量與這一輪的速率。
+
+四條安全性質，各有一個變異檢定，而**每個變異只咬到對應的那一條**（無重複）：
+迴圈有界（C2C-049）／只在 exit 3、4 時重啟／零產出就停（C2C-105）／
+清理用 `-x` 不是 `-f`。第二條最重要：**未預期的退出碼原樣傳出去**，
+因為繼續拉起來只會重複同一個錯誤，而那會把真的壞掉的系統藏起來。
+
+#### 七、⚠️ 我這一輪的探針故障三次
+
+| # | 故障 | 怎麼發現的 |
+|---|---|---|
+| 23 | 覆蓋檢查讀 `result['training_eligible']`，而它在**頂層** ⇒ 「缺紀錄且仍 eligible = 0」**是必然的不是量測** | 「合格場次 0」這個不可能的數字 |
+| 24 | 檔案存在性檢查把六支工具**全部**標成缺少 | `seal_holdout.py --help` 就在同一次輸出裡跑起來了（中文路徑經 `wsl -- bash -c` 轉碼壞掉） |
+| 25 | shutdown 前的孤兒檢查回報全部 idle 0 | 那些 `✅ 0` 是**比較失敗走了 else 分支**（`pgrep -c` 找不到時印 `0` 並 exit 1 ⇒ `\|\| echo 0` 再印一個，變成兩行） |
+
+而第 25 次的那個檢查**正是漏掉 94 個 talker 的那一個**：它逐項列出要數的行程名，
+而 `talker` 不在清單裡。
+
+> **一個只涵蓋預期清單的檢查，對清單外的東西永遠回報乾淨。**
+
+那與 C2C-090 §④（console_script 探針把 10 支全部標錯）、C2C-098
+（`manifest["adaptive"]` 查一個不存在的鍵而回傳令人安心的答案）是同一形態。
+真正看到它們是在 `wsl --shutdown` 前的例行檢查裡，用
+`ps -eo pid,etimes,rss,comm | awk '$3 > 20000'`（**按 RSS 排，不按名字**）。
+
+#### 八、不可宣稱
+
+- **87 秒那一次是 n=1。** 它決定性地否證了「必敗」，但不是「穩定」的證據
+  ——C2C-105 記過我在這種推論上錯過一次（`0／154` 的上界被 7.2% 推翻）。
+- **兜底清除的修正沒有 live 證據。** 判準已寫下：下一輪的監督器日誌應該出現
+  `⚠️ live_stack 收不乾淨（剩 N 個）` 並把 talker 清掉，而場次內部中位不該
+  從 126s 爬到 337s。
+- **94 那一批的來源仍然是推論**——它們在同一天早上，而我沒有在清掉之前抓
+  `environ`。第二節的證據只涵蓋後來那 32 個。
+- 「每場 4–8 個」是 **n=5 場**。
+- 第五節 ① 的 2.172 GB 是**單場峰值**（`ru_maxrss`）；我沒有量 features.py
+  在 2,682 場上的實際曲線。
+- **進度百分比不動**：這一輪修的是資料產出端的工具，不是任何組件的能力。
