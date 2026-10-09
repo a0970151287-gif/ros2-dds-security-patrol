@@ -248,3 +248,85 @@ def test_shm_cleanup_also_removes_the_lock_not_just_the_port_file(source: str) -
     i_count = code.index("grep -cE")
     i_rm = code.index("rm -f /dev/shm/")
     assert i_count < i_rm, "計數要在刪除之前,否則數到的是刪完的結果"
+
+# ---------------------------------------------------------------------------
+# 2026-10-09：兜底清除漏掉整個攻擊端
+#
+# `STACK_PATTERNS` 原本的 16 項全是防守端，所以 `count_stack_processes` 數不到
+# `unauthorized_participant` 的 runner（`ros2 run demo_nodes_cpp talker`，
+# runners.py:247）。實測五場 UA 留下 **32 個** talker 孤兒（pgid 五組
+# 7/6/8/7/4），而監督器每輪都回報「殘留 0」。
+#
+# 代價是量到的：孤兒累積讓場次內部中位從 126s 變成 337s（2.7 倍），步調熔斷器
+# 在約 3.5 小時後自停。機制是 C2C-082 自己預先寫下的 fork 收尾風險——父行程
+# `os._exit(0)` 之後 `ManagedProcess.stop()` 的 SIGTERM 送不到攻擊子行程。
+# ---------------------------------------------------------------------------
+
+RUNNERS = Path(__file__).resolve().parents[1] / "firewall_lab" / "runners.py"
+
+# `ros2 run <pkg> <exe>`，寫成 python list 的樣子
+ROS2_RUN = re.compile(
+    r'"run"\s*,\s*"(?P<pkg>[A-Za-z0-9_]+)"\s*,\s*"(?P<exe>[A-Za-z0-9_]+)"'
+)
+
+SWEEP = re.compile(r"STACK_PATTERNS='([^']+)'", re.S)
+
+
+def _sweep_patterns(source: str) -> list[str]:
+    match = SWEEP.search(source)
+    assert match, "找不到 STACK_PATTERNS"
+    return [p for p in re.split(r"[|\n]", match.group(1)) if p.strip()]
+
+
+def test_the_sweep_covers_every_external_process_the_attack_runners_spawn(
+    source: str,
+) -> None:
+    """每一個 `ros2 run` 起來的外部行程都必須在兜底清除裡。
+
+    這一條刻意**從 runners.py 推導**而不是寫死清單：新增一個會起外部行程的
+    runner 而忘記更新 `STACK_PATTERNS`，就會在這裡被咬住。那正是 2026-10-09
+    那次漏掉的形態——清單是手寫的，而它只涵蓋了作者當時想到的那一半。
+    """
+    patterns = _sweep_patterns(source)
+    spawned = {
+        (m.group("pkg"), m.group("exe"))
+        for m in ROS2_RUN.finditer(RUNNERS.read_text(encoding="utf-8"))
+    }
+    assert spawned, "runners.py 裡找不到任何 `ros2 run`——regex 可能過期了"
+    missing = [
+        f"{pkg}/{exe}"
+        for pkg, exe in sorted(spawned)
+        if not any(exe in pattern for pattern in patterns)
+    ]
+    assert not missing, (
+        f"這些攻擊端行程不在 STACK_PATTERNS 裡，監督器數不到也殺不掉：{missing}"
+    )
+
+
+def test_the_2026_10_09_orphan_leak_stays_fixed(source: str) -> None:
+    """用**字面值**記錄那次缺陷，不讀任何可被修正改變的常數。
+
+    C2C-081 記過：一個記錄過去缺陷的回歸測試，不可以讀一個修正被允許改變的
+    值，否則修好缺陷就會刪掉它自己的紀錄。
+    """
+    # ⚠️ 讀**解析後的清單**不是整個 source：第一版讀 source，而這個修正自己
+    # 的註解裡就寫著 `demo_nodes_cpp/talker`，所以把 pattern 移掉之後它照樣
+    # 通過。變異檢定抓到的——三個新測試裡只有兩個咬住。
+    patterns = _sweep_patterns(source)
+    assert "demo_nodes_cpp/talker" in patterns, (
+        "2026-10-09 量到五場 unauthorized_participant 留下 32 個 talker 孤兒；"
+        "兜底清除必須涵蓋它"
+    )
+
+
+def test_the_sweep_patterns_stay_specific(source: str) -> None:
+    """不可以用裸 `talker`——腳本自己的註解就寫了為什麼。
+
+    `STACK_PATTERNS` 餵給 `pkill -f`，而裸 `talker` 會配到使用者任何含那個字
+    的指令。寧可漏殺也不要誤殺，所以用完整的 `demo_nodes_cpp/talker`。
+    """
+    patterns = _sweep_patterns(source)
+    assert "talker" not in patterns, (
+        "裸 `talker` 太通用，會誤殺使用者自己的行程；要用 demo_nodes_cpp/talker"
+    )
+    assert "demo_nodes_cpp/talker" in patterns

@@ -45,12 +45,25 @@ mkdir -p "$DATASET"
 #   36 → 42 → 48 → 54 → 60 → 66 個行程,每輪 +6,連續 19 輪什麼都沒產出。
 # 所以監督器自己要有一道按名字的兜底清除。
 #
+# ⚠️ 2026-10-09:清單原本**只有防守端**,所以 `count_stack_processes` 數不到
+# 攻擊行程。`unauthorized_participant` 的 runner 是 `ros2 run demo_nodes_cpp
+# talker`（runners.py:247），而自適應攻擊者每 7–11 秒起一個 ⇒ 實測**每場留下
+# 4–8 個**（五場 UA 留下 32 個,pgid 五組 7/6/8/7/4）。
+#
+# 它們逃掉的機制是 C2C-082 自己預先寫下的風險:fork 收尾讓父行程
+# `os._exit(0)`,而 `ManagedProcess.stop()` 送 SIGTERM 時父行程已經走了。
+# C2C-082 當時寫「退化成『沒有收』,不會更糟」——**量到它更糟**:孤兒累積讓
+# 場次內部中位從 126s 變成 337s（2.7 倍）,步調熔斷器在約 3.5 小時後自停。
+#
+# 用完整路徑 `demo_nodes_cpp/talker` 而不是裸 `talker`,理由就是下一行那一句。
+#
 # ⚠️ 只列**夠特定**的名字。`create`、`component_container` 這種通用字會誤殺
 # 使用者自己的行程,寧可漏殺也不要誤殺。
 STACK_PATTERNS='gz sim|gzserver|ros_gz_sim|ros_gz_bridge|parameter_bridge|
 robot_state_publisher|monitor_node|intelligent_defense|velocity_guard|
 patrol_node|sensor_hub|mission_manager|system_status_node|dumpcap|
-live_telemetry_collector|sros2_deny_adapter'
+live_telemetry_collector|sros2_deny_adapter|
+demo_nodes_cpp/talker'
 STACK_PATTERNS=$(printf '%s' "$STACK_PATTERNS" | tr -d '
 ')
 
