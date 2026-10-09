@@ -1,0 +1,55 @@
+{
+  "schema": "sros2-firewall-stage0-memory-bound/v1",
+  "generated_utc": "2026-10-09T15:30:00Z",
+  "method": "estimated from compressed record size, NOT observed",
+  "calibration": {
+    "source": "C2C-108",
+    "compressed_bytes": 31400000,
+    "packets": 3737684,
+    "measured_peak_bytes": 1151000000,
+    "ratio_times_compressed": 36.66
+  },
+  "records": {
+    "dataset_mega": {
+      "n": 2903,
+      "median_mb": 2.9,
+      "p99_mb": 19.2,
+      "max_mb": 31.4
+    },
+    "dataset_rerun300": {
+      "n": 305,
+      "median_mb": 0.0,
+      "p99_mb": 0.1,
+      "max_mb": 0.1
+    },
+    "dataset_live": {
+      "n": 1100,
+      "median_mb": 0.1,
+      "p99_mb": 0.1,
+      "max_mb": 0.1
+    },
+    "refresh": {
+      "n": 910,
+      "median_mb": 0.0,
+      "p99_mb": 0.1,
+      "max_mb": 0.2
+    },
+    "total": {
+      "n": 5218,
+      "sum_gb": 11.39,
+      "max_mb": 31.4
+    }
+  },
+  "largest_session": "20260920T064608212519Z_unauthorized_participant_7afa648f",
+  "estimated_peak_gb": 1.15,
+  "budget_gb": 7.3,
+  "budget_basis": "wslconfig memory=9GB minus about 1.7GB WSL baseline",
+  "headroom_gb": 6.15,
+  "verdict": "within budget",
+  "peak_does_not_grow": "largest record unchanged while dataset grew 2053 -> 2903 sessions",
+  "limitations": [
+    "upper bound from file size, not an observation; features.py has not run since the 2026-10-08 stall",
+    "the largest session IS the calibration session, so agreement is definitional not independent",
+    "page cache will additionally touch 11.39 GB of reads; that was C2C-108's primary cause and autoMemoryReclaim=gradual handling it is also unobserved"
+  ]
+}
