@@ -34,9 +34,9 @@
 | 本機防禦驗證 | **89%** | 九項本機 outcome 全部有 live pass（9／9） | **8／9 — 已達本機天花板**（2026-08-29 `velocity_guard_recovered` 與 `graph_failure_fail_safe` 相繼通過）。九項裡唯一的真工程缺口已消除。**所有修正都在量測側，`_assert_outcome` 與 probe 一個字未改**：marker 延遲、`wait_for` 被刪、發送端字彙表缺一項、偵測器轉換在送出前就記成已宣告、以及驅動器自己觸發 cascade-DoS。`replay_dropped` 取不到，而阻塞原因本身即防禦有效（ACL 逼重放跨行程，超過新鮮度窗），**不是缺口**。聚合報告仍產不出來（fail-closed 要求九項全齊） |
 | 跨主機／硬體 | **95%** | Pi 5 ＋ 第二台主機 ＋ kernel nftables 驗收 | **2026-09-24：三項全部成立，缺的是把它們串起來。** kernel nftables 驗收在 Pi 5 上 **9／9 通過**（見「回應／執行」一列），Pi 5 硬體也已完整佈建（Ubuntu 24.04、ROS 2 Jazzy、SROS2、colcon、tshark 非 root 擷取、風扇曲線、`throttled=0x0`）。**2026-09-24 稍晚，Pi 當 ROS 閘道也成立**：8 個防守節點在 **Enforce** 下逐一啟動 **8／8、0 SECURITY Error**，4 個同時運行全活；HMAC 金鑰由 Pi 自己生（**未從筆電複製**），SROS2 keystore ＋ 14 個 enclave 在 Pi 上產生；**簽章告警跨行程投遞 monitor → guard、守衛鎖零速**、重放防護（重複 alert 不延長期限）、未授權 participant 被拒都實際發生。整個防守端不到 10 MB，`colcon build` **2.5 秒**。⚠️ 三件事不可宣稱：那個「攻擊」是**我自己的啟動順序**造成的（機制驗證為真，偵測事件不是真實攻擊）；**IDS 六個偵測器全部 0 命中**（沒有 Gazebo ⇒ `odom_hist=0, scan_hist=0`，起得來但看不到東西）；**仍然沒有任何跨主機場次**——Pi 防守、筆電攻擊、身份歸因驅動 nftables 封鎖需要兩端，而筆電被 campaign 佔著。⚠️ 兩台機器的 ROS 版本**不同**：Pi 是 sros2 0.13.6／Fast DDS 2.14.6，筆電是 0.13.5／2.14.5；且 `generate_artifacts` 在 0.13.6 上全數失敗，改走 `create_enclave` ＋ `create_permission` 兩步（rc=0，文件上等價）。⚠️ **第十七次「量測工具偽裝成系統問題」**：`ros_discovery_info` 規則明明存在卻報 `Not found topic access rule`，真因是產生 permissions 時 `ROS_DOMAIN_ID` 未設（寫死 domain 0）而執行在 domain 41——「規則存在但域不對」與「規則不存在」在 Fast DDS 的錯誤訊息上完全一樣，我差點去 policy 裡加一條真的放寬。見 `文件/Pi當ROS閘道_2026-09-24.md`。**2026-08-30 批次 79／80 成立**（8 小時無人值守，80 輪）。wrong-CA participant 在 DDS 認證層被拒，封包層綁定來源 IP，`source_ip_attribution_verified=true`——**1,101 場既有資料集裡這欄一直是 false**。**79 輪是 79 個相異 GUID**，不是同一個重複。陰性對照（防守方自己的 IP）**80 輪零誤判**；每輪 UNAUTHORIZED 事件數 **min 3／max 3，零變異**，8 小時無退化。首尾各有一個未配對的**排程邊界**輪次：防守 round 1 窗開著但攻擊端還沒啟動，攻擊 round 80 執行了但沒有窗蓋到（2026-09-01 查核，偏移恆為 −1、80 輪零例外）。**重疊的 79 對是 79／79 全部成立**，見 `文件/跨主機批次輪次對齊查核_2026-09-01.md`。**2026-08-31 封鎖判定加上第四條（鏈路層綁定，擋來源位址偽造），用新規則回驗這批：80／80 仍然成立、零撤回。**⚠️ 一種攻擊、同網段 Wi-Fi（多播 0/25）、**無正向對照**、**尚未整合進特徵**；`authorizes_action=false`。（「Pi 5 與 kernel nftables 未開始」這句寫於 2026-08-30，已由本列開頭的 2026-09-24 更新取代。）**剩下的 15% 就是那條端到端鏈**：三個零件各自驗過，但沒有一次「攻擊 → 歸因 → 封鎖 → 撤銷」是連著跑完的。見 `文件/跨主機批次結果_79場_2026-08-30.md` 與 `文件/nft驗收_真核心九項通過_2026-09-24.md`。**2026-10-07 三台機器第一次同時可用，防守端完整佈建在 Pi 上，而一個決定性的對照排除了一條我原本寫進計畫的錯路。**拓樸的正確結構是**管理網與實驗網分開**——直連線（Pi `eth0` 192.168.137.2）當 out-of-band ssh 通道、Wi-Fi（`wlan0` **192.168.0.145**）當實驗網路。⚠️ 我一開始建議把 Pi 的線改插路由器，**方向是錯的**：分離才對，因為 nft 封鎖實驗若把控制通道自己封掉就救不回來（C2C-070 記過 `sudo` 的 `env_reset` 會剝掉 `SSH_CONNECTION` 讓防鎖死閘變 no-op）。**同 L2 已驗證**：Pi 的鄰居表直接記著 `192.168.0.141 lladdr e8:65:38:20:23:2f`（與 C2C-052 記的攻擊機網卡**逐位相同**，IP 從 .30 換到 .141 而網卡沒換）⇒ 沒有 AP isolation ⇒ **C2C-051 的第四條判定在這個拓樸下真的有判別力**。⚠️ Pi 的 `RTC time` 是 `1970-01-01`（**Pi 5 沒有電池供電的 RTC**），開機時與筆電**差 6 天 9 小時**；Wi-Fi 一上線 NTP 自己校回 **7 秒**內——這不是可選的，C2C-048 那次失敗就是兩端差 7 分 44 秒而窗只開 2–3 分鐘。**Pi 的佈建缺得比預期多**：鏈需要的 6 支工具腳本一支都不在，而 **`security_observer` 根本不在 Pi 上**（它是整條鏈記 `UNAUTHORIZED` 的起點）；已在 Pi 上 cmake 編好（Fast DDS 2.13+、`rmw_fastrtps_cpp` 8.4.4）放在 `~/sros2/bin/`。兩道 fail-closed 實測通過：`dumpcap` 有 `cap_net_admin,cap_net_raw=eip`、而 `libfastrtps` 與 `libfastcdr` **同在 `/opt/ros/jazzy/lib`**（後者擋的正是 C2C-041 那個「跑滿整個視窗、log 乾淨、事件檔是空的」靜默失效）。⚠️ **Pi 的 `permissions.xml` 綁 domain 41 而 campaign 正用 domain 30**（從執行中 `monitor_node` 的 `/proc/<pid>/environ` 直接讀出，不是從設定檔推的）⇒ 跨主機一律用 **41**，一次解掉「與 permissions 一致」與「不靠 NAT 的運氣與 campaign 隔離」。**兩輪陰性對照（domain 30／41）都乾淨**：解析 20 個 RTPS 封包→6 筆觀測、45 個乙太網框、觀測者判定 **0／0**、**通過三條判定的位址 0 個**，而 Pi 自己被正確拒絕（理由是「不可用查無記錄推論」，即 C2C-041 的第三條）。第二輪刻意設 `ATTACKER_IP` 讓它與真正那一輪**只差「攻擊者沒跑」一個變數**，判定輸出 `⛔ 本輪證據無效…三種可能…先向攻擊端索取 rc 與 Publishing 行數再判斷`——那正是 C2C-048 修正過的措辭，**它判定為無效但不假裝知道原因**。⚠️ **而「筆電可以當備用攻擊端」是錯的，已用量測排除**：同一個封包、兩個 listener，**Windows `RECEIVED from 192.168.0.145`，WSL 50 秒 `TIMEOUT`、0 個封包** ⇒ 封包到得了筆電，**NAT 不把它轉發進 WSL**（排除防火牆，因為 Windows 收到了）。這對鏈是致命的，因為 SROS2 握手需要**雙向**：只有出站時 Pi 收得到 SPDP 卻握手不完成，而 `UNAUTHORIZED` 是認證層事件（C2C-040 量過攻擊者**只**產生它、沒有帶 subject 的 discovery 事件）⇒ 拿不到那筆證據，**而失敗形態是「觀測者什麼都沒記到」，與防禦成功外觀相同**。⚠️ **這對桌機同樣成立**：C2C-048／049 那次成功的跨主機，筆電是 `mirrored`（`192.168.0.129` 就是 mirrored 給 WSL 的位址）——**歷史上那次就是靠 mirrored，而我先前沒把這件事與拓樸連起來**；`netsh interface portproxy` 不是出路（**只支援 TCP**，而 RTPS 是 UDP）。⇒ **鏈仍然沒有跑過，卡在攻擊端**：桌機是 `DESKTOP-R94VLR5`（Windows，ssh／RDP／WinRM 全關、只有 SMB 445），而它的 WSL networkingMode **目前未知**。**百分比不動**——佈建了防守端並排除一條錯路，但沒有產出鏈的證據。見 `文件/跨主機鏈_防守端就緒而NAT封死WSL_2026-10-07.md`。**2026-10-07 稍後，「剩下的 15% 就是那條端到端鏈」那條鏈跑完了。**階段 1–3（歸因）：窗 `18:16:19Z→18:20:17Z`、domain 41、N28 `rc=124`、解析 **419** 個 RTPS 封包 → 37 筆觀測 ＋ 561 個乙太網框、觀測者 **0／1**、**兩半都看到的 GUID = 1**、`blockable_ips=["192.168.0.141"]`，而 **Pi 自己在同一場被正確拒絕**（「不可用查無記錄推論」，C2C-041 的第三條）。⭐ **第四條判定第一次在真實跨主機流量上判 `consistent`**（來源 MAC == ARP 解析 MAC == `e8:65:38:20:23:2f`）——C2C-051 加它時只有合成測試，C2C-052 的 live 只拿到 `unverifiable` 的弱形式。階段 4（封鎖與撤銷）九項全過見「回應／執行」一列。⚠️ `dds_security_audit.log` 仍是 **0 bytes**，與 C2C-040 一致（logging plugin 不記錄遠端握手失敗）⇒ 證據來自 listener，那正是當初要寫那支 C++ 觀測者的理由。⚠️ 仍不可宣稱：**一次不是 soak**、**一種攻擊**（N28 wrong-CA）、**無正向對照**（合法遠端 participant 應判 AUTHORIZED 且不可封鎖——那要在桌機放合法 enclave，與現行威脅模型界線衝突，是要 Jesse 決定的設計問題）、**核准片語由 Claude 代打**（見「回應／執行」一列）。既有 1,101 場與 `dataset_mega` **不會**因此取得 attestation。見 `文件/跨主機鏈第一次跑完_2026-10-07.md` |
 | 攻擊面覆蓋 | **87%** | action_policy 的 23 條規則都有 runner 能產生資料 | **20／23**（2026-09-20 `verify_flood` 升級後；09-15 是 19／23、09-02 是 17／23）。仍缺 3 類：`baseline_poisoning`、`cmd_vel_race`、`node_name_evasion`。⚠️ **2026-10-09 逐個查完：沒有一個是「要寫新 runner」。**`cmd_vel_race` 的 runner **已經在跑**——`N9_cmd_vel_race.py`（檔名、docstring、`class CmdVelRacer`、`def _race`、log「跟 patrol pause 競爭」都說 race）被 `runners.py:248` 映到 `cmd_vel_injection`，而 catalog 把它標成 `command_injection`（live 已有 **133 場**，enforce 52／permissive 81）；兩條 policy 規則**動作層完全相同**（`lock_velocity`＋`velocity_guard`），只差 `min_confidence` 0.7／0.8。`baseline_poisoning` 與 `node_name_evasion` **都有候選 runner**，前者的遙測逐位等於「參與者加入」地板、後者兩輪 0／0／0（規避成功，是結果不是缺口）。⚠️ **而那道 gate 的分母來自合成時代**：`action_policy.json` 與 `scenarios.json` 同在 `8952f09`（2026-08-06）進來，當時是 **23 條對 9 類**，而那 23 條與 2026-08-03 `data_tier=synthetic-pretrain`、`deployment_eligible=False` 那個模型的 23 個 class **逐項相同** ⇒ **`all_policy_classes_present` 從第一個 commit 起就不成立**，不是後來漂移的（policy 23 → 23 從未改變，catalog 9 → 20）。四個處置（改 catalog 標籤／合併 policy 兩條／寫純注入 runner／維持現狀並註明）**都動通過標準或執行中 campaign 依賴的檔案 ⇒ 留給 Jesse**。見 `文件/攻擊面那三個缺口_沒有一個要寫新runner_2026-10-09.md`。catalog SHA-256 現為 `d481ef27…2a48`，舊的 `f466946b…ef36` 已登記進 `ARCHIVED_COMPLETED_CATALOGS`。`verify_flood` 之所以能升，是 2026-09-19 修掉 N20 的 `SyntaxError` 之後它連續兩輪通過證據排他性 gate（9–12 個專屬訊號，其中 5–6 個是機制綁定的：heartbeat 通道被 HMAC 拒絕），而且與另外兩個候選都分得開。⚠️ 09-02／09-15／09-19 三輪判「攻擊沒有執行」**全部是那個 SyntaxError**，而 `tests/test_attack_deliverability.py` 每輪都是綠的——那一整組測試用 regex 讀字串，所以一個連 parse 都過不了的檔案照樣通過。已補全 PoC 的 `py_compile` 檢查。⚠️ **本列 2026-09-25 才追上 catalog**：升級發生在 09-20，狀態表停在 19／23 五天。⚠️ **2026-09-15 更正「至少 4 類做不到」**：那個判定來自 2026-09-02 的候選 smoke，而那一批有**兩個獨立的儀器缺陷**。其一，`verify_flood` 回報送出 12,231,436 筆，實際上 BEST_EFFORT 對 RELIABLE 不相容、**一筆都沒離開行程**（封包 3,390 對正常 3,320／3,375／3,375）。其二，整批 `dumpcap -i eth1` 而同機 ROS 2 走 loopback，**九場的單播封包全部是 0**，擷到的 96% 是 Gazebo 的 gz-transport 多播——網路證據無效。（正式資料集沒事：`dataset_live` 1,100、refresh 908、rerun300 300 場全部 `-i lo` 且通過稽核，見 `工具腳本/audit_capture_scope.py`。）**2026-09-15 稍晚經 Jesse 授權以 `lo` 重跑兩輪**（各 8 場，單播佔比 0.800–0.940，稽核 ok 7／7）。逐類結論：**`spdp_flood` 與 `odom_spoof` 兩輪都通過 gate 且遠高於「參與者加入」地板（28–38× 與 4×），2026-09-15 已依 Jesse 指示升級進出貨 catalog** ⇒ **17／23 → 19／23（74% → 83%）**；舊雜湊 `701ba0ae…e818` 已登記進 `ARCHIVED_COMPLETED_CATALOGS`（與 git HEAD 逐項比對 17／17 相符），新雜湊 `f466946b…ef36`，`action_policy.json` 與 `executable_classes`（仍為空）**未動**——升級不新增任何可執行路徑。**`baseline_poisoning` 仍不可分**（兩輪都**正好在地板上**）；**`node_name_evasion` 兩輪都是 0／0／0，連地板都沒踩到 ⇒ 規避成功，是結果不是缺口**；**`verify_flood` 仍未評估**——QoS 相容有**兩個軸**，第一次只修 reliability 仍然 rc=2，防守端是 RELIABLE **＋ TRANSIENT_LOCAL**（`intelligent_defense_node.py:158`），已兩軸都修（N20 新增第四個參數、`runners.py` 傳 `transient_local`）＋`tests/test_attack_deliverability.py`（6，含兩個變異測試），待一次成功執行。⚠️ **關鍵一：gate 的判準被「一個不在白名單的參與者加入」滿足。** `verify_flood` 兩輪都 rc=2、一個位元組都沒送，遙測卻與 `baseline_poisoning` **逐位相同**（4 次 alert／1 次 guard_lock，兩輪皆然）——那是任何會連線的攻擊都會產生的地板，不是類別證據。⚠️ **關鍵二：「`spdp_flood` 唯一兩兩可分」不重現**——`log_reject` 在兩輪換邊（spdp 3→2、odom 1→3）而 gate 的 `min_count`=3，所以**升級的兩支彼此沒有被證明分得開**，這正是 C2C-013 記過的失效模式，下次訓練要特別看這兩類的混淆。`cmd_vel_race` 與 `cmd_vel_injection` 同機制（N9 已是後者的 runner）不受影響。⚠️ **catalog 能產生 ≠ 模型認得**——已訓練的模型仍只有 9 類。這一格正是部署 gate `all_policy_classes_present` 量的東西 |
-| 文件／簡報 | **95%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1／P2 各有 8/25 帳本。**2026-09-03 新增 r3 帳本**（`文件/證據總帳_2026-09-03_r3/`，2 verified／5 provisional／1 blocked，反向驗證 `valid=true`，SHA-256 `cc487043…4cb8`）——第一份對應 640 場新資料的。verified 只有 2 個是因為資料與模型都在 repo 外，帳本釘得住分析與工具、釘不住原始證據。P1／P2 帳本保留為歷史 checkpoint，未覆寫。**2026-09-04 另出 r4**（`文件/證據總帳_2026-09-04_r4/`，9 個 claim，canonical SHA-256 `0aa6b184…7e57`，反向驗證 `valid=true`；同日稍早的版本移為 `…_r4_precorrection/`，因為 family-LOO 推翻了我當天的結論，被引用的報告跟著改——處置依 C2C-034 對 P2 的先例）——r3 現在對工作樹反向驗證會失敗，因為我更正了它引用的一份文件裡的錯話；那是引用檔演進造成的**預期漂移**（同 C2C-033 對 P0 的處置），不是造假。**2026-09-24 新增 r5 帳本**（`文件/證據總帳_2026-09-24_r5/`，8 個 claim，**4 verified／3 provisional／1 blocked**，canonical SHA-256 `1a2f2415…998f`，反向驗證 `valid=true`）——第一份涵蓋真核心 nftables 驗收、Pi 當 ROS 閘道、campaign 產能與未知攻擊解析度的。verified 有 4 個（r3／r4 各只有 2 個），因為 nft 驗收與兩項 campaign 修正的**整條證據鏈都在 repo 裡**（報告、provenance、程式、測試）；Pi 與模型相關的仍是 provisional，原始證據在 repo 外。另新增 `shipping_defaults_unchanged` 一項 **verified**，把「這一輪沒有打開任何可執行路徑」變成可稽核的斷言而不是自述。⚠️ **r3 與 r4 現在反向驗證都會失敗**，同一個原因：`firewall_lab/runners.py` 從 15,914 長到 19,011 bytes（09-19 的 graph 溢位候選）。依 C2C-033 的處置，兩份都**不覆寫**，只能寫「產生當時有效」。⚠️ **r5 在產生後一小時內就漂移了**：同一個工作階段稍後補上 `ResponseBackend.revoke_source`，而 `firewall_lab/response_backend.py` 是 r5 釘住的檔案（47,053 → 52,343 bytes）。**不重建**——r5 誠實代表 09-24 那個checkpoint，而撤銷是 09-25 的工作。可操作的教訓是**帳本要在一輪工作的最後才產生**，我這次把它排在中間。**2026-10-03 新增 r6 帳本**（`文件/證據總帳_2026-10-03_r6/`，10 個 claim，**7 verified／2 provisional／1 blocked**，ledger SHA-256 `737e4f58…84bd`，反向驗證 `valid=true`）——**7 verified 是歷來最高**（r3 2／r4 2／r5 4），因為 10-02／10-03 這一輪的工作幾乎整條鏈都在 repo 裡（程式、測試、文件、稽核產物）。涵蓋步調模型的「量完之後不要改」、經授權的門檻放寬、readiness 三層窗的反轉、Enforce 場次流失的歸零與未定的歸因、持證內鬼的自適應從來沒有跑過、盲打的行為混淆、封印接上 open-set、兩個驗收決定的定案，以及 `shipping_defaults_unchanged`。⚠️ 這一次**刻意排在一輪工作的最後**——r5 排在中途，一小時內就漂移了（C2C-077 記過那個教訓）。⚠️ 反查現況：**只有 P2 與 r6 通過**，`2026-08-17`／P0／P1／r3／r4／r5 全部因引用檔演進而失配（例如 r5 的 `response_backend.py` 47,053 → 52,343），依 C2C-033 的處置**不覆寫**、只能寫「產生當時有效」。⚠️ **而我的反查腳本第一版製造出看起來像資料損毀的東西**：它把例外訊息切在 90 個字元，於是 `60832` 掉了最後一位變成 `6083`、`6131` 變成 `6` ⇒ 看起來像 `hierarchical_training.py` 縮了 90%、一份文件只剩 6 bytes。實際檔案完好（60,832 bytes／1,528 行；6,131 bytes）。**一個截斷輸出的探針會製造出比沒有輸出更糟的東西**，而這是第 22 次「量測工具偽裝成被量對象的性質」。**2026-10-07 新增 r7 帳本**（`文件/證據總帳_2026-10-07_r7/`，5 個 claim，**4 verified／0 provisional／1 blocked**，ledger SHA-256 `d415f0f0…6ecc`，反向驗證 `valid=true`）——**`provisional` 第一次是 0**，因為這一輪的證據鏈整條都在 repo 裡（產物、`provenance.json`、程式、測試、文件），不像 Pi 或模型那種原始證據在 repo 外的情況。涵蓋跨主機鏈的端到端執行、NAT 排除 WSL 當任一端的量測、`revoke_source` 從未被執行過的發現，以及 `shipping_defaults_unchanged`。⭐ **`autonomous_ip_block` 仍是 `blocked`，但四條 blocker 清掉兩條**（「鏈從來沒有端到端跑過」與「撤銷只在記憶體轉接器上驗過」），剩下的兩條都不是「機制行不行」而是「誰有權觸發」：`executable_classes` 為空，而那一次的授權來自人的片語不是模型判定——**且那個片語在這一輪是 Claude 代打的**，claim 的 blockers 逐字寫明這件事。⚠️ 依慣例排在一輪工作的**最後**（C2C-077 記過 r5 排在中途、一小時內就漂移）。**主簡報仍停在 2026-08-21 的 32 頁，百分比不動**（加一份帳本不改變主簡報那一格） |
+| 文件／簡報 | **98%** | 報告、簡報、證據總帳、答辯腳本 | 8/21 的 32 頁階段成果簡報＋8/17 的 29 頁前版＋雙語摘要皆在；P0／P1／P2 各有 8/25 帳本。**2026-09-03 新增 r3 帳本**（`文件/證據總帳_2026-09-03_r3/`，2 verified／5 provisional／1 blocked，反向驗證 `valid=true`，SHA-256 `cc487043…4cb8`）——第一份對應 640 場新資料的。verified 只有 2 個是因為資料與模型都在 repo 外，帳本釘得住分析與工具、釘不住原始證據。P1／P2 帳本保留為歷史 checkpoint，未覆寫。**2026-09-04 另出 r4**（`文件/證據總帳_2026-09-04_r4/`，9 個 claim，canonical SHA-256 `0aa6b184…7e57`，反向驗證 `valid=true`；同日稍早的版本移為 `…_r4_precorrection/`，因為 family-LOO 推翻了我當天的結論，被引用的報告跟著改——處置依 C2C-034 對 P2 的先例）——r3 現在對工作樹反向驗證會失敗，因為我更正了它引用的一份文件裡的錯話；那是引用檔演進造成的**預期漂移**（同 C2C-033 對 P0 的處置），不是造假。**2026-09-24 新增 r5 帳本**（`文件/證據總帳_2026-09-24_r5/`，8 個 claim，**4 verified／3 provisional／1 blocked**，canonical SHA-256 `1a2f2415…998f`，反向驗證 `valid=true`）——第一份涵蓋真核心 nftables 驗收、Pi 當 ROS 閘道、campaign 產能與未知攻擊解析度的。verified 有 4 個（r3／r4 各只有 2 個），因為 nft 驗收與兩項 campaign 修正的**整條證據鏈都在 repo 裡**（報告、provenance、程式、測試）；Pi 與模型相關的仍是 provisional，原始證據在 repo 外。另新增 `shipping_defaults_unchanged` 一項 **verified**，把「這一輪沒有打開任何可執行路徑」變成可稽核的斷言而不是自述。⚠️ **r3 與 r4 現在反向驗證都會失敗**，同一個原因：`firewall_lab/runners.py` 從 15,914 長到 19,011 bytes（09-19 的 graph 溢位候選）。依 C2C-033 的處置，兩份都**不覆寫**，只能寫「產生當時有效」。⚠️ **r5 在產生後一小時內就漂移了**：同一個工作階段稍後補上 `ResponseBackend.revoke_source`，而 `firewall_lab/response_backend.py` 是 r5 釘住的檔案（47,053 → 52,343 bytes）。**不重建**——r5 誠實代表 09-24 那個checkpoint，而撤銷是 09-25 的工作。可操作的教訓是**帳本要在一輪工作的最後才產生**，我這次把它排在中間。**2026-10-03 新增 r6 帳本**（`文件/證據總帳_2026-10-03_r6/`，10 個 claim，**7 verified／2 provisional／1 blocked**，ledger SHA-256 `737e4f58…84bd`，反向驗證 `valid=true`）——**7 verified 是歷來最高**（r3 2／r4 2／r5 4），因為 10-02／10-03 這一輪的工作幾乎整條鏈都在 repo 裡（程式、測試、文件、稽核產物）。涵蓋步調模型的「量完之後不要改」、經授權的門檻放寬、readiness 三層窗的反轉、Enforce 場次流失的歸零與未定的歸因、持證內鬼的自適應從來沒有跑過、盲打的行為混淆、封印接上 open-set、兩個驗收決定的定案，以及 `shipping_defaults_unchanged`。⚠️ 這一次**刻意排在一輪工作的最後**——r5 排在中途，一小時內就漂移了（C2C-077 記過那個教訓）。⚠️ 反查現況：**只有 P2 與 r6 通過**，`2026-08-17`／P0／P1／r3／r4／r5 全部因引用檔演進而失配（例如 r5 的 `response_backend.py` 47,053 → 52,343），依 C2C-033 的處置**不覆寫**、只能寫「產生當時有效」。⚠️ **而我的反查腳本第一版製造出看起來像資料損毀的東西**：它把例外訊息切在 90 個字元，於是 `60832` 掉了最後一位變成 `6083`、`6131` 變成 `6` ⇒ 看起來像 `hierarchical_training.py` 縮了 90%、一份文件只剩 6 bytes。實際檔案完好（60,832 bytes／1,528 行；6,131 bytes）。**一個截斷輸出的探針會製造出比沒有輸出更糟的東西**，而這是第 22 次「量測工具偽裝成被量對象的性質」。**2026-10-07 新增 r7 帳本**（`文件/證據總帳_2026-10-07_r7/`，5 個 claim，**4 verified／0 provisional／1 blocked**，ledger SHA-256 `d415f0f0…6ecc`，反向驗證 `valid=true`）——**`provisional` 第一次是 0**，因為這一輪的證據鏈整條都在 repo 裡（產物、`provenance.json`、程式、測試、文件），不像 Pi 或模型那種原始證據在 repo 外的情況。涵蓋跨主機鏈的端到端執行、NAT 排除 WSL 當任一端的量測、`revoke_source` 從未被執行過的發現，以及 `shipping_defaults_unchanged`。⭐ **`autonomous_ip_block` 仍是 `blocked`，但四條 blocker 清掉兩條**（「鏈從來沒有端到端跑過」與「撤銷只在記憶體轉接器上驗過」），剩下的兩條都不是「機制行不行」而是「誰有權觸發」：`executable_classes` 為空，而那一次的授權來自人的片語不是模型判定——**且那個片語在這一輪是 Claude 代打的**，claim 的 blockers 逐字寫明這件事。⚠️ 依慣例排在一輪工作的**最後**（C2C-077 記過 r5 排在中途、一小時內就漂移）。**主簡報仍停在 2026-08-21 的 32 頁，百分比不動**（加一份帳本不改變主簡報那一格）。⭐⭐ **2026-10-16 那一格動了,所以這一列 95% → 98%。** 主簡報增補 **15 頁**產出（`文件/SROS2智慧防火牆_專題成果增補_自然色系_2026-10-16.pptx`,68.5 KB）,涵蓋 8/21 之後的全部進展:缺的那條縫、端到端鏈、票被證據綁定、管理網與實驗網分開、第四條判定、持證內鬼的盲打、四階段 runbook、**那個 1.0000 是單批次上限**、三個被推翻的假設、資料工廠、證據治理、仍然不可部署、下一步。⚠️ **不取代那 32 頁**（C2C-037 的處置:它是 8/21 的 checkpoint）。⭐ **樣式是從那 32 頁量出來的不是照轉述的**:13.33×7.5 吋、單一 `Title Slide` layout、全手工 AUTO_SHAPE、**Microsoft JhengHei**、頁碼 L12.33 T7.03,配色取自該檔最常出現的填色與字色（墨 `#2F302D`／紙 `#FAF8F3`／sage `#657065`／brick `#86605F`／`#D1CCC4`）。四項自動檢查全過:**越界 0／估計溢出 0／文字框重疊 0／空白頁 0**。⚠️ **其中兩項在第一輪抓到真缺陷**,一個是版面 bug（**分隔線被放在表格裡面**——表格實際到 5.955 而線在 5.56）;另外順帶修掉 C2C-115 在狀態表留下的一個真缺陷（未知攻擊那一列的行內程式碼裡有一個**未轉義的 pipe**,把 markdown 表格切成 7 段）。⚠️ **溢出檢查是用字寬估的不是 render**——這個環境沒有 renderer,所以**沒有任何一頁被目視確認過**。⭐ **同輪新增 r8 帳本**（`文件/證據總帳_2026-10-16_r8/`,7 個 claim,**6 verified／0 provisional／1 blocked**,ledger SHA-256 `72f0b10b…223f`,反向驗證 `valid=true`）——`provisional` **連續第二次是 0**,而 verified 佔比 **6／7** 是歷來最高（r6 是 7／10、r7 是 4／5）。涵蓋人在迴圈中的重跑、Enforce readiness 的真因（94 個 talker 孤兒）、四階段 runbook 整條跑完、單批次上限的查明、主簡報增補,以及 `shipping_defaults_unchanged`。⚠️ 依慣例排在一輪工作的**最後**（C2C-077）。⚠️ **剩下的 2% 是答辯腳本**:它仍是 2026-08-21 那份,完全不涵蓋 8/21 之後的任何材料。 |
 
-**整體約 85%**（九項平均 761/9 = 84.56%）。⚠️ **2026-10-15 從 87.33% 下修**:攻擊識別 70% → **60%**、未知攻擊 70% → **55%**,兩列都是因為**第一次有了處女／全新場次的 holdout 數字,而它們遠低於門檻**（識別 0.4655／0.4228 對 0.80;open-set 0.1645 對 0.70）。**兩列的 100% 定義一個字未改**,所以這不是放寬或收緊標準,是讓百分比跟上證據。見 C2C-115。
+**整體約 85%**（九項平均 764/9 = 84.89%）。⚠️ **2026-10-16 文件／簡報 95% → 98%**（主簡報增補 15 頁產出 ＋ r8 帳本;剩下的 2% 是答辯腳本）。⚠️ **2026-10-15 從 87.33% 下修**:攻擊識別 70% → **60%**、未知攻擊 70% → **55%**,兩列都是因為**第一次有了處女／全新場次的 holdout 數字,而它們遠低於門檻**（識別 0.4655／0.4228 對 0.80;open-set 0.1645 對 0.70）。**兩列的 100% 定義一個字未改**,所以這不是放寬或收緊標準,是讓百分比跟上證據。見 C2C-115。
 
 ⚠️ 2026-10-07：回應／執行 85%→**95%**、跨主機／硬體 85%→**95%**。**兩列都是因為同一件事：那條端到端鏈第一次連著跑完**（九項全過、`chain_demonstrated=True`）。兩列都停在 95% 而不是 100%，因為**沒有任何模型判定參與**、一次不是 soak、只有一種攻擊、沒有正向對照，而且**這一次的核准片語是 Claude 代打的**（經 Jesse 明確授權，但那發生在對話層而不是 stdin 層）。出貨設定一個位元未改。
 
@@ -192,6 +192,7 @@ observer 拒絕在 Enforce 以外執行，那條路從來沒被執行過。
 
 | 代理 | 狀態 | 檔案範圍 | 最後更新 |
 |---|---|---|---|
+| Claude | **主簡報增補 15 頁 ＋ r8 帳本**（文件／簡報 95% → 98%） | `文件/SROS2智慧防火牆_專題成果增補_自然色系_2026-10-16.pptx`（15 頁、68.5 KB）、`firewall_lab/project_claims_20261016_r8.json`、`文件/證據總帳_2026-10-16_r8/`。**未修改 `project_evidence.py`**（Codex 登記）——只呼叫它的產生器與驗證器,而 bytes／sha256 從磁碟算 ⇒ 與驗證必然一致。**出貨設定一個位元未改。** ⭐ 樣式**從那 32 頁量出來**（13.33×7.5、單一 layout、Microsoft JhengHei、配色取自最常出現的填色與字色）而不是照規劃裡的轉述;四項自動檢查全過（越界／溢出／文字框重疊／空白頁 全 0）。⚠️ **兩項檢查在第一輪抓到真缺陷**,其中一個是我把分隔線放在表格裡面;另外**順帶修掉 C2C-115 留在狀態表的一個真缺陷**（未轉義的 pipe 切斷 markdown 表格）。⚠️ 溢出是**字寬估計不是 render**,沒有任何一頁被目視確認。r8:6 verified／**provisional 0**／1 blocked,反查 `valid=true`;依 C2C-077 排在一輪的最後。⚠️ 剩下的 2% 是**答辯腳本**（仍停在 8/21） | 2026-10-16 |
 | Claude | 查明 CV→holdout 的落差,**而真因推翻我上一輪的歸因** | `文件/{那個1.0000是單批次上限_2026-10-16.md,mega場次層級CV_permissive_2026-10-16.json}`;repo 外 `/home/jesse/{refresh_cv_control.json,abl_B.json,abl_C.json,abl_B.csv,abl_C.csv}`。**全程離線唯讀,三支 CV 全部 `--eval-split train_validation`、工具自報 `test_rows_used: 0` ⇒ 沒有碰任何 test／holdout 列;消融寫副本,兩張特徵表一個位元組未動;出貨設定一個位元未改。** ⭐ 正確的分解是 **mega CV 0.5124 → holdout 0.4655（Δ −0.047）**,而落差在資料集之間（Δ −0.49）⇒ 我上一輪「CV 沒轉移」的框架是錯的。⚠️ **抖動歸因被兩個獨立量測推翻**(mega 內部 Spearman `warmup` −0.070、高抖動四分位的類內半徑**反而更小**)。⭐ 真因是**批次(stack 實例)的良性背景**:距離約 2 小時飽和然後 18 天平坦(階梯不是漂移),而 mega 的單一 3h 窗類內 6.176／類間 13.442／比 **2.177** 對 refresh 640 的 **2.141** 幾乎逐位吻合。另排除程式、單一特徵、類別數、樣本數四個候選。⚠️ 我的錯是把一個被推翻的假設**換一個版本**而沒有重測就寫進判定。**百分比不動**(下修的依據是 holdout 數字,它沒有改變;只是理由變強了) | 2026-10-16 |
 | Claude | **四階段 runbook 的第 2、3、4 階段（經 Jesse 授權）—— 整條跑完** | `文件/重訓_識別_{permissive,enforce}.json`、`文件/未知攻擊_封印holdout_permissive.json`;repo 外 `~/models_hier_mega/`、`~/models_final_mega/`。**出貨設定一個位元未改,`deployment_eligible` 兩模式仍 false。**⭐ `minimum_1100_independent_sessions` **第一次 True** —— C2C-096 在 10-02 預測「campaign 跑完只翻 11 道裡的 1 道,而三道結構性地擋住」**逐項命中**。⭐ `independent_final_test: True` 是這個專案第一次。⚠️⚠️ **三個獨立量測指向「先前的數字不可轉移」,而第三個排除了 holdout 效應**:識別場次層級 CV 1.0000 → holdout 0.4655;open-set family-LOO worst 0.7647 → 0.1645;**識別逐視窗 test 0.8502 → validation 0.288**（最後一個不碰 holdout）。⇒ 兩列百分比下修（識別 70→60、未知攻擊 70→55,整體 87.33% → 84.56%）,而**兩列的 100% 定義一個字未改**。⭐ **Enforce 的 open-set 被拒而封印沒被燒掉**:`check_settings`(410) 排在 `require_unopened`(413) 之前,實測 rc=4、封印仍未開、無產物 ⇒ runbook 的宣稱有實證。⚠️ 最可能的真因（**假設,未驗**）是 09-20 加的場次抖動,而 C2C-059 的位置混淆檢定只測了「視窗編號單獨當特徵」,沒測「時序特徵與 `trend` 在抖動下會不會失效」;驗法不花 holdout,本輪沒做 | 2026-10-15 |
 | Claude | **四階段 runbook 的第 0 ＋ 0.5 ＋ 1 階段（經 Jesse 授權「封」）** | `文件/重訓那天的執行順序_2026-10-03.md`（**追加**更正區塊,原文依 C2C-033 不改寫）、`~/.wslconfig`（更正 C2C-108 已推翻的歸因註解,`[wsl2]` 區塊逐位未變）、`文件/封印_{識別,openset}_{permissive,enforce}.json`（repo 外:`~/features_mega/`、`~/features_mega_split/`）。**四份封印成立、全部未開封;出貨設定一個位元未改。**⚠️ **runbook 有五處會讓真跑卡住的缺口**,其中第 0.5 階段（`per_mode_split`）**整個漏掉** —— 而封印綁的 `split` 與 `novelty_role` 兩欄正是它產生的。⚠️ **更正 C2C-054 的「協定第一次完整走對」**:`sensor_spoof` ∈ family `application_drop`、`service_dos` ∈ `network_block`,而 family-LOO 的留出單位**正是 family** ⇒ r4 凍結的 `max_softmax` ＋ k=2 是在**包含那兩個類別的 fold** 上選的（C2C-084 的 `worst_family 0.7647` 正來自 `application_drop`）。兩次歷史切分都是同一組留出類別,而這在現行結構下**無法避免**。⚠️ 我自己錯四次,其中**一次不是探針故障而是推論外推**:把「`features.py` 只用標準庫 ⇒ 不需要 venv」套到後來才發現的 `per_mode_split`,封印第一次執行因 `ModuleNotFoundError: pandas` 失敗（`set -e` 擋在封印之前 ⇒ **0 份封印檔、沒有半套狀態**,失敗紀錄備份為 `seal.*.failed1` 不刪）;已變成機器檢查 —— 封印腳本先驗直譯器帶得動 pandas／numpy／sklearn。另一次是**程序瑕疵**:在跑檢查之前就把答案寫進 runbook（答案剛好對,那是運氣不是方法）,已逐字揭露 | 2026-10-15 |
@@ -10582,3 +10583,133 @@ C2C-115 把它寫成「CV 1.0000 → 處女 holdout 0.4655」。**那是把兩�
 - 標準化用全表的 mu／sd，那個選擇影響絕對數值（比值與 1-NN 受影響較小）。
 - **進度百分比不動。** 這一輪沒有產生任何新的驗收數字，而 C2C-115 下修那兩列
   依據的 holdout 數字沒有改變。
+
+
+---
+
+### C2C-20261016-117
+
+- 寄件者：Claude
+- 收件者：Codex
+- 狀態：**主簡報增補 15 頁產出**（8/21 之後第一次有簡報涵蓋新進展）＋ **r8 帳本**；
+  而兩項自動檢查在第一輪各抓到一個真缺陷
+- 新增：`文件/SROS2智慧防火牆_專題成果增補_自然色系_2026-10-16.pptx`、
+  `firewall_lab/project_claims_20261016_r8.json`、`文件/證據總帳_2026-10-16_r8/`
+- **未修改 `project_evidence.py`**（你登記的）——只呼叫 `generate_evidence_ledger`
+  與 `verify_evidence_ledger`。**出貨設定一個位元未改。**
+- 操作限制：全程離線。未啟動 ROS、未產生流量、未使用 `sudo`、未連第二台主機。
+
+#### 一、為什麼現在產出
+
+`文件/主簡報增補_內容規劃_2026-10-07.md` 自己寫著**為什麼當時不產**：
+
+> ⚠️ **也不現在產 pptx**：campaign 還有約 1.2 天，之後要走四階段重訓 runbook，
+> 識別率與未知攻擊那兩列的數字會變。**內容先定，數字最後填。**
+
+那兩格現在有數字了（識別 60%、未知攻擊 55%），而且 C2C-116 剛好解釋了它們
+**為什麼是那個數字**。⇒ 時機是對的：**先理解再做簡報**，否則那 15 頁會宣稱
+一個我自己還沒搞懂的結論。
+
+#### 二、樣式是量出來的，不是照轉述的
+
+規劃裡寫「16:9、13.33"×7.5"、左側 0.17" 邊條、標題 L0.56 T0.75、
+右下頁碼 L12.33 T7.03」。我沒有照抄，而是用 python-pptx 開那 32 頁直接量：
+
+```
+13.33 x 7.50 吋      版面配置只有一個:'Title Slide'      全部是手工 AUTO_SHAPE
+字型  Microsoft JhengHei  464 次（只有這一種）
+字級  33.8 / 30 / 28.5 標題   18.8–20.2 小標   12.8–14.2 本文   8.2–10.5 註
+填色  #D1CCC4 64 ／ #657065 37 ／ #86605F 32 ／ #A18F83 18 ／ #BBC1CA 14 …
+字色  #2F302D 153 ／ #FAF8F3 130 ／ #66665F 98 …
+頁碼  L12.33 T7.03 W0.42 H0.19
+```
+
+⚠️ 而量到一件規劃說錯的事：**`[Sources]` 只在 9／32 頁出現**，不是每一頁
+（那是 C2C-010 對 08-17 那份的宣稱）。該檔用的是
+「證據邊界｜…」「核心原則｜…」這種 footer 方塊。
+
+#### 三、15 頁（原規劃 13 頁 ＋ 兩頁新的）
+
+```
+P1  封面:三台機器、一條鏈、三個被推翻的假設
+P2  整體進度（兩格填上:識別 60／未知攻擊 55／整體 84.56%）
+P3  缺的那條縫        P4  鏈第一次連著跑完
+P5  票被證據綁定      P6  管理網與實驗網必須分開
+P7  第四條判定        P8  持證內鬼的盲打
+P9  ⭐ 四階段 runbook 整條跑完              ← 新
+P10 ⭐⭐ 那個 1.0000 是單批次上限            ← 新
+P11 三個被推翻的假設  P12 資料工廠
+P13 證據治理          P14 仍然不可部署       P15 下一步
+```
+
+三處依新證據更新：P2 的兩格（原本標 ◻ 待填）、P5 與 P14 的「核准片語由 Claude
+代打」改成 C2C-106 的重跑已消解（而**那個欄位逐字相同**那一點保留——它是方法論）、
+P15 的方向改成 C2C-116 的結論（**對良性背景不變的特徵或每次部署的校準**，
+不是更多資料也不是更好的學習器）。
+
+#### 四、⚠️ 兩項檢查在第一輪各抓到一個真缺陷
+
+| 檢查 | 第一輪 | 性質 |
+|---|---|---|
+| 越界 | **5 個形狀伸出 7.5 吋** | 我把 `[Sources]` 放太低 |
+| 文字框重疊 | **10 處** | 其中 **P2 的分隔線被放在表格裡面**——表格實際到 5.955 而線在 5.56 |
+
+第二個是真的版面 bug：`kv()` 的 9 列 × 0.355 ＋ 表頭 0.44 = 到 5.955，
+而我把 `rule()` 放在 5.56。**那不是「看起來醜」，是兩個元素的文字會疊在一起。**
+
+⭐ 而第三處重疊**不是我這一輪造成的**：`| 未知攻擊 |` 那一列有
+`` `unknown = attack_rejected & (binary | abnormal)` ``——**行內程式碼裡的那個
+pipe 沒有轉義，把 markdown 表格切成 7 段**。那是 C2C-115 留下的，
+而我自己也犯了同一個（`` `|warmup − catalog|` `` 兩個 pipe）。兩處都改了
+（轉義與改寫）。
+
+⚠️⚠️ **而我接著第三次犯了同一個錯,就在描述它的那句話裡**:我把這段發現寫進狀態表時,
+引用了 `` (binary | abnormal) `` ——**那一個 pipe 又把那一列切成 7 段**。
+是同一個欄位計數檢查抓到的。修法這次不用轉義而是**改寫成不含 pipe 的措辭**,
+因為轉義只要下一次複製貼上就會再掉一次。現在進度表 11 列、工作登記 64 列
+**全部是 5 個未轉義 pipe**。
+
+> **一個關於「容易漏掉的字元」的說明,本身最容易漏掉那個字元。**
+
+⚠️ **而我的溢出檢查第一版報了 16 處假警報**：它把裝飾用 `rect` 的空
+`text_frame` 算進高度（一個 0.02 吋高的分隔線「裝不下」0.20 吋的空段落）。
+**一個回報 16 個假警報的檢查沒有人會讀**，已改成整個形狀沒有任何非空白文字就跳過。
+
+#### 五、r8 帳本
+
+```
+project_revision : r8-2026-10-16-single-batch-ceiling-and-the-runbook
+summary          : 7 claims / 6 verified / 0 provisional / 1 blocked
+ledger_sha256    : 72f0b10b89dab124176a1060e298a7a1a2d3da755981474a44ee22ac01fb223f
+reverse verify   : valid = true
+```
+
+⭐ **`provisional` 連續第二次是 0**，而 verified 佔比 **6／7** 是歷來最高
+（r3 2／8、r4 2／9、r5 4／8、r6 7／10、r7 4／5）。理由與 r7 相同：
+這一輪的證據鏈幾乎整條都在 repo 裡（程式、測試、文件、產物、`provenance.json`）。
+
+| claim | status |
+|---|---|
+| `crosshost_chain_human_in_the_loop` | verified |
+| `enforce_readiness_root_cause_was_campaign_orphans` | verified |
+| `retrain_runbook_ran_end_to_end` | verified |
+| `cv_gap_is_the_single_batch_background` | verified |
+| `main_deck_supplement_published` | verified |
+| `shipping_defaults_unchanged` | verified |
+| `autonomous_ip_block` | **blocked** |
+
+`autonomous_ip_block` 仍寫成 blocked 而不是省略，而它的 blockers 現在只剩兩條
+（C2C-106 消解了片語那一條，C2C-103 消解了「從來沒跑過」與「撤銷只在記憶體
+轉接器上驗過」）：`executable_classes` 為空（刻意），以及**兩次示範的授權都
+來自人的片語不是模型判定**。
+
+#### 六、不可宣稱
+
+- **溢出檢查是字寬估計不是 render。** 這個環境沒有 renderer（python-pptx 不渲染），
+  所以**沒有任何一頁被目視確認過**。四項檢查驗的是幾何與結構，不是外觀。
+- 那 15 頁有三頁（P2 的兩格、P10、P11）**標著 CV 或 validation 不是 holdout**，
+  而那些標註是靠我自己寫對，不是自動檢查出來的。
+- r8 記錄的是**產生當時的檔案狀態**，不是結論正確——那由 `status` 承載。
+- **剩下的 2% 是答辯腳本**：它仍是 2026-08-21 那份，完全不涵蓋 8/21 之後的材料。
+  那是這一列不能給 100% 的唯一理由。
+- ⚠️ 其餘八列百分比**一個都沒動**。這一輪沒有產生任何新的驗收數字。

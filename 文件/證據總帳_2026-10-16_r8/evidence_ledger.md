@@ -1,0 +1,137 @@
+# Project evidence ledger
+
+- Project: `sros2-smart-firewall`
+- Revision: `r8-2026-10-16-single-batch-ceiling-and-the-runbook`
+- Generated (UTC): `2026-10-15T17:13:45.673056+00:00`
+- Claims: verified 6, provisional 0, blocked 1
+- This ledger cannot authorize deployment, an adapter, or an autonomous IP block.
+
+| Claim | Status | Statement | Evidence | Blockers |
+|---|---|---|---:|---|
+| The approval phrase was typed by the human, and the artifacts cannot tell | verified | On 2026-10-07 the attribution-to-block chain ran end to end for the first time, but the approval phrase was typed by Claude under an explicit authorisation given in conversation rather than on stdin, so r7 recorded that limitation verbatim. On 2026-10-08 13:56Z the same chain was run again with Jesse typing the phrase himself: all nine checks passed, rc=0, chain_demonstrated=True, the kernel set carried 192.168.0.141, the counter moved and revocation left an empty set confirmed by querying the kernel. Claude did not touch that process; it only cleared stuck processes beforehand, re-opened the ICMP traffic source, and watched the kernel nft table count go 1 to 0 from the out-of-band management link before reading the artifacts. The finding that matters is not that the rerun passed but that the two runs are indistinguishable from their outputs: both artifacts carry the identical authorization block, authority_came_from='human approval phrase on stdin' and human_phrase_supplied=true. The program cannot tell who pressed the key, which is exactly why provenance has to be carried outside the artifact rather than asserted by it. | 5 | — |
+| Enforce readiness failed because of 94 talker orphans the campaign created itself | verified | Enforce stack readiness had been failing three times out of three at 236-247 seconds, and the supervisor logged it as 'the enforce stack will not come up'. The root cause was 94 orphaned `ros2 run demo_nodes_cpp talker` processes left behind by the campaign's own unauthorized_participant runner, roughly 31 per session. A prediction was written before clearing them: if the talkers are the cause, readiness should pass afterwards. After `wsl --shutdown` the same `live_stack.sh start enforce` reported READY in 87 seconds with zero residual nodes, and the following 80 complete sessions were 80/80 eligible with zero SIGKILL and zero hard-stop. The mechanism by which they escaped is the one C2C-082 wrote down in advance as the fork-teardown risk: the parent exits unconditionally, so ManagedProcess.stop sends SIGTERM to a process group whose leader has already gone. C2C-082 predicted this would degrade to 'nothing gets reaped, no worse than before'; measurement showed it is worse than before, because the cost accumulates - median in-session wall clock went 126s to 337s over 3.5 hours until the pace breaker stopped the campaign by itself, and that breaker's judgment checked out (85.7 + 0.376 x 158.8 = 145.4s predicted against 337.0s measured, residual +192 against a threshold of 90, with throughput falling 28.5 to 23.2 sessions per hour as an independent corroboration). The fix is that the supervisor's backstop sweep listed sixteen process patterns and every one of them was a defender process, so it could never count an attacker-side orphan; a seventeenth pattern was added, and the test that prevents recurrence derives the expected pattern set from runners.py rather than hard-coding it. | 8 | — |
+| The four-phase retrain runbook ran end to end, and it was missing an entire phase | verified | The runbook written on 2026-10-03 had never been executed. Running it on 2026-10-15 produced the project's first identification numbers on a sealed, never-opened holdout: feature extraction over 3,553 sessions in 1:57:28 with ru_maxrss 1.50 GiB and zero swaps; per-mode splitting giving permissive 1,606 and enforce 1,947 sessions, bit-identical to the campaign's own count arrived at by a completely different path; four seals created, two for `split == test` and two for `novelty_role`, whose scopes turned out to be orthogonal rather than nested (intersection 22 and 23 sessions) so that 'open once' needed no relaxation and no resolution was lost; identification balanced accuracy 0.4655 for permissive over 18 classes with a ceiling of 1.0000 and zero zero-recall classes, and 0.4228 for enforce over 20 classes; open-set session recall at k=2 of 0.1645 for permissive with a normal false-unknown session rate of exactly 0.0; and the deployment gates evaluated with minimum_1100_independent_sessions True for the first time in both modes, item-for-item matching the prediction recorded on 10-02 that finishing the campaign would turn exactly one of the eleven gates. independent_final_test is True for the first time in this project, and deployment_eligible remains false in both modes. Two structural findings came out of the run itself. The runbook omitted an entire phase: features.py writes only a single fused table, while the `split` and `novelty_role` columns that the seals bind are produced by per_mode_split.py, so sealing was impossible without it. And the enforce open-set evaluation was refused with rc=4 because its scorer is undecided, with the seal still unopened and no artifact written, because check_settings is ordered before require_unopened - which is the first live evidence for the one-shot protection the runbook claims. | 12 | — |
+| The earlier 1.0000 was a single-batch ceiling, not a generalisation result | verified | The gap between the session-level cross-validation score of 1.0000 and the sealed holdout's 0.4655 was first framed as a failure to transfer from CV to holdout. That framing put two different datasets on one line. Measuring session-level CV on dataset_mega itself, with --eval-split train_validation and the tool reporting test_rows_used 0, gives 0.5124 against a shuffled control of 0.0523 and a chance level of 0.0556. So the CV-to-holdout step transfers well, a difference of -0.047 that sits inside the resolution, and the drop of -0.49 is between the datasets. The cause is the data geometry, not the learner: leave-one-out 1-NN, which involves no fitted model at all, gives 0.9490 on refresh 640 against 0.4670 on mega, while random forest gives 1.0000 against 0.5124, so the forest beats nearest neighbour by only 0.045, and the two agree on which classes are worst. Four candidates were ruled out. The program: the same tool reproduces 1.0000 plus/minus 0.0000 on refresh 640 with a worst class of 1.000. Any single feature: zeroing sros_auth_fail_rate, which is non-zero in 97.4 percent of refresh rows and identically zero across all 38,810 mega rows, and then also mean_bytes_per_packet, still leaves refresh at 1.0000. The class count: restricting mega to the same fifteen classes moves the between-to-within ratio from 0.588 to 0.591. The sample size: the direction is wrong, since going from 17 to 65 sessions per class should bring the nearest neighbour closer. The session jitter added on 09-20 was also ruled out, and from inside mega so that nothing else varies: Spearman correlations between within-class standardised distance and jitter magnitude are all about zero, with warmup at -0.070, and splitting on quartiles leaves the high-jitter group with the smaller within-class radius. What is left is measured rather than inferred. Same-class pair distance saturates within about two hours and is then flat across eighteen days, which is a step and not a drift, and two hours is one batch at forty sessions of ninety to a hundred and thirty seconds with one stack_up per batch. Restricting mega to a single three-hour window gives a within-class radius of 6.176, a between-centroid distance of 13.442 and a ratio of 2.177, against refresh 640's 6.478, 13.871 and 2.141 - nearly bit-for-bit - and the ratio falls monotonically with window length from 1.492 at three hours to 0.588 over the whole span. So the earlier 1.0000 measures how separable attacks are against one stack instance's benign background, and 0.4655 is the realistic number. The direction this implies is background-invariant features or per-deployment calibration, not more data and not a better learner. | 5 | — |
+| A fifteen-page supplement now covers everything after 2026-08-21 | verified | The main deck had been frozen at the 32-page 2026-08-21 version, and C2C-037 said to wait for new final evidence before building another one. A content plan was written on 10-07 that deliberately deferred production because two cells were still unknown. Those cells now have numbers, so the deck was produced: fifteen pages covering the missing seam, the end-to-end chain, evidence-bound tickets, the management/experiment network split, the fourth link-layer criterion, the credentialed insider's blindness, the four-phase runbook, the single-batch ceiling finding, the three refuted hypotheses, the data factory, evidence governance, why the system is still not deployable, and what comes next. The 2026-08-21 deck is not replaced. The style was measured from it rather than guessed - 13.33 by 7.5 inches, a single Title Slide layout with every page hand-positioned, Microsoft JhengHei throughout, and the palette taken from its most frequent fills and text colours - and the result passes four automated checks: zero shapes out of bounds, zero estimated text overflows, zero overlapping text boxes and zero blank pages. Two of those checks found real defects on the first pass, one of which was a layout bug where a divider had been placed inside a table rather than below it. | 3 | — |
+| No executable path was opened in any of this work | verified | Across the cross-host chain reruns, the campaign repairs, the four-phase runbook and the separability investigation, the shipping configuration was not changed. action_policy.json's executable_classes is an empty list, so zero classes are authorised to execute. decision.py forces any executable decision back to alert while deployment_eligible is false, and both per-mode models report deployment_eligible false. LIVE_NFT_ACTIVATION_ALLOWED in nft_backend_service.py is False. The separability work was entirely read-only: all three cross-validation runs used --eval-split train_validation with the tool reporting zero test rows used, and the feature ablation wrote copies rather than touching either feature table. | 4 | — |
+| Room-scale autonomous IP blocking | blocked | The full chain from attack through attribution to a revocable kernel block has now been demonstrated end to end twice, the second time with the approval phrase typed by the human, and revocation has been confirmed against the real kernel rather than a return value. Two of the four original blockers are therefore cleared. The remaining two are not about whether the mechanism works but about who is allowed to trigger it. | 4 | executable_classes is an empty list, so no class is authorised to execute any action. This is deliberate and will stay until each class has passed live outcome, misjudgement-safety, revocation and backend acceptance individually.; The authority for both demonstrated runs came from a human approval phrase, not from a model decision. No model decision participates anywhere in the chain, and the identification and open-set models both report deployment_eligible false. |
+
+## Claim details
+
+### Evidence for `crosshost_chain_human_in_the_loop`
+
+- `文件/跨主機鏈_2026-10-07/chain_block_human.json` — 2909 bytes, SHA-256 `ca6226d29a9fd4b020a9d54961cc1b82cd8c1eb167023dcad87f613ab6eb9f83` (The nine-check report from the run Jesse drove: chain_demonstrated=True, rc=0)
+- `文件/跨主機鏈_2026-10-07/run_block_human.log` — 2691 bytes, SHA-256 `1a512140de10ba0c1874041c57593c8ef43816b0b22f86d2bfc06d51d4d7a1f7` (That run's full stdout, including the phrase prompt)
+- `文件/跨主機鏈_2026-10-07/provenance_human.json` — 2735 bytes, SHA-256 `25bc89d8e88afd9daf9adbc961957af65f43a8185bb6070ce225f07eb1a3c131` (Provenance for the rerun; records that Claude only observed from the management link)
+- `文件/跨主機鏈_2026-10-07/chain_block.json` — 2907 bytes, SHA-256 `49443848fb7efcc9241ed2cfbbb2f9e34272df080ec10d092b4814c8465d869c` (The 10-07 run, for the byte-identical authorization block comparison)
+- `文件/跨主機鏈_2026-10-07/provenance.json` — 4937 bytes, SHA-256 `326cdf3a73520bc84522a96a47bb17c6cd61d253fae747951f4db5fd89d0ee83` (The 10-07 provenance, whose MUST_BE_DISCLOSED block carried the limitation)
+
+### Limitations for `crosshost_chain_human_in_the_loop`
+
+- Checks 7 and 9 use ICMP, not attack traffic: the rule is `ip saddr @blocked counter drop` on the input hook and does not distinguish protocol, so the Pi pinging the desktop is enough to move the counter. The attribution of attack traffic comes from stages 1-3, not from those checks.
+- One run, one target, one ticket, TTL 90 seconds, one packet dropped. This is not a soak.
+- One attack type (N28 wrong-CA) and no positive control: a legitimate remote participant that should be judged AUTHORIZED and must not be blockable was never run.
+- No model decision participates anywhere in the chain.
+- r7 is deliberately not overwritten; its limitation text represents what was true when it was generated, per the C2C-033 handling of reference drift.
+
+### Evidence for `enforce_readiness_root_cause_was_campaign_orphans`
+
+- `文件/Enforce失敗的真因是94個talker孤兒_2026-10-08.md` — 11179 bytes, SHA-256 `a5b47d81a3c522c259dcfff4e261fe6c5274f2e0e18128d8255a2246cdfc1f30` (The investigation: the prediction, the before/after, and the accumulation measurement)
+- `文件/Enforce的readiness_是participant規模不是Gazebo_2026-10-09.md` — 5770 bytes, SHA-256 `fe04d6ea80c375e67d272bf77e48b12212f6be053190ec25aa9f08167840c4f7` (The follow-up that separated participant scale from Gazebo startup)
+- `工具腳本/run_mega_campaign.sh` — 18150 bytes, SHA-256 `bcc9194356a9accd95dc5767d0a77a0b5a0f36ac1598e8fa4ee566e73507390f` (The supervisor; STACK_PATTERNS now covers the attacker-side talker)
+- `tests/test_mega_supervisor.py` — 15954 bytes, SHA-256 `056f20aebcf215a90e10e289b63f62d740c1622495de2619771164b9fca3080c` (Coverage derived from runners.py, so a new spawning runner cannot be forgotten)
+- `工具腳本/reap_attack_orphans.py` — 5683 bytes, SHA-256 `70a2a67c0b37ad60c35e7a38ac7048139a85ac3d516430103f7ae9cbcd7cde5c` (The deadline-based reaper; fixing it at the batch boundary was too late)
+- `tests/test_attack_orphan_reaper.py` — 5818 bytes, SHA-256 `fa28eab0a2239577fee81c13b72a126bd520e57103341a2c98f3d11188c57dd3` (Its criteria: a future deadline is untouched, overdue is reaped, the grace has a floor)
+- `工具腳本/relaunch_mega_campaign.sh` — 3999 bytes, SHA-256 `5be1b33d0f185315f9f5b617a872519718dec2333b1eee7438e746d0c951e855` (The watcher; it deliberately does not assume the fix works and logs each round's rate)
+- `tests/test_relaunch_watcher.py` — 4046 bytes, SHA-256 `79d64bf8041781989daf34f93191f4193ec75173ef4c01eaacb41916db8448c7` (Four safety properties, each bitten by its own mutation and no other)
+
+### Limitations for `enforce_readiness_root_cause_was_campaign_orphans`
+
+- The 87-second READY is n=1. It decisively refutes 'always fails' but is not evidence of stability.
+- The origin of the original batch of 94 is inferred: they were cleared before `environ` was captured, so the pgid/ppid/environ evidence covers only the later batch of 32.
+- 'Roughly 31 per session' comes from n=3 unauthorized_participant sessions plus the count after a clean shutdown (3 x 31 = 93 against 94 measured).
+- The reaper's --loop had exactly one live reaping observed (7 processes); eight unit tests cover its criteria, not its live effectiveness.
+- Whether the reaper or the 9GB WSL memory cap fixed the later 784-session clean run is not separable: both landed in the same restart.
+
+### Evidence for `retrain_runbook_ran_end_to_end`
+
+- `文件/重訓那天的執行順序_2026-10-03.md` — 18409 bytes, SHA-256 `c204a3c60794bde60cde2a2046a4b16f8fbd78cd95da08926402097fb566796e` (The runbook, with the corrections block appended rather than rewritten (C2C-033))
+- `文件/封印_識別_permissive.json` — 14030 bytes, SHA-256 `421ead55eb2f86dd93ed9621ead1e451a9a6febac33631c037774365d01a935e` (Seal, scope=test, permissive)
+- `文件/封印_識別_enforce.json` — 17100 bytes, SHA-256 `f0ba3154330459c178260665d673ca0c3f1b22b70da0ce3c66887cd2a536be49` (Seal, scope=test, enforce)
+- `文件/封印_openset_permissive.json` — 9617 bytes, SHA-256 `ec669a0ac8a3a7fb898080e84b4bdb8fef4409abaeb3c9c9e8f40e43324826b9` (Seal, scope=novelty_holdout, permissive)
+- `文件/封印_openset_enforce.json` — 9660 bytes, SHA-256 `2387a30ad9810daa867201557f1a94d74b27d92808a8efb3bfb7775f792b5314` (Seal, scope=novelty_holdout, enforce - still unopened, and opening it is meaningless while the enforce scorer is undecided)
+- `文件/重訓_識別_permissive.json` — 23850 bytes, SHA-256 `97475b380c49044293055cd4cdc4c8c1c1dac859c994c1213dafc2a86d989fb2` (Phase 2 permissive: 0.4655, independent_final_test True)
+- `文件/重訓_識別_enforce.json` — 28470 bytes, SHA-256 `7ce6676362b6ac712154207766d8a74ffea8de9c5d0a5393b6963ebee16c72f0` (Phase 2 enforce: 0.4228)
+- `文件/未知攻擊_封印holdout_permissive.json` — 11804 bytes, SHA-256 `8abd81c7486ef9de7eb3b186ac8dd4edd2613ae5b78bb2728d1f52e970d29421` (Phase 3 permissive: session k=2 0.1645, normal false-unknown sessions 0.0)
+- `工具腳本/seal_holdout.py` — 13554 bytes, SHA-256 `1ff507b98bdc2c76590632e18fe48285f3aaad0b3912639733a964380912bafa` (The sealing tool, with --scope added for the two scopes)
+- `工具腳本/retrain_from_registration.py` — 14154 bytes, SHA-256 `5a3a82fa6851295151d05e6ca76acc8b4882d17f040f5451234dbcda9819f9ec` (Phase 2; require_unopened precedes fit, which precedes open_seal, which precedes predict)
+- `工具腳本/evaluate_openset_from_registration.py` — 22968 bytes, SHA-256 `0726f2d62f4a77367c8e23610a5c9b0d8a3ca46e2622fa8b2868f81bdf160da5` (Phase 3)
+- `tests/test_openset_sealed_holdout.py` — 11145 bytes, SHA-256 `cfc2d507d1b54f975618cce81fdaee867a1ca7695ab1c00e1450869b81ccc0a1` (28 tests, including one asserting the tool actually passes expected_scope - testing the mechanism is not testing the wiring)
+
+### Limitations for `retrain_runbook_ran_end_to_end`
+
+- The identification holdouts are now spent, both modes. The next number needs new data.
+- Phase 2 has 11-12 sessions per class, so per-class recall has a granularity of about 0.083.
+- Phase 3 covers only two holdout classes, so session-level recall has a granularity of 1/76.
+- Phase 3's numbers may not be called a virgin holdout, only new sessions: family-LOO's holdout unit is the family, so the frozen max_softmax and k=2 were chosen on folds that included those two classes. That overlap is structural under the current design.
+- Phase 4 reports per-window validation balanced accuracy, not test; that run deliberately did not carry --final-evaluate-test because the identification holdout had already been spent.
+- Phase 0's 3,553 figure is sessions accepted into the feature table, not disk sessions (3,837 complete), and 288 were skipped.
+
+### Evidence for `cv_gap_is_the_single_batch_background`
+
+- `文件/那個1.0000是單批次上限_2026-10-16.md` — 11832 bytes, SHA-256 `813336553c2c2268a7e66baac0c84e88c24ba42b054172eb1357e19ebcfa75a1` (The full measurement: the decomposition, the four ruled-out candidates, the jitter refutation from inside mega, and the batch-window observation)
+- `文件/mega場次層級CV_permissive_2026-10-16.json` — 4559 bytes, SHA-256 `7cde9d82fa7f18616aa8f099397ef116272989d3da76f75fb70f238c3585ffe9` (The mega session-level CV artifact: 0.5124, shuffled control 0.0523, test_rows_used 0)
+- `文件/識別模型選型_2026-09-19/選型_permissive.json` — 17755 bytes, SHA-256 `86f957a3dde2419f3f06c156abd38ba6a74d3882c61ab7dd098735ea0ec584a7` (The 2026-09-19 selection on refresh 640, which the ablation control reproduces)
+- `文件/識別模型選型_2026-09-19/選型_enforce.json` — 18635 bytes, SHA-256 `e72dc02bfb6b0bf05d54fc8dce245921504639d1d74c77ffab38820d115c1137` (The enforce half of that selection, for the temporal-feature margin)
+- `工具腳本/select_identification_model.py` — 24932 bytes, SHA-256 `76eecd3cbdb2b414197f79a5285acb1d10528d22a3709f2027e7bdeff0ff892f` (The tool; its session_matrix was imported rather than reimplemented (C2C-060))
+
+### Limitations for `cv_gap_is_the_single_batch_background`
+
+- Everything here is permissive. Enforce's CV, 1-NN and batch effect were not measured.
+- 'Stack instance' is a time-window proxy: nothing records an instance id. The two-hour saturation matches the batch scale, but the supervisor log was not read to pair sessions to stack_up events.
+- The three-hour window has 67 sessions, about 4.5 per class, so its 1-NN of 0.7164 is not comparable to refresh 640's 0.9490 at 17 per class; what is comparable is the scale-free ratio.
+- The microscopic mechanism is not identified: what varies in the 'benign background' - Gazebo initial conditions, machine load, code_revision, SHM residue - was not measured. Only its scale was.
+- Standardisation uses whole-table mean and standard deviation; that choice affects absolute values, though the ratio and 1-NN are less sensitive to it.
+- Nothing here produces a new acceptance number, and the holdout figures the two percentage downgrades rest on did not change.
+
+### Evidence for `main_deck_supplement_published`
+
+- `文件/SROS2智慧防火牆_專題成果增補_自然色系_2026-10-16.pptx` — 68532 bytes, SHA-256 `6611ac80a0f394ac53cd8f0300efff6cdc8ffa19a624212e31c8bdb8de8ea9be` (The fifteen-page supplement)
+- `文件/主簡報增補_內容規劃_2026-10-07.md` — 9700 bytes, SHA-256 `62ebb3884d4fda01c87b81ffc7f5c2071c9ceeb254284b290f08e4678a9cb32e` (The content plan it follows, which deliberately deferred production until the numbers existed)
+- `文件/SROS2智慧防火牆_專題最終報告_自然色系_2026-08-21.pptx` — 147644 bytes, SHA-256 `5ef98c374e104d0d8224836a608284ca5bb9b87aaa13fb61c6cddd41dd8473d3` (The 32-page deck it supplements and does not replace)
+
+### Limitations for `main_deck_supplement_published`
+
+- The overflow check is an estimate from character widths, not a render. No rendered page was inspected, because no renderer was available in this environment.
+- The defence script is still the 2026-08-21 version and does not cover any of this material.
+- Three pages state numbers that are cross-validation or validation figures rather than holdout figures, and say so on the page.
+
+### Evidence for `shipping_defaults_unchanged`
+
+- `firewall_lab/action_policy.json` — 3144 bytes, SHA-256 `0ed41ad00639e77f45be4df367f3c9efb5fdcf756a10c07820e4e6380d7c2a49` (executable_classes is an empty list)
+- `firewall_lab/decision.py` — 14552 bytes, SHA-256 `e5aa89ef9372e52bd16b29b387e1899bd101f9a3c41e281af50aa50e8da850e4` (Executable decisions are forced to alert when not eligible)
+- `firewall_lab/nft_backend_service.py` — 46154 bytes, SHA-256 `951ccfeaff539701f6aea222763c42a26158a597df5141cf9780c4a59e0c5bfc` (LIVE_NFT_ACTIVATION_ALLOWED is False)
+- `firewall_lab/scenarios.json` — 11964 bytes, SHA-256 `d481ef27943c340098fc06e2c13e07453779f86bdb7da549d9438cfccc702a48` (The shipping catalog, unchanged at 20 producible classes)
+
+### Limitations for `shipping_defaults_unchanged`
+
+- This is an assertion about configuration, not a claim that opening those paths would be safe.
+- The chain's ticket was authorised by a human phrase; no model decision reaches the backend, which is precisely why these flags were never exercised.
+
+### Evidence for `autonomous_ip_block`
+
+- `文件/跨主機鏈_2026-10-07/chain_block_human.json` — 2909 bytes, SHA-256 `ca6226d29a9fd4b020a9d54961cc1b82cd8c1eb167023dcad87f613ab6eb9f83` (Nine of nine with the phrase typed by the human)
+- `firewall_lab/action_policy.json` — 3144 bytes, SHA-256 `0ed41ad00639e77f45be4df367f3c9efb5fdcf756a10c07820e4e6380d7c2a49` (executable_classes is empty, deliberately)
+- `firewall_lab/response_backend.py` — 52343 bytes, SHA-256 `e59e86a30dd02cbfd68fd309718538a6f5a8f3bb7470b0030e376ebf5148483a` (revoke_source exists and has now been executed against a real kernel)
+- `工具腳本/run_attribution_driven_block.py` — 26404 bytes, SHA-256 `637d3d569abde3df5ef1289866af433da42e41b61ff55cbcec9001b2b79b7c3c` (The chain runner; the ticket's evidence_id is the attribution report's own SHA-256)
+
+### Limitations for `autonomous_ip_block`
+
+- One run per variant; one target, one ticket, TTL 90 seconds. Not a soak.
+- One attack type and no positive control.
+
+
+## Safety boundary
+
+This is an evidence inventory, not a cryptographic signature or live-test authorization.
+A valid ledger proves only that the cited repository files matched the recorded size and hash at verification time.
