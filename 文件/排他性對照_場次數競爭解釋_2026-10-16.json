@@ -1,0 +1,43 @@
+{
+  "schema_version": "sros2-firewall-rho-controls/v1",
+  "holdout_reads": 0,
+  "note": "Y 直接引用已發布的 per_class_recall;X 與場次數都只用 train+validation",
+  "modes": {
+    "permissive": {
+      "全部": {
+        "n": 17,
+        "rho_exclusivity": 0.3344,
+        "rho_cv_sessions": -0.1045,
+        "critical_p05": 0.49,
+        "critical_p01": 0.645,
+        "verdict": "不顯著"
+      },
+      "排除兩個持證內鬼": {
+        "n": 17,
+        "rho_exclusivity": 0.3344,
+        "rho_cv_sessions": -0.1045,
+        "critical_p05": 0.49,
+        "critical_p01": 0.645,
+        "verdict": "不顯著"
+      }
+    },
+    "enforce": {
+      "全部": {
+        "n": 19,
+        "rho_exclusivity": 0.6334,
+        "rho_cv_sessions": 0.227,
+        "critical_p05": 0.46,
+        "critical_p01": 0.608,
+        "verdict": "p<.01"
+      },
+      "排除兩個持證內鬼": {
+        "n": 17,
+        "rho_exclusivity": 0.5861,
+        "rho_cv_sessions": 0.185,
+        "critical_p05": 0.49,
+        "critical_p01": 0.645,
+        "verdict": "p<.05"
+      }
+    }
+  }
+}

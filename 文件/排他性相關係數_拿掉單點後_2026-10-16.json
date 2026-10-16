@@ -1,0 +1,29 @@
+{
+  "schema_version": "sros2-firewall-rho-leaveone/v1",
+  "holdout_reads": 0,
+  "question": "ρ 是不是由 hmac_forgery 單一點撐起來的?",
+  "modes": {
+    "permissive": {
+      "rho_all": 0.3344,
+      "n_all": 17,
+      "rho_without_hmac_forgery": 0.3344,
+      "n_without": 17,
+      "X_range_without": [
+        0.4961,
+        0.5
+      ],
+      "X_spread_without": 0.0039
+    },
+    "enforce": {
+      "rho_all": 0.6334,
+      "n_all": 19,
+      "rho_without_hmac_forgery": 0.6365,
+      "n_without": 18,
+      "X_range_without": [
+        0.4614,
+        0.5
+      ],
+      "X_spread_without": 0.0386
+    }
+  }
+}

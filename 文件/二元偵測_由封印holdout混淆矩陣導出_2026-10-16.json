@@ -1,0 +1,46 @@
+{
+  "schema_version": "sros2-firewall-binary-from-confusion/v1",
+  "method": "collapse the published 18x18 / 20x20 confusion matrix to attack-vs-normal",
+  "holdout_reads": 0,
+  "note": "不重讀任何一列 test;只對已開封那一次產出的混淆矩陣做再分析",
+  "modes": {
+    "permissive": {
+      "classes": 18,
+      "holdout_sessions": 242,
+      "independent_final_test": true,
+      "seal_path": "文件/封印_識別_permissive.json",
+      "test_sessions_sha256": "acbc55994d7e25ecbdd892c96aa31f00baca531cd4076aa248d74d8b6b201337",
+      "TP": 197,
+      "FN": 0,
+      "FP": 0,
+      "TN": 45,
+      "attack_recall": 1.0,
+      "normal_false_positive_rate": 0.0,
+      "specificity": 1.0,
+      "precision": 1.0,
+      "f1": 1.0,
+      "binary_balanced_accuracy": 1.0,
+      "pr_auc": null,
+      "pr_auc_unavailable_because": "混淆矩陣只有硬判定,沒有機率分數;PR-AUC 需要分數"
+    },
+    "enforce": {
+      "classes": 20,
+      "holdout_sessions": 292,
+      "independent_final_test": true,
+      "seal_path": "文件/封印_識別_enforce.json",
+      "test_sessions_sha256": "a429f85053d5b3170d10f6d1dc1171b1660c82dc9140f373ae0020571fb72fa1",
+      "TP": 227,
+      "FN": 20,
+      "FP": 4,
+      "TN": 41,
+      "attack_recall": 0.919,
+      "normal_false_positive_rate": 0.0889,
+      "specificity": 0.9111,
+      "precision": 0.9827,
+      "f1": 0.9498,
+      "binary_balanced_accuracy": 0.9151,
+      "pr_auc": null,
+      "pr_auc_unavailable_because": "混淆矩陣只有硬判定,沒有機率分數;PR-AUC 需要分數"
+    }
+  }
+}
