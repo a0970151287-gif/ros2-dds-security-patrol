@@ -1,0 +1,459 @@
+{
+  "schema_version": "sros2-firewall-enforce-batch-geometry/v2",
+  "prediction_file": "文件/預測_Enforce的批次效應與觀測者通道混淆_2026-10-17.md",
+  "prediction_commit": "154682d",
+  "temporal": "none",
+  "holdout_reads": 0,
+  "standardisation": "whole-table mu/sd",
+  "nn1_note": "balanced = mean per-class recall; plain = fraction correct. C2C-116 reported PLAIN for mega and they coincide for refresh.",
+  "changes_shipped_defaults": false,
+  "baseline": {
+    "refresh_enforce": {
+      "classes": 17,
+      "sessions": 289,
+      "within": 5.8931,
+      "between": 11.3346,
+      "ratio": 1.9234,
+      "nn1_balanced": 0.526,
+      "nn1_plain": 0.526
+    },
+    "mega_enforce": {
+      "classes": 20,
+      "sessions": 1655,
+      "within": 10.0796,
+      "between": 4.706,
+      "ratio": 0.4669,
+      "nn1_balanced": 0.2572,
+      "nn1_plain": 0.3178
+    },
+    "refresh_permissive": {
+      "classes": 15,
+      "sessions": 255,
+      "within": 6.4777,
+      "between": 13.871,
+      "ratio": 2.1413,
+      "nn1_balanced": 0.949,
+      "nn1_plain": 0.949
+    },
+    "mega_permissive": {
+      "classes": 18,
+      "sessions": 1364,
+      "within": 11.1341,
+      "between": 6.5422,
+      "ratio": 0.5876,
+      "nn1_balanced": 0.3832,
+      "nn1_plain": 0.467
+    }
+  },
+  "E3_collapse_factor": {
+    "permissive": 3.6441,
+    "enforce": 4.1195,
+    "prediction": "enforce < permissive",
+    "verdict": "否證"
+  },
+  "E1_buckets": {
+    "mega_enforce": [
+      {
+        "bucket": "< 300s",
+        "n": 191,
+        "median_distance": 4.0961
+      },
+      {
+        "bucket": "< 1800s",
+        "n": 1015,
+        "median_distance": 5.1761
+      },
+      {
+        "bucket": "< 7200s",
+        "n": 3182,
+        "median_distance": 6.7521
+      },
+      {
+        "bucket": "< 24h",
+        "n": 26367,
+        "median_distance": 7.7844
+      },
+      {
+        "bucket": "< 3 天",
+        "n": 12693,
+        "median_distance": 16.4494
+      },
+      {
+        "bucket": "< 10 天",
+        "n": 22696,
+        "median_distance": 14.4973
+      },
+      {
+        "bucket": ">= 10 天",
+        "n": 21612,
+        "median_distance": 17.0012
+      }
+    ],
+    "mega_enforce_monotone_drift": true,
+    "mega_permissive": [
+      {
+        "bucket": "< 300s",
+        "n": 139,
+        "median_distance": 4.8303
+      },
+      {
+        "bucket": "< 1800s",
+        "n": 779,
+        "median_distance": 4.9419
+      },
+      {
+        "bucket": "< 7200s",
+        "n": 1975,
+        "median_distance": 6.7986
+      },
+      {
+        "bucket": "< 24h",
+        "n": 12028,
+        "median_distance": 11.0423
+      },
+      {
+        "bucket": "< 3 天",
+        "n": 3606,
+        "median_distance": 11.7497
+      },
+      {
+        "bucket": "< 10 天",
+        "n": 37456,
+        "median_distance": 11.1827
+      },
+      {
+        "bucket": ">= 10 天",
+        "n": 11845,
+        "median_distance": 10.2069
+      }
+    ],
+    "mega_permissive_monotone_drift": false
+  },
+  "E2_windows": {
+    "mega_enforce": {
+      "3h": {
+        "windows": 110,
+        "median_ratio": 1.9983,
+        "best_coverage": {
+          "classes": 20,
+          "sessions": 68,
+          "within": 5.9626,
+          "between": 7.4725,
+          "ratio": 1.2532,
+          "nn1_balanced": 0.1663,
+          "nn1_plain": 0.2206
+        },
+        "best_start_utc": "2026-10-02T09:35:48.148082+00:00"
+      },
+      "6h": {
+        "windows": 168,
+        "median_ratio": 1.4844,
+        "best_coverage": {
+          "classes": 20,
+          "sessions": 68,
+          "within": 5.9626,
+          "between": 7.4725,
+          "ratio": 1.2532,
+          "nn1_balanced": 0.1663,
+          "nn1_plain": 0.2206
+        },
+        "best_start_utc": "2026-10-02T06:35:48.148082+00:00"
+      },
+      "12h": {
+        "windows": 224,
+        "median_ratio": 1.203,
+        "best_coverage": {
+          "classes": 20,
+          "sessions": 68,
+          "within": 5.9626,
+          "between": 7.4725,
+          "ratio": 1.2532,
+          "nn1_balanced": 0.1663,
+          "nn1_plain": 0.2206
+        },
+        "best_start_utc": "2026-10-02T00:35:48.148082+00:00"
+      },
+      "24h": {
+        "windows": 333,
+        "median_ratio": 1.0893,
+        "best_coverage": {
+          "classes": 20,
+          "sessions": 68,
+          "within": 5.9626,
+          "between": 7.4725,
+          "ratio": 1.2532,
+          "nn1_balanced": 0.1663,
+          "nn1_plain": 0.2206
+        },
+        "best_start_utc": "2026-10-01T12:35:48.148082+00:00"
+      },
+      "72h": {
+        "windows": 597,
+        "median_ratio": 1.1605,
+        "best_coverage": {
+          "classes": 20,
+          "sessions": 68,
+          "within": 5.9626,
+          "between": 7.4725,
+          "ratio": 1.2532,
+          "nn1_balanced": 0.1663,
+          "nn1_plain": 0.2206
+        },
+        "best_start_utc": "2026-09-29T12:35:48.148082+00:00"
+      },
+      "all": {
+        "median_ratio": 0.4669
+      }
+    },
+    "mega_permissive": {
+      "3h": {
+        "windows": 132,
+        "median_ratio": 2.456,
+        "best_coverage": {
+          "classes": 18,
+          "sessions": 74,
+          "within": 4.2161,
+          "between": 16.5561,
+          "ratio": 3.9269,
+          "nn1_balanced": 0.4907,
+          "nn1_plain": 0.6351
+        },
+        "best_start_utc": "2026-09-20T09:59:18.703867+00:00"
+      },
+      "6h": {
+        "windows": 199,
+        "median_ratio": 1.9493,
+        "best_coverage": {
+          "classes": 18,
+          "sessions": 80,
+          "within": 4.6228,
+          "between": 16.4406,
+          "ratio": 3.5564,
+          "nn1_balanced": 0.4815,
+          "nn1_plain": 0.6375
+        },
+        "best_start_utc": "2026-09-20T06:59:18.703867+00:00"
+      },
+      "12h": {
+        "windows": 280,
+        "median_ratio": 1.6027,
+        "best_coverage": {
+          "classes": 18,
+          "sessions": 88,
+          "within": 5.8371,
+          "between": 16.5159,
+          "ratio": 2.8295,
+          "nn1_balanced": 0.4472,
+          "nn1_plain": 0.6023
+        },
+        "best_start_utc": "2026-09-20T00:59:18.703867+00:00"
+      },
+      "24h": {
+        "windows": 380,
+        "median_ratio": 1.3779,
+        "best_coverage": {
+          "classes": 18,
+          "sessions": 137,
+          "within": 6.601,
+          "between": 15.7003,
+          "ratio": 2.3785,
+          "nn1_balanced": 0.5739,
+          "nn1_plain": 0.7007
+        },
+        "best_start_utc": "2026-09-19T19:29:18.703867+00:00"
+      },
+      "72h": {
+        "windows": 601,
+        "median_ratio": 0.8147,
+        "best_coverage": {
+          "classes": 18,
+          "sessions": 137,
+          "within": 6.601,
+          "between": 15.7003,
+          "ratio": 2.3785,
+          "nn1_balanced": 0.5739,
+          "nn1_plain": 0.7007
+        },
+        "best_start_utc": "2026-09-19T19:29:18.703867+00:00"
+      },
+      "all": {
+        "median_ratio": 0.5876
+      }
+    }
+  },
+  "C2_common_classes": {
+    "enforce": {
+      "common": [
+        "command_injection",
+        "confused_deputy",
+        "cross_channel_relay",
+        "discovery_recon",
+        "health_spoof",
+        "hmac_forgery",
+        "identity_abuse",
+        "message_dos",
+        "mission_spoof",
+        "node_churn",
+        "normal",
+        "parameter_tamper",
+        "replay",
+        "replay_dos",
+        "scan_drift",
+        "sensor_spoof",
+        "service_dos"
+      ],
+      "refresh": {
+        "classes": 17,
+        "sessions": 289,
+        "within": 5.8931,
+        "between": 11.3346,
+        "ratio": 1.9234,
+        "nn1_balanced": 0.526,
+        "nn1_plain": 0.526
+      },
+      "mega": {
+        "classes": 17,
+        "sessions": 1452,
+        "within": 10.0857,
+        "between": 5.1657,
+        "ratio": 0.5122,
+        "nn1_balanced": 0.293,
+        "nn1_plain": 0.3554
+      },
+      "factor": 3.7552
+    },
+    "permissive": {
+      "common": [
+        "command_injection",
+        "cross_channel_relay",
+        "discovery_recon",
+        "health_spoof",
+        "identity_abuse",
+        "message_dos",
+        "mission_spoof",
+        "node_churn",
+        "normal",
+        "parameter_tamper",
+        "replay",
+        "replay_dos",
+        "scan_drift",
+        "sensor_spoof",
+        "service_dos"
+      ],
+      "refresh": {
+        "classes": 15,
+        "sessions": 255,
+        "within": 6.4777,
+        "between": 13.871,
+        "ratio": 2.1413,
+        "nn1_balanced": 0.949,
+        "nn1_plain": 0.949
+      },
+      "mega": {
+        "classes": 15,
+        "sessions": 1168,
+        "within": 10.9098,
+        "between": 6.379,
+        "ratio": 0.5847,
+        "nn1_balanced": 0.415,
+        "nn1_plain": 0.5077
+      },
+      "factor": 3.6622
+    }
+  },
+  "E6_observer_channel": {
+    "refresh_enforce/只歸零 sros_auth_fail_rate": {
+      "classes": 17,
+      "sessions": 289,
+      "within": 5.8405,
+      "between": 10.902,
+      "ratio": 1.8666,
+      "nn1_balanced": 0.5121,
+      "nn1_plain": 0.5121
+    },
+    "refresh_enforce/＋mean_bytes_per_packet": {
+      "classes": 17,
+      "sessions": 289,
+      "within": 5.7828,
+      "between": 10.4592,
+      "ratio": 1.8087,
+      "nn1_balanced": 0.4913,
+      "nn1_plain": 0.4913
+    },
+    "refresh_enforce/整個遙測層": {
+      "classes": 17,
+      "sessions": 289,
+      "within": 4.9639,
+      "between": 9.9215,
+      "ratio": 1.9988,
+      "nn1_balanced": 0.5121,
+      "nn1_plain": 0.5121
+    },
+    "refresh_permissive/只歸零 sros_auth_fail_rate": {
+      "classes": 15,
+      "sessions": 255,
+      "within": 6.2573,
+      "between": 13.6555,
+      "ratio": 2.1823,
+      "nn1_balanced": 0.9451,
+      "nn1_plain": 0.9451
+    },
+    "refresh_permissive/＋mean_bytes_per_packet": {
+      "classes": 15,
+      "sessions": 255,
+      "within": 6.0608,
+      "between": 13.4651,
+      "ratio": 2.2217,
+      "nn1_balanced": 0.9412,
+      "nn1_plain": 0.9412
+    },
+    "refresh_permissive/整個遙測層": {
+      "classes": 15,
+      "sessions": 255,
+      "within": 4.9298,
+      "between": 8.7657,
+      "ratio": 1.7781,
+      "nn1_balanced": 0.4,
+      "nn1_plain": 0.4
+    }
+  },
+  "temporal_control": {
+    "purpose": "定住 C2C-116 的幾何用的是哪一個 temporal（它沒有記）",
+    "table": "~/features_refresh_split/fusion_features_permissive.csv",
+    "split": "train+validation",
+    "c2c116_reported_ratio": 2.141,
+    "closest_temporal": "none",
+    "by_temporal": {
+      "none": {
+        "classes": 15,
+        "sessions": 255,
+        "within": 6.4777,
+        "between": 13.871,
+        "ratio": 2.1413,
+        "nn1_balanced": 0.949,
+        "nn1_plain": 0.949,
+        "aggregate_width": 192
+      },
+      "d1_m3_x3": {
+        "classes": 15,
+        "sessions": 255,
+        "within": 12.3793,
+        "between": 29.6239,
+        "ratio": 2.393,
+        "nn1_balanced": 0.949,
+        "nn1_plain": 0.949,
+        "aggregate_width": 768
+      },
+      "d1_m3_x3_m5_x5": {
+        "classes": 15,
+        "sessions": 255,
+        "within": 14.8564,
+        "between": 36.7028,
+        "ratio": 2.4705,
+        "nn1_balanced": 0.9412,
+        "nn1_plain": 0.9412,
+        "aggregate_width": 1152
+      }
+    }
+  }
+}
