@@ -1,0 +1,117 @@
+{
+  "schema_version": "sros2-firewall-drift-robustness/v1",
+  "prediction_commit": "808e905",
+  "holdout_reads": 0,
+  "note": "兩個探針都沒有預先註冊",
+  "changes_shipped_defaults": false,
+  "C3_volume_by_era": {
+    "enforce": {
+      "by_era": {
+        "E1": {
+          "n": 123,
+          "median_mb": 263.5975
+        },
+        "E2": {
+          "n": 71,
+          "median_mb": 158.2645
+        },
+        "E3": {
+          "n": 55,
+          "median_mb": 171.1239
+        },
+        "E4": {
+          "n": 336,
+          "median_mb": 99.2338
+        },
+        "E5": {
+          "n": 160,
+          "median_mb": 146.235
+        },
+        "E6": {
+          "n": 910,
+          "median_mb": 7.2828
+        }
+      },
+      "max_over_min": 36.19,
+      "sessions_without_pcap": 0
+    },
+    "permissive": {
+      "by_era": {
+        "E1": {
+          "n": 35,
+          "median_mb": 13.1458
+        },
+        "E2": {
+          "n": 331,
+          "median_mb": 71.3068
+        },
+        "E3": {
+          "n": 465,
+          "median_mb": 87.9732
+        },
+        "E4": {
+          "n": 533,
+          "median_mb": 53.9627
+        }
+      },
+      "max_over_min": 6.69,
+      "sessions_without_pcap": 0
+    }
+  },
+  "sd_choice": {
+    "全表 sd": {
+      "cells": {
+        "E4-E4": 9.3132,
+        "E5-E5": 9.5981,
+        "E6-E6": 6.9916,
+        "E4-E5": 9.9754,
+        "E4-E6": 15.215,
+        "E5-E6": 16.0614
+      },
+      "pooled_diag": 9.3132,
+      "pooled_off": 15.215,
+      "ratio": 1.6337,
+      "classes": 20,
+      "per_class_ratio_median": 1.8106,
+      "classes_above_1_3": 20,
+      "E4_E5_vs_own_diagonals": 1.055,
+      "E5_E6_vs_own_diagonals": 1.9363
+    },
+    "E4-only sd": {
+      "cells": {
+        "E4-E4": 10.3551,
+        "E5-E5": 11.6524,
+        "E6-E6": 11.2836,
+        "E4-E5": 12.4037,
+        "E4-E6": 30.151,
+        "E5-E6": 31.386
+      },
+      "pooled_diag": 11.2836,
+      "pooled_off": 30.151,
+      "ratio": 2.6721,
+      "classes": 20,
+      "per_class_ratio_median": 2.7477,
+      "classes_above_1_3": 20,
+      "E4_E5_vs_own_diagonals": 1.1272,
+      "E5_E6_vs_own_diagonals": 2.7368
+    },
+    "各 era 等權 sd": {
+      "cells": {
+        "E4-E4": 12.4436,
+        "E5-E5": 12.9411,
+        "E6-E6": 9.0466,
+        "E4-E5": 14.5635,
+        "E4-E6": 25.0367,
+        "E5-E6": 26.837
+      },
+      "pooled_diag": 12.4436,
+      "pooled_off": 25.0367,
+      "ratio": 2.012,
+      "classes": 20,
+      "per_class_ratio_median": 2.2698,
+      "classes_above_1_3": 20,
+      "E4_E5_vs_own_diagonals": 1.1474,
+      "E5_E6_vs_own_diagonals": 2.4411
+    }
+  }
+}
