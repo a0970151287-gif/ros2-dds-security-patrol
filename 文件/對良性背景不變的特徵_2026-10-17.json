@@ -1,0 +1,416 @@
+{
+  "schema_version": "sros2-firewall-batch-invariant-features/v1",
+  "prediction_file": "文件/預測_對良性背景不變的特徵_2026-10-17.md",
+  "prediction_commit": "ac36dab",
+  "batch_artifact_commit": "3b5ff89",
+  "arm": {
+    "model": "random_forest",
+    "variant": "full",
+    "temporal": "d1_m3_x3",
+    "folds": 5,
+    "repeats": 3
+  },
+  "holdout_reads": 0,
+  "changes_shipped_defaults": false,
+  "modes": {
+    "permissive": {
+      "sessions": 1364,
+      "batches": 53,
+      "batches_with_normal": 42,
+      "aggregate_width": 816,
+      "test_rows_in_table": 5824,
+      "test_rows_used": 0,
+      "sessions_fell_back_to_global": 28,
+      "arms": {
+        "V0_raw": {
+          "ba": 0.5124,
+          "ba_full": "0.5124341040358528",
+          "normal_recall": 1.0,
+          "per_class": {
+            "command_injection": 0.4896,
+            "cross_channel_relay": 0.3897,
+            "discovery_recon": 0.3128,
+            "health_spoof": 0.4975,
+            "identity_abuse": 0.8073,
+            "message_dos": 0.5128,
+            "mission_spoof": 0.5152,
+            "node_churn": 0.5657,
+            "normal": 1.0,
+            "odom_spoof": 0.3182,
+            "parameter_tamper": 0.4747,
+            "replay": 0.5455,
+            "replay_dos": 0.4462,
+            "scan_drift": 0.2974,
+            "sensor_spoof": 0.441,
+            "service_dos": 0.6205,
+            "spdp_flood": 0.4951,
+            "verify_flood": 0.4946
+          }
+        },
+        "V1_batch_center": {
+          "ba": 0.5067,
+          "ba_full": "0.506736417226277",
+          "normal_recall": 1.0,
+          "per_class": {
+            "command_injection": 0.5052,
+            "cross_channel_relay": 0.3949,
+            "discovery_recon": 0.2974,
+            "health_spoof": 0.5075,
+            "identity_abuse": 0.7969,
+            "message_dos": 0.5231,
+            "mission_spoof": 0.5051,
+            "node_churn": 0.5606,
+            "normal": 1.0,
+            "odom_spoof": 0.2929,
+            "parameter_tamper": 0.4596,
+            "replay": 0.5404,
+            "replay_dos": 0.4359,
+            "scan_drift": 0.2564,
+            "sensor_spoof": 0.4205,
+            "service_dos": 0.6308,
+            "spdp_flood": 0.5049,
+            "verify_flood": 0.4892
+          }
+        },
+        "V2_batch_center_scale": {
+          "ba": 0.5022,
+          "ba_full": "0.5022204896428418",
+          "normal_recall": 1.0,
+          "per_class": {
+            "command_injection": 0.5208,
+            "cross_channel_relay": 0.3846,
+            "discovery_recon": 0.2718,
+            "health_spoof": 0.5124,
+            "identity_abuse": 0.7708,
+            "message_dos": 0.5026,
+            "mission_spoof": 0.5051,
+            "node_churn": 0.5303,
+            "normal": 1.0,
+            "odom_spoof": 0.2172,
+            "parameter_tamper": 0.4747,
+            "replay": 0.5556,
+            "replay_dos": 0.4513,
+            "scan_drift": 0.2923,
+            "sensor_spoof": 0.4513,
+            "service_dos": 0.6462,
+            "spdp_flood": 0.4853,
+            "verify_flood": 0.4677
+          }
+        },
+        "V3_global_center": {
+          "ba": 0.5122,
+          "ba_full": "0.512166605330854",
+          "normal_recall": 1.0,
+          "per_class": {
+            "command_injection": 0.4948,
+            "cross_channel_relay": 0.3897,
+            "discovery_recon": 0.3179,
+            "health_spoof": 0.4975,
+            "identity_abuse": 0.8073,
+            "message_dos": 0.5128,
+            "mission_spoof": 0.5152,
+            "node_churn": 0.5556,
+            "normal": 1.0,
+            "odom_spoof": 0.3182,
+            "parameter_tamper": 0.4747,
+            "replay": 0.5404,
+            "replay_dos": 0.4513,
+            "scan_drift": 0.2923,
+            "sensor_spoof": 0.441,
+            "service_dos": 0.6205,
+            "spdp_flood": 0.4951,
+            "verify_flood": 0.4946
+          }
+        }
+      },
+      "C1_internal_reference": {
+        "expected": 0.5124,
+        "measured": 0.5124,
+        "matches": true
+      },
+      "G1_gain_over_raw": -0.0057,
+      "G1_verdict": "否證",
+      "G2_gain_beyond_global_centering": -0.0055,
+      "G2_verdict": "否證",
+      "best_arm": "V1_batch_center",
+      "ladder_center": -0.0057,
+      "ladder_scale": -0.0045,
+      "G4_normal_recall_leak": {
+        "V0_raw": 1.0,
+        "V1_batch_center": 1.0,
+        "V2_batch_center_scale": 1.0,
+        "V3_global_center": 1.0
+      },
+      "C5_shuffled": {
+        "V0_raw": 0.0579,
+        "V1_batch_center": 0.0514
+      },
+      "C5_chance": 0.0556,
+      "G5_verdict": "成立",
+      "C4_drop_batches_without_normal": {
+        "sessions_kept": 1346,
+        "sessions_dropped": 18,
+        "ba": 0.5064
+      },
+      "C6_leak_mutation": {
+        "normal_recall": 1.0,
+        "ba": 0.5106,
+        "bites_before_correction": true,
+        "bites": false,
+        "why": "飽和:兩臂都 1.0000"
+      },
+      "G4_verdict_before_correction": "洩漏",
+      "G4_verdict": "無判別力（見 G4_C6_correction）",
+      "diagnostics": {
+        "sessions": 1364,
+        "batches": 53,
+        "normal_sessions": 254,
+        "batch_normal_count": {
+          "min": 0,
+          "p25": 1.0,
+          "median": 3.0,
+          "p75": 8.0,
+          "max": 24,
+          "zero_batches": 11,
+          "one_batches": 10,
+          "le2_batches": 23
+        },
+        "leak_reach": {
+          "normal_in_k1_batches": 10,
+          "normal_in_k2_batches": 4,
+          "share_of_normal_becoming_exactly_zero_under_C6": 0.0394,
+          "why_G4_had_no_power": "G4 判「normal recall >= 0.98 就是洩漏」,而 V0（完全沒有正規化）的 normal recall 本來就是 1.0000（permissive）⇒ 門檻在未變異的那一臂已經滿足 ⇒ 兩個子句都不可能被違反"
+        },
+        "baseline_sample_size_for_attack_sessions": {
+          "min": 0,
+          "median": 8.0,
+          "p75": 13.0,
+          "max": 24,
+          "share_with_le2_normal": 0.0505,
+          "share_with_le4_normal": 0.1279,
+          "share_with_zero_normal": 0.0162
+        }
+      }
+    },
+    "enforce": {
+      "sessions": 1655,
+      "batches": 80,
+      "batches_with_normal": 56,
+      "aggregate_width": 696,
+      "test_rows_in_table": 10365,
+      "test_rows_used": 0,
+      "sessions_fell_back_to_global": 123,
+      "arms": {
+        "V0_raw": {
+          "ba": 0.404,
+          "ba_full": "0.40398750942482486",
+          "normal_recall": 0.8667,
+          "per_class": {
+            "command_injection": 0.1795,
+            "confused_deputy": 0.9586,
+            "cross_channel_relay": 0.0923,
+            "discovery_recon": 0.4478,
+            "health_spoof": 0.2778,
+            "hmac_forgery": 0.0876,
+            "identity_abuse": 0.9385,
+            "message_dos": 0.1616,
+            "mission_spoof": 0.1487,
+            "node_churn": 0.598,
+            "normal": 0.8667,
+            "odom_spoof": 0.3134,
+            "parameter_tamper": 0.5821,
+            "replay": 0.2828,
+            "replay_dos": 0.0718,
+            "scan_drift": 0.1592,
+            "sensor_spoof": 0.0859,
+            "service_dos": 0.8872,
+            "spdp_flood": 0.6667,
+            "verify_flood": 0.2736
+          }
+        },
+        "V1_batch_center": {
+          "ba": 0.3877,
+          "ba_full": "0.3877123104094676",
+          "normal_recall": 0.915,
+          "per_class": {
+            "command_injection": 0.1333,
+            "confused_deputy": 0.9611,
+            "cross_channel_relay": 0.1487,
+            "discovery_recon": 0.4826,
+            "health_spoof": 0.1717,
+            "hmac_forgery": 0.1265,
+            "identity_abuse": 0.9231,
+            "message_dos": 0.101,
+            "mission_spoof": 0.159,
+            "node_churn": 0.5343,
+            "normal": 0.915,
+            "odom_spoof": 0.3035,
+            "parameter_tamper": 0.4527,
+            "replay": 0.2121,
+            "replay_dos": 0.0821,
+            "scan_drift": 0.0746,
+            "sensor_spoof": 0.1364,
+            "service_dos": 0.8564,
+            "spdp_flood": 0.6667,
+            "verify_flood": 0.3134
+          }
+        },
+        "V2_batch_center_scale": {
+          "ba": 0.3162,
+          "ba_full": "0.3162048180470737",
+          "normal_recall": 0.9451,
+          "per_class": {
+            "command_injection": 0.0872,
+            "confused_deputy": 0.9708,
+            "cross_channel_relay": 0.0205,
+            "discovery_recon": 0.3284,
+            "health_spoof": 0.1768,
+            "hmac_forgery": 0.146,
+            "identity_abuse": 0.9385,
+            "message_dos": 0.0808,
+            "mission_spoof": 0.1436,
+            "node_churn": 0.2647,
+            "normal": 0.9451,
+            "odom_spoof": 0.1393,
+            "parameter_tamper": 0.2637,
+            "replay": 0.2121,
+            "replay_dos": 0.0872,
+            "scan_drift": 0.1045,
+            "sensor_spoof": 0.0859,
+            "service_dos": 0.6974,
+            "spdp_flood": 0.5024,
+            "verify_flood": 0.1294
+          }
+        },
+        "V3_global_center": {
+          "ba": 0.4035,
+          "ba_full": "0.403545404586468",
+          "normal_recall": 0.8654,
+          "per_class": {
+            "command_injection": 0.1744,
+            "confused_deputy": 0.9586,
+            "cross_channel_relay": 0.0821,
+            "discovery_recon": 0.4527,
+            "health_spoof": 0.2727,
+            "hmac_forgery": 0.09,
+            "identity_abuse": 0.9385,
+            "message_dos": 0.1566,
+            "mission_spoof": 0.1487,
+            "node_churn": 0.598,
+            "normal": 0.8654,
+            "odom_spoof": 0.3184,
+            "parameter_tamper": 0.5721,
+            "replay": 0.2929,
+            "replay_dos": 0.0769,
+            "scan_drift": 0.1642,
+            "sensor_spoof": 0.0859,
+            "service_dos": 0.8872,
+            "spdp_flood": 0.657,
+            "verify_flood": 0.2786
+          }
+        }
+      },
+      "C1_internal_reference": {
+        "expected": 0.404,
+        "measured": 0.404,
+        "matches": true
+      },
+      "G1_gain_over_raw": -0.0163,
+      "G1_verdict": "否證",
+      "G2_gain_beyond_global_centering": -0.0158,
+      "G2_verdict": "否證",
+      "best_arm": "V1_batch_center",
+      "ladder_center": -0.0163,
+      "ladder_scale": -0.0715,
+      "G4_normal_recall_leak": {
+        "V0_raw": 0.8667,
+        "V1_batch_center": 0.915,
+        "V2_batch_center_scale": 0.9451,
+        "V3_global_center": 0.8654
+      },
+      "C5_shuffled": {
+        "V0_raw": 0.0461,
+        "V1_batch_center": 0.0507
+      },
+      "C5_chance": 0.05,
+      "G5_verdict": "成立",
+      "C4_drop_batches_without_normal": {
+        "sessions_kept": 1550,
+        "sessions_dropped": 105,
+        "ba": 0.3946
+      },
+      "C6_leak_mutation": {
+        "normal_recall": 0.8993,
+        "ba": 0.3864,
+        "bites_before_correction": false,
+        "bites": false,
+        "why": "方向相反:洩漏版 0.8993 < 非洩漏版 0.9150"
+      },
+      "G4_verdict_before_correction": "沒有洩漏",
+      "G4_verdict": "無判別力（見 G4_C6_correction）",
+      "diagnostics": {
+        "sessions": 1655,
+        "batches": 80,
+        "normal_sessions": 255,
+        "batch_normal_count": {
+          "min": 0,
+          "p25": 0.0,
+          "median": 1.0,
+          "p75": 5.0,
+          "max": 15,
+          "zero_batches": 24,
+          "one_batches": 18,
+          "le2_batches": 52
+        },
+        "leak_reach": {
+          "normal_in_k1_batches": 18,
+          "normal_in_k2_batches": 20,
+          "share_of_normal_becoming_exactly_zero_under_C6": 0.0706,
+          "why_G4_had_no_power": "G4 判「normal recall >= 0.98 就是洩漏」,而 V0（完全沒有正規化）的 normal recall 本來就是 1.0000（permissive）⇒ 門檻在未變異的那一臂已經滿足 ⇒ 兩個子句都不可能被違反"
+        },
+        "baseline_sample_size_for_attack_sessions": {
+          "min": 0,
+          "median": 9.0,
+          "p75": 11.0,
+          "max": 15,
+          "share_with_le2_normal": 0.2329,
+          "share_with_le4_normal": 0.2857,
+          "share_with_zero_normal": 0.075
+        }
+      }
+    }
+  },
+  "G4_C6_correction": {
+    "what_was_wrong": "G4 註冊成「normal recall >= 0.98 就是洩漏」,而 V0（完全沒有正規化）的 normal recall 在 permissive 本來就是 1.0000 ⇒ 門檻在未變異的那一臂已經滿足。G4 的第二個子句（V1/V2/V3 不得明顯高於 V0）同樣不可能被違反,因為 1.0000 已經是上限 ⇒ **兩個子句都沒有判別力**。",
+    "C6_did_not_bite_in_either_mode": {
+      "permissive": "兩臂都是 1.0000 ⇒ 飽和,分不出來（而它印出 ✅ 咬住,那是空洞為真）",
+      "enforce": "洩漏版的 normal recall 反而更低（0.8993 對 V1 的 0.9150）⇒ 洩漏不會把 normal 變好,我註冊時的假設錯了"
+    },
+    "structural_measure_instead": {
+      "note": "改量洩漏的實際觸及範圍（結構量,不經過任何 recall）",
+      "permissive_normal_in_k1_batches": 10,
+      "permissive_share_of_normal": 0.0394,
+      "enforce_normal_in_k1_batches": 18,
+      "enforce_share_of_normal": 0.0706,
+      "reading": "k=1 的批次裡,normal 場次在 C6 下會變成全零向量 ⇒ 那是洩漏最極端的形態,而它只觸及 3.9%／7.1% 的 normal 場次 ⇒ 在 normal 已經接近完美分類的資料上沒有表現空間。留一法仍然是唯一站得住的建構,但**本輪沒有任何證據顯示它有差**。"
+    }
+  },
+  "V2_design_defect": {
+    "fact": "k=1 時 MAD = median(|x − x|) 恆等於 0 ⇒ 程式的 `where(sca>0, sca, 1.0)` 退路啟動 ⇒ 那些場次只被中心化而沒有被縮放,而其餘場次兩者都做。",
+    "consequence": "同一張矩陣裡混著「已縮放」與「未縮放」的列 ⇒ V2 不是一個一致的變換。這是我註冊的 V2 自己的設計缺陷,是程式層的確定事實不是相關性。",
+    "exposure": {
+      "permissive_attack_sessions_with_le2_normal_refs": 0.0501,
+      "enforce_attack_sessions_with_le2_normal_refs": 0.2327
+    },
+    "matches_the_damage": "V2 那一步的額外代價 permissive −0.0045 對 enforce −0.0715（16 倍）,而暴露比例是 5.0% 對 23.3%（4.7 倍）—— 方向一致,⚠️ 但那是 n=2 個模式,不是一個檢定過的機制。"
+  },
+  "noisy_baseline_candidate": {
+    "status": "候選,本輪刻意沒有檢定",
+    "claim": "逐批次的 normal 中位數在樣本很少時是一個很吵的估計量,減掉它會加入變異而不是移除背景。",
+    "support": [
+      "跨模式方向一致（基線 ≤2 個樣本:permissive 5.0% 對 enforce 23.3%,而 V1 的代價 −0.0057 對 −0.0163）",
+      "V2 的退化是程式層確定的（見 V2_design_defect）"
+    ],
+    "why_not_tested_here": "這個機制是**看過結果之後**才形成的假設。在同一輪裡發明並檢定它,正是這個 session 已經犯過三次的錯誤形狀（C2C-116 的抖動、C2C-120 的粒度、C2C-126 的方向）。它需要它自己的預先註冊。"
+  }
+}
