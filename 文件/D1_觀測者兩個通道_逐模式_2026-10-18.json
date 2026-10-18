@@ -1,0 +1,28 @@
+{
+ "permissive": {
+  "bursts": 8210,
+  "zf_positive": 4135,
+  "alerts_positive": 1506,
+  "contained": 2417,
+  "noticed": 287,
+  "sessions": 1344,
+  "sessions_both_channels_silent": 472,
+  "decisions": {
+   "被擋住 ⇒ 暫停後小幅試探": 2417,
+   "沒被注意 ⇒ 升級": 5701,
+   "被注意到 ⇒ 潛行": 92
+  }
+ },
+ "enforce": {
+  "bursts": 9196,
+  "zf_positive": 0,
+  "alerts_positive": 0,
+  "contained": 0,
+  "noticed": 0,
+  "sessions": 1359,
+  "sessions_both_channels_silent": 1359,
+  "decisions": {
+   "沒被注意 ⇒ 升級": 9196
+  }
+ }
+}
