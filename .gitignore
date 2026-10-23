@@ -94,3 +94,8 @@ canary_evidence/
 
 # campaign 執行中的鎖檔，不進版控
 firewall_lab/campaign_*.json.lock
+
+# Factory simulation stays local; ROS2 repository upload excludes this demo.
+/factory_delivery/
+/SmartIndustry-boot.png
+/SmartIndustry-oip.png

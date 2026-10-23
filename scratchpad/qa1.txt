@@ -1,0 +1,21 @@
+頁數 18   版面 13.33 x 7.50 吋
+字型 ['Microsoft JhengHei']
+1 越界           0 OK
+2 空白頁          0 OK
+3 估計溢出         18 FAIL
+       p2 #4 need1.23 have0.76  起點：一個被硬化過的系統，和一個知道自己為什麼不
+       p2 #10 need0.58 have0.33  identity CA ≠ permission
+       p2 #16 need0.58 have0.33  畸形 /scan 的 ZeroDivisionE
+       p4 #4 need1.23 have0.76  程式長 6.9 倍，而防守端的 src/ 只長 
+       p4 #5 need0.58 have0.50  git diff --shortstat fa6
+       p6 #4 need1.23 have0.76  資料工廠：1,100 場，以及兩個把防禦偽裝成有
+       p6 #19 need0.68 have0.60  parameter_call_rate 的 ho
+       p8 #9 need0.58 have0.37  validation 每類只有 3 場 ⇒「3 
+       p8 #21 need0.45 have0.38  ⚠️ 那個 GroupKFold 的缺陷是第 1
+       p9 #4 need1.23 have0.76  三個根因都不是模型問題；而跨主機鏈第一次連著跑完
+       p11 #4 need1.08 have0.76  九個組件：七月初沒有這張表，計分本身是 8 月才
+       p13 #4 need1.08 have0.76  0.25 對 0.98 的答案：那個落差被拆成五
+4 文字框重疊        0 OK
+5 色塊蓋住文字       0 OK
+
+共 18 處
