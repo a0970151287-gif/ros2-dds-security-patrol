@@ -3,14 +3,21 @@
 # 08 TQC 深度強化學習訓練（Tier-1 頂尖版）
 # 演算法：Truncated Quantile Critics（sb3-contrib，SAC 後繼者）
 # 表徵：raw 180-beam LiDAR + 1D-Conv encoder + frame stack K=4 + LayerNorm
-# 訓練：potential-based shaping + DR + 5% 對抗 + 自適應 curriculum
+# 訓練：Δdist progress + forward bonus + DR + 5% 對抗 + 自適應 curriculum
 # GPU：RTX 5070（CUDA）
 # 目標：2,000,000 timesteps（SPL plateau 後可提早 Ctrl+C）
 # ============================================================
-# 設計重點：
+# 設計重點（第 6 次訓練，依據兩個 reference baseline 整合）：
 #   • TQC：top_quantiles_to_drop_per_net=2，抑制 Q overestimation
-#   • Reward = γ·Φ(s') - Φ(s) + smooth + sparse（Ng-Harada-Russell 1999）
-#     → 理論上保證最佳策略不變，論文可直接引用
+#   • Reward = Δdist + 0.04·action[0] + smooth + −0.05·time + sparse
+#     ├─ Δdist 取代上一代 NHR γ·Φ(s')−Φ(s) — 後者 (1−γ)·dist 基線
+#     │   每集給「原地不動」+5∼+9 正分，121 集實證 0% 成功
+#     │   （詳見 lesson_nhr_shaping_trap.md 記憶）
+#     └─ +0.04·action[0]：Reinis Cimurs DRL-Robot-Navigation-ROS2 設計
+#         （96%+ 成功 reference），雙重保險，封死「原地不動」可能性
+#   • TQC 超參對齊 SB3-Zoo BipedalWalker-v3：
+#     lr=7.3e-4, tau=0.02, gamma=0.98, train_freq=64, gradient_steps=64,
+#     use_sde=True, log_std_init=-3（wall-time 大殺器 + gSDE 探索）
 #   • Domain Randomization：lidar noise / dropout / max-vel 隨機化 → sim2real
 #   • 對抗訓練：5% episode 注入 subtle lidar bias / noise burst / action jam
 #     → 對應 DDS 攻擊 K 的端到端 robust policy
@@ -21,12 +28,12 @@
 # ============================================================
 
 # ── 終端 1：啟動 Gazebo 模擬器 ──────────────────────────────
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 export TURTLEBOT3_MODEL=burger
 ros2 launch dds_security_monitor gazebo.launch.py
 
 # ── 確認 /scan 跟 /odom 都活著（再開訓練！）────────────────
-source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 ros2 topic hz /scan -w 1     # 約 5 Hz
 ros2 topic hz /odom -w 1     # 約 50 Hz
 
@@ -38,9 +45,11 @@ bash ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/train_top.sh
 #   ▶ Sanity check: /scan publishing?       ✓ /scan alive
 #   ▶ Sanity check: /odom publishing?       ✓ /odom alive
 #   🔐  HMAC secret loaded   fingerprint=sha256:xxxxxxxx
-#   ▶ Fresh start TQC training
+#   ▶ Fresh start TQC training        ← 必須是 Fresh，不能 Resuming
 #     Target steps : 2,000,000
 #     Device       : cuda    Params: 1,209,992
+# 如果看到「Resuming」表示 tqc_latest.zip 還在，需先搬到
+# runs_top/archive_nhr_collapsed_v2/ 才能 fresh start
 # fingerprint 跟 monitor_node / patrol_node 印的不一樣 → secret 沒對齊立刻修
 
 # 純執行版（不檢查 /scan /odom，假設你自己確認過）：
@@ -63,6 +72,12 @@ tensorboard --logdir ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/runs_top/logs/t
 #   • SPL > 0.85 且連續 100K steps 沒上升  → Ctrl+C 收工
 #   • SPL 卡 0.5 超過 300K steps           → 停，回去調 hyperparam
 #   • Curriculum 升到 stage 5 + SPL > 0.8  → 可寫論文
+#
+# 早期警報（前 100 集就要判斷，避免又訓 8 小時白工）：
+#   ✅ 健康   mean_reward 波動 / 為負；collision_rate 短暫飆 10-30%；
+#            300 集內出現首次 success
+#   ⚠️ 警報   mean_reward 卡 +5~+15 不動；collision_rate=0%（不敢動）；
+#            500 集後 success 仍 0% → 立刻 Ctrl+C，回去看 reward 設計
 
 # ── 終端機計分板（訓練時自動每 20 ep 印一次）──────────────
 #   ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -77,7 +92,8 @@ tensorboard --logdir ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/runs_top/logs/t
 #   ╚══════════════════════════════════════════════════════════════════════════════╝
 
 # ── 評估訓練成果（簡報數字必從這跑，不用 rolling mean）──────
-source ~/dqn_env/bin/activate && source ~/ros2_ws/install/setup.bash
+source ~/dqn_env/bin/activate || exit 1
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 python3 ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/eval_top.py --episodes 50 --max-wp 5
 # 預設載 runs_top/models/tqc_best.zip，啟動會先驗 HMAC，篡改則 sys.exit(2)
 # 輸出範例：
@@ -124,5 +140,11 @@ GZ_IP=127.0.0.1 gz service -s /world/default/set_pose \
   --timeout 3000 \
   --req 'name: "burger", position: {x: -0.5, y: -0.5, z: 0.05}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}'
 
-# ── 從零重訓（砍掉所有產出）─────────────────────────────
-# rm -rf ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/runs_top/
+# ── 從零重訓（保留失敗證據版，不 rm 用 mv 搬到 archive）───────
+# cd ~/ros2_ws/src/turtlebot3_dqn/turtlebot3_dqn/runs_top
+# ARCHIVE="archive_$(date +%Y%m%d_%H%M%S)"
+# mkdir -p "$ARCHIVE"
+# mv models/tqc_latest.* models/tqc_buffer.* models/checkpoints "$ARCHIVE/"
+# mv logs/monitor "$ARCHIVE/" 2>/dev/null
+# mv logs/tensorboard/TQC_0 "$ARCHIVE/" 2>/dev/null
+# # 失敗的 model/buffer 可留作論文 ablation「修正前 vs 修正後」對照組

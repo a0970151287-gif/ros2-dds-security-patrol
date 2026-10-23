@@ -1,0 +1,357 @@
+{
+  "schema_version": "sros2-firewall-aggregate-extension/v1",
+  "features_table": "/home/jesse/features_refresh_split/fusion_features_enforce.csv",
+  "eval_split": "train_validation",
+  "test_rows_used": 0,
+  "sessions": 289,
+  "classes": 17,
+  "model": "random_forest",
+  "folds": 5,
+  "repeats": 12,
+  "splitter": "StratifiedGroupKFold(shuffle=True, random_state=repeat)",
+  "base_stats": [
+    "mean",
+    "std",
+    "min",
+    "max",
+    "max_abs_delta",
+    "trend"
+  ],
+  "declared_extra_blocks": {
+    "plus_quantiles": [
+      "p25",
+      "median",
+      "p75"
+    ],
+    "plus_endpoints": [
+      "first",
+      "last"
+    ],
+    "plus_volatility": [
+      "mean_abs_delta",
+      "std_abs_delta"
+    ],
+    "plus_all": [
+      "p25",
+      "median",
+      "p75",
+      "first",
+      "last",
+      "mean_abs_delta",
+      "std_abs_delta"
+    ]
+  },
+  "dimensions": {
+    "base": 156,
+    "plus_quantiles": 234,
+    "plus_endpoints": 208,
+    "plus_volatility": 208,
+    "plus_all": 338
+  },
+  "changes_shipped_defaults": false,
+  "shuffle_control": {
+    "ran": true,
+    "arm": "plus_all",
+    "chance": 0.0588,
+    "shuffled_mean": 0.0516,
+    "real_mean": 0.6768,
+    "bar": 0.3678
+  },
+  "summary": {
+    "plus_quantiles": {
+      "mean": 0.6779,
+      "std": 0.0095,
+      "min": 0.6574,
+      "max": 0.692,
+      "paired_delta_vs_reference": 0.0029,
+      "paired_delta_ci95": [
+        -0.0012,
+        0.0069
+      ],
+      "paired_std": 0.0075,
+      "wins_vs_reference": 8,
+      "ties_vs_reference": 1,
+      "per_repeat": [
+        0.6747,
+        0.6574,
+        0.6817,
+        0.6886,
+        0.6678,
+        0.6886,
+        0.6747,
+        0.6782,
+        0.6782,
+        0.692,
+        0.6747,
+        0.6782
+      ]
+    },
+    "plus_all": {
+      "mean": 0.6768,
+      "std": 0.0107,
+      "min": 0.6644,
+      "max": 0.7024,
+      "paired_delta_vs_reference": 0.0017,
+      "paired_delta_ci95": [
+        -0.0023,
+        0.0063
+      ],
+      "paired_std": 0.008,
+      "wins_vs_reference": 5,
+      "ties_vs_reference": 2,
+      "per_repeat": [
+        0.6782,
+        0.6678,
+        0.6747,
+        0.7024,
+        0.6851,
+        0.6713,
+        0.6678,
+        0.6747,
+        0.6644,
+        0.6886,
+        0.6713,
+        0.6747
+      ]
+    },
+    "plus_volatility": {
+      "mean": 0.6765,
+      "std": 0.0115,
+      "min": 0.6574,
+      "max": 0.692,
+      "paired_delta_vs_reference": 0.0014,
+      "paired_delta_ci95": [
+        -0.004,
+        0.0066
+      ],
+      "paired_std": 0.0097,
+      "wins_vs_reference": 8,
+      "ties_vs_reference": 0,
+      "per_repeat": [
+        0.6713,
+        0.6747,
+        0.6574,
+        0.692,
+        0.692,
+        0.6782,
+        0.6678,
+        0.6817,
+        0.6644,
+        0.692,
+        0.6782,
+        0.6678
+      ]
+    },
+    "base": {
+      "mean": 0.675,
+      "std": 0.0076,
+      "min": 0.6609,
+      "max": 0.692,
+      "paired_delta_vs_reference": 0.0,
+      "paired_delta_ci95": [
+        0.0,
+        0.0
+      ],
+      "paired_std": 0.0,
+      "wins_vs_reference": 0,
+      "ties_vs_reference": 12,
+      "per_repeat": [
+        0.6747,
+        0.6678,
+        0.6782,
+        0.6817,
+        0.6747,
+        0.6747,
+        0.6609,
+        0.6747,
+        0.6713,
+        0.692,
+        0.6782,
+        0.6713
+      ]
+    },
+    "plus_endpoints": {
+      "mean": 0.6727,
+      "std": 0.0105,
+      "min": 0.654,
+      "max": 0.692,
+      "paired_delta_vs_reference": -0.0023,
+      "paired_delta_ci95": [
+        -0.0072,
+        0.0023
+      ],
+      "paired_std": 0.009,
+      "wins_vs_reference": 4,
+      "ties_vs_reference": 2,
+      "per_repeat": [
+        0.6782,
+        0.6678,
+        0.6782,
+        0.6817,
+        0.6713,
+        0.6817,
+        0.6747,
+        0.654,
+        0.6644,
+        0.692,
+        0.6678,
+        0.6609
+      ]
+    }
+  },
+  "ceiling_detail": {
+    "base": {
+      "classes": 17,
+      "worst_class": "message_dos",
+      "worst_class_recall": 0.1961,
+      "ceiling_per_repeat_mean": 1.0,
+      "ceiling_per_repeat_min": 1.0,
+      "ceiling_per_repeat_max": 1.0,
+      "ceiling_pooled": 1.0,
+      "never_correct_classes": [],
+      "zero_in_how_many_repeats": {}
+    },
+    "plus_quantiles": {
+      "classes": 17,
+      "worst_class": "message_dos",
+      "worst_class_recall": 0.1961,
+      "ceiling_per_repeat_mean": 1.0,
+      "ceiling_per_repeat_min": 1.0,
+      "ceiling_per_repeat_max": 1.0,
+      "ceiling_pooled": 1.0,
+      "never_correct_classes": [],
+      "zero_in_how_many_repeats": {}
+    },
+    "plus_endpoints": {
+      "classes": 17,
+      "worst_class": "replay",
+      "worst_class_recall": 0.2108,
+      "ceiling_per_repeat_mean": 1.0,
+      "ceiling_per_repeat_min": 1.0,
+      "ceiling_per_repeat_max": 1.0,
+      "ceiling_pooled": 1.0,
+      "never_correct_classes": [],
+      "zero_in_how_many_repeats": {}
+    },
+    "plus_volatility": {
+      "classes": 17,
+      "worst_class": "message_dos",
+      "worst_class_recall": 0.1618,
+      "ceiling_per_repeat_mean": 1.0,
+      "ceiling_per_repeat_min": 1.0,
+      "ceiling_per_repeat_max": 1.0,
+      "ceiling_pooled": 1.0,
+      "never_correct_classes": [],
+      "zero_in_how_many_repeats": {}
+    },
+    "plus_all": {
+      "classes": 17,
+      "worst_class": "message_dos",
+      "worst_class_recall": 0.1912,
+      "ceiling_per_repeat_mean": 1.0,
+      "ceiling_per_repeat_min": 1.0,
+      "ceiling_per_repeat_max": 1.0,
+      "ceiling_pooled": 1.0,
+      "never_correct_classes": [],
+      "zero_in_how_many_repeats": {}
+    }
+  },
+  "per_class_recall": {
+    "base": {
+      "command_injection": 1.0,
+      "confused_deputy": 1.0,
+      "cross_channel_relay": 0.2745,
+      "discovery_recon": 1.0,
+      "health_spoof": 0.299,
+      "hmac_forgery": 1.0,
+      "identity_abuse": 0.9706,
+      "message_dos": 0.1961,
+      "mission_spoof": 0.5784,
+      "node_churn": 1.0,
+      "normal": 1.0,
+      "parameter_tamper": 0.8186,
+      "replay": 0.2108,
+      "replay_dos": 0.3873,
+      "scan_drift": 0.3039,
+      "sensor_spoof": 0.4363,
+      "service_dos": 1.0
+    },
+    "plus_quantiles": {
+      "command_injection": 1.0,
+      "confused_deputy": 1.0,
+      "cross_channel_relay": 0.2892,
+      "discovery_recon": 1.0,
+      "health_spoof": 0.2843,
+      "hmac_forgery": 1.0,
+      "identity_abuse": 0.9755,
+      "message_dos": 0.1961,
+      "mission_spoof": 0.6373,
+      "node_churn": 1.0,
+      "normal": 1.0,
+      "parameter_tamper": 0.8284,
+      "replay": 0.1961,
+      "replay_dos": 0.3775,
+      "scan_drift": 0.2696,
+      "sensor_spoof": 0.4706,
+      "service_dos": 1.0
+    },
+    "plus_endpoints": {
+      "command_injection": 1.0,
+      "confused_deputy": 1.0,
+      "cross_channel_relay": 0.2598,
+      "discovery_recon": 1.0,
+      "health_spoof": 0.2794,
+      "hmac_forgery": 1.0,
+      "identity_abuse": 0.9804,
+      "message_dos": 0.2353,
+      "mission_spoof": 0.5735,
+      "node_churn": 1.0,
+      "normal": 1.0,
+      "parameter_tamper": 0.8284,
+      "replay": 0.2108,
+      "replay_dos": 0.3824,
+      "scan_drift": 0.2794,
+      "sensor_spoof": 0.4069,
+      "service_dos": 1.0
+    },
+    "plus_volatility": {
+      "command_injection": 0.9951,
+      "confused_deputy": 1.0,
+      "cross_channel_relay": 0.2794,
+      "discovery_recon": 1.0,
+      "health_spoof": 0.3382,
+      "hmac_forgery": 1.0,
+      "identity_abuse": 0.9755,
+      "message_dos": 0.1618,
+      "mission_spoof": 0.5882,
+      "node_churn": 1.0,
+      "normal": 1.0,
+      "parameter_tamper": 0.8235,
+      "replay": 0.1667,
+      "replay_dos": 0.4118,
+      "scan_drift": 0.3137,
+      "sensor_spoof": 0.4461,
+      "service_dos": 1.0
+    },
+    "plus_all": {
+      "command_injection": 1.0,
+      "confused_deputy": 1.0,
+      "cross_channel_relay": 0.2549,
+      "discovery_recon": 1.0,
+      "health_spoof": 0.299,
+      "hmac_forgery": 1.0,
+      "identity_abuse": 0.9755,
+      "message_dos": 0.1912,
+      "mission_spoof": 0.6324,
+      "node_churn": 1.0,
+      "normal": 1.0,
+      "parameter_tamper": 0.8235,
+      "replay": 0.2206,
+      "replay_dos": 0.3873,
+      "scan_drift": 0.2696,
+      "sensor_spoof": 0.451,
+      "service_dos": 1.0
+    }
+  },
+  "elapsed_sec": 261.2
+}

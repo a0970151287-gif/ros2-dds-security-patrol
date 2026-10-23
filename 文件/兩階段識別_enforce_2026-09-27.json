@@ -1,0 +1,158 @@
+{
+  "changes_shipped_defaults": false,
+  "classes": 17,
+  "created_utc": "2026-09-26T19:43:41Z",
+  "elapsed_sec": 238.0,
+  "eval_split": "train_validation",
+  "families": 6,
+  "features": "/home/jesse/features_refresh_split/fusion_features_enforce.csv",
+  "flat": {
+    "balanced_accuracy": 0.6799,
+    "std": 0.0154
+  },
+  "folds": 5,
+  "paired_delta_mean": -0.0219,
+  "paired_delta_std": 0.0134,
+  "per_class": {
+    "command_injection": {
+      "delta": -0.0784,
+      "family": "control_lock",
+      "flat": 1.0,
+      "sessions": 102,
+      "two_stage": 0.9216
+    },
+    "confused_deputy": {
+      "delta": 0.0,
+      "family": "alert_only",
+      "flat": 1.0,
+      "sessions": 102,
+      "two_stage": 1.0
+    },
+    "cross_channel_relay": {
+      "delta": 0.0294,
+      "family": "application_drop",
+      "flat": 0.3039,
+      "sessions": 102,
+      "two_stage": 0.3333
+    },
+    "discovery_recon": {
+      "delta": 0.0,
+      "family": "alert_only",
+      "flat": 1.0,
+      "sessions": 102,
+      "two_stage": 1.0
+    },
+    "health_spoof": {
+      "delta": 0.0588,
+      "family": "application_drop",
+      "flat": 0.3333,
+      "sessions": 102,
+      "two_stage": 0.3922
+    },
+    "hmac_forgery": {
+      "delta": 0.0,
+      "family": "application_drop",
+      "flat": 1.0,
+      "sessions": 102,
+      "two_stage": 1.0
+    },
+    "identity_abuse": {
+      "delta": -0.0196,
+      "family": "participant_deny",
+      "flat": 0.9608,
+      "sessions": 102,
+      "two_stage": 0.9412
+    },
+    "message_dos": {
+      "delta": 0.0196,
+      "family": "application_drop",
+      "flat": 0.2255,
+      "sessions": 102,
+      "two_stage": 0.2451
+    },
+    "mission_spoof": {
+      "delta": -0.0784,
+      "family": "application_drop",
+      "flat": 0.6176,
+      "sessions": 102,
+      "two_stage": 0.5392
+    },
+    "node_churn": {
+      "delta": 0.0,
+      "family": "network_block",
+      "flat": 1.0,
+      "sessions": 102,
+      "two_stage": 1.0
+    },
+    "normal": {
+      "delta": 0.0,
+      "family": "normal",
+      "flat": 1.0,
+      "sessions": 102,
+      "two_stage": 1.0
+    },
+    "parameter_tamper": {
+      "delta": -0.2059,
+      "family": "participant_deny",
+      "flat": 0.8137,
+      "sessions": 102,
+      "two_stage": 0.6078
+    },
+    "replay": {
+      "delta": 0.0294,
+      "family": "application_drop",
+      "flat": 0.1863,
+      "sessions": 102,
+      "two_stage": 0.2157
+    },
+    "replay_dos": {
+      "delta": 0.0196,
+      "family": "application_drop",
+      "flat": 0.4314,
+      "sessions": 102,
+      "two_stage": 0.451
+    },
+    "scan_drift": {
+      "delta": -0.1765,
+      "family": "control_lock",
+      "flat": 0.2255,
+      "sessions": 102,
+      "two_stage": 0.049
+    },
+    "sensor_spoof": {
+      "delta": 0.0294,
+      "family": "application_drop",
+      "flat": 0.4608,
+      "sessions": 102,
+      "two_stage": 0.4902
+    },
+    "service_dos": {
+      "delta": 0.0,
+      "family": "network_block",
+      "flat": 1.0,
+      "sessions": 102,
+      "two_stage": 1.0
+    }
+  },
+  "registration_sha256": "2e95c7883ee55b2763375f68b62d68171de040b3c1d247e42dbc8a89b5b02eff",
+  "repeats": 6,
+  "schema_version": "sros2-firewall-two-stage-identification/v1",
+  "sessions": 289,
+  "settings": {
+    "blind_spot_features": "retained_with_known_limitation",
+    "feature_variant": "full",
+    "formulation": "session_aggregate",
+    "model": "random_forest",
+    "ood_scorer_enforce": "undecided",
+    "ood_scorer_permissive": "max_softmax",
+    "temporal_expansion": "d1_m3_x3",
+    "unknown_session_pooling": "k_of_n_k2"
+  },
+  "stage1_family_balanced_accuracy": 0.8779,
+  "test_rows_used": 0,
+  "two_stage": {
+    "balanced_accuracy": 0.658,
+    "std": 0.0051
+  },
+  "two_stage_wins_of_repeats": 1
+}

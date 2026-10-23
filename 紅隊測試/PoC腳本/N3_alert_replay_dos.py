@@ -33,6 +33,12 @@ threat model 寫「拿到 alert_secret out of scope」但**這個攻擊根本不
 import sys
 import time
 import rclpy
+from rclpy.executors import ExternalShutdownException
+
+try:  # rclpy exposes RCLError under different paths across distros
+    from rclpy._rclpy_pybind11 import RCLError
+except ImportError:  # pragma: no cover - fallback for older rclpy
+    RCLError = RuntimeError
 from rclpy.node import Node
 from rclpy.qos import (DurabilityPolicy, QoSProfile, ReliabilityPolicy)
 from std_msgs.msg import String
@@ -100,10 +106,14 @@ def main():
     try:
         while rclpy.ok() and time.monotonic() < deadline:
             rclpy.spin_once(node, timeout_sec=0.5)
+    except (KeyboardInterrupt, ExternalShutdownException, RCLError):
+        pass
     finally:
-        node.get_logger().error(f'⏹ 結束，總共重放 {node._n} 次')
+        if rclpy.ok():
+            node.get_logger().error(f'⏹ 結束，總共重放 {node._n} 次')
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

@@ -1,0 +1,53 @@
+{
+  "batch": "/home/jesse/candidate_smoke_20260902T081833Z",
+  "candidates": {
+    "baseline_poisoning": {
+      "beats_control": false,
+      "features": [],
+      "violations": 0
+    },
+    "node_churn": {
+      "beats_control": false,
+      "features": [],
+      "violations": 0
+    },
+    "node_name_evasion": {
+      "beats_control": false,
+      "features": [],
+      "violations": 0
+    },
+    "odom_spoof": {
+      "beats_control": false,
+      "features": [],
+      "violations": 0
+    },
+    "spdp_flood": {
+      "beats_control": false,
+      "features": [],
+      "violations": 0
+    },
+    "verify_flood": {
+      "beats_control": false,
+      "features": [],
+      "violations": 0
+    }
+  },
+  "changes_shipped_catalog": false,
+  "control_max": 0,
+  "control_violations_per_normal": [
+    0,
+    0,
+    0
+  ],
+  "schema_version": "sros2-firewall-network-exclusivity/v1",
+  "sessions_per_class": {
+    "baseline_poisoning": 1,
+    "node_churn": 1,
+    "node_name_evasion": 1,
+    "normal": 3,
+    "odom_spoof": 1,
+    "spdp_flood": 1,
+    "verify_flood": 1
+  },
+  "window_sec": 8.0
+}

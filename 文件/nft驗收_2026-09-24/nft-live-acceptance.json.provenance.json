@@ -1,0 +1,17 @@
+{
+  "applied_ttl_sec": 12,
+  "authorized_scope": [
+    "192.168.137.0/24"
+  ],
+  "executor": "run_nft_live_acceptance.py",
+  "generated_utc": "2026-09-23T17:59:34Z",
+  "host": "Jesse",
+  "kernel": "6.8.0-1048-raspi",
+  "live_nft_activation_allowed_unchanged": true,
+  "protected_sources": [
+    "192.168.137.1/32"
+  ],
+  "report_sha256": "2de64dcb13adb4ed2cc5e7b045bbaeaeefc1f8f73527acc4bdced4dea66a6fbe",
+  "test_source": "192.168.137.50",
+  "test_sources_used": 1
+}

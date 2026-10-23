@@ -1,0 +1,124 @@
+{
+  "adversarial_holdouts": {
+    "confused_deputy/node_churn": [
+      "max_softmax"
+    ],
+    "discovery_recon/replay_dos": [
+      "mahalanobis"
+    ],
+    "identity_abuse/replay_dos": [
+      "isolation_forest"
+    ]
+  },
+  "changes_shipped_defaults": false,
+  "features": "/home/jesse/features_refresh_split/fusion_features_enforce.csv",
+  "holdout_size": 2,
+  "known_classes": [
+    "command_injection",
+    "confused_deputy",
+    "cross_channel_relay",
+    "discovery_recon",
+    "health_spoof",
+    "hmac_forgery",
+    "identity_abuse",
+    "message_dos",
+    "mission_spoof",
+    "node_churn",
+    "parameter_tamper",
+    "replay",
+    "replay_dos",
+    "scan_drift"
+  ],
+  "leave_one_class_out_auc": {
+    "isolation_forest": {
+      "command_injection": 0.3835,
+      "confused_deputy": 0.8888,
+      "cross_channel_relay": 0.4098,
+      "discovery_recon": 0.3812,
+      "health_spoof": 0.4369,
+      "hmac_forgery": 0.8021,
+      "identity_abuse": 0.3415,
+      "message_dos": 0.4194,
+      "mission_spoof": 0.4971,
+      "node_churn": 0.9134,
+      "parameter_tamper": 0.3964,
+      "replay": 0.3756,
+      "replay_dos": 0.3405,
+      "scan_drift": 0.4182
+    },
+    "mahalanobis": {
+      "command_injection": 0.3999,
+      "confused_deputy": 1.0,
+      "cross_channel_relay": 0.434,
+      "discovery_recon": 0.3762,
+      "health_spoof": 0.4588,
+      "hmac_forgery": 0.9609,
+      "identity_abuse": 0.4043,
+      "message_dos": 0.4293,
+      "mission_spoof": 0.4612,
+      "node_churn": 0.9996,
+      "parameter_tamper": 0.427,
+      "replay": 0.3781,
+      "replay_dos": 0.3684,
+      "scan_drift": 0.4058
+    },
+    "max_softmax": {
+      "command_injection": 0.9999,
+      "confused_deputy": 0.3678,
+      "cross_channel_relay": 0.9773,
+      "discovery_recon": 0.9958,
+      "health_spoof": 0.9793,
+      "hmac_forgery": 0.9178,
+      "identity_abuse": 0.9991,
+      "message_dos": 0.9701,
+      "mission_spoof": 0.9889,
+      "node_churn": 0.6342,
+      "parameter_tamper": 0.9949,
+      "replay": 0.9896,
+      "replay_dos": 0.9973,
+      "scan_drift": 0.982
+    }
+  },
+  "metrics": "/home/jesse/models_hier_refresh_maha/enforce/training_metrics.json",
+  "official_holdout_excluded": [
+    "sensor_spoof",
+    "service_dos"
+  ],
+  "results": {
+    "isolation_forest": {
+      "macro": 0.5443,
+      "per_holdout": {
+        "confused_deputy/node_churn": 0.9351,
+        "discovery_recon/replay_dos": 0.3598,
+        "identity_abuse/replay_dos": 0.3379
+      },
+      "worst": 0.3379
+    },
+    "mahalanobis": {
+      "macro": 0.582,
+      "per_holdout": {
+        "confused_deputy/node_churn": 0.9999,
+        "discovery_recon/replay_dos": 0.3579,
+        "identity_abuse/replay_dos": 0.3883
+      },
+      "worst": 0.3579
+    },
+    "max_softmax": {
+      "macro": 0.8047,
+      "per_holdout": {
+        "confused_deputy/node_churn": 0.4275,
+        "discovery_recon/replay_dos": 0.9965,
+        "identity_abuse/replay_dos": 0.9902
+      },
+      "worst": 0.4275
+    }
+  },
+  "rows_used": {
+    "official_holdout": 0,
+    "test": 0,
+    "train": 1614,
+    "validation": 0
+  },
+  "schema_version": "sros2-firewall-ood-worst-case/v1",
+  "winner_by_worst_case": "max_softmax"
+}

@@ -1,0 +1,256 @@
+{
+  "changes_shipped_defaults": false,
+  "modes": {
+    "enforce": {
+      "_meta": {
+        "live_features": 26,
+        "temporal_features": 106,
+        "validation_rows": 622,
+        "validation_sessions": 51
+      },
+      "base+temporal": {
+        "session_attackonly": {
+          "balanced_accuracy": 0.5556,
+          "macro_f1": 0.5206,
+          "per_seed_ba": [
+            0.549,
+            0.549,
+            0.5686
+          ]
+        },
+        "session_max": {
+          "balanced_accuracy": 0.1634,
+          "macro_f1": 0.1309,
+          "per_seed_ba": [
+            0.1569,
+            0.1765,
+            0.1569
+          ]
+        },
+        "session_mean": {
+          "balanced_accuracy": 0.366,
+          "macro_f1": 0.3409,
+          "per_seed_ba": [
+            0.3725,
+            0.3725,
+            0.3529
+          ]
+        },
+        "session_vote": {
+          "balanced_accuracy": 0.3856,
+          "macro_f1": 0.3716,
+          "per_seed_ba": [
+            0.3725,
+            0.3725,
+            0.4118
+          ]
+        },
+        "source_pool": {
+          "balanced_accuracy": 0.4578,
+          "macro_f1": 0.4482,
+          "per_seed_ba": [
+            0.4486,
+            0.4672,
+            0.4574
+          ]
+        },
+        "window": {
+          "balanced_accuracy": 0.4416,
+          "macro_f1": 0.4349,
+          "per_seed_ba": [
+            0.441,
+            0.4496,
+            0.4343
+          ]
+        }
+      },
+      "base32": {
+        "session_attackonly": {
+          "balanced_accuracy": 0.3791,
+          "macro_f1": 0.3662,
+          "per_seed_ba": [
+            0.3922,
+            0.3725,
+            0.3725
+          ]
+        },
+        "session_max": {
+          "balanced_accuracy": 0.1373,
+          "macro_f1": 0.0992,
+          "per_seed_ba": [
+            0.1373,
+            0.1569,
+            0.1176
+          ]
+        },
+        "session_mean": {
+          "balanced_accuracy": 0.2157,
+          "macro_f1": 0.1725,
+          "per_seed_ba": [
+            0.2157,
+            0.2157,
+            0.2157
+          ]
+        },
+        "session_vote": {
+          "balanced_accuracy": 0.2222,
+          "macro_f1": 0.1943,
+          "per_seed_ba": [
+            0.2353,
+            0.2157,
+            0.2157
+          ]
+        },
+        "source_pool": {
+          "balanced_accuracy": 0.3123,
+          "macro_f1": 0.3233,
+          "per_seed_ba": [
+            0.3017,
+            0.3195,
+            0.3156
+          ]
+        },
+        "window": {
+          "balanced_accuracy": 0.3218,
+          "macro_f1": 0.3302,
+          "per_seed_ba": [
+            0.3283,
+            0.3234,
+            0.3136
+          ]
+        }
+      }
+    },
+    "permissive": {
+      "_meta": {
+        "live_features": 32,
+        "temporal_features": 130,
+        "validation_rows": 573,
+        "validation_sessions": 45
+      },
+      "base+temporal": {
+        "session_attackonly": {
+          "balanced_accuracy": 0.9778,
+          "macro_f1": 0.9771,
+          "per_seed_ba": [
+            0.9778,
+            0.9778,
+            0.9778
+          ]
+        },
+        "session_max": {
+          "balanced_accuracy": 0.3704,
+          "macro_f1": 0.3806,
+          "per_seed_ba": [
+            0.3333,
+            0.3333,
+            0.4444
+          ]
+        },
+        "session_mean": {
+          "balanced_accuracy": 0.9778,
+          "macro_f1": 0.9771,
+          "per_seed_ba": [
+            0.9778,
+            0.9778,
+            0.9778
+          ]
+        },
+        "session_vote": {
+          "balanced_accuracy": 0.9778,
+          "macro_f1": 0.9771,
+          "per_seed_ba": [
+            0.9778,
+            0.9778,
+            0.9778
+          ]
+        },
+        "source_pool": {
+          "balanced_accuracy": 0.9404,
+          "macro_f1": 0.9474,
+          "per_seed_ba": [
+            0.94,
+            0.9411,
+            0.94
+          ]
+        },
+        "window": {
+          "balanced_accuracy": 0.9389,
+          "macro_f1": 0.9457,
+          "per_seed_ba": [
+            0.9378,
+            0.9383,
+            0.9406
+          ]
+        }
+      },
+      "base32": {
+        "session_attackonly": {
+          "balanced_accuracy": 0.9778,
+          "macro_f1": 0.9771,
+          "per_seed_ba": [
+            0.9778,
+            0.9778,
+            0.9778
+          ]
+        },
+        "session_max": {
+          "balanced_accuracy": 0.2519,
+          "macro_f1": 0.2368,
+          "per_seed_ba": [
+            0.2222,
+            0.2667,
+            0.2667
+          ]
+        },
+        "session_mean": {
+          "balanced_accuracy": 0.7926,
+          "macro_f1": 0.764,
+          "per_seed_ba": [
+            0.7778,
+            0.7778,
+            0.8222
+          ]
+        },
+        "session_vote": {
+          "balanced_accuracy": 0.9333,
+          "macro_f1": 0.9338,
+          "per_seed_ba": [
+            0.9333,
+            0.9333,
+            0.9333
+          ]
+        },
+        "source_pool": {
+          "balanced_accuracy": 0.8749,
+          "macro_f1": 0.8834,
+          "per_seed_ba": [
+            0.8782,
+            0.8738,
+            0.8727
+          ]
+        },
+        "window": {
+          "balanced_accuracy": 0.8728,
+          "macro_f1": 0.8803,
+          "per_seed_ba": [
+            0.8705,
+            0.8729,
+            0.8751
+          ]
+        }
+      }
+    }
+  },
+  "schema_version": "sros2-firewall-pooling-temporal/v1",
+  "seeds": [
+    20260915,
+    7,
+    991
+  ],
+  "split_used": {
+    "evaluate": "validation",
+    "fit": "train"
+  },
+  "test_rows_used": 0
+}

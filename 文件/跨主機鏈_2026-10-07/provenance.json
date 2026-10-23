@@ -1,0 +1,91 @@
+{
+  "schema": "sros2-firewall-crosshost-chain-provenance/v1",
+  "generated_utc": "2026-10-07T19:54:00Z",
+  "what_this_is": "身份歸因 → 真核心 nftables 封鎖 → 撤銷 的第一次端到端執行",
+  "topology": {
+    "defender_pi": {
+      "experiment_net": "192.168.0.145/24 (wlan0, Wi-Fi)",
+      "management_net": "192.168.137.2/24 (eth0, 直連筆電，out-of-band)",
+      "role": "SROS2 keystore + security_observer + dumpcap + nftables",
+      "kernel": "6.8.0-1065-raspi",
+      "nft_version": "nftables v1.0.9"
+    },
+    "attacker_desktop": {
+      "address": "192.168.0.141/24 (eth3, WSL2 mirrored)",
+      "mac": "e8:65:38:20:23:2f",
+      "host": "DESKTOP-R94VLR5",
+      "role": "N28 wrong-CA participant，自己生 CA、自己簽憑證，無任何防守方私鑰"
+    },
+    "laptop": {
+      "role": "指揮與 campaign，不參與鏈的任何一端",
+      "note": "WSL 在 NAT 後面，實測收不到入站 UDP，因此結構上不能當任一端"
+    },
+    "same_l2_verified": "Pi 的鄰居表記著 192.168.0.141 lladdr e8:65:38:20:23:2f（無 AP isolation）",
+    "clock_skew_at_run": "Pi 對筆電 7 秒以內（NTP 已同步）"
+  },
+  "stages": {
+    "1_3_attribution": {
+      "session": "20261007T181614806024Z_crosshost_62c47459",
+      "window_utc": "2026-10-07T18:16:19Z → 18:20:17Z",
+      "domain": 41,
+      "attacker_run": "N28 ... 40（rc=124，Publishing 19+ 行，18:18:49Z–18:19:07Z）",
+      "rtps_packets_parsed": 419,
+      "observations": 37,
+      "ethernet_frames": 561,
+      "observer_verdicts": {"AUTHORIZED": 0, "UNAUTHORIZED": 1},
+      "guids_seen_by_both_halves": 1,
+      "link_layer": {
+        "192.168.0.141": "consistent（來源 MAC == ARP 解析 MAC == e8:65:38:20:23:2f）",
+        "192.168.0.145": "consistent（Pi 自己）"
+      },
+      "blockable_ips": ["192.168.0.141"],
+      "negative_control_same_run": "192.168.0.145 判為不可封鎖（觀測者沒有對此 GUID 的拒絕記錄）"
+    },
+    "4_block_and_revoke": {
+      "run_utc": "2026-10-07T19:54Z",
+      "ttl_sec": 90,
+      "authorized_scope": "192.168.0.141/32",
+      "protected_sources": ["192.168.0.145", "192.168.137.2"],
+      "traffic_source": "Pi 主動 ping 桌機；桌機的 ICMP echo reply 來源即 192.168.0.141，進入 input hook",
+      "checks_passed": 9,
+      "chain_demonstrated": true
+    }
+  },
+  "negative_controls": [
+    {
+      "what": "兩輪無攻擊者的收集（domain 30 與 41）",
+      "result": "觀測者判定 0/0，通過三條判定的位址 0 個，Pi 自己被正確拒絕"
+    },
+    {
+      "what": "封鎖前後的 nft 基準",
+      "result": "封鎖前 0 個表，teardown 後回到 0 個表"
+    }
+  ],
+  "MUST_BE_DISCLOSED": {
+    "approval_phrase_was_typed_by_claude": true,
+    "explanation": "chain_block_20261007.json 裡的 authority_came_from='human approval phrase on stdin' 與 human_phrase_supplied=true 在這一次不精確：核准片語是由 Claude 從原始碼讀出後餵進 stdin 的，不是人親手輸入。Jesse 在 2026-10-07 的對話中先授權階段 4（『開始』），再對『我授權你代打片語』明確回覆『授權』。程式無從分辨這兩者，所以這個事實只能由本檔案承載。",
+    "why_it_matters": "那道閘的設計意圖是『在執行的那一刻有一個人類確認』。這一次的人類確認發生在對話層而不是 stdin 層。日後若要宣稱『人在迴圈中』，應重跑一次由人親手輸入的版本。",
+    "traffic_was_icmp_not_attack": "第 7、9 項用的是 ICMP（Pi 主動 ping 桌機的回應），不是攻擊流量。那一段驗的是核心的 drop 路徑；攻擊流量的歸因由階段 1–3 提供（419 個 RTPS 封包）。"
+  },
+  "artifacts": {
+    "chain_block.json": "49443848fb7efcc9241ed2cfbbb2f9e34272df080ec10d092b4814c8465d869c",
+    "crosscheck.json": "6475d6ff86cbfeb0602e543d87bdfa0246d42168d733aa377b681dd3f3307284",
+    "link_layer_binding.json": "737d5880c2ddae49ebde77658d6af136bb420ab8b74767ebc618748dd0c5f013",
+    "observer_events.jsonl": "2e85f7de8adfb476ea25c8a0a2b212c168a5a40bcdf844b97f6db644b9fead33",
+    "rtps_identity_packets.jsonl": "cf410b99dcee0ce34f4588a082a0b749eb43b59bcd730d48e59c14b57ed45cde",
+    "run_block.log": "6a1d9c0e1e3408847d6e5559550b2255b97453065f5a3d7a871425616c033da4"
+  },
+  "artifacts_left_on_pi": {
+    "traffic.pcapng": {
+      "sha256": "cbd9cd59babac8e1fc5eb469366334580d76ee05fd152d7fee6336a34427a6fc",
+      "bytes": 517008,
+      "path": "/home/jesse/crosshost/20261007T181614806024Z_crosshost_62c47459/traffic.pcapng",
+      "reason": "原始擷取留在收集端，repo 內只放衍生產物與雜湊"
+    }
+  },
+  "shipping_defaults_unchanged": {
+    "LIVE_NFT_ACTIVATION_ALLOWED": false,
+    "executable_classes": [],
+    "note": "這一次是人核准的驗收，不是自動封鎖；沒有任何模型判定參與，也沒有任何可執行路徑被打開。"
+  }
+}

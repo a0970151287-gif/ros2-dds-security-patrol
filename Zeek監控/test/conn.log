@@ -1,0 +1,43 @@
+#separator \x09
+#set_separator	,
+#empty_field	(empty)
+#unset_field	-
+#path	conn
+#open	2026-06-16-18-02-21
+#fields	ts	uid	id.orig_h	id.orig_p	id.resp_h	id.resp_p	proto	service	duration	orig_bytes	resp_bytes	conn_state	local_orig	local_resp	missed_bytes	history	orig_pkts	orig_ip_bytes	resp_pkts	resp_ip_bytes	tunnel_parents	ip_proto
+#types	time	string	addr	port	addr	port	enum	string	interval	count	count	string	bool	bool	count	string	count	count	count	count	set[string]	count
+5.900000	C0i5ys4PscZytG8dTk	10.10.10.1	40029	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+5.800000	CmPUak8W2avYYFjp7	10.10.10.1	40028	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+3.899999	C9UAdv2TDVq7mwjb2e	10.10.10.1	40009	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+3.200000	C1Ah6m2jCxvXGJtr42	10.10.10.1	40002	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+4.200000	CHGJvD1xL0S4G0Kk6	10.10.10.1	40012	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+3.600000	CEi7Tc3jVWEV5r7Xqg	10.10.10.1	40006	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+3.399999	CdVJLj4bWRlmzn1Sog	10.10.10.1	40004	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+4.299999	CRL0AR3sIgqthPgMv1	10.10.10.1	40013	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+3.100000	C1CBz7PGDBR2X0IVj	10.10.10.1	40001	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+3.700000	Cu5AYt2b8E5XrMJ7Yi	10.10.10.1	40007	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+3.500000	Cqmdau2ZDmDgaWUlEj	10.10.10.1	40005	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+5.599999	CCWzTk2pftGiPstJ9k	10.10.10.1	40026	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+2.000000	CCIZdi1wOhNNI7HYzf	10.10.10.1	14913	10.10.10.2	14913	udp	-	5.000000	99	0	S0	T	T	0	D	2	155	0	0	-	17
+5.000000	COGyn33zH9UuftgU5a	10.10.10.1	40020	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+5.300000	CYnuTs1YbcCQkqNNFg	10.10.10.1	40023	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+3.299999	CHtOBgGMKzVt9iHDb	10.10.10.1	40003	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+3.000000	C0iyre19vyiuxl177j	10.10.10.1	40000	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+0.000000	Cbbbck4k1NEXp3fwZi	10.10.10.2	14900	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+5.500000	CwCjID2M1YPlWGCG2b	10.10.10.1	40025	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+8.000000	CTxVvgb4BP85wIkza	10.10.10.2	14910	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+4.000000	Cv3Dpz3Wi18YpwM1i8	10.10.10.1	40010	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+4.799999	CoJZVX1rvKYxEob6Id	10.10.10.1	40018	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+4.099999	CcY1XS1yDCV9O6VYoh	10.10.10.1	40011	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+5.700000	CB3nwu41dF3fjTCG1l	10.10.10.1	40027	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+4.400000	C4qu6fycc4uhbFHlh	10.10.10.1	40014	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+5.099999	CQNNZrlL5jqKxbOnd	10.10.10.1	40021	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+5.400000	C5hsKt3xncEBmWZ48d	10.10.10.1	40024	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+4.500000	Cx2gy845JKpHdsROh	10.10.10.1	40015	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+1.000000	CuQlbMvdhY8dZQZb6	10.10.10.1	14910	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+4.599999	COMF4cyhlnVcUsC02	10.10.10.1	40016	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+3.799999	CzNm7Q20igCbAZnhq5	10.10.10.1	40008	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+4.700000	Cdws3Lo20Jxx2nU1g	10.10.10.1	40017	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+4.900000	Cnw8la357aHQuh7B8	10.10.10.1	40019	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+5.200000	CoLKr132SBssObM3B6	10.10.10.1	40022	239.255.0.1	14900	udp	-	-	-	-	S0	T	T	0	D	1	54	0	0	-	17
+#close	2026-06-16-18-02-21

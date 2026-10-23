@@ -1,0 +1,173 @@
+{
+  "classification_semantics": {
+    "fn": "expected_zero_but_canary_received",
+    "fp": "expected_full_but_canary_not_received",
+    "negative_condition": "policy_expected_full_delivery",
+    "positive_condition": "policy_expected_zero_delivery",
+    "tn": "expected_full_and_canary_received",
+    "tp": "expected_zero_and_canary_not_received"
+  },
+  "confusion_matrix": {
+    "fn": 0,
+    "fp": 0,
+    "tn": 90,
+    "tp": 30
+  },
+  "counts": {
+    "messages": 120,
+    "pairs": 6,
+    "passed_sessions": 12,
+    "sessions": 12,
+    "trials": 12
+  },
+  "created_utc": "2026-08-25T03:53:36.612580+00:00",
+  "evidence_basis": {
+    "all_inputs_reverified": true,
+    "all_pairings_attested": false,
+    "all_sessions_paired": true,
+    "ground_truth": "paired_direct_application_delivery",
+    "publisher_authorization_contexts_all_attested": false,
+    "vendor_security_log_used_as_ground_truth": false
+  },
+  "metrics": {
+    "accuracy": 1.0,
+    "balanced_accuracy": 1.0,
+    "false_negative_rate": 0.0,
+    "false_positive_rate": 0.0,
+    "true_negative_rate": 1.0,
+    "true_positive_rate": 1.0
+  },
+  "safety": {
+    "adapter": "none",
+    "automatic_ip_block_authorized": false,
+    "deployment_eligible": false,
+    "executable": false,
+    "network_action_performed": false,
+    "network_activity_performed": false,
+    "offline_verification_only": true,
+    "source_ip_attribution_verified": false
+  },
+  "schema_version": "sros2-firewall-direct-delivery-aggregate/v2",
+  "sessions": [
+    {
+      "contract_sha256": "5030abd0ec789e239a70e12283d93d252ca849c8f083327a252687e1e21c83cd",
+      "observed": "full_delivery",
+      "pair_id": "authorized_seed_01",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "enforce",
+      "session_id": "20260818T071840744494Z_delivery_canary_0209c865",
+      "trial_id": "canary_trial_0010"
+    },
+    {
+      "contract_sha256": "6eb107b54c0838504c983a751f03e71e939a06fe83d62709ce3fe092b990db28",
+      "observed": "full_delivery",
+      "pair_id": "authorized_seed_01",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "permissive",
+      "session_id": "20260818T071451437721Z_delivery_canary_ed6b512a",
+      "trial_id": "canary_trial_0004"
+    },
+    {
+      "contract_sha256": "ac6ae432f001680e2fd0a984d5056d322b186e1094eb249d56a5584d0fc4e705",
+      "observed": "full_delivery",
+      "pair_id": "authorized_seed_02",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "enforce",
+      "session_id": "20260818T071913016170Z_delivery_canary_76dd7b6f",
+      "trial_id": "canary_trial_0011"
+    },
+    {
+      "contract_sha256": "e8ca25201ef0e491af017eb1c752a1bf23a9e2b5a7700f93febd37a8e4db6c85",
+      "observed": "full_delivery",
+      "pair_id": "authorized_seed_02",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "permissive",
+      "session_id": "20260818T071523563093Z_delivery_canary_91f226be",
+      "trial_id": "canary_trial_0005"
+    },
+    {
+      "contract_sha256": "00ce449910ae9a4a9d3a0fccda8ac4e7958c840acdea3259d950e5fbb90fa2bf",
+      "observed": "full_delivery",
+      "pair_id": "authorized_seed_03",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "enforce",
+      "session_id": "20260818T071945589544Z_delivery_canary_117e2279",
+      "trial_id": "canary_trial_0012"
+    },
+    {
+      "contract_sha256": "ebe0590fa9c2c0e1be9ab2f9c5aaeee58f745ce2c6b583a025e2b25ca090e6ba",
+      "observed": "full_delivery",
+      "pair_id": "authorized_seed_03",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "permissive",
+      "session_id": "20260818T071555385155Z_delivery_canary_2b870a53",
+      "trial_id": "canary_trial_0006"
+    },
+    {
+      "contract_sha256": "29834fb16cae733d575079d1596e4494500aa0a9142b1bff6ae18b8d3c6c4a4a",
+      "observed": "zero_delivery",
+      "pair_id": "uncredentialed_seed_01",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "enforce",
+      "session_id": "20260818T071704175607Z_delivery_canary_bf2f17a8",
+      "trial_id": "canary_trial_0007"
+    },
+    {
+      "contract_sha256": "d7cc2628d4bf080e8258604ec66bc08e0f0fe663bb838cbbbf4bebc6b66aca05",
+      "observed": "full_delivery",
+      "pair_id": "uncredentialed_seed_01",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "permissive",
+      "session_id": "20260818T071315667785Z_delivery_canary_5db963c7",
+      "trial_id": "canary_trial_0001"
+    },
+    {
+      "contract_sha256": "bd543c8b7e5e41c936ade8a435a828d1edb559038ae8cd8cda755736e30fa4f0",
+      "observed": "zero_delivery",
+      "pair_id": "uncredentialed_seed_02",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "enforce",
+      "session_id": "20260818T071736293070Z_delivery_canary_d937438d",
+      "trial_id": "canary_trial_0008"
+    },
+    {
+      "contract_sha256": "a49bb0fa4ec1a94d2adf92fa641f2eefd3174afda251cbc0c8592069c9eeb92d",
+      "observed": "full_delivery",
+      "pair_id": "uncredentialed_seed_02",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "permissive",
+      "session_id": "20260818T071347370277Z_delivery_canary_692003e6",
+      "trial_id": "canary_trial_0002"
+    },
+    {
+      "contract_sha256": "058d0583f729ce4b252248fd4413f265856bfc79c2027ae5103a2e774e1df1b1",
+      "observed": "zero_delivery",
+      "pair_id": "uncredentialed_seed_03",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "enforce",
+      "session_id": "20260818T071808517253Z_delivery_canary_08c634b7",
+      "trial_id": "canary_trial_0009"
+    },
+    {
+      "contract_sha256": "ee78f5b5ff8ce3bde28fb43ce3407146cbbd9a14371318b523a9dea1adcbb576",
+      "observed": "full_delivery",
+      "pair_id": "uncredentialed_seed_03",
+      "pairing_attested": false,
+      "passed": true,
+      "security_mode": "permissive",
+      "session_id": "20260818T071419373613Z_delivery_canary_2f19f6c1",
+      "trial_id": "canary_trial_0003"
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+{
+  "bootstrap": 2000,
+  "modes": {
+    "enforce": {
+      "base+temporal": {
+        "session_ba": 0.5556,
+        "session_ba_ci95": [
+          0.4559,
+          0.6458
+        ],
+        "session_ba_per_seed": [
+          0.549,
+          0.549,
+          0.5686
+        ],
+        "shuffled_session_ba": 0.0196,
+        "shuffled_window_ba": 0.0472,
+        "window_ba": 0.4416
+      },
+      "base32": {
+        "session_ba": 0.3791,
+        "session_ba_ci95": [
+          0.2971,
+          0.4867
+        ],
+        "session_ba_per_seed": [
+          0.3922,
+          0.3725,
+          0.3725
+        ],
+        "shuffled_session_ba": 0.0131,
+        "shuffled_window_ba": 0.0465,
+        "window_ba": 0.3218
+      },
+      "per_class_session_recall": {
+        "command_injection": {
+          "base32": 0.667,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "confused_deputy": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "cross_channel_relay": {
+          "base32": 0.0,
+          "n": 3,
+          "temporal": 0.0
+        },
+        "discovery_recon": {
+          "base32": 0.667,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "health_spoof": {
+          "base32": 0.0,
+          "n": 3,
+          "temporal": 0.333
+        },
+        "hmac_forgery": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "identity_abuse": {
+          "base32": 0.333,
+          "n": 3,
+          "temporal": 0.667
+        },
+        "message_dos": {
+          "base32": 0.0,
+          "n": 3,
+          "temporal": 0.333
+        },
+        "mission_spoof": {
+          "base32": 0.667,
+          "n": 3,
+          "temporal": 0.667
+        },
+        "node_churn": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "normal": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "parameter_tamper": {
+          "base32": 0.0,
+          "n": 3,
+          "temporal": 0.0
+        },
+        "replay": {
+          "base32": 0.0,
+          "n": 3,
+          "temporal": 0.0
+        },
+        "replay_dos": {
+          "base32": 0.0,
+          "n": 3,
+          "temporal": 0.0
+        },
+        "scan_drift": {
+          "base32": 0.0,
+          "n": 3,
+          "temporal": 0.0
+        },
+        "sensor_spoof": {
+          "base32": 0.0,
+          "n": 3,
+          "temporal": 0.333
+        },
+        "service_dos": {
+          "base32": 0.333,
+          "n": 3,
+          "temporal": 1.0
+        }
+      }
+    },
+    "permissive": {
+      "base+temporal": {
+        "session_ba": 0.9778,
+        "session_ba_ci95": [
+          0.9286,
+          1.0
+        ],
+        "session_ba_per_seed": [
+          0.9778,
+          0.9778,
+          0.9778
+        ],
+        "shuffled_session_ba": 0.0963,
+        "shuffled_window_ba": 0.1048,
+        "window_ba": 0.9389
+      },
+      "base32": {
+        "session_ba": 0.9778,
+        "session_ba_ci95": [
+          0.9286,
+          1.0
+        ],
+        "session_ba_per_seed": [
+          0.9778,
+          0.9778,
+          0.9778
+        ],
+        "shuffled_session_ba": 0.1259,
+        "shuffled_window_ba": 0.106,
+        "window_ba": 0.8728
+      },
+      "per_class_session_recall": {
+        "command_injection": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "cross_channel_relay": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "discovery_recon": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "health_spoof": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "identity_abuse": {
+          "base32": 0.667,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "message_dos": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "mission_spoof": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "node_churn": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "normal": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "parameter_tamper": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "replay": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "replay_dos": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "scan_drift": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 0.667
+        },
+        "sensor_spoof": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        },
+        "service_dos": {
+          "base32": 1.0,
+          "n": 3,
+          "temporal": 1.0
+        }
+      }
+    }
+  },
+  "schema_version": "sros2-firewall-pooling-controls/v1",
+  "seeds": [
+    20260915,
+    7,
+    991
+  ],
+  "split_used": {
+    "evaluate": "validation",
+    "fit": "train"
+  },
+  "test_rows_used": 0
+}

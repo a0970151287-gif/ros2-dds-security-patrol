@@ -1,0 +1,212 @@
+{
+  "schema_version": "sros2-firewall-defense-coverage/v1",
+  "classes": {
+    "normal": {
+      "prevention": ["sros2_least_privilege", "hmac_v3", "single_cmd_vel_writer"],
+      "detection": ["normal_baseline", "network_and_telemetry_health"],
+      "action": "allow",
+      "adapter": "none",
+      "recovery": "continuous_service_and_false_positive_monitoring",
+      "evidence": "code_synthetic_local_data_chain",
+      "residual_risk": "normal preservation outcome not yet measured end-to-end"
+    },
+    "identity_abuse": {
+      "prevention": ["sros2_identity_ca", "sros2_permissions_ca", "exact_enclave_acl"],
+      "detection": ["sros2_auth_deny", "participant_identity_telemetry"],
+      "action": "deny_participant",
+      "adapter": "sros2_identity",
+      "recovery": "revoke_reissue_restart_runbook",
+      "evidence": "code_synthetic_local_data_chain",
+      "residual_risk": "revocation and reissue outcome not yet proven"
+    },
+    "command_injection": {
+      "prevention": ["private_controller_topics", "single_cmd_vel_writer", "sros2_acl"],
+      "detection": ["d1_d2_d4_d6", "velocity_guard_validation"],
+      "action": "lock_velocity",
+      "adapter": "velocity_guard",
+      "recovery": "authenticated_monitor_lease_and_bounded_hold",
+      "evidence": "code_synthetic_local_data_chain",
+      "residual_risk": "zero and recovery outcome not yet proven in live session"
+    },
+    "sensor_spoof": {
+      "prevention": ["sros2_sensor_acl", "hmac_sensor_status"],
+      "detection": ["hmac_channel_schema", "d4_d6"],
+      "action": "drop_message",
+      "adapter": "application_hmac",
+      "recovery": "accept_next_fresh_authenticated_sensor_state",
+      "evidence": "code_synthetic_local_data_chain",
+      "residual_risk": "raw scan odom imu rely on SROS2 and consistency checks"
+    },
+    "parameter_tamper": {
+      "prevention": ["readonly_parameters", "sros2_service_acl", "parameter_veto"],
+      "detection": ["parameter_callback", "sros2_permission_deny"],
+      "action": "deny_participant",
+      "adapter": "sros2_acl",
+      "recovery": "verify_parameter_unchanged_then_revoke_identity",
+      "evidence": "code_synthetic_local_data_chain",
+      "residual_risk": "live unchanged-state assertion not yet captured"
+    },
+    "message_dos": {
+      "prevention": ["scan_point_cap", "bounded_input_parser", "qos_keep_last"],
+      "detection": ["input_reject_telemetry", "resource_health"],
+      "action": "drop_message",
+      "adapter": "input_validator",
+      "recovery": "watchdog_requires_next_valid_fresh_frame",
+      "evidence": "code_synthetic_local_data_chain",
+      "residual_risk": "RMW allocation pressure occurs before Python validation"
+    },
+    "service_dos": {
+      "prevention": ["sros2_service_acl", "readonly_parameters", "bounded_executor"],
+      "detection": ["service_rate", "network_and_host_resource_signals"],
+      "action": "temporary_block",
+      "adapter": "network_helper",
+      "recovery": "kernel_timeout_expiry_and_backend_reconciliation",
+      "evidence": "code_synthetic_local_data_chain",
+      "residual_risk": "kernel timeout backend outcome not yet proven"
+    },
+    "replay": {
+      "prevention": ["hmac_timestamp", "nonce_lru", "channel_binding"],
+      "detection": ["replay_reject_reason", "heartbeat_gap"],
+      "action": "drop_message",
+      "adapter": "application_hmac",
+      "recovery": "accept_only_fresh_nonce_after_cache_ttl",
+      "evidence": "code_synthetic_local_data_chain",
+      "residual_risk": "live drop and recovery trace not yet captured"
+    },
+    "replay_dos": {
+      "prevention": ["bounded_replay_cache", "envelope_size_cap", "log_throttle"],
+      "detection": ["replay_reject_rate", "resource_health"],
+      "action": "drop_message",
+      "adapter": "application_hmac",
+      "recovery": "cache_ttl_lru_and_log_cooldown",
+      "evidence": "code_synthetic_local_data_chain",
+      "residual_risk": "live resource stability not yet measured"
+    },
+    "discovery_recon": {
+      "prevention": ["sros2_discovery_encryption"],
+      "detection": ["zeek_discovery_rate", "network_model"],
+      "action": "alert",
+      "adapter": "none",
+      "recovery": "operator_triage_and_evidence_retention",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "participant presence can remain observable"
+    },
+    "spdp_flood": {
+      "prevention": ["bounded_zeek_state", "dds_allocation_limits_planned"],
+      "detection": ["per_source_sliding_window", "host_resource_signal"],
+      "action": "temporary_block",
+      "adapter": "network_helper",
+      "recovery": "kernel_timeout_expiry_and_backend_reconciliation",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "preauthentication discovery packets still consume resources"
+    },
+    "node_name_evasion": {
+      "prevention": ["sros2_identity", "exact_name_allowlist", "enclave_acl"],
+      "detection": ["d4_endpoint_count", "ros_graph_monitor"],
+      "action": "deny_participant",
+      "adapter": "sros2_identity",
+      "recovery": "revoke_reissue_restart_runbook",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "single same-name endpoint requires identity binding"
+    },
+    "baseline_poisoning": {
+      "prevention": ["allowlisted_startup_baseline", "graph_capacity_guard"],
+      "detection": ["startup_graph_diff", "sros2_identity"],
+      "action": "quarantine",
+      "adapter": "none",
+      "recovery": "clean_restart_and_baseline_review",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "quarantine is operator-only and has no live runbook evidence"
+    },
+    "mission_spoof": {
+      "prevention": ["hmac_mission_channel", "sros2_topic_acl"],
+      "detection": ["hmac_channel_schema", "mission_state_validation"],
+      "action": "drop_message",
+      "adapter": "application_hmac",
+      "recovery": "accept_next_fresh_authenticated_mission",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "key rotation and compromise recovery not yet implemented"
+    },
+    "health_spoof": {
+      "prevention": ["hmac_health_channel", "no_confused_deputy_resign"],
+      "detection": ["hmac_schema", "rate_limited_health_log"],
+      "action": "drop_message",
+      "adapter": "application_hmac",
+      "recovery": "accept_next_fresh_authenticated_health",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "shared HMAC key remains a concentration risk"
+    },
+    "cmd_vel_race": {
+      "prevention": ["single_cmd_vel_writer", "private_controller_topics", "sros2_acl"],
+      "detection": ["d2_d4_d6", "source_selection"],
+      "action": "lock_velocity",
+      "adapter": "velocity_guard",
+      "recovery": "fresh_heartbeat_no_fault_and_fresh_command",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "permissive mode cannot prevent raw publisher races"
+    },
+    "scan_drift": {
+      "prevention": ["sros2_scan_publisher_acl", "scan_schema_and_point_cap"],
+      "detection": ["d3_d4_d6", "telemetry_drift_ratio"],
+      "action": "lock_velocity",
+      "adapter": "velocity_guard",
+      "recovery": "fresh_monitor_lease_and_valid_sensor_stream",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "coordinated scan and odom spoof can evade consistency checks"
+    },
+    "odom_spoof": {
+      "prevention": ["sros2_odom_publisher_acl"],
+      "detection": ["d4_d6", "odom_command_mismatch"],
+      "action": "lock_velocity",
+      "adapter": "velocity_guard",
+      "recovery": "fresh_monitor_lease_and_valid_sensor_stream",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "coordinated sensor spoof can evade behavior checks"
+    },
+    "node_churn": {
+      "prevention": ["sros2_identity", "graph_capacity_guard", "bounded_lru"],
+      "detection": ["participant_churn_rate", "graph_overflow_fault"],
+      "action": "temporary_block",
+      "adapter": "network_helper",
+      "recovery": "state_ttl_and_kernel_timeout_reconciliation",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "RMW discovery allocation limits are not yet configured"
+    },
+    "verify_flood": {
+      "prevention": ["envelope_size_cap", "bounded_replay_cache", "log_throttle"],
+      "detection": ["hmac_reject_rate", "cpu_and_queue_health"],
+      "action": "temporary_block",
+      "adapter": "network_helper",
+      "recovery": "throttle_decay_cache_ttl_and_kernel_expiry",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "runtime reject-reason producer not yet wired"
+    },
+    "cross_channel_relay": {
+      "prevention": ["hmac_channel_binding"],
+      "detection": ["expected_channel_mismatch"],
+      "action": "drop_message",
+      "adapter": "application_hmac",
+      "recovery": "accept_next_fresh_correct_channel_message",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "shared key compromise bypasses application authenticity"
+    },
+    "hmac_forgery": {
+      "prevention": ["hmac_sha256", "mode_0600_secret", "constant_time_compare"],
+      "detection": ["bad_hmac_reason", "reject_rate"],
+      "action": "drop_message",
+      "adapter": "application_hmac",
+      "recovery": "key_rotation_and_rebootstrap_required",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "automated key rotation is not yet implemented"
+    },
+    "confused_deputy": {
+      "prevention": ["never_resign_unverified_input", "channel_schema"],
+      "detection": ["reflection_ratio", "bounded_log"],
+      "action": "alert",
+      "adapter": "none",
+      "recovery": "cooldown_and_operator_review",
+      "evidence": "code_synthetic_only",
+      "residual_risk": "no automated quarantine runbook by design"
+    }
+  }
+}

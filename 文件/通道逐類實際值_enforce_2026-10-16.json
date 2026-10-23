@@ -1,0 +1,392 @@
+{
+  "schema_version": "sros2-firewall-channel-values/v1",
+  "features_table": "/home/jesse/features_mega_split/fusion_features_enforce.csv",
+  "eval_split": "train_validation",
+  "test_rows_used": 0,
+  "sessions": 1655,
+  "classes": 20,
+  "aggregate_stat_shown": "max",
+  "changes_shipped_defaults": false,
+  "per_class": {
+    "command_injection": {
+      "sessions": 65,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.3968,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 871.7834,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "confused_deputy": {
+      "sessions": 137,
+      "unknown_node_rate/max": {
+        "median": 0.125,
+        "nonzero_fraction": 0.9562
+      },
+      "participant_churn_rate/max": {
+        "median": 0.25,
+        "nonzero_fraction": 0.9562
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4954,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 763.5514,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "cross_channel_relay": {
+      "sessions": 65,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0154
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4252,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 308.2615,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "discovery_recon": {
+      "sessions": 67,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.3911,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 871.0909,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "health_spoof": {
+      "sessions": 66,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4168,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 872.1121,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "hmac_forgery": {
+      "sessions": 137,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4257,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 344.6954,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "identity_abuse": {
+      "sessions": 65,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.7298,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 320.71,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "message_dos": {
+      "sessions": 66,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.3692,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 871.8482,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "mission_spoof": {
+      "sessions": 65,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0154
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4187,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 871.6875,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "node_churn": {
+      "sessions": 68,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0147
+      },
+      "dst_port_entropy/max": {
+        "median": 4.0193,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 275.9425,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "normal": {
+      "sessions": 255,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4138,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 871.0909,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "odom_spoof": {
+      "sessions": 67,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0149
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4892,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 322.4981,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "parameter_tamper": {
+      "sessions": 67,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4138,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 870.6582,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "replay": {
+      "sessions": 66,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.403,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 871.0945,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "replay_dos": {
+      "sessions": 65,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0154
+      },
+      "dst_port_entropy/max": {
+        "median": 3.3678,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 871.8182,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "scan_drift": {
+      "sessions": 67,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.411,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 357.0511,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "sensor_spoof": {
+      "sessions": 66,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.3979,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 870.2365,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "service_dos": {
+      "sessions": 65,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4263,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 871.6727,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "spdp_flood": {
+      "sessions": 69,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4918,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 869.68,
+        "nonzero_fraction": 1.0
+      }
+    },
+    "verify_flood": {
+      "sessions": 67,
+      "unknown_node_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0
+      },
+      "participant_churn_rate/max": {
+        "median": 0.0,
+        "nonzero_fraction": 0.0149
+      },
+      "dst_port_entropy/max": {
+        "median": 3.4187,
+        "nonzero_fraction": 1.0
+      },
+      "mean_bytes_per_packet/max": {
+        "median": 870.8421,
+        "nonzero_fraction": 1.0
+      }
+    }
+  }
+}

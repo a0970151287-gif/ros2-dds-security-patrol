@@ -1,0 +1,173 @@
+{
+  "changes_shipped_defaults": false,
+  "created_utc": "2026-09-26T19:37:49Z",
+  "elapsed_sec": 329.5,
+  "eval_split": "train_validation",
+  "families": {
+    "alert_only": {
+      "chance": 0.5,
+      "classes": [
+        "confused_deputy",
+        "discovery_recon"
+      ],
+      "flat_within_family": {
+        "balanced_accuracy": 1.0,
+        "std": 0.0
+      },
+      "folds_used": 5,
+      "sessions_per_class": {
+        "confused_deputy": 17,
+        "discovery_recon": 17
+      },
+      "shuffled": {
+        "balanced_accuracy": 0.4216,
+        "std": 0.1096
+      },
+      "specialist": {
+        "balanced_accuracy": 1.0,
+        "std": 0.0
+      },
+      "specialist_minus_flat": 0.0,
+      "specialist_minus_shuffled": 0.5784
+    },
+    "application_drop": {
+      "chance": 0.125,
+      "classes": [
+        "cross_channel_relay",
+        "health_spoof",
+        "hmac_forgery",
+        "message_dos",
+        "mission_spoof",
+        "replay",
+        "replay_dos",
+        "sensor_spoof"
+      ],
+      "flat_within_family": {
+        "balanced_accuracy": 0.4449,
+        "std": 0.025
+      },
+      "folds_used": 5,
+      "sessions_per_class": {
+        "cross_channel_relay": 17,
+        "health_spoof": 17,
+        "hmac_forgery": 17,
+        "message_dos": 17,
+        "mission_spoof": 17,
+        "replay": 17,
+        "replay_dos": 17,
+        "sensor_spoof": 17
+      },
+      "shuffled": {
+        "balanced_accuracy": 0.1189,
+        "std": 0.0605
+      },
+      "specialist": {
+        "balanced_accuracy": 0.5147,
+        "std": 0.017
+      },
+      "specialist_minus_flat": 0.0698,
+      "specialist_minus_shuffled": 0.3958
+    },
+    "control_lock": {
+      "chance": 0.5,
+      "classes": [
+        "command_injection",
+        "scan_drift"
+      ],
+      "flat_within_family": {
+        "balanced_accuracy": 0.6127,
+        "std": 0.0202
+      },
+      "folds_used": 5,
+      "sessions_per_class": {
+        "command_injection": 17,
+        "scan_drift": 17
+      },
+      "shuffled": {
+        "balanced_accuracy": 0.5245,
+        "std": 0.1384
+      },
+      "specialist": {
+        "balanced_accuracy": 0.9951,
+        "std": 0.011
+      },
+      "specialist_minus_flat": 0.3824,
+      "specialist_minus_shuffled": 0.4706
+    },
+    "network_block": {
+      "chance": 0.5,
+      "classes": [
+        "node_churn",
+        "service_dos"
+      ],
+      "flat_within_family": {
+        "balanced_accuracy": 1.0,
+        "std": 0.0
+      },
+      "folds_used": 5,
+      "sessions_per_class": {
+        "node_churn": 17,
+        "service_dos": 17
+      },
+      "shuffled": {
+        "balanced_accuracy": 0.5049,
+        "std": 0.1229
+      },
+      "specialist": {
+        "balanced_accuracy": 1.0,
+        "std": 0.0
+      },
+      "specialist_minus_flat": 0.0,
+      "specialist_minus_shuffled": 0.4951
+    },
+    "normal": {
+      "classes": [
+        "normal"
+      ],
+      "skipped": "只有一類，族內沒有東西可分"
+    },
+    "participant_deny": {
+      "chance": 0.5,
+      "classes": [
+        "identity_abuse",
+        "parameter_tamper"
+      ],
+      "flat_within_family": {
+        "balanced_accuracy": 0.8873,
+        "std": 0.0314
+      },
+      "folds_used": 5,
+      "sessions_per_class": {
+        "identity_abuse": 17,
+        "parameter_tamper": 17
+      },
+      "shuffled": {
+        "balanced_accuracy": 0.5343,
+        "std": 0.0967
+      },
+      "specialist": {
+        "balanced_accuracy": 0.8824,
+        "std": 0.024
+      },
+      "specialist_minus_flat": -0.0049,
+      "specialist_minus_shuffled": 0.3481
+    }
+  },
+  "features": "/home/jesse/features_refresh_split/fusion_features_enforce.csv",
+  "folds": 5,
+  "registration_sha256": "2e95c7883ee55b2763375f68b62d68171de040b3c1d247e42dbc8a89b5b02eff",
+  "repeats": 6,
+  "schema_version": "sros2-firewall-within-family-separability/v1",
+  "sessions": 289,
+  "settings": {
+    "blind_spot_features": "retained_with_known_limitation",
+    "feature_variant": "full",
+    "formulation": "session_aggregate",
+    "model": "random_forest",
+    "ood_scorer_enforce": "undecided",
+    "ood_scorer_permissive": "max_softmax",
+    "temporal_expansion": "d1_m3_x3",
+    "unknown_session_pooling": "k_of_n_k2"
+  },
+  "test_rows_used": 0
+}

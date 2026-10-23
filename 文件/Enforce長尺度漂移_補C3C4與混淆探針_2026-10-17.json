@@ -1,0 +1,90 @@
+{
+  "schema_version": "sros2-firewall-drift-config-or-time-followup/v1",
+  "prediction_commit": "808e905",
+  "holdout_reads": 0,
+  "temporal": "none",
+  "standardisation": "whole-table mu/sd",
+  "changes_shipped_defaults": false,
+  "C3_volume_by_era": {
+    "enforce": {},
+    "enforce_max_over_min": null,
+    "permissive": {},
+    "permissive_max_over_min": null
+  },
+  "C4_per_class_complete_eras_only": {
+    "eras_used": [
+      "E4",
+      "E5",
+      "E6"
+    ],
+    "classes_usable": 20,
+    "cells": {
+      "E4-E4": {
+        "classes": 20,
+        "median_of_class_medians": 9.3132
+      },
+      "E5-E5": {
+        "classes": 20,
+        "median_of_class_medians": 9.5981
+      },
+      "E6-E6": {
+        "classes": 20,
+        "median_of_class_medians": 6.9916
+      },
+      "E4-E5": {
+        "classes": 20,
+        "median_of_class_medians": 9.9754
+      },
+      "E4-E6": {
+        "classes": 20,
+        "median_of_class_medians": 15.215
+      },
+      "E5-E6": {
+        "classes": 20,
+        "median_of_class_medians": 16.0614
+      }
+    },
+    "pooled_diagonal": 9.3132,
+    "pooled_off_diagonal": 15.215,
+    "ratio": 1.6337,
+    "per_class_ratio": {
+      "replay": 2.1604,
+      "discovery_recon": 2.1593,
+      "message_dos": 2.1437,
+      "hmac_forgery": 2.1373,
+      "health_spoof": 2.1307,
+      "normal": 2.1056,
+      "mission_spoof": 2.0262,
+      "cross_channel_relay": 1.9564,
+      "sensor_spoof": 1.8738,
+      "scan_drift": 1.8182,
+      "node_churn": 1.8031,
+      "command_injection": 1.7926,
+      "spdp_flood": 1.7661,
+      "identity_abuse": 1.7657,
+      "odom_spoof": 1.7011,
+      "service_dos": 1.5962,
+      "replay_dos": 1.591,
+      "verify_flood": 1.5074,
+      "parameter_tamper": 1.3536,
+      "confused_deputy": 1.3052
+    },
+    "classes_above_1_3": 20
+  },
+  "confound_probe_within_revision": {
+    "enforce": {
+      "same_rev_short_n": 3757,
+      "same_rev_short_median": 5.8797,
+      "same_rev_mid_n": 8773,
+      "same_rev_mid_median": 6.6076,
+      "ratio": 1.1238
+    },
+    "permissive": {
+      "same_rev_short_n": 2508,
+      "same_rev_short_median": 6.1309,
+      "same_rev_mid_n": 6355,
+      "same_rev_mid_median": 13.1739,
+      "ratio": 2.1488
+    }
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "bindings": {
+    "canary_topic": "/chatter",
+    "protected_enclave": "/listener",
+    "protected_sink_id": "canary_listener",
+    "source_enclave": "/uncredentialed_source",
+    "source_id": "uncredentialed_source",
+    "window_end_utc": "2026-08-18T07:17:59.176790+00:00",
+    "window_start_utc": "2026-08-18T07:17:43.174310+00:00"
+  },
+  "classification_semantics": {
+    "fn": "expected_zero_but_canary_received",
+    "fp": "expected_full_but_canary_not_received",
+    "negative_condition": "policy_expected_full_delivery",
+    "positive_condition": "policy_expected_zero_delivery",
+    "tn": "expected_full_and_canary_received",
+    "tp": "expected_zero_and_canary_not_received"
+  },
+  "confusion_matrix": {
+    "fn": 0,
+    "fp": 0,
+    "tn": 0,
+    "tp": 10
+  },
+  "created_utc": "2026-08-25T03:51:59.246483+00:00",
+  "evidence_basis": {
+    "attempt_source": "publisher_application_canary_archive",
+    "claim_scope": "direct_canary_delivery_only",
+    "collector_authenticity_attested": false,
+    "pairing_attested": false,
+    "publisher_authorization_context_attested": false,
+    "receipt_source": "protected_subscriber_application_canary_archive",
+    "vendor_security_log_used_as_ground_truth": false
+  },
+  "integrity": {
+    "archive_sequences_continuous": true,
+    "attempt_set_sha256": "4a521fa7c94c665feddff7ebe88829dc1105e03f6729c9f6e23109915d1e41a6",
+    "attempted_archive": {
+      "bytes": 21097,
+      "data_record_count": 10,
+      "path": "attempted.jsonl",
+      "record_count": 29,
+      "sha256": "399ed7025bc391aedd2cdc5c9d3012a57bbe1587d4b06eb8f8d969fc1994ddd2"
+    },
+    "collector_health_verified": true,
+    "contract_sha256": "bd543c8b7e5e41c936ade8a435a828d1edb559038ae8cd8cda755736e30fa4f0",
+    "protected_received_archive": {
+      "bytes": 23057,
+      "data_record_count": 0,
+      "path": "protected_received.jsonl",
+      "record_count": 33,
+      "sha256": "ae14a7950a4c37bb0ab47be4aba43ecbb8291ff23d51d5977f1313e91adba35d"
+    }
+  },
+  "pair_id": "uncredentialed_seed_02",
+  "pairing_attested": false,
+  "policy_sha256": "0ed41ad00639e77f45be4df367f3c9efb5fdcf756a10c07820e4e6380d7c2a49",
+  "publisher_authorization": {
+    "authorization_case": "uncredentialed_publisher",
+    "context_attested": false,
+    "credential_state": "absent",
+    "expected_delivery": "zero_delivery",
+    "expected_reason": "enforce_uncredentialed_publisher",
+    "permission_state": "not_reached",
+    "subject_enclave": "/uncredentialed_source",
+    "topic": "/chatter"
+  },
+  "result": {
+    "attempted_count": 10,
+    "attempted_sequences": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "blocked_count": 10,
+    "delivered_count": 0,
+    "delivered_sequences": [],
+    "evaluable": true,
+    "expected": "zero_delivery",
+    "expected_reason": "enforce_uncredentialed_publisher",
+    "observed": "zero_delivery",
+    "passed": true,
+    "undelivered_sequences": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  "safety": {
+    "adapter": "none",
+    "automatic_ip_block_authorized": false,
+    "deployment_eligible": false,
+    "executable": false,
+    "network_action_performed": false,
+    "network_activity_performed": false,
+    "offline_verification_only": true,
+    "source_ip_attribution_verified": false
+  },
+  "schema_version": "sros2-firewall-direct-delivery-report/v2",
+  "security_mode": "enforce",
+  "session_id": "20260818T071736293070Z_delivery_canary_d937438d",
+  "trial_id": "canary_trial_0008"
+}

@@ -1,0 +1,81 @@
+{
+  "claims_nothing_about_quality": "這份註冊不宣稱任何設定是好的。它們全部只是 CV 上的選擇，而 CV 不是 held-out test。它保證的只有一件事：跑新 test 的時候，這些值沒有被偷偷換過。",
+  "registration_sha256": "f1b1fbe130b0248445fcdf8972732bf417a52dbf6bd9b4b6cf4bd5bf2318a44d",
+  "schema_version": "sros2-firewall-retraining-preregistration/v1",
+  "sealed_test_protocol": [
+    "切分在任何模型擬合**之前**產生，並記下 test 場次清單的 SHA-256。",
+    "test 只准評估**一次**。評估器對已存在的輸出檔必須拒絕覆寫。",
+    "評估之後不得再調任何設定。要調就等下一批資料。",
+    "若評估結果不如預期，那是結果，不是重跑的理由。",
+    "open-set holdout 的 family 必須在切分時就決定，不可在看過分數後更換。"
+  ],
+  "settings": {
+    "blind_spot_features": {
+      "evidence_bytes": 13020,
+      "evidence_path": "文件/防禦反應特徵稽核_2026-09-04.md",
+      "evidence_sha256": "f5038c417bc0a881659e9d7bce172af22550ce676355c7e33655a0ccf3411d33",
+      "rationale": "`sros_auth_fail_rate` 與 `mean_bytes_per_packet` 是同一件事的兩個代理（這個 participant 合不合法）。2026-09-04 量到拿掉它們讓未見持證內鬼 recall 0.0885 → 0.6010，**但**同一天用 family-LOO 重量發現Enforce 的未見**外部**攻擊從 0.0667 塌到 0.0012。兩邊都不可接受 ⇒ 留著並記錄限制，正解是換一個不在這條軸上的證據（封包層 RTPS 身份）。",
+      "supersedes_earlier_choice": "⚠️ C2C-056 一度寫「代價幾乎是零」，是 C2C-057 用 family-LOO 推翻的——我當時只量了三個軸，漏了整條未知偵測鏈。",
+      "value": "retained_with_known_limitation"
+    },
+    "feature_variant": {
+      "evidence_bytes": 10643,
+      "evidence_path": "文件/識別模型選型_折的缺陷與重複分層CV_2026-09-19.md",
+      "evidence_sha256": "cc13413fa7d390cef248b087ef7e613e2b95c4226525903919d763ad7452bd95",
+      "rationale": "勝出的臂是 `random_forest/**full**/d1_m3_x3`。2026-09-19 宣告過七個特徵變體（`full`、`drop_dead`、`stats_level`、`stats_shape`、`stats_no_std`、`stats_no_minmax`、`stats_mean_max`），而七臂的差距0.6742–0.6857 **全部落在 ±0.024 的雜訊地板裡**（地板是 2026-09-17 用打亂對照量出來的），所以選 `full` 不是因為它顯著較好，是因為它**不丟資訊**——在分不開的時候要選不做額外假設的那一個。`full` 等於六個聚合統計量全用（mean／std／min／max／max_abs_delta／trend）且不丟死欄位，也就是 `aggregate_sessions` 的原生行為。",
+      "supersedes_earlier_choice": "⚠️ 這一項 2026-09-25 才補進註冊。先前**完全沒有記**，而它是勝出臂名字的一部分——漏掉它等於讓重訓可以在七個變體裡任選一個而仍然自稱符合註冊。",
+      "value": "full"
+    },
+    "formulation": {
+      "evidence_bytes": 10412,
+      "evidence_path": "文件/換問題表述與模型類別_2026-09-16.md",
+      "evidence_sha256": "33a219d9cad8c57b6e5e292ba8016421dad9f6cb9cbd0ecdd9c4964c172d29d2",
+      "rationale": "一場一個向量直接分類。2026-09-16 量到換表述值 +0.093（Enforce 0.5571 → 0.6505），遠大於換遍 24 個學習法的 +0.021；RF 與 HistGB 在該表述下同分，代表功勞在表述不在模型。機制最清楚的是 parameter_tamper 0.059 → 0.765：爆量被逐視窗機率平均稀釋，在特徵層取 max／max_abs_delta 不會。",
+      "supersedes_earlier_choice": null,
+      "value": "session_aggregate"
+    },
+    "model": {
+      "evidence_bytes": 10643,
+      "evidence_path": "文件/識別模型選型_折的缺陷與重複分層CV_2026-09-19.md",
+      "evidence_sha256": "cc13413fa7d390cef248b087ef7e613e2b95c4226525903919d763ad7452bd95",
+      "rationale": "2026-09-19 用 StratifiedGroupKFold(shuffle) × 12 輪重複 ＋ 配對統計重選。Enforce 唯一 12／12 全勝（0.6851，配對 CI [+0.0138, +0.0288]）、Permissive 255／255。sklearn 內建無額外相依，Pi 上推論 1.88 ms／場。另量到它**略微低估**自己（ECE 0.0414、過度自信 −0.0102），而 HistGB 嚴重高估（+0.2435）——與通用文獻相反，但這是本專案的量測。",
+      "supersedes_earlier_choice": "⚠️ 這推翻了 2026-09-16 推薦的 hist_gradient_boosting。那一輪用 GroupKFold，而它**不洗牌也不吃 seed**，所有數字來自同一個偏掉的折分割（每折缺 2–3 個完整類別）。排名因此重排。",
+      "value": "random_forest"
+    },
+    "ood_scorer_enforce": {
+      "evidence_bytes": 9018,
+      "evidence_path": "文件/未知攻擊_解析度與評分器_2026-09-24.md",
+      "evidence_sha256": "e5e0a2cf7c1893b13d58bdcc87cfb6b5390dfa420174620fe1ee7ecc8fdc93e4",
+      "rationale": "**刻意不決定。** 兩個量測互相矛盾：max_softmax 在對抗性最差情況贏（0.4275 對 0.3579）卻在 family-LOO 的閘門指標上輸（any-macro 0.1168 對 0.2252），而三組 holdout 呈互補。真正的約束是閘門否決了 OOD 頭 88% 的拒絕，換評分器碰不到那個。出貨預設 isolation_forest 不動，直到有證據能分開它們。",
+      "supersedes_earlier_choice": null,
+      "value": "undecided"
+    },
+    "ood_scorer_permissive": {
+      "evidence_bytes": 9018,
+      "evidence_path": "文件/未知攻擊_解析度與評分器_2026-09-24.md",
+      "evidence_sha256": "e5e0a2cf7c1893b13d58bdcc87cfb6b5390dfa420174620fe1ee7ecc8fdc93e4",
+      "rationale": "2026-09-24：worst_family 0.0000 → 0.9216（any）／0.5294（k3）、macro 0.6941 → 0.9843，**而且正常誤報更低**（0.0714 → 0.0455）。用 C2C-028 自己設計的對抗性協定重做，最差情況 0.9212 對 Mahalanobis 0.4514——連在專門針對它最弱兩類的那組上都是。",
+      "supersedes_earlier_choice": "⚠️ 這反轉了 C2C-028 在舊資料上選 Mahalanobis 的結論。未驗證的解釋：那一輪做在網路特徵壞掉的資料上（Zeek 無 -C、conn_count 虛增 7.96×），距離式對那種扭曲最敏感。",
+      "value": "max_softmax"
+    },
+    "temporal_expansion": {
+      "evidence_bytes": 10643,
+      "evidence_path": "文件/識別模型選型_折的缺陷與重複分層CV_2026-09-19.md",
+      "evidence_sha256": "cc13413fa7d390cef248b087ef7e613e2b95c4226525903919d763ad7452bd95",
+      "rationale": "2026-09-19 在修好的折上值 +0.0101。⚠️ 2026-09-25 把它從 `enabled` 改成**確切的字串**：勝出的臂在 artifact 裡叫 `random_forest/full/d1_m3_x3`（mean 0.6851、配對 CI [+0.0138, +0.0288]、12／12 全勝，與本項理由的數字逐字相符），而 `compare_session_models.py` 的**預設是 `d1_m3_x3_m5_x5`**——那是另一個設定。「enabled」釘不住是哪一種展開，照它去重訓會用錯的那一個。",
+      "supersedes_earlier_choice": "⚠️ 這推翻了 2026-09-16 的「換表述之後時序展開幾乎多餘（+0.003）」。同樣是壞折的產物。⚠️ 也取代同一天早先註冊的 `enabled`——**那個值不夠精確**，而一份釘不住設定的註冊沒有達成它唯一的目的。",
+      "value": "d1_m3_x3"
+    },
+    "unknown_session_pooling": {
+      "evidence_bytes": 6607,
+      "evidence_path": "文件/未知攻擊_k2讓兩個約束同時過_2026-09-25.md",
+      "evidence_sha256": "324e6702eed2b4de3148c20287e7d0a7cb4f189b26e6cd63f0b304d31e4094ec",
+      "rationale": "2026-09-25：**k 必須跟著評分器一起定。** C2C-060 在 mahalanobis／isolation_forest 上選 k=3，理由是四組的正常誤報全部降到 0.0000，那在當時是對的；但 2026-09-24 把 Permissive 的評分器凍結成 `max_softmax`，而它問的是完全不同的問題（有沒有任何已知類別敢認領這一列），最佳 k 不是 3。全解析度實測 k=3 的 `worst_family_unknown_recall` 只有 0.5294，**k=2 是 0.7647**，而兩者的最差正常誤報都是 **0.0000**——五折全部為零。⇒ 兩個驗收約束第一次同時成立，而且不付誤報代價。`alert_only`（只有 `discovery_recon`）從 P1 起每一組設定都是 0.0000，k=2 讓它變成 0.9412。兩種解析度互相印證（validation 0.7778 對全解析度 0.7647，差 0.013）。",
+      "supersedes_earlier_choice": "⚠️ 這取代同一天早先註冊的 k=3（`文件/重訓預先註冊_2026-09-25.json`，canonical `e0342f49…6360`，**保留不刪**）。改動發生在 campaign 的新資料**存在之前**，那是這份註冊的設計用途；看過新 test 之後再改才是污染。⚠️ 而 k=2 本身仍然是**看過掃描結果之後**選的——掃描範圍（k=1..4 ＋ 三個比例）是 C2C-060 預先定義的，勝出的值是量出來的。把它釘在這裡，就是為了讓新 test 上不能再挑一次。⚠️ 這個值只對 **Permissive** 有量測支持。Enforce 的瓶頸是閘門否決了OOD 頭 88% 的拒絕，換 k 碰不到那個。",
+      "value": "k_of_n_k2"
+    }
+  },
+  "undecided": [
+    "ood_scorer_enforce"
+  ]
+}

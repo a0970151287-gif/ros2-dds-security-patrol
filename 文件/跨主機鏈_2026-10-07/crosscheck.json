@@ -1,0 +1,54 @@
+{
+  "attacker_reachability": {
+    "attacker_rtps_present": true,
+    "expected_attacker_ip": "192.168.0.141",
+    "next_step": null,
+    "note": null,
+    "possible_causes": null,
+    "verdict": "ok"
+  },
+  "authorizes_action": false,
+  "blockable_ips": [
+    "192.168.0.141"
+  ],
+  "contract_bindings": {
+    "guids_appearing_at_multiple_ips": {},
+    "unique_guid_to_ip_binding": true
+  },
+  "counts": {
+    "authorized_guids": 0,
+    "guids_seen_by_both_halves": 1,
+    "packet_guids": 2,
+    "rejected_guids": 1,
+    "source_ips": 2
+  },
+  "inputs": {
+    "link_layer_binding": "/home/jesse/crosshost/20261007T181614806024Z_crosshost_62c47459/link_layer_binding.json",
+    "observer_events": "/home/jesse/crosshost/20261007T181614806024Z_crosshost_62c47459/observer_events.jsonl",
+    "packet_observations": "/home/jesse/crosshost/20261007T181614806024Z_crosshost_62c47459/rtps_identity_packets.jsonl"
+  },
+  "per_ip": {
+    "192.168.0.141": {
+      "blockable": true,
+      "guid_count": 1,
+      "has_authorized_identity": false,
+      "has_rejection_record": true,
+      "link_layer_verdict": "consistent",
+      "reasons_not_blockable": [],
+      "unique_guid": true
+    },
+    "192.168.0.145": {
+      "blockable": false,
+      "guid_count": 1,
+      "has_authorized_identity": false,
+      "has_rejection_record": false,
+      "link_layer_verdict": "consistent",
+      "reasons_not_blockable": [
+        "觀測者沒有對此 GUID 的拒絕記錄（不可用查無記錄推論）"
+      ],
+      "unique_guid": true
+    }
+  },
+  "schema_version": "sros2-firewall-identity-crosscheck/v2",
+  "source_ip_attribution_verified": true
+}

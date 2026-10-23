@@ -1,0 +1,67 @@
+{
+  "schema_version": "sros2-firewall-batch-invariant-diagnostics/v1",
+  "purpose": "量我註冊的 G4／C6 為什麼沒有判別力,以及 V1 變差的機制候選;不是新假設,是儀器診斷",
+  "holdout_reads": 0,
+  "modes": {
+    "permissive": {
+      "sessions": 1364,
+      "batches": 53,
+      "normal_sessions": 254,
+      "batch_normal_count": {
+        "min": 0,
+        "p25": 1.0,
+        "median": 3.0,
+        "p75": 8.0,
+        "max": 24,
+        "zero_batches": 11,
+        "one_batches": 10,
+        "le2_batches": 23
+      },
+      "leak_reach": {
+        "normal_in_k1_batches": 10,
+        "normal_in_k2_batches": 4,
+        "share_of_normal_becoming_exactly_zero_under_C6": 0.0394,
+        "why_G4_had_no_power": "G4 判「normal recall >= 0.98 就是洩漏」,而 V0（完全沒有正規化）的 normal recall 本來就是 1.0000（permissive）⇒ 門檻在未變異的那一臂已經滿足 ⇒ 兩個子句都不可能被違反"
+      },
+      "baseline_sample_size_for_attack_sessions": {
+        "min": 0,
+        "median": 8.0,
+        "p75": 13.0,
+        "max": 24,
+        "share_with_le2_normal": 0.0505,
+        "share_with_le4_normal": 0.1279,
+        "share_with_zero_normal": 0.0162
+      }
+    },
+    "enforce": {
+      "sessions": 1655,
+      "batches": 80,
+      "normal_sessions": 255,
+      "batch_normal_count": {
+        "min": 0,
+        "p25": 0.0,
+        "median": 1.0,
+        "p75": 5.0,
+        "max": 15,
+        "zero_batches": 24,
+        "one_batches": 18,
+        "le2_batches": 52
+      },
+      "leak_reach": {
+        "normal_in_k1_batches": 18,
+        "normal_in_k2_batches": 20,
+        "share_of_normal_becoming_exactly_zero_under_C6": 0.0706,
+        "why_G4_had_no_power": "G4 判「normal recall >= 0.98 就是洩漏」,而 V0（完全沒有正規化）的 normal recall 本來就是 1.0000（permissive）⇒ 門檻在未變異的那一臂已經滿足 ⇒ 兩個子句都不可能被違反"
+      },
+      "baseline_sample_size_for_attack_sessions": {
+        "min": 0,
+        "median": 9.0,
+        "p75": 11.0,
+        "max": 15,
+        "share_with_le2_normal": 0.2329,
+        "share_with_le4_normal": 0.2857,
+        "share_with_zero_normal": 0.075
+      }
+    }
+  }
+}

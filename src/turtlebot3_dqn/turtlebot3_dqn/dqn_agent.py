@@ -1,5 +1,7 @@
 """Double Dueling DQN Agent（純避障版）"""
 import math
+from collections.abc import Mapping
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -133,11 +135,55 @@ class DQNAgent:
         path = self.model_dir / f'dqn_{tag}.pth'
         if not path.exists():
             return False
-        ckpt = torch.load(path, map_location=self.device, weights_only=False)
+        # weights_only=True blocks arbitrary pickle globals during checkpoint
+        # deserialization.  The remaining scalar/schema checks prevent malformed
+        # but syntactically safe checkpoints from partially mutating the agent.
+        ckpt = torch.load(path, map_location=self.device, weights_only=True)
+        if not isinstance(ckpt, dict):
+            raise ValueError('checkpoint 必須是 dict')
+        required = {'policy', 'target', 'epsilon', 'episode'}
+        missing = required.difference(ckpt)
+        if missing:
+            raise ValueError(f'checkpoint 缺少欄位: {sorted(missing)}')
+        for field_name in ('policy', 'target'):
+            state = ckpt[field_name]
+            if (
+                not isinstance(state, Mapping)
+                or not state
+                or any(
+                    not isinstance(key, str) or not isinstance(value, torch.Tensor)
+                    for key, value in state.items()
+                )
+            ):
+                raise ValueError(
+                    f'checkpoint {field_name} 必須是非空 tensor state_dict'
+                )
+        epsilon = ckpt['epsilon']
+        episode = ckpt['episode']
+        total_steps = ckpt.get('total_steps', 0)
+        if (
+            isinstance(epsilon, bool)
+            or not isinstance(epsilon, (int, float))
+            or not math.isfinite(epsilon)
+            or not 0.0 <= epsilon <= 1.0
+        ):
+            raise ValueError('checkpoint epsilon 必須是 0..1 有限數值')
+        if (
+            isinstance(episode, bool)
+            or not isinstance(episode, int)
+            or episode < 0
+        ):
+            raise ValueError('checkpoint episode 必須是非負整數')
+        if (
+            isinstance(total_steps, bool)
+            or not isinstance(total_steps, int)
+            or total_steps < 0
+        ):
+            raise ValueError('checkpoint total_steps 必須是非負整數')
         self.policy_net.load_state_dict(ckpt['policy'])
         self.target_net.load_state_dict(ckpt['target'])
-        self.epsilon     = ckpt['epsilon']
-        self.episode     = ckpt['episode']
-        self.total_steps = ckpt.get('total_steps', 0)
+        self.epsilon     = float(epsilon)
+        self.episode     = episode
+        self.total_steps = total_steps
         print(f'載入 ep={self.episode}, steps={self.total_steps}, ε={self.epsilon:.3f}')
         return True

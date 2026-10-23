@@ -1,0 +1,62 @@
+{
+  "arms": {
+    "base": {
+      "session_balanced_accuracy": 0.9778,
+      "session_per_seed": [
+        0.9778,
+        0.9778,
+        0.9778
+      ],
+      "window_balanced_accuracy": 0.8728
+    },
+    "base+position": {
+      "session_balanced_accuracy": 0.9778,
+      "session_per_seed": [
+        0.9778,
+        0.9778,
+        0.9778
+      ],
+      "window_balanced_accuracy": 0.8908
+    },
+    "base+temporal": {
+      "session_balanced_accuracy": 0.9778,
+      "session_per_seed": [
+        0.9778,
+        0.9778,
+        0.9778
+      ],
+      "window_balanced_accuracy": 0.9398
+    }
+  },
+  "changes_shipped_defaults": false,
+  "controls": {
+    "position_confound": {
+      "explained_by_position": 0.0,
+      "passed": true,
+      "position_gain": 0.0,
+      "temporal_gain": 0.0
+    },
+    "shuffled_labels": {
+      "chance_level": 0.0667,
+      "passed": true,
+      "ratio_to_real": 0.1136,
+      "session_balanced_accuracy": 0.1111
+    }
+  },
+  "controls_enforced": true,
+  "eval_split": "validation",
+  "evaluation_sessions": 45,
+  "features_table": "/home/jesse/features_refresh_split/fusion_features_permissive.csv",
+  "fit_split": "train",
+  "live_features": 32,
+  "pooling_rule": "session_attack_only",
+  "schema_version": "sros2-firewall-pooling-temporal/v1",
+  "seeds": [
+    20260915,
+    7,
+    991
+  ],
+  "stream_resets": 0,
+  "temporal_features": 128,
+  "test_rows_used": 0
+}

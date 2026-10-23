@@ -1,0 +1,61 @@
+{
+  "schema_version": "sros2-firewall-catalog/v1",
+  "scenarios": [
+    {
+      "id": "normal_patrol",
+      "attack_class": "normal",
+      "runner": "normal",
+      "description": "smoke 的基線場次，與出貨 catalog 相同設定",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "allow",
+      "requires_gazebo": true
+    },
+    {
+      "id": "baseline_poisoning",
+      "attack_class": "baseline_poisoning",
+      "runner": "baseline_poisoning",
+      "description": "候選：N5_baseline_poison.py。尚未通過證據排他性 gate。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "quarantine",
+      "requires_gazebo": true
+    },
+    {
+      "id": "node_name_evasion",
+      "attack_class": "node_name_evasion",
+      "runner": "node_name_evasion",
+      "description": "候選：N2_ros2cli_regex_bypass.py。尚未通過證據排他性 gate。",
+      "default_security_mode": "permissive",
+      "duration_sec": 30,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "deny_participant",
+      "requires_gazebo": true
+    },
+    {
+      "id": "graph_overflow",
+      "attack_class": "graph_overflow",
+      "runner": "graph_overflow",
+      "description": "候選：N36_graph_overflow.py。node 數越過 _GRAPH_NODE_MAX(256) 讓 _check_graph 提早 return，白名單偵測整段停擺而證據極少。policy 沒有對應規則。",
+      "default_security_mode": "permissive",
+      "duration_sec": 75,
+      "warmup_sec": 10,
+      "cooldown_sec": 5,
+      "intensity_min": 0.1,
+      "intensity_max": 1.0,
+      "expected_action": "alert",
+      "requires_gazebo": true
+    }
+  ]
+}

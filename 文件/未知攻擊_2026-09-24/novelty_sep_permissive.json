@@ -1,0 +1,441 @@
+{
+  "families": {
+    "alert_only": {
+      "best_margin": 0.2164,
+      "classes_held": [
+        "discovery_recon"
+      ],
+      "constant_features": 5,
+      "features_above_margin": 2,
+      "known_rows": 1354,
+      "top": [
+        {
+          "auc": 0.2836,
+          "constant": false,
+          "feature": "hmac_failure_rate",
+          "margin": 0.2164
+        },
+        {
+          "auc": 0.3752,
+          "constant": false,
+          "feature": "log_reject_rate",
+          "margin": 0.1248
+        },
+        {
+          "auc": 0.4077,
+          "constant": false,
+          "feature": "timestamp_violation_ratio",
+          "margin": 0.0923
+        },
+        {
+          "auc": 0.5902,
+          "constant": false,
+          "feature": "participant_churn_rate",
+          "margin": 0.0902
+        },
+        {
+          "auc": 0.5499,
+          "constant": false,
+          "feature": "unknown_node_rate",
+          "margin": 0.0499
+        },
+        {
+          "auc": 0.4527,
+          "constant": false,
+          "feature": "parameter_call_rate",
+          "margin": 0.0473
+        },
+        {
+          "auc": 0.4527,
+          "constant": false,
+          "feature": "oversized_message_ratio",
+          "margin": 0.0473
+        },
+        {
+          "auc": 0.4586,
+          "constant": false,
+          "feature": "channel_mismatch_ratio",
+          "margin": 0.0414
+        },
+        {
+          "auc": 0.4586,
+          "constant": false,
+          "feature": "alert_reflection_ratio",
+          "margin": 0.0414
+        },
+        {
+          "auc": 0.4765,
+          "constant": false,
+          "feature": "tuple_repeat_ratio",
+          "margin": 0.0235
+        },
+        {
+          "auc": 0.5209,
+          "constant": false,
+          "feature": "sros_auth_fail_rate",
+          "margin": 0.0209
+        },
+        {
+          "auc": 0.4797,
+          "constant": false,
+          "feature": "conn_count",
+          "margin": 0.0203
+        }
+      ],
+      "unknown_rows": 136,
+      "unknown_sessions": 17
+    },
+    "application_drop": {
+      "best_margin": 0.3989,
+      "classes_held": [
+        "cross_channel_relay",
+        "health_spoof",
+        "message_dos",
+        "mission_spoof",
+        "replay",
+        "replay_dos"
+      ],
+      "constant_features": 5,
+      "features_above_margin": 2,
+      "known_rows": 734,
+      "top": [
+        {
+          "auc": 0.8989,
+          "constant": false,
+          "feature": "hmac_failure_rate",
+          "margin": 0.3989
+        },
+        {
+          "auc": 0.6697,
+          "constant": false,
+          "feature": "timestamp_violation_ratio",
+          "margin": 0.1697
+        },
+        {
+          "auc": 0.4102,
+          "constant": false,
+          "feature": "sros_auth_fail_rate",
+          "margin": 0.0898
+        },
+        {
+          "auc": 0.5876,
+          "constant": false,
+          "feature": "oversized_message_ratio",
+          "margin": 0.0876
+        },
+        {
+          "auc": 0.4128,
+          "constant": false,
+          "feature": "parameter_call_rate",
+          "margin": 0.0872
+        },
+        {
+          "auc": 0.4213,
+          "constant": false,
+          "feature": "participant_churn_rate",
+          "margin": 0.0787
+        },
+        {
+          "auc": 0.5764,
+          "constant": false,
+          "feature": "channel_mismatch_ratio",
+          "margin": 0.0764
+        },
+        {
+          "auc": 0.5764,
+          "constant": false,
+          "feature": "alert_reflection_ratio",
+          "margin": 0.0764
+        },
+        {
+          "auc": 0.4529,
+          "constant": false,
+          "feature": "unknown_node_rate",
+          "margin": 0.0471
+        },
+        {
+          "auc": 0.4607,
+          "constant": false,
+          "feature": "log_reject_rate",
+          "margin": 0.0393
+        },
+        {
+          "auc": 0.4625,
+          "constant": false,
+          "feature": "conn_count",
+          "margin": 0.0375
+        },
+        {
+          "auc": 0.4625,
+          "constant": false,
+          "feature": "conn_rate",
+          "margin": 0.0375
+        }
+      ],
+      "unknown_rows": 890,
+      "unknown_sessions": 102
+    },
+    "control_lock": {
+      "best_margin": 0.2414,
+      "classes_held": [
+        "command_injection",
+        "scan_drift"
+      ],
+      "constant_features": 5,
+      "features_above_margin": 4,
+      "known_rows": 1214,
+      "top": [
+        {
+          "auc": 0.2586,
+          "constant": false,
+          "feature": "hmac_failure_rate",
+          "margin": 0.2414
+        },
+        {
+          "auc": 0.6299,
+          "constant": false,
+          "feature": "log_reject_rate",
+          "margin": 0.1299
+        },
+        {
+          "auc": 0.6078,
+          "constant": false,
+          "feature": "publisher_violation_ratio",
+          "margin": 0.1078
+        },
+        {
+          "auc": 0.397,
+          "constant": false,
+          "feature": "timestamp_violation_ratio",
+          "margin": 0.103
+        },
+        {
+          "auc": 0.4473,
+          "constant": false,
+          "feature": "parameter_call_rate",
+          "margin": 0.0527
+        },
+        {
+          "auc": 0.4473,
+          "constant": false,
+          "feature": "oversized_message_ratio",
+          "margin": 0.0527
+        },
+        {
+          "auc": 0.4504,
+          "constant": false,
+          "feature": "participant_churn_rate",
+          "margin": 0.0496
+        },
+        {
+          "auc": 0.4539,
+          "constant": false,
+          "feature": "channel_mismatch_ratio",
+          "margin": 0.0461
+        },
+        {
+          "auc": 0.4539,
+          "constant": false,
+          "feature": "alert_reflection_ratio",
+          "margin": 0.0461
+        },
+        {
+          "auc": 0.4629,
+          "constant": false,
+          "feature": "sros_auth_fail_rate",
+          "margin": 0.0371
+        },
+        {
+          "auc": 0.4693,
+          "constant": false,
+          "feature": "unknown_node_rate",
+          "margin": 0.0307
+        },
+        {
+          "auc": 0.4773,
+          "constant": false,
+          "feature": "conn_count",
+          "margin": 0.0227
+        }
+      ],
+      "unknown_rows": 306,
+      "unknown_sessions": 34
+    },
+    "network_block": {
+      "best_margin": 0.4541,
+      "classes_held": [
+        "node_churn"
+      ],
+      "constant_features": 5,
+      "features_above_margin": 16,
+      "known_rows": 1354,
+      "top": [
+        {
+          "auc": 0.9541,
+          "constant": false,
+          "feature": "sros_auth_fail_rate",
+          "margin": 0.4541
+        },
+        {
+          "auc": 0.8099,
+          "constant": false,
+          "feature": "participant_churn_rate",
+          "margin": 0.3099
+        },
+        {
+          "auc": 0.7482,
+          "constant": false,
+          "feature": "conn_count",
+          "margin": 0.2482
+        },
+        {
+          "auc": 0.7482,
+          "constant": false,
+          "feature": "conn_rate",
+          "margin": 0.2482
+        },
+        {
+          "auc": 0.7481,
+          "constant": false,
+          "feature": "tuple_repeat_ratio",
+          "margin": 0.2481
+        },
+        {
+          "auc": 0.734,
+          "constant": false,
+          "feature": "log_reject_rate",
+          "margin": 0.234
+        },
+        {
+          "auc": 0.2836,
+          "constant": false,
+          "feature": "hmac_failure_rate",
+          "margin": 0.2164
+        },
+        {
+          "auc": 0.702,
+          "constant": false,
+          "feature": "unknown_node_rate",
+          "margin": 0.202
+        },
+        {
+          "auc": 0.665,
+          "constant": false,
+          "feature": "interarrival_cv",
+          "margin": 0.165
+        },
+        {
+          "auc": 0.665,
+          "constant": false,
+          "feature": "burstiness",
+          "margin": 0.165
+        },
+        {
+          "auc": 0.3764,
+          "constant": false,
+          "feature": "spdp_ratio",
+          "margin": 0.1236
+        },
+        {
+          "auc": 0.6236,
+          "constant": false,
+          "feature": "userdata_ratio",
+          "margin": 0.1236
+        }
+      ],
+      "unknown_rows": 136,
+      "unknown_sessions": 17
+    },
+    "participant_deny": {
+      "best_margin": 0.2484,
+      "classes_held": [
+        "identity_abuse",
+        "parameter_tamper"
+      ],
+      "constant_features": 5,
+      "features_above_margin": 4,
+      "known_rows": 1208,
+      "top": [
+        {
+          "auc": 0.7484,
+          "constant": false,
+          "feature": "parameter_call_rate",
+          "margin": 0.2484
+        },
+        {
+          "auc": 0.2575,
+          "constant": false,
+          "feature": "hmac_failure_rate",
+          "margin": 0.2425
+        },
+        {
+          "auc": 0.3636,
+          "constant": false,
+          "feature": "log_reject_rate",
+          "margin": 0.1364
+        },
+        {
+          "auc": 0.3965,
+          "constant": false,
+          "feature": "timestamp_violation_ratio",
+          "margin": 0.1035
+        },
+        {
+          "auc": 0.4414,
+          "constant": false,
+          "feature": "tuple_repeat_ratio",
+          "margin": 0.0586
+        },
+        {
+          "auc": 0.447,
+          "constant": false,
+          "feature": "oversized_message_ratio",
+          "margin": 0.053
+        },
+        {
+          "auc": 0.4533,
+          "constant": false,
+          "feature": "interarrival_cv",
+          "margin": 0.0467
+        },
+        {
+          "auc": 0.4533,
+          "constant": false,
+          "feature": "burstiness",
+          "margin": 0.0467
+        },
+        {
+          "auc": 0.4536,
+          "constant": false,
+          "feature": "channel_mismatch_ratio",
+          "margin": 0.0464
+        },
+        {
+          "auc": 0.4536,
+          "constant": false,
+          "feature": "alert_reflection_ratio",
+          "margin": 0.0464
+        },
+        {
+          "auc": 0.4599,
+          "constant": false,
+          "feature": "sros_auth_fail_rate",
+          "margin": 0.0401
+        },
+        {
+          "auc": 0.528,
+          "constant": false,
+          "feature": "spdp_ratio",
+          "margin": 0.028
+        }
+      ],
+      "unknown_rows": 318,
+      "unknown_sessions": 34
+    }
+  },
+  "features": "/home/jesse/features_refresh_split/fusion_features_permissive.csv",
+  "metrics": "/home/jesse/models_hier_refresh_maha/permissive/training_metrics.json",
+  "schema_version": "sros2-firewall-novelty-separability/v1",
+  "test_rows_used": 0,
+  "useful_margin": 0.1
+}

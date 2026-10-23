@@ -1,0 +1,133 @@
+{
+  "action_map": {
+    "command_injection": "control_lock",
+    "confused_deputy": "alert_only",
+    "cross_channel_relay": "application_drop",
+    "discovery_recon": "alert_only",
+    "health_spoof": "application_drop",
+    "hmac_forgery": "application_drop",
+    "identity_abuse": "participant_deny",
+    "message_dos": "application_drop",
+    "mission_spoof": "application_drop",
+    "node_churn": "network_block",
+    "normal": "normal",
+    "parameter_tamper": "participant_deny",
+    "replay": "application_drop",
+    "replay_dos": "application_drop",
+    "scan_drift": "control_lock",
+    "sensor_spoof": "application_drop",
+    "service_dos": "network_block"
+  },
+  "aggregate_width": 624,
+  "changes_shipped_defaults": false,
+  "created_utc": "2026-09-25T15:51:55Z",
+  "elapsed_sec": 765.0,
+  "eval_split": "train_validation",
+  "features": "/home/jesse/features_refresh_split/fusion_features_enforce.csv",
+  "folds": 5,
+  "real": {
+    "action_level": {
+      "balanced_accuracy": 0.9098,
+      "categories": 6,
+      "chance": 0.1667,
+      "per_category_recall": {
+        "alert_only": 1.0,
+        "application_drop": 0.8781,
+        "control_lock": 0.6127,
+        "network_block": 1.0,
+        "normal": 1.0,
+        "participant_deny": 0.9681
+      },
+      "std": 0.008,
+      "times_chance": 5.46
+    },
+    "class_level": {
+      "balanced_accuracy": 0.6819,
+      "categories": 17,
+      "chance": 0.0588,
+      "per_category_recall": {
+        "command_injection": 1.0,
+        "confused_deputy": 1.0,
+        "cross_channel_relay": 0.3186,
+        "discovery_recon": 1.0,
+        "health_spoof": 0.3333,
+        "hmac_forgery": 1.0,
+        "identity_abuse": 0.9461,
+        "message_dos": 0.2304,
+        "mission_spoof": 0.6225,
+        "node_churn": 1.0,
+        "normal": 1.0,
+        "parameter_tamper": 0.8186,
+        "replay": 0.2059,
+        "replay_dos": 0.4167,
+        "scan_drift": 0.2255,
+        "sensor_spoof": 0.4755,
+        "service_dos": 1.0
+      },
+      "std": 0.0131,
+      "times_chance": 11.59
+    }
+  },
+  "registration_path": "文件/重訓預先註冊_2026-09-25_r3.json",
+  "registration_sha256": "f1b1fbe130b0248445fcdf8972732bf417a52dbf6bd9b4b6cf4bd5bf2318a44d",
+  "repeats": 12,
+  "rows": 3529,
+  "schema_version": "sros2-firewall-action-level-accuracy/v1",
+  "sessions": 289,
+  "settings": {
+    "blind_spot_features": "retained_with_known_limitation",
+    "feature_variant": "full",
+    "formulation": "session_aggregate",
+    "model": "random_forest",
+    "ood_scorer_enforce": "undecided",
+    "ood_scorer_permissive": "max_softmax",
+    "temporal_expansion": "d1_m3_x3",
+    "unknown_session_pooling": "k_of_n_k2"
+  },
+  "shuffled": {
+    "action_level": {
+      "balanced_accuracy": 0.1666,
+      "categories": 6,
+      "chance": 0.1667,
+      "per_category_recall": {
+        "alert_only": 0.1152,
+        "application_drop": 0.47,
+        "control_lock": 0.1127,
+        "network_block": 0.1275,
+        "normal": 0.049,
+        "participant_deny": 0.125
+      },
+      "std": 0.0278,
+      "times_chance": 1.0
+    },
+    "class_level": {
+      "balanced_accuracy": 0.0545,
+      "categories": 17,
+      "chance": 0.0588,
+      "per_category_recall": {
+        "command_injection": 0.049,
+        "confused_deputy": 0.0343,
+        "cross_channel_relay": 0.0588,
+        "discovery_recon": 0.0735,
+        "health_spoof": 0.0343,
+        "hmac_forgery": 0.049,
+        "identity_abuse": 0.0686,
+        "message_dos": 0.0441,
+        "mission_spoof": 0.0637,
+        "node_churn": 0.0882,
+        "normal": 0.049,
+        "parameter_tamper": 0.0441,
+        "replay": 0.0441,
+        "replay_dos": 0.0784,
+        "scan_drift": 0.0588,
+        "sensor_spoof": 0.049,
+        "service_dos": 0.0392
+      },
+      "std": 0.0136,
+      "times_chance": 0.93
+    }
+  },
+  "splitter": "StratifiedGroupKFold(shuffle=True, random_state=repeat)",
+  "test_rows_in_table": 627,
+  "test_rows_used": 0
+}

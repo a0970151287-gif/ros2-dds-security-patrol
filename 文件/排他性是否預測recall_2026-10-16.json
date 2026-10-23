@@ -1,0 +1,290 @@
+{
+  "schema_version": "sros2-firewall-exclusivity-predicts-recall/v1",
+  "prediction_file": "文件/預測_排他性是否逐類預測recall_2026-10-16.md",
+  "X": "max |AUC-0.5| vs normal over all non-constant aggregate columns, train+validation",
+  "Y": "per-class recall on the sealed holdout, quoted from the published artifact",
+  "holdout_reads": 0,
+  "changes_shipped_defaults": false,
+  "modes": {
+    "permissive": {
+      "attack_classes": 17,
+      "spearman_rho": 0.3344,
+      "low_X_below_0_2": {
+        "n": 0,
+        "median_Y": null
+      },
+      "high_X_above_0_4": {
+        "n": 17,
+        "median_Y": 0.4167
+      },
+      "per_class": [
+        {
+          "label": "command_injection",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.2727,
+          "holdout_sessions": 11,
+          "cv_sessions": 64
+        },
+        {
+          "label": "cross_channel_relay",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.7273,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "discovery_recon",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.4167,
+          "holdout_sessions": 12,
+          "cv_sessions": 65
+        },
+        {
+          "label": "health_spoof",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "identity_abuse",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.9091,
+          "holdout_sessions": 11,
+          "cv_sessions": 64
+        },
+        {
+          "label": "message_dos",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.3636,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "mission_spoof",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.3333,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "node_churn",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.25,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "odom_spoof",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.4167,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "parameter_tamper",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "replay",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "replay_dos",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 65
+        },
+        {
+          "label": "scan_drift",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.1667,
+          "holdout_sessions": 12,
+          "cv_sessions": 65
+        },
+        {
+          "label": "sensor_spoof",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.5455,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "service_dos",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.4545,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "verify_flood",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.2727,
+          "holdout_sessions": 11,
+          "cv_sessions": 62
+        },
+        {
+          "label": "spdp_flood",
+          "max_sep_vs_normal": 0.4961,
+          "holdout_recall": 0.25,
+          "holdout_sessions": 12,
+          "cv_sessions": 68
+        }
+      ]
+    },
+    "enforce": {
+      "attack_classes": 19,
+      "spearman_rho": 0.6334,
+      "low_X_below_0_2": {
+        "n": 1,
+        "median_Y": 0.1667
+      },
+      "high_X_above_0_4": {
+        "n": 18,
+        "median_Y": 0.3333
+      },
+      "per_class": [
+        {
+          "label": "service_dos",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.8182,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "spdp_flood",
+          "max_sep_vs_normal": 0.5,
+          "holdout_recall": 0.75,
+          "holdout_sessions": 12,
+          "cv_sessions": 69
+        },
+        {
+          "label": "confused_deputy",
+          "max_sep_vs_normal": 0.4994,
+          "holdout_recall": 1.0,
+          "holdout_sessions": 24,
+          "cv_sessions": 137
+        },
+        {
+          "label": "identity_abuse",
+          "max_sep_vs_normal": 0.496,
+          "holdout_recall": 1.0,
+          "holdout_sessions": 12,
+          "cv_sessions": 65
+        },
+        {
+          "label": "cross_channel_relay",
+          "max_sep_vs_normal": 0.4955,
+          "holdout_recall": 0.3636,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "node_churn",
+          "max_sep_vs_normal": 0.4954,
+          "holdout_recall": 0.9167,
+          "holdout_sessions": 12,
+          "cv_sessions": 68
+        },
+        {
+          "label": "scan_drift",
+          "max_sep_vs_normal": 0.4953,
+          "holdout_recall": 0.25,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "sensor_spoof",
+          "max_sep_vs_normal": 0.4952,
+          "holdout_recall": 0.0,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "parameter_tamper",
+          "max_sep_vs_normal": 0.4949,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "replay",
+          "max_sep_vs_normal": 0.4944,
+          "holdout_recall": 0.1667,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "command_injection",
+          "max_sep_vs_normal": 0.4943,
+          "holdout_recall": 0.1818,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "replay_dos",
+          "max_sep_vs_normal": 0.4943,
+          "holdout_recall": 0.0909,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "verify_flood",
+          "max_sep_vs_normal": 0.494,
+          "holdout_recall": 0.3333,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "mission_spoof",
+          "max_sep_vs_normal": 0.4937,
+          "holdout_recall": 0.0909,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "message_dos",
+          "max_sep_vs_normal": 0.4933,
+          "holdout_recall": 0.0,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "health_spoof",
+          "max_sep_vs_normal": 0.489,
+          "holdout_recall": 0.3333,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "discovery_recon",
+          "max_sep_vs_normal": 0.4631,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "odom_spoof",
+          "max_sep_vs_normal": 0.4614,
+          "holdout_recall": 0.0833,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "hmac_forgery",
+          "max_sep_vs_normal": 0.0507,
+          "holdout_recall": 0.1667,
+          "holdout_sessions": 24,
+          "cv_sessions": 137
+        }
+      ]
+    }
+  }
+}

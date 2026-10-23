@@ -1,0 +1,5 @@
+{"event":"participant_authentication","status":"AUTHORIZED","guid":"d8.b7.19.e7.25.90.f5.66.28.23.a8.0e|0.0.1.c1","claimed_subject":""}
+{"event":"participant_discovery","status":"0","guid":"d8.b7.19.e7.25.90.f5.66.28.23.a8.0e|0.0.1.c1","claimed_subject":"/CN=\/local_outcome_probe"}
+{"event":"participant_authentication","status":"UNAUTHORIZED","guid":"a2.5a.10.4e.14.09.ff.76.a1.d8.57.2d|0.0.1.c1","claimed_subject":""}
+{"event":"participant_authentication","status":"UNAUTHORIZED","guid":"a2.5a.10.4e.14.09.ff.76.a1.d8.57.2d|0.0.1.c1","claimed_subject":""}
+{"event":"participant_discovery","status":"2","guid":"d8.b7.19.e7.25.90.f5.66.28.23.a8.0e|0.0.1.c1","claimed_subject":"/CN=\/local_outcome_probe"}

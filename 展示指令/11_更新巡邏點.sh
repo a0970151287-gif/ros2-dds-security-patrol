@@ -3,7 +3,7 @@
 # 04 動態更新巡邏點
 # ============================================================
 
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 
 # ── 用法 ─────────────────────────────────────────────────────
 

@@ -1,8 +1,9 @@
 dds_security_monitor:
   ros__parameters:
     poll_interval_sec: 5.0
-    # 憑證優先使用環境變數 LINE_CHANNEL_TOKEN / LINE_USER_ID
-    # 不要把 token 寫在這裡並提交到 git！
+    # LINE token 只從 ~/.config/dds-monitor/line_token（chmod 600）讀取。
+    # line_token 參數保留供舊設定檔相容，但非空值會被忽略；不要把 token 寫進 YAML。
+    # LINE user ID 不是 secret，可用檔案、LINE_USER_ID 或下方參數。
     line_token: ""
     line_user_id: ""
     # 是否在節點離線時也發送警報
@@ -10,7 +11,6 @@ dds_security_monitor:
     # 偵測到入侵時是否自動停止機器人
     emergency_stop_enabled: true
     # 持續發送停止指令的秒數
-    emergency_stop_duration_sec: 3.0
     # 白名單：已知的合法節點，不需要警報
     whitelist:
       - bt_navigator
@@ -54,6 +54,8 @@ dds_security_monitor:
       - mission_manager_node
       - system_status_node
       - intelligent_defense_node   # 行為 IDS（自家節點，勿誤殺 → 否則 patrol 被自己停掉）
+      - velocity_guard_node        # final /cmd_vel 唯一合法 publisher
+      - security_readiness_probe   # 啟動 gate；只讀五條 Gazebo stream
       - mission_manager            # executable 名（節點名萬一不帶 _node 也涵蓋）
       - monitor_node
       # TQC 訓練相關（避免訓練節點被誤判為入侵 → emergency stop → 干擾訓練）

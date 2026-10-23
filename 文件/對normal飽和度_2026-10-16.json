@@ -1,0 +1,281 @@
+{
+  "schema_version": "sros2-firewall-vsnormal-saturation/v1",
+  "holdout_reads": 0,
+  "question": "X(max |AUC-0.5| vs normal) 飽和是真訊號還是 204 欄取最大的選擇假象?",
+  "changes_shipped_defaults": false,
+  "modes": {
+    "permissive": {
+      "normal_sessions": 254,
+      "argmax_column_tally": {
+        "max_conn_bytes/mean": 12,
+        "max_conn_bytes/std": 4,
+        "amplification_ratio/max_abs_delta": 1
+      },
+      "per_class": {
+        "command_injection": {
+          "cv_sessions": 64,
+          "columns_ge_0_45": 24,
+          "columns_ge_0_49": 13,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/std"
+        },
+        "cross_channel_relay": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 22,
+          "columns_ge_0_49": 13,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "discovery_recon": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 19,
+          "columns_ge_0_49": 13,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "health_spoof": {
+          "cv_sessions": 67,
+          "columns_ge_0_45": 21,
+          "columns_ge_0_49": 15,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/std"
+        },
+        "identity_abuse": {
+          "cv_sessions": 64,
+          "columns_ge_0_45": 25,
+          "columns_ge_0_49": 14,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "message_dos": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 18,
+          "columns_ge_0_49": 13,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "mission_spoof": {
+          "cv_sessions": 66,
+          "columns_ge_0_45": 21,
+          "columns_ge_0_49": 15,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "node_churn": {
+          "cv_sessions": 66,
+          "columns_ge_0_45": 24,
+          "columns_ge_0_49": 13,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "odom_spoof": {
+          "cv_sessions": 66,
+          "columns_ge_0_45": 19,
+          "columns_ge_0_49": 13,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "parameter_tamper": {
+          "cv_sessions": 66,
+          "columns_ge_0_45": 24,
+          "columns_ge_0_49": 15,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "replay": {
+          "cv_sessions": 66,
+          "columns_ge_0_45": 21,
+          "columns_ge_0_49": 13,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "replay_dos": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 20,
+          "columns_ge_0_49": 15,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "scan_drift": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 22,
+          "columns_ge_0_49": 14,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "sensor_spoof": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 20,
+          "columns_ge_0_49": 15,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/std"
+        },
+        "service_dos": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 22,
+          "columns_ge_0_49": 14,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/mean"
+        },
+        "spdp_flood": {
+          "cv_sessions": 68,
+          "columns_ge_0_45": 19,
+          "columns_ge_0_49": 9,
+          "max_abs": 0.4961,
+          "argmax_column": "amplification_ratio/max_abs_delta"
+        },
+        "verify_flood": {
+          "cv_sessions": 62,
+          "columns_ge_0_45": 22,
+          "columns_ge_0_49": 14,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/std"
+        }
+      }
+    },
+    "enforce": {
+      "normal_sessions": 255,
+      "argmax_column_tally": {
+        "max_conn_bytes/max_abs_delta": 14,
+        "mean_bytes_per_packet/max_abs_delta": 2,
+        "max_conn_bytes/max": 2,
+        "dominant_port_ratio/trend": 1
+      },
+      "per_class": {
+        "command_injection": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 6,
+          "columns_ge_0_49": 2,
+          "max_abs": 0.4943,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "confused_deputy": {
+          "cv_sessions": 137,
+          "columns_ge_0_45": 18,
+          "columns_ge_0_49": 4,
+          "max_abs": 0.4994,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "cross_channel_relay": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 5,
+          "columns_ge_0_49": 3,
+          "max_abs": 0.4955,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "discovery_recon": {
+          "cv_sessions": 67,
+          "columns_ge_0_45": 2,
+          "columns_ge_0_49": 0,
+          "max_abs": 0.4631,
+          "argmax_column": "mean_bytes_per_packet/max_abs_delta"
+        },
+        "health_spoof": {
+          "cv_sessions": 66,
+          "columns_ge_0_45": 5,
+          "columns_ge_0_49": 0,
+          "max_abs": 0.489,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "hmac_forgery": {
+          "cv_sessions": 137,
+          "columns_ge_0_45": 0,
+          "columns_ge_0_49": 0,
+          "max_abs": 0.0507,
+          "argmax_column": "dominant_port_ratio/trend"
+        },
+        "identity_abuse": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 7,
+          "columns_ge_0_49": 3,
+          "max_abs": 0.496,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "message_dos": {
+          "cv_sessions": 66,
+          "columns_ge_0_45": 6,
+          "columns_ge_0_49": 1,
+          "max_abs": 0.4933,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "mission_spoof": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 6,
+          "columns_ge_0_49": 2,
+          "max_abs": 0.4937,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "node_churn": {
+          "cv_sessions": 68,
+          "columns_ge_0_45": 5,
+          "columns_ge_0_49": 2,
+          "max_abs": 0.4954,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "odom_spoof": {
+          "cv_sessions": 67,
+          "columns_ge_0_45": 2,
+          "columns_ge_0_49": 0,
+          "max_abs": 0.4614,
+          "argmax_column": "mean_bytes_per_packet/max_abs_delta"
+        },
+        "parameter_tamper": {
+          "cv_sessions": 67,
+          "columns_ge_0_45": 6,
+          "columns_ge_0_49": 2,
+          "max_abs": 0.4949,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "replay": {
+          "cv_sessions": 66,
+          "columns_ge_0_45": 6,
+          "columns_ge_0_49": 1,
+          "max_abs": 0.4944,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "replay_dos": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 6,
+          "columns_ge_0_49": 1,
+          "max_abs": 0.4943,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "scan_drift": {
+          "cv_sessions": 67,
+          "columns_ge_0_45": 5,
+          "columns_ge_0_49": 2,
+          "max_abs": 0.4953,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "sensor_spoof": {
+          "cv_sessions": 66,
+          "columns_ge_0_45": 6,
+          "columns_ge_0_49": 1,
+          "max_abs": 0.4952,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        },
+        "service_dos": {
+          "cv_sessions": 65,
+          "columns_ge_0_45": 7,
+          "columns_ge_0_49": 4,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/max"
+        },
+        "spdp_flood": {
+          "cv_sessions": 69,
+          "columns_ge_0_45": 6,
+          "columns_ge_0_49": 3,
+          "max_abs": 0.5,
+          "argmax_column": "max_conn_bytes/max"
+        },
+        "verify_flood": {
+          "cv_sessions": 67,
+          "columns_ge_0_45": 6,
+          "columns_ge_0_49": 2,
+          "max_abs": 0.494,
+          "argmax_column": "max_conn_bytes/max_abs_delta"
+        }
+      }
+    }
+  }
+}

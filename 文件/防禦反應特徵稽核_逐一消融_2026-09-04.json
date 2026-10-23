@@ -1,0 +1,378 @@
+{
+  "baseline": {
+    "normal_false_positive_rate": 0.0,
+    "per_seed": [
+      0.0875,
+      0.0906,
+      0.0875
+    ],
+    "unseen_recall": 0.0885
+  },
+  "changes_shipped_defaults": false,
+  "constant_features": [
+    "alert_reflection_ratio",
+    "channel_mismatch_ratio",
+    "heartbeat_gap_sec",
+    "nonce_reuse_ratio",
+    "odom_cmd_mismatch_ratio",
+    "oversized_message_ratio",
+    "publisher_violation_ratio",
+    "qos_drop_ratio",
+    "scan_static_ratio",
+    "sros_permission_deny_rate",
+    "timestamp_violation_ratio"
+  ],
+  "features_table": "/home/jesse/features_refresh_split/fusion_features_enforce.csv",
+  "insider_labels": [
+    "confused_deputy",
+    "hmac_forgery"
+  ],
+  "live_features": [
+    "amplification_ratio",
+    "burstiness",
+    "conn_count",
+    "conn_rate",
+    "control_conflict_ratio",
+    "dominant_host_ratio",
+    "dominant_port_ratio",
+    "dst_port_entropy",
+    "hmac_failure_rate",
+    "interarrival_cv",
+    "log_reject_rate",
+    "max_conn_bytes",
+    "mcast_ratio",
+    "mean_bytes_per_packet",
+    "meta_ratio",
+    "orig_bytes_rate",
+    "orig_pkts_rate",
+    "parameter_call_rate",
+    "participant_churn_rate",
+    "spdp_ratio",
+    "sros_auth_fail_rate",
+    "tuple_repeat_ratio",
+    "uniq_dst_hosts",
+    "uniq_dst_ports",
+    "unknown_node_rate",
+    "userdata_ratio"
+  ],
+  "per_feature": [
+    {
+      "feature": "sros_auth_fail_rate",
+      "fpr_without": 0.0,
+      "gain_from_dropping": 0.226,
+      "recall_per_seed": [
+        0.3156,
+        0.3156,
+        0.3125
+      ],
+      "recall_without": 0.3146,
+      "stable": true
+    },
+    {
+      "feature": "mean_bytes_per_packet",
+      "fpr_without": 0.0,
+      "gain_from_dropping": 0.0958,
+      "recall_per_seed": [
+        0.1875,
+        0.1812,
+        0.1844
+      ],
+      "recall_without": 0.1844,
+      "stable": true
+    },
+    {
+      "feature": "amplification_ratio",
+      "fpr_without": 0.0,
+      "gain_from_dropping": 0.0073,
+      "recall_per_seed": [
+        0.0875,
+        0.0969,
+        0.1031
+      ],
+      "recall_without": 0.0958,
+      "stable": false
+    },
+    {
+      "feature": "uniq_dst_hosts",
+      "fpr_without": 0.0,
+      "gain_from_dropping": 0.0062,
+      "recall_per_seed": [
+        0.1031,
+        0.0875,
+        0.0938
+      ],
+      "recall_without": 0.0948,
+      "stable": false
+    },
+    {
+      "feature": "uniq_dst_ports",
+      "fpr_without": 0.0,
+      "gain_from_dropping": 0.0062,
+      "recall_per_seed": [
+        0.0938,
+        0.0938,
+        0.0969
+      ],
+      "recall_without": 0.0948,
+      "stable": true
+    },
+    {
+      "feature": "interarrival_cv",
+      "fpr_without": 0.0,
+      "gain_from_dropping": 0.001,
+      "recall_per_seed": [
+        0.0813,
+        0.0781,
+        0.1094
+      ],
+      "recall_without": 0.0896,
+      "stable": false
+    },
+    {
+      "feature": "meta_ratio",
+      "fpr_without": 0.0,
+      "gain_from_dropping": 0.001,
+      "recall_per_seed": [
+        0.0781,
+        0.0875,
+        0.1031
+      ],
+      "recall_without": 0.0896,
+      "stable": false
+    },
+    {
+      "feature": "orig_bytes_rate",
+      "fpr_without": 0.0,
+      "gain_from_dropping": 0.001,
+      "recall_per_seed": [
+        0.0719,
+        0.0875,
+        0.1094
+      ],
+      "recall_without": 0.0896,
+      "stable": false
+    },
+    {
+      "feature": "max_conn_bytes",
+      "fpr_without": 0.0,
+      "gain_from_dropping": 0.0,
+      "recall_per_seed": [
+        0.0875,
+        0.0844,
+        0.0938
+      ],
+      "recall_without": 0.0885,
+      "stable": false
+    },
+    {
+      "feature": "control_conflict_ratio",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0021,
+      "recall_per_seed": [
+        0.0875,
+        0.0844,
+        0.0875
+      ],
+      "recall_without": 0.0865,
+      "stable": true
+    },
+    {
+      "feature": "orig_pkts_rate",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0042,
+      "recall_per_seed": [
+        0.0656,
+        0.0844,
+        0.1031
+      ],
+      "recall_without": 0.0844,
+      "stable": false
+    },
+    {
+      "feature": "burstiness",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0052,
+      "recall_per_seed": [
+        0.0781,
+        0.0844,
+        0.0875
+      ],
+      "recall_without": 0.0833,
+      "stable": true
+    },
+    {
+      "feature": "hmac_failure_rate",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0052,
+      "recall_per_seed": [
+        0.0813,
+        0.0813,
+        0.0875
+      ],
+      "recall_without": 0.0833,
+      "stable": true
+    },
+    {
+      "feature": "unknown_node_rate",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0073,
+      "recall_per_seed": [
+        0.0844,
+        0.0875,
+        0.0719
+      ],
+      "recall_without": 0.0813,
+      "stable": true
+    },
+    {
+      "feature": "userdata_ratio",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0073,
+      "recall_per_seed": [
+        0.0781,
+        0.0813,
+        0.0844
+      ],
+      "recall_without": 0.0813,
+      "stable": true
+    },
+    {
+      "feature": "mcast_ratio",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0083,
+      "recall_per_seed": [
+        0.0813,
+        0.0844,
+        0.075
+      ],
+      "recall_without": 0.0802,
+      "stable": true
+    },
+    {
+      "feature": "dominant_host_ratio",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0094,
+      "recall_per_seed": [
+        0.0688,
+        0.0844,
+        0.0844
+      ],
+      "recall_without": 0.0792,
+      "stable": true
+    },
+    {
+      "feature": "tuple_repeat_ratio",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0094,
+      "recall_per_seed": [
+        0.075,
+        0.0813,
+        0.0813
+      ],
+      "recall_without": 0.0792,
+      "stable": true
+    },
+    {
+      "feature": "spdp_ratio",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0104,
+      "recall_per_seed": [
+        0.0656,
+        0.0781,
+        0.0906
+      ],
+      "recall_without": 0.0781,
+      "stable": false
+    },
+    {
+      "feature": "conn_count",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0115,
+      "recall_per_seed": [
+        0.0781,
+        0.075,
+        0.0781
+      ],
+      "recall_without": 0.0771,
+      "stable": true
+    },
+    {
+      "feature": "conn_rate",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0115,
+      "recall_per_seed": [
+        0.0781,
+        0.075,
+        0.0781
+      ],
+      "recall_without": 0.0771,
+      "stable": true
+    },
+    {
+      "feature": "parameter_call_rate",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0125,
+      "recall_per_seed": [
+        0.0594,
+        0.0844,
+        0.0844
+      ],
+      "recall_without": 0.076,
+      "stable": true
+    },
+    {
+      "feature": "participant_churn_rate",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0135,
+      "recall_per_seed": [
+        0.0656,
+        0.0813,
+        0.0781
+      ],
+      "recall_without": 0.075,
+      "stable": true
+    },
+    {
+      "feature": "log_reject_rate",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0167,
+      "recall_per_seed": [
+        0.0625,
+        0.075,
+        0.0781
+      ],
+      "recall_without": 0.0719,
+      "stable": true
+    },
+    {
+      "feature": "dominant_port_ratio",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.0219,
+      "recall_per_seed": [
+        0.0688,
+        0.0625,
+        0.0688
+      ],
+      "recall_without": 0.0667,
+      "stable": true
+    },
+    {
+      "feature": "dst_port_entropy",
+      "fpr_without": 0.0,
+      "gain_from_dropping": -0.024,
+      "recall_per_seed": [
+        0.075,
+        0.0563,
+        0.0625
+      ],
+      "recall_without": 0.0646,
+      "stable": true
+    }
+  ],
+  "schema_version": "sros2-firewall-feature-ablation-sweep/v1",
+  "seeds": [
+    20260904,
+    7,
+    991
+  ]
+}

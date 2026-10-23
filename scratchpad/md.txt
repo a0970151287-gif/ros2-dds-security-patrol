@@ -1,0 +1,10 @@
+bytes 942345  CR 0
+表格 277 塊，欄數不一致 0 塊
+  行內程式碼含未轉義 pipe line 1908: `tail -n 4000 file | python3 - args <<'PYEOF'`
+  行內程式碼含未轉義 pipe line 7178: `O_CREAT | O_EXCL`
+  行內程式碼含未轉義 pipe line 9634: `ps -eo pid,etimes,rss,comm | awk '$3 > 20000'`
+  行內程式碼含未轉義 pipe line 10678: `| 未知攻擊 |`
+  行內程式碼含未轉義 pipe line 10679: `unknown = attack_rejected & (binary | abnormal)`
+  行內程式碼含未轉義 pipe line 10681: `|warmup − catalog|`
+  行內程式碼含未轉義 pipe line 11633: `split("|")`
+行內程式碼含未轉義 pipe: 7

@@ -1,0 +1,75 @@
+{
+  "artifacts": {
+    "features": {
+      "path": "firewall_lab/features_per_mode/fusion_features_permissive.csv",
+      "sha256": "4cbe01324b0fce1bc4f1265b3bda5c9d2835c80bed5f261fca1082fc5537065b"
+    },
+    "training_metrics": {
+      "path": ".codex_tmp/hierarchical_v2_20260817_r4/permissive/training_metrics.json",
+      "sha256": "3fb8a77a99abd4769ed2c291da11ab9875fb4ac9c7788f2cd8fc8ba3e58b4767"
+    }
+  },
+  "automatic_ip_block_authorized": false,
+  "created_utc": "2026-08-25T05:30:20.184754+00:00",
+  "deployment_eligible": false,
+  "development_only": true,
+  "executable": false,
+  "expanded_calibration_plus_threshold_development_pool": {
+    "all_finite_sample_resolutions_sufficient": false,
+    "eligible_as_independent_confirmation": false,
+    "references": {
+      "known_attack": {
+        "additional_sessions_required": 0,
+        "alpha": 0.05,
+        "calibration_sessions": 27,
+        "finite_sample_resolution_sufficient": true,
+        "minimum_p_value": 0.03571428571428571,
+        "required_sessions": 19
+      },
+      "normality": {
+        "additional_sessions_required": 8,
+        "alpha": 0.02,
+        "calibration_sessions": 41,
+        "finite_sample_resolution_sufficient": false,
+        "minimum_p_value": 0.023809523809523808,
+        "required_sessions": 49
+      }
+    },
+    "shares_groups_with_binary_threshold_selection": true
+  },
+  "independent_final_test": false,
+  "method": "session_max_split_conformal",
+  "network_activity_performed": false,
+  "protocol": {
+    "calibration_groups": 22,
+    "historical_validation_reused_for_development": true,
+    "pairwise_overlap": 0,
+    "selection_groups": 26,
+    "test_rows_used": 0,
+    "threshold_groups": 19
+  },
+  "registered_calibration_partition": {
+    "all_finite_sample_resolutions_sufficient": false,
+    "references": {
+      "known_attack": {
+        "additional_sessions_required": 4,
+        "alpha": 0.05,
+        "calibration_sessions": 15,
+        "finite_sample_resolution_sufficient": false,
+        "minimum_p_value": 0.0625,
+        "required_sessions": 19
+      },
+      "normality": {
+        "additional_sessions_required": 27,
+        "alpha": 0.02,
+        "calibration_sessions": 22,
+        "finite_sample_resolution_sufficient": false,
+        "minimum_p_value": 0.043478260869565216,
+        "required_sessions": 49
+      }
+    }
+  },
+  "schema_version": "sros2-firewall-conformal-readiness-audit/v1",
+  "security_mode": "permissive",
+  "status": "blocked_insufficient_calibration_sessions"
+}

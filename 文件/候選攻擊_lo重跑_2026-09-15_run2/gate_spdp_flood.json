@@ -1,0 +1,24 @@
+{
+  "attack_class": "spdp_flood",
+  "attack_evidence": "攻擊執行 30.0 秒，return_code=0",
+  "attack_ran": true,
+  "baseline_event_kinds": 73,
+  "baseline_sessions": [
+    "/home/jesse/candidate_smoke_lo_20260915T105127Z/20260915T105129341636Z_normal_patrol_4f90565a",
+    "/home/jesse/candidate_smoke_lo_20260915T105127Z/20260915T105217747134Z_normal_patrol_37b8ca11",
+    "/home/jesse/candidate_smoke_lo_20260915T105127Z/20260915T105304785741Z_normal_patrol_12f74ce9"
+  ],
+  "candidate": "/home/jesse/candidate_smoke_lo_20260915T105127Z/20260915T105703527354Z_spdp_flood_6eaa4864",
+  "candidate_event_kinds": 74,
+  "exclusive_signals": {
+    "authenticated_action.action=guard_lock": 37,
+    "hmac_result.channel=alerts": 152,
+    "hmac_result.channel=alerts&outcome=accepted": 152,
+    "hmac_result.channel=alerts&reason=accepted": 152
+  },
+  "min_count": 3,
+  "scenario_id": "spdp_flood",
+  "schema_version": "sros2-firewall-evidence-exclusivity/v1",
+  "security_mode": "permissive",
+  "verdict": "pass"
+}

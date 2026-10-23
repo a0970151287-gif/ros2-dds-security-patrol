@@ -1,37 +1,13 @@
 #!/usr/bin/env bash
-# ============================================================================
-# block_source.sh <來源IP> [封鎖秒數] — DoS 主動阻斷（被 Zeek 偵測到風暴時呼叫）
+# 舊版直接接收「來源 IP + 秒數」的 root helper 已永久停用。
 #
-# Zeek 以 root 跑(sudo zeek -i eth0)，故可直接下 iptables。
-# 對偵測到的洪水來源 IP 加一條 INPUT DROP（限 DDS UDP 埠），N 秒後自動移除。
-# 冪等：同 IP 已封鎖則不重複加。
+# 原介面無法驗證 AI 判定、證據來源、模型/政策版本、一次性票證或
+# shared-IP 風險，因此任何能執行它的帳號都可能繞過 response authorizer。
+# 真正的主動封鎖只能在具備跨程序驗票、nonce 防重放、原子 claim、
+# 核心層到期解封與重啟復原的 backend 完成後，改由新的 helper 提供。
 #
-# ⚠️ WSL2 mirrored 模式下，host 端 iptables 可能不攔截鏡像流量；
-#    若無效，改用 Windows 端防火牆封鎖該來源（見 DoS_DDoS防禦策略.md）。
-# ============================================================================
-set -uo pipefail
-IP="${1:?用法: block_source.sh <IP> [秒數]}"
-SECS="${2:-300}"
-PORTLO=7400; PORTHI=65000
-CHAIN="DDS_DOS_BLOCK"
+# 此檔保留為 fail-closed stub，避免舊設定誤呼叫時真的改動防火牆。
+set -euo pipefail
 
-command -v iptables >/dev/null 2>&1 || { echo "no iptables"; exit 0; }
-
-# 自有 chain（與系統規則隔離，方便清理）
-iptables -nL "$CHAIN" >/dev/null 2>&1 || {
-  iptables -N "$CHAIN" 2>/dev/null
-  iptables -C INPUT -j "$CHAIN" 2>/dev/null || iptables -I INPUT -j "$CHAIN"
-}
-
-# 冪等：已封鎖就跳過
-if iptables -C "$CHAIN" -s "$IP" -p udp --dport "$PORTLO:$PORTHI" -j DROP 2>/dev/null; then
-  echo "[block] $IP 已在封鎖中"; exit 0
-fi
-
-iptables -I "$CHAIN" -s "$IP" -p udp --dport "$PORTLO:$PORTHI" -j DROP
-echo "[block] 已封鎖 $IP（DDS UDP $PORTLO-$PORTHI）$SECS 秒"
-
-# 排程自動解封（背景，不卡 Zeek）
-( sleep "$SECS"
-  iptables -D "$CHAIN" -s "$IP" -p udp --dport "$PORTLO:$PORTHI" -j DROP 2>/dev/null
-  echo "[block] $IP 已自動解封" ) >/dev/null 2>&1 &
+echo "legacy block-source is disabled: signed-ticket backend required" >&2
+exit 78

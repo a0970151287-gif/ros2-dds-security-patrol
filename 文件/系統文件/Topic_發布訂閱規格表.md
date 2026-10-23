@@ -1,6 +1,6 @@
 # ROS2 DDS 節點與 Topic 規格書
 
-> **版本：TQC + HMAC envelope v3 + 行為 IDS。** 本文件已從舊版（SAC / dqn_environment / 376 維 / 純文字警報）更新。
+> **版本：HMAC envelope v3 + 行為 IDS；TQC 為獨立未來工作軌。** 本文件已從舊版（SAC / dqn_environment / 376 維 / 純文字警報）更新。
 > 最新、最完整的規格以 [紅隊測試/ARCHITECTURE.md](../../紅隊測試/ARCHITECTURE.md)、[紅隊測試/系統威脅分析.md](../../紅隊測試/系統威脅分析.md) 為準（含介面清單與簽章狀態）。
 >
 > 所有規格直接從原始碼提取，非推測。  
@@ -114,12 +114,11 @@
 | 項目 | 內容 |
 |---|---|
 | 來源 | `burger_env_top.py`（本專題自製）|
-| 職責 | TQC（Truncated Quantile Critics）強化學習的 Gym 環境介面，將 ROS2 感測器訊號轉為 RL 觀測向量，模型動作轉為速度指令，並計算 potential-based 即時獎勵 |
+| 職責 | 獨立未來工作軌的 TQC（Truncated Quantile Critics）Gym 訓練/評估環境：將 ROS2 感測器訊號轉為 RL 觀測向量、把模型動作轉為速度指令並計算即時獎勵；不是 DDS 攻防主控制器 |
 | 訂閱 | `/scan`（LaserScan）— 180 raw beams，歸一化後經 1D-Conv encoder |
 | | `/odom`（Odometry）— 取 (x,y) 算到巡邏點距離；取 yaw 算朝向誤差 |
-| | `/security/alerts`（String，envelope v3，RELIABLE+VOLATILE）— 驗章通過則終止回合 |
 | 發布 | `/cmd_vel`（TwistStamped）— linear.x ∈ [0, +0.22] m/s（Burger 物理上限）；angular.z ∈ [−1.5, +1.5] rad/s |
-| 核心邏輯 | 觀測向量：(180 LiDAR beams + 6 state) × frame stack K=4 = **744 維**；Reward = γ·Φ(s')−Φ(s)（Ng-Harada-Russell 1999）；curriculum 1→5 + Domain Randomization + 5% 對抗訓練 |
+| 核心邏輯 | 觀測向量：(180 LiDAR beams + 6 state) × frame stack K=4 = **744 維**，由 1D-Conv encoder 抽特徵；Reward = `Δdist − 0.05‖Δa‖² − 0.05 + 0.04·action[0]`，碰撞/到達為 −100/+100；curriculum 1→5 + Domain Randomization + 對抗擾動。此環境**不訂閱 `/security/alerts`、不驗 publisher 身分** |
 
 ---
 
@@ -167,7 +166,7 @@
 | 緊急停止 | 0.0 | 0.0 |
 | RL（TQC）輸出 | [0, +0.22] | [−1.5, +1.5] |
 
-> ⚠️ 多節點可發布，最後到達者生效（Last-Write-Win）。`/cmd_vel` 非 String 無法簽章，改由 `intelligent_defense_node` 行為偵測（D1/D4/D6）緩解；根治需 SROS2 Enforce。
+> ⚠️ Permissive 下多節點可發布，最後到達者生效（Last-Write-Win）。`/cmd_vel` 非 String 無法簽章，改由 `intelligent_defense_node` 行為偵測（D1/D4/D6）緩解。`01c` Enforce 的雙 CA、最小權限 ACL 與稽核已完成，但修補後全場景/N9 after 尚未重跑。
 
 ---
 
@@ -201,7 +200,7 @@
 
 | Topic | 傳什麼 | 發布者 → 訂閱者 | 頻率 | QoS |
 |---|---|---|---|---|
-| `/security/alerts` | **HMAC envelope v3 簽章字串**（channel=CH_ALERTS + ts + nonce + payload + sig）| monitor、intelligent_defense → patrol、mission_manager、system_status、burger_env_top | 事件觸發 | **RELIABLE + VOLATILE（max_age 3s）** |
+| `/security/alerts` | **HMAC envelope v3 簽章字串**（channel=CH_ALERTS + ts + nonce + payload + sig）| monitor、intelligent_defense → patrol、mission_manager、system_status | 事件觸發 | **RELIABLE + VOLATILE（max_age 3s）** |
 | `/security/heartbeat` | envelope v3 簽章心跳 | monitor → intelligent_defense | 2 Hz | RELIABLE + TRANSIENT_LOCAL |
 
 **收到警報後各節點的反應（皆先 `verify_alert` 驗章，通過才動作）：**
@@ -211,7 +210,6 @@
 | `patrol` | 停止移動 | 30 秒後自動恢復（timer 固定不 reset；90s 內≥2 次 → 120s quiet window） |
 | `mission_manager` | 切換 EMERGENCY_STOP | 30 秒後恢復 PATROL |
 | `system_status` | 健康報告標記 🚨 | 30 秒後清除 |
-| `burger_env_top` | 終止 episode | 本 episode 結束 |
 
 **為何用 RELIABLE + VOLATILE（而非 TRANSIENT_LOCAL）：**  
 RELIABLE 確保警報不因網路擁堵被丟棄；改用 VOLATILE 是為了**防重放** —— TRANSIENT_LOCAL 會把最後一筆警報 latch 給晚啟動的訂閱者，反而讓攻擊者可重放舊警報造成永久停車（紅隊 N3）。anti-replay 改由 envelope v3 的 ts + nonce + 接收端 ReplayCache 保證。心跳則仍用 TRANSIENT_LOCAL（擋 BEST_EFFORT 假冒 publisher）。
@@ -230,7 +228,7 @@ RELIABLE 確保警報不因網路擁堵被丟棄；改用 VOLATILE 是為了**�
 | `mission_manager_node` | | | | | | | SUB | **PUB** | SUB | |
 | `system_status_node` | | | | | | | SUB | SUB | SUB | **PUB** |
 | `patrol_node` | SUB | | | | | **PUB** | | | SUB | |
-| `burger_env_top` | SUB | | SUB | | | **PUB** | | | SUB | |
+| `burger_env_top`（獨立 TQC 軌） | SUB | | SUB | | | **PUB** | | | | |
 | `intelligent_defense_node` | SUB | | SUB | | | SUB | | | **PUB** | |
 
 ---
@@ -249,7 +247,7 @@ RELIABLE 確保警報不因網路擁堵被丟棄；改用 VOLATILE 是為了**�
 
 ### 缺陷 2：`/cmd_vel` 無優先權仲裁
 `/cmd_vel` 訊息型別非 String，無法包 HMAC envelope；多 publisher 競爭（Last-Write-Win），緊急停止可能被高頻注入覆蓋（紅隊 N9）。  
-**現狀**：由 `intelligent_defense_node` 行為偵測緩解 —— D1 物理門檻（>0.23 m/s）、D4 unauthorized publisher、D6 cmd-vs-odom 一致性；patrol pause 期間高頻送 0 速度競爭（N9 約 62% 緩解）。**根治需 SROS2 Enforce**（列入 90 天計畫）。
+**現狀**：由 `intelligent_defense_node` 行為偵測緩解 —— D1 物理門檻（>0.23 m/s）、D4 unauthorized publisher、D6 cmd-vs-odom 一致性；patrol pause 期間高頻送 0 速度競爭（N9 約 62% 緩解）。`01c` Enforce 已建立來源預防政策，但尚未針對 N9 實際重測 after 效果，故仍列為殘餘風險。
 
 ### 缺陷 3：`/security/alerts` 無身份驗證 / 可重放 ✅ 已修補
 原設定為**純文字、無簽章**，任何同 domain 節點可偽造警報強制停車（紅隊 B），且可錄製合法警報無限重放造成永久停車（紅隊 N3）。  

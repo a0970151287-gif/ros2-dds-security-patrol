@@ -1,0 +1,582 @@
+"""The supervisor guard for a campaign that is slow rather than dead.
+
+On 2026-09-19 the mega campaign degraded from ~95s per session to ~385s and
+stayed there for 103 sessions, about ten hours. The existing circuit breaker
+counts sessions produced, and a degraded campaign still produces sessions --
+just four times slower. "Nothing is being produced" and "everything is being
+produced too slowly" are different failures and only the first was watched.
+
+The important test here is not that the threshold arithmetic works; it is that
+the guard fires on the *real* degraded window and stays quiet on the real
+healthy one. A synthetic fixture would only prove the comparison operator
+works.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import importlib.util
+import json
+import pathlib
+import re
+import sys
+
+import pytest
+
+_ROOT = pathlib.Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+_PACE_PATH = _ROOT / "工具腳本" / "recent_session_pace.py"
+_SUPERVISOR_PATH = _ROOT / "工具腳本" / "run_mega_campaign.sh"
+
+EPOCH = dt.datetime(2026, 9, 24, tzinfo=dt.timezone.utc)
+
+# Medians measured from ~/dataset_mega on 2026-09-24.
+HEALTHY_MEDIAN_SEC = 95.1
+DEGRADED_MEDIAN_SEC = 385.2
+
+
+@pytest.fixture(scope="module")
+def pace():
+    spec = importlib.util.spec_from_file_location("_recent_session_pace", _PACE_PATH)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.fixture(scope="module")
+def supervisor_source() -> str:
+    return _SUPERVISOR_PATH.read_text(encoding="utf-8")
+
+
+def _write(
+    root: pathlib.Path,
+    index: int,
+    inside_sec: float,
+    mode: str = "enforce",
+    pcap_mb: float = 0.0,
+) -> None:
+    """One synthetic session, optionally with a capture of a given size.
+
+    The capture matters: the guard subtracts what that size predicts, so a
+    fixture without one only ever exercises the model's fixed term.
+    """
+    start = EPOCH + dt.timedelta(seconds=index * 1000)
+    end = start + dt.timedelta(seconds=inside_sec)
+    directory = root / f"s{index:03d}"
+    directory.mkdir()
+    (directory / "manifest.json").write_text(
+        json.dumps({
+            "session_id": directory.name,
+            "started_utc": start.isoformat().replace("+00:00", "Z"),
+            "ended_utc": end.isoformat().replace("+00:00", "Z"),
+            "security_mode": mode,
+            "code_revision": "rev",
+        }),
+        encoding="utf-8",
+    )
+    if pcap_mb:
+        pcap = directory / "traffic.pcapng"
+        with pcap.open("wb") as handle:
+            handle.truncate(int(pcap_mb * 1e6))
+
+
+# ── the guard on the real numbers ────────────────────────────────────────────
+
+
+def test_the_real_degraded_pace_is_caught(pace, tmp_path):
+    """385s per session is what ran unnoticed for ten hours."""
+    for index in range(10):
+        _write(tmp_path, index, DEGRADED_MEDIAN_SEC)
+    assert pace.main(["--dataset", str(tmp_path)]) == 4
+
+
+def test_the_real_healthy_pace_is_not_flagged(pace, tmp_path):
+    for index in range(10):
+        _write(tmp_path, index, HEALTHY_MEDIAN_SEC)
+    assert pace.main(["--dataset", str(tmp_path)]) == 0
+
+
+def test_the_default_threshold_sits_clear_of_both(pace):
+    """200s is not a round number picked for looks; both sides need margin."""
+    parser_default = 200.0
+    assert HEALTHY_MEDIAN_SEC * 2 < parser_default < DEGRADED_MEDIAN_SEC / 1.9
+
+
+def test_the_slow_and_healthy_worlds_are_distinguished_by_the_median_not_the_max(
+    pace, tmp_path
+):
+    """One long session must not condemn a healthy batch.
+
+    Single sessions legitimately run long -- the real healthy window had a max
+    of 481s. Watching the maximum would stop the campaign constantly.
+    """
+    for index in range(9):
+        _write(tmp_path, index, HEALTHY_MEDIAN_SEC)
+    _write(tmp_path, 9, 481.0)
+    assert pace.main(["--dataset", str(tmp_path)]) == 0
+
+
+# ── only the newest sessions count ───────────────────────────────────────────
+
+
+def test_old_slow_sessions_do_not_keep_the_alarm_on(pace, tmp_path):
+    """After a restart clears the degradation the guard must let go.
+
+    The 2026-09-19 run recovered on its own; a guard that averaged over the
+    whole dataset would stay latched and stop a campaign that was fine.
+    """
+    for index in range(20):
+        _write(tmp_path, index, DEGRADED_MEDIAN_SEC)
+    for index in range(20, 32):
+        _write(tmp_path, index, HEALTHY_MEDIAN_SEC)
+    assert pace.main(["--dataset", str(tmp_path), "--window", "10"]) == 0
+
+
+def test_a_fresh_degradation_is_caught_even_after_a_long_healthy_run(pace, tmp_path):
+    for index in range(40):
+        _write(tmp_path, index, HEALTHY_MEDIAN_SEC)
+    for index in range(40, 52):
+        _write(tmp_path, index, DEGRADED_MEDIAN_SEC)
+    assert pace.main(["--dataset", str(tmp_path), "--window", "10"]) == 4
+
+
+# ── not enough data is not a pass and not a failure ──────────────────────────
+
+
+def test_too_few_sessions_is_reported_not_judged(pace, tmp_path, capsys):
+    for index in range(3):
+        _write(tmp_path, index, DEGRADED_MEDIAN_SEC)
+    assert pace.main(["--dataset", str(tmp_path)]) == 0
+    assert "too few to judge" in capsys.readouterr().out
+
+
+def test_an_empty_dataset_does_not_stop_the_campaign(pace, tmp_path):
+    assert pace.main(["--dataset", str(tmp_path)]) == 0
+
+
+def test_a_missing_dataset_is_a_distinct_exit_code(pace, tmp_path):
+    assert pace.main(["--dataset", str(tmp_path / "absent")]) == 2
+
+
+# ── the guard is wired into the supervisor, not merely present ───────────────
+
+
+def _code_only(text: str) -> str:
+    return "\n".join(
+        line for line in text.splitlines() if not line.lstrip().startswith("#")
+    )
+
+
+def test_the_supervisor_actually_calls_the_pace_check(supervisor_source):
+    """A guard that exists but is never invoked is what happened on 2026-09-21.
+
+    `stream_replay.py` was written to prevent a defect, given its own tests, and
+    then never imported by either CLI. Presence is not wiring.
+    """
+    body = _code_only(supervisor_source)
+    assert "recent_session_pace.py" in body, "the pace tool is never invoked"
+    assert re.search(r"^\s*if check_pace; then", body, re.M), "check_pace is never called"
+    assert "MAX_SLOW_BATCHES" in body
+    assert "exit 4" in body
+
+
+def test_the_pace_check_runs_after_the_production_check(supervisor_source):
+    """A batch can be both productive and too slow; that pair is the target."""
+    body = _code_only(supervisor_source)
+    declared = body.index("MAX_BARREN_BATCHES=")
+    # The last production check in the loop, then the pace check after it.
+    produced = body.rindex('"$barren" -ge')
+    paced = body.index("if check_pace; then")
+    assert declared < produced < paced
+
+
+def test_the_slow_breaker_uses_its_own_counter(supervisor_source):
+    """Sharing `barren` would let a slow batch mask a dead one, or the reverse."""
+    body = _code_only(supervisor_source)
+    assert re.search(r"^slow=0", body, re.M)
+    assert "slow=$((slow + 1))" in body
+    assert "barren=$((barren + 1))" in body
+
+
+def test_the_exit_codes_do_not_collide(supervisor_source):
+    """3 is 'produced nothing', 4 is 'too slow'. A caller must tell them apart."""
+    body = _code_only(supervisor_source)
+    assert "exit 3" in body and "exit 4" in body
+    assert body.count("exit 4") == 1
+
+
+def test_the_pace_check_propagates_the_tools_exit_code(supervisor_source):
+    """`| tee` would otherwise return tee's status and the guard would never fire."""
+    body = _code_only(supervisor_source)
+    assert "PIPESTATUS[0]" in body, "the exit code is taken from tee, not the tool"
+
+# ── the guard judges the residual, not the raw wall clock ────────────────────
+
+# Session wall clock tracks capture size: measured over 502 sessions,
+# inside ~ 85.7s + 0.376 s/MB, from 86s at 4MB to 453s at 750MB. An absolute
+# threshold therefore fires on any batch of heavy scenarios, which is a false
+# positive that would stop a healthy campaign.
+
+
+def _expected(pcap_mb: float) -> float:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("_pace_for_model", _PACE_PATH)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.expected_sec(pcap_mb)
+
+
+def test_a_heavy_but_proportionate_batch_is_not_flagged(pace, tmp_path):
+    """The false positive an absolute threshold would produce.
+
+    400MB of capture costs about 236s on volume alone. Under the old 200s rule
+    every one of these sessions was 'slow'; none of them is.
+    """
+    heavy_mb = 400.0
+    for index in range(10):
+        _write(tmp_path, index, _expected(heavy_mb), pcap_mb=heavy_mb)
+    assert pace.main(["--dataset", str(tmp_path)]) == 0
+    assert _expected(heavy_mb) > 200.0, "the old absolute threshold would have fired"
+
+
+def test_a_light_batch_that_is_slow_is_still_flagged(pace, tmp_path):
+    """Degradation on a small capture must not hide behind the model."""
+    for index in range(10):
+        _write(tmp_path, index, _expected(5.0) + 120.0, pcap_mb=5.0)
+    assert pace.main(["--dataset", str(tmp_path)]) == 4
+
+
+def test_the_real_degradation_is_still_caught_at_its_real_capture_size(pace, tmp_path):
+    """The 2026-09-19 block: 385.2s median at a 393.7MB median capture.
+
+    Volume explains most of it, and the residual +116.8s is the part that is
+    actually a defect. The guard has to see that part.
+    """
+    for index in range(10):
+        _write(tmp_path, index, 385.2, pcap_mb=393.7)
+    assert pace.main(["--dataset", str(tmp_path)]) == 4
+
+
+def test_a_healthy_batch_at_the_same_capture_size_is_not_flagged(pace, tmp_path):
+    """Same 393.7MB, but only what the model predicts. Must stay quiet.
+
+    Paired with the test above, this is what separates 'heavy' from 'degraded'.
+    """
+    for index in range(10):
+        _write(tmp_path, index, _expected(393.7), pcap_mb=393.7)
+    assert pace.main(["--dataset", str(tmp_path)]) == 0
+
+
+def test_the_model_matches_the_measurement_it_came_from(pace):
+    """Three points from the measured deciles, within the spread of the fit."""
+    for megabytes, observed in ((4.0, 86.2), (51.2, 105.1), (750.0, 453.0)):
+        predicted = _expected(megabytes)
+        assert abs(predicted - observed) < 90.0, (
+            f"{megabytes}MB: model says {predicted:.0f}s, measured {observed:.0f}s"
+        )
+
+
+def test_a_missing_capture_does_not_credit_a_session_with_volume(pace, tmp_path):
+    """No pcap means no allowance; otherwise a broken capture would hide a stall."""
+    assert _expected(0.0) < _expected(1.0)
+    for index in range(10):
+        _write(tmp_path, index, _expected(0.0) + 120.0, pcap_mb=0.0)
+    assert pace.main(["--dataset", str(tmp_path)]) == 4
+
+
+# ── the model is known invalid above a measured size ─────────────────────────
+
+# The volume model was fitted while per-packet extraction was truncated at a
+# fixed 300s. Once the timeout scales with capture size (2026-09-25) extraction
+# runs to completion and `inside` grows, but the model does not know that.
+#
+# Measured over the 180-session recovery run:
+#     extraction_sec ~ 17.2 + 0.533 s/MB   (R2 0.767, 4-way parallel)
+#
+#     pcap     model's whole-session prediction     extraction alone
+#     263MB              184.6s                          157.4s
+#     500MB              273.7s                          283.7s   <- crossover
+#     795MB              384.6s                          441.0s
+#
+# Above the crossover the residual stops measuring degradation and starts
+# measuring how wrong the model is, so the guard must decline rather than fire.
+# That is the same class of error the residual itself was introduced to fix on
+# 2026-09-24, pointing the other way.
+
+_EXTRACTION_FIXED_SEC = 17.2
+_EXTRACTION_SLOPE_SEC_PER_MB = 0.533
+
+
+def _extraction_sec(pcap_mb: float) -> float:
+    return _EXTRACTION_FIXED_SEC + _EXTRACTION_SLOPE_SEC_PER_MB * pcap_mb
+
+
+def test_the_invalidity_threshold_is_where_extraction_overtakes_the_model(pace):
+    """The constant is measured, not chosen.
+
+    Below it the model still leaves room for the rest of the session; above it
+    one step already costs more than the model allows for all of them.
+    """
+    limit = pace.MODEL_INVALID_ABOVE_MB
+    assert _extraction_sec(limit) >= _expected(limit) * 0.95
+    assert _extraction_sec(limit * 0.5) < _expected(limit * 0.5)
+    assert _extraction_sec(limit * 1.5) > _expected(limit * 1.5)
+
+
+def test_a_batch_above_the_limit_is_not_judged(pace, tmp_path):
+    """Declining is the point: a stale model must not stop a healthy campaign."""
+    heavy_mb = 700.0
+    for index in range(10):
+        # Far beyond the stale model, yet entirely explained by extraction.
+        _write(tmp_path, index, _expected(heavy_mb) + 300.0, pcap_mb=heavy_mb)
+    assert pace.main(["--dataset", str(tmp_path)]) == 0
+
+
+def test_declining_says_so_rather_than_reporting_ok(pace, tmp_path, capsys):
+    """"ok" would claim the campaign was checked. It was not."""
+    for index in range(10):
+        _write(tmp_path, index, _expected(700.0) + 300.0, pcap_mb=700.0)
+    pace.main(["--dataset", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert "模型不適用" in out
+    assert "ok" not in out.split("\n")[-2]
+
+
+def test_the_guard_does_not_go_soft_below_the_limit(pace, tmp_path):
+    """The mutation that would matter: declining everywhere instead of above it.
+
+    A 400MB batch is under the crossover, so a genuine +200s stall must still
+    abort the campaign.
+    """
+    for index in range(10):
+        _write(tmp_path, index, _expected(400.0) + 200.0, pcap_mb=400.0)
+    assert pace.main(["--dataset", str(tmp_path)]) == 4
+
+
+# ── 2026-10-02: the re-fit C2C-087 asked for, and why it must not be adopted ──
+#
+# C2C-087 left the model unrefittable: the only completed-extraction data came
+# from a 4-way-parallel backfill with no campaign on the machine, which is the
+# wrong regime. The restarted run supplied the right one -- in-campaign, serial
+# extraction, the volume-scaled timeout -- so the re-fit was finally possible.
+#
+# An ordinary least squares fit on the 733 post-2026-09-26 sessions gives
+#
+#     inside ~ 91.0 + 0.780 s/MB     (R2 0.260)
+#
+# which is more than double the shipped slope, and the obvious reading is that
+# the shipped model now underpredicts. Binning the same sessions by capture size
+# and taking the median residual against the SHIPPED model refutes that reading:
+#
+#     pcap bin (MB)   n    median residual vs shipped model
+#       0-25         156        +7.0s
+#      25-50          74        +7.5s
+#      50-75          61       +52.2s
+#      75-100        127       +11.2s
+#     100-135        141        +5.7s
+#     135-175         92       +15.1s
+#     175-225         61       +17.2s
+#     225-300         16       +64.0s
+#     300-400          5       +99.5s
+#
+# A 0.780 slope would put the 100-135MB bin near +46s. It measures +5.7s. So the
+# OLS slope is an artifact of a handful of high-leverage heavy sessions, and the
+# binned view is the trustworthy one: the shipped model is close to unbiased
+# across the range where the data actually lives.
+#
+# These tests exist so that a future re-fit has to argue with the measurement
+# rather than quietly replace the constants.
+
+# (pcap MB at the bin's midpoint, measured median residual, sessions in the bin)
+_BINNED_RESIDUALS_POST_0926 = (
+    (12.5, 7.0, 156),
+    (37.5, 7.5, 74),
+    (62.5, 52.2, 61),
+    (87.5, 11.2, 127),
+    (117.5, 5.7, 141),
+    (155.0, 15.1, 92),
+    (200.0, 17.2, 61),
+)
+
+# The constants the residuals above were measured against. They are literals on
+# purpose: a historical measurement must not read the value a later change is
+# allowed to move, or fixing the model would erase the evidence about it. That
+# mistake was made on 2026-09-25 and corrected in C2C-081.
+_SHIPPED_AT_MEASUREMENT_FIXED_SEC = 85.7
+_SHIPPED_AT_MEASUREMENT_SLOPE_SEC_PER_MB = 0.376
+
+# The bound the binned residuals were measured against, and the bound the model
+# must stay inside. It deliberately does NOT follow the guard's configured
+# threshold: relaxing the alarm must not licence a more biased model, or the two
+# chase each other and the residual stops meaning "degradation". Raising this to
+# follow the 2026-10-02 relaxation would have silently stopped the OLS mutation
+# test from biting (the refit's error at 200MB is -68.9s, inside 90 but not 60).
+_MODEL_BIAS_BOUND_SEC = 60.0
+
+
+def _observed_sec(pcap_mb: float, residual_sec: float) -> float:
+    """The wall clock those sessions actually took, reconstructed."""
+    return (_SHIPPED_AT_MEASUREMENT_FIXED_SEC
+            + _SHIPPED_AT_MEASUREMENT_SLOPE_SEC_PER_MB * pcap_mb
+            + residual_sec)
+
+
+def test_the_model_stays_unbiased_in_both_directions_where_the_data_lives(pace):
+    """Both directions, because each one breaks the guard differently.
+
+    Under-predicting makes it fire on healthy heavy batches. Over-predicting is
+    worse and quieter: it absorbs a real stall, so the guard reports ok while
+    the campaign crawls. Adopting the 0.780 OLS slope fails this at 200MB.
+    """
+    for megabytes, residual, count in _BINNED_RESIDUALS_POST_0926:
+        assert count >= 50, "a thin bin cannot pin a constant"
+        error = _observed_sec(megabytes, residual) - pace.expected_sec(megabytes)
+        assert abs(error) < _MODEL_BIAS_BOUND_SEC, (
+            f"{megabytes}MB: the model is off by {error:+.1f}s against "
+            f"{count} measured sessions, which is at or past the threshold the "
+            "guard fires on"
+        )
+
+
+def test_the_ols_refit_is_refuted_by_the_binned_residuals(pace):
+    """The decisive arithmetic, kept so the refutation need not be redone.
+
+    If the true slope were the OLS value, the shipped model's residual at
+    117.5MB would be around +46s. It is measured at +5.7s, so the OLS fit is an
+    artifact of the few high-leverage heavy sessions.
+    """
+    ols_fixed, ols_slope = 91.0, 0.780
+    megabytes, measured_residual, _ = _BINNED_RESIDUALS_POST_0926[4]
+    implied_residual = ((ols_fixed + ols_slope * megabytes)
+                        - (_SHIPPED_AT_MEASUREMENT_FIXED_SEC
+                           + _SHIPPED_AT_MEASUREMENT_SLOPE_SEC_PER_MB * megabytes))
+    assert implied_residual > 3 * measured_residual, (
+        "the OLS fit and the binned median must disagree, or this test pins "
+        "nothing"
+    )
+    assert measured_residual < _MODEL_BIAS_BOUND_SEC / 2
+
+
+def test_the_healthy_calibration_does_not_cover_the_heavy_range(pace):
+    """Why the invalidity limit stays even though the light bins look fine.
+
+    The segment whose health is certified without reference to duration --
+    rc=0 36/36, 97.8% eligible, batches completing 40/40 -- spans only
+    3.3-165.8MB of capture. A limit below that range would decline to judge
+    exactly where the guard has been shown to work.
+    """
+    certified_max_mb = 165.8
+    assert pace.MODEL_INVALID_ABOVE_MB > certified_max_mb
+    # And the measurement cannot be used to lower it: the bins that cross the
+    # threshold hold 16 and 5 sessions.
+    pinned_max_mb = max(mb for mb, _, _ in _BINNED_RESIDUALS_POST_0926)
+    assert pinned_max_mb < pace.MODEL_INVALID_ABOVE_MB, (
+        "the pinned bins must sit below the limit; a bin above it is not "
+        "evidence about a range the guard declines to judge"
+    )
+
+
+# ── 2026-10-02: the threshold was relaxed 60 -> 90 on Jesse's authorisation ───
+#
+# This is a relaxation of a pass criterion, so the basis is pinned here rather
+# than left in a commit message. Measured on 2026-10-02 over dataset_mega:
+#
+#   population                      windows   >+60s        >+90s
+#   certified healthy (restart+)         80   1 (1.2%)     0 (0.0%)
+#   the rest (health uncertified)      1510   458 (30.3%)  371 (24.6%)
+#
+# "Certified healthy" means certified WITHOUT reference to duration -- rc=0
+# 44/44, 98.1% eligible, batches completing 40/40 -- so using it to calibrate a
+# duration threshold is not circular.
+#
+# The cost: 87 windows in the uncertified population fall in (60, 90], residual
+# +60.0 to +89.3. Whether those are misfires or real degradation is NOT known.
+#
+# What makes the relaxation safe is the margin on the degradation this guard
+# exists to catch, which sits far above the new threshold.
+_CONFIGURED_THRESHOLD_SEC = 90.0
+_PREVIOUS_THRESHOLD_SEC = 60.0
+
+# C2C-073's degraded block, and the extraction-cutoff sessions that turned out
+# to BE that degradation (2026-10-02: n=178, residual median +256.0s).
+_KNOWN_DEGRADATION_RESIDUAL_SEC = 116.8
+_EXTRACTION_CUTOFF_RESIDUAL_SEC = 256.0
+
+# Highest windowed median seen on the certified-healthy segment.
+_HEALTHY_WORST_WINDOW_SEC = 69.1
+
+
+def test_the_configured_threshold_is_the_authorised_value(pace):
+    """The tool's default and the supervisor's default must be the same number.
+
+    Two files, one decision. 2026-10-02 (C2C-091) is the precedent: a value was
+    changed at the caller and the consumer rejected it, because nothing checked
+    that the two ends agreed.
+    """
+    parser = pace.build_parser() if hasattr(pace, "build_parser") else None
+    if parser is not None:
+        default = parser.get_default("slow_threshold_sec")
+    else:
+        source = _PACE_PATH.read_text(encoding="utf-8")
+        match = re.search(r'"--slow-threshold-sec",\s*\n\s*type=float,\s*\n\s*'
+                          r'default=([0-9.]+),', source)
+        assert match, "could not read the parser default"
+        default = float(match.group(1))
+    assert default == _CONFIGURED_THRESHOLD_SEC
+
+    supervisor = _SUPERVISOR_PATH.read_text(encoding="utf-8")
+    match = re.search(r"SLOW_SESSION_SEC=\"\$\{SLOW_SESSION_SEC:-([0-9.]+)\}\"",
+                      supervisor)
+    assert match, "could not read the supervisor default"
+    assert float(match.group(1)) == _CONFIGURED_THRESHOLD_SEC, (
+        "the supervisor and the tool disagree about the threshold"
+    )
+
+
+def test_the_threshold_still_sits_below_the_degradation_it_exists_to_catch():
+    """The test that must fail if the threshold is ever raised too far.
+
+    Relaxing towards +116.8s would make the guard unable to see the only
+    degradation it has ever been shown to detect. A 20% margin is required so
+    the next relaxation has to re-measure rather than creep.
+    """
+    assert _CONFIGURED_THRESHOLD_SEC < _KNOWN_DEGRADATION_RESIDUAL_SEC / 1.2, (
+        f"+{_CONFIGURED_THRESHOLD_SEC:.0f}s leaves only "
+        f"{_KNOWN_DEGRADATION_RESIDUAL_SEC - _CONFIGURED_THRESHOLD_SEC:+.1f}s "
+        "of margin on the measured degradation"
+    )
+    # And far below the sessions that turned out to be that degradation.
+    assert _CONFIGURED_THRESHOLD_SEC < _EXTRACTION_CUTOFF_RESIDUAL_SEC / 2
+
+
+def test_the_relaxation_is_above_the_healthy_segments_worst_window():
+    """Why 90 and not 70: the point of the change was to clear the misfire.
+
+    The certified-healthy segment's worst windowed median is +69.1s, which is
+    what produced the single 1/80 misfire at +60s. A threshold between those two
+    values would not have fixed anything.
+    """
+    assert _PREVIOUS_THRESHOLD_SEC < _HEALTHY_WORST_WINDOW_SEC
+    assert _HEALTHY_WORST_WINDOW_SEC < _CONFIGURED_THRESHOLD_SEC
+    headroom = _CONFIGURED_THRESHOLD_SEC - _HEALTHY_WORST_WINDOW_SEC
+    assert headroom > 15.0, "too little headroom for a relaxation to be worth it"
+
+
+def test_the_relaxation_did_not_follow_through_to_the_model_bias_bound():
+    """The bound the binned residuals were measured against must not move.
+
+    If the bias bound tracked the alarm threshold, every relaxation would also
+    licence a more biased model and the residual would stop meaning anything.
+    Concretely: the rejected OLS refit is off by -68.9s at 200MB, which is
+    inside 90 but outside 60 -- so following the relaxation here would have
+    silently disarmed test_the_model_stays_unbiased_in_both_directions.
+    """
+    assert _MODEL_BIAS_BOUND_SEC == _PREVIOUS_THRESHOLD_SEC
+    assert _MODEL_BIAS_BOUND_SEC < _CONFIGURED_THRESHOLD_SEC
+    ols_error_at_200mb = 68.9
+    assert ols_error_at_200mb > _MODEL_BIAS_BOUND_SEC, (
+        "the mutation this bound exists to catch no longer exceeds it"
+    )

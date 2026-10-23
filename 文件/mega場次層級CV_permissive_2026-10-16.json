@@ -1,0 +1,175 @@
+{
+  "schema_version": "sros2-firewall-model-selection/v1",
+  "mode": "arms",
+  "features_table": "/home/jesse/features_mega_split/fusion_features_permissive.csv",
+  "eval_split": "train_validation",
+  "test_rows_in_table": 5824,
+  "test_rows_used": 0,
+  "rows": 32986,
+  "sessions": 1364,
+  "classes": 18,
+  "formulation": "session_aggregate",
+  "folds": 5,
+  "repeats": 3,
+  "splitter": "StratifiedGroupKFold(shuffle=True, random_state=repeat)",
+  "reference_arm": "random_forest",
+  "declared_variants": [
+    "full",
+    "drop_dead",
+    "stats_level",
+    "stats_shape",
+    "stats_no_std",
+    "stats_no_minmax",
+    "stats_mean_max"
+  ],
+  "declared_grid": null,
+  "grid_parameters": null,
+  "dead_aggregate_columns_whole_table": 28,
+  "aggregate_width": 204,
+  "same_source_check": {
+    "ran": false
+  },
+  "shuffle_control": {
+    "ran": true,
+    "arm": "random_forest",
+    "chance": 0.0556,
+    "shuffled_mean": 0.0523,
+    "shuffled_max": 0.0587,
+    "real_mean": 0.503,
+    "bar": 0.2793
+  },
+  "changes_shipped_defaults": false,
+  "ranking_key": "ceiling_per_repeat_mean, then ceiling_pooled, then mean",
+  "ranking_by_ceiling": [
+    "random_forest/full/d1_m3_x3",
+    "random_forest"
+  ],
+  "ranking_by_score": [
+    "random_forest/full/d1_m3_x3",
+    "random_forest"
+  ],
+  "summary": {
+    "random_forest/full/d1_m3_x3": {
+      "mean": 0.5124,
+      "std": 0.0026,
+      "min": 0.5101,
+      "max": 0.5153,
+      "paired_delta_vs_reference": 0.0094,
+      "paired_delta_ci95": [
+        0.0068,
+        0.0121
+      ],
+      "paired_std": 0.0026,
+      "wins_vs_reference": 3,
+      "ties_vs_reference": 0,
+      "per_repeat": [
+        0.5101,
+        0.512,
+        0.5153
+      ],
+      "classes": 18,
+      "worst_class": "scan_drift",
+      "worst_class_recall": 0.2974,
+      "ceiling_per_repeat_mean": 1.0,
+      "ceiling_per_repeat_min": 1.0,
+      "ceiling_per_repeat_max": 1.0,
+      "ceiling_pooled": 1.0,
+      "never_correct_classes": []
+    },
+    "random_forest": {
+      "mean": 0.503,
+      "std": 0.0047,
+      "min": 0.4999,
+      "max": 0.5084,
+      "paired_delta_vs_reference": 0.0,
+      "paired_delta_ci95": [
+        0.0,
+        0.0
+      ],
+      "paired_std": 0.0,
+      "wins_vs_reference": 0,
+      "ties_vs_reference": 3,
+      "per_repeat": [
+        0.5006,
+        0.4999,
+        0.5084
+      ],
+      "classes": 18,
+      "worst_class": "odom_spoof",
+      "worst_class_recall": 0.2576,
+      "ceiling_per_repeat_mean": 1.0,
+      "ceiling_per_repeat_min": 1.0,
+      "ceiling_per_repeat_max": 1.0,
+      "ceiling_pooled": 1.0,
+      "never_correct_classes": []
+    }
+  },
+  "ceiling_detail": {
+    "random_forest": {
+      "classes": 18,
+      "worst_class": "odom_spoof",
+      "worst_class_recall": 0.2576,
+      "ceiling_per_repeat_mean": 1.0,
+      "ceiling_per_repeat_min": 1.0,
+      "ceiling_per_repeat_max": 1.0,
+      "ceiling_pooled": 1.0,
+      "never_correct_classes": [],
+      "zero_in_how_many_repeats": {}
+    },
+    "random_forest/full/d1_m3_x3": {
+      "classes": 18,
+      "worst_class": "scan_drift",
+      "worst_class_recall": 0.2974,
+      "ceiling_per_repeat_mean": 1.0,
+      "ceiling_per_repeat_min": 1.0,
+      "ceiling_per_repeat_max": 1.0,
+      "ceiling_pooled": 1.0,
+      "never_correct_classes": [],
+      "zero_in_how_many_repeats": {}
+    }
+  },
+  "per_class_recall": {
+    "random_forest": {
+      "command_injection": 0.4896,
+      "cross_channel_relay": 0.3897,
+      "discovery_recon": 0.2718,
+      "health_spoof": 0.4826,
+      "identity_abuse": 0.7448,
+      "message_dos": 0.4974,
+      "mission_spoof": 0.5758,
+      "node_churn": 0.5657,
+      "normal": 1.0,
+      "odom_spoof": 0.2576,
+      "parameter_tamper": 0.4394,
+      "replay": 0.5657,
+      "replay_dos": 0.4513,
+      "scan_drift": 0.2923,
+      "sensor_spoof": 0.4256,
+      "service_dos": 0.6051,
+      "spdp_flood": 0.5049,
+      "verify_flood": 0.4946
+    },
+    "random_forest/full/d1_m3_x3": {
+      "command_injection": 0.4896,
+      "cross_channel_relay": 0.3897,
+      "discovery_recon": 0.3128,
+      "health_spoof": 0.4975,
+      "identity_abuse": 0.8073,
+      "message_dos": 0.5128,
+      "mission_spoof": 0.5152,
+      "node_churn": 0.5657,
+      "normal": 1.0,
+      "odom_spoof": 0.3182,
+      "parameter_tamper": 0.4747,
+      "replay": 0.5455,
+      "replay_dos": 0.4462,
+      "scan_drift": 0.2974,
+      "sensor_spoof": 0.441,
+      "service_dos": 0.6205,
+      "spdp_flood": 0.4951,
+      "verify_flood": 0.4946
+    }
+  },
+  "marginal_means": null,
+  "elapsed_sec": 108.8
+}

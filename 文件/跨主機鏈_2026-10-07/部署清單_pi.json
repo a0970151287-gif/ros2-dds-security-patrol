@@ -1,0 +1,13 @@
+{
+  "paths": [
+    "firewall_lab/response_backend.py",
+    "firewall_lab/nft_backend_service.py",
+    "firewall_lab/response_authorizer.py",
+    "工具腳本/run_nft_live_acceptance.py",
+    "工具腳本/run_attribution_driven_block.py",
+    "工具腳本/crosscheck_identity_attribution.py",
+    "工具腳本/check_link_layer_binding.py",
+    "工具腳本/decode_rtps_identity.py",
+    "firewall_lab/features.py"
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "schema_version": "sros2-firewall-identity-attribution-contract/v1",
+  "status": "blocked",
+  "purpose": "development-only RTPS/DDS identity features and future trusted identity-to-IP attribution",
+  "observation_schema": "sros2-firewall-rtps-identity-observation/v1",
+  "required_artifacts": [
+    "rtps_identity.jsonl",
+    "identity_attestation.json",
+    "dds_security_audit.jsonl"
+  ],
+  "required_zeek_identity_fields": [
+    "rtps_guid_prefix",
+    "rtps_entity_id",
+    "dds_topic",
+    "dds_identity_subject_sha256"
+  ],
+  "feature_names": [
+    "rtps_participant_rate",
+    "rtps_guid_churn_rate",
+    "rtps_guid_multi_ip_ratio",
+    "rtps_ip_multi_guid_ratio",
+    "rtps_endpoint_rate",
+    "rtps_topic_diversity_ratio",
+    "rtps_acl_deny_ratio",
+    "rtps_authenticated_binding_ratio",
+    "rtps_complete_evidence_ratio"
+  ],
+  "lineage_bindings": [
+    "session_id",
+    "capture_sha256",
+    "decoder_sha256",
+    "policy_sha256",
+    "collector_id",
+    "sequence",
+    "ts_unix_ns"
+  ],
+  "network_action_acceptance": {
+    "unique_guid_to_ip_binding": true,
+    "ip_not_shared_by_multiple_identities": true,
+    "authenticated_identity_subject_binding": true,
+    "trusted_collector_attestation": true,
+    "two_consecutive_signed_windows": true,
+    "authorized_scope_and_allowlist_checks": true,
+    "current_evidence_satisfies_acceptance": false
+  },
+  "claim_boundaries": [
+    "same-UID telemetry source validation is not DDS identity-to-IP attribution",
+    "SPDP or SEDP packet fields alone are spoofable observations, not authenticated identity",
+    "multiple DDS participants may legitimately share one host IP, so ambiguous IPs cannot be blocked",
+    "development features cannot directly authorize network actions"
+  ],
+  "source_ip_attribution_verified": false,
+  "cross_host_test_ready": false,
+  "autonomous_ip_block_ready": false,
+  "deployment_eligible": false,
+  "runtime_authorization": false,
+  "executable": false
+}

@@ -1,0 +1,283 @@
+#!/usr/bin/env bash
+# identity_abuse ＋ normal 重跑，帶 sidecar 觀測者的認證證據通道。
+#
+# 用法： run_identity_channel_campaign.sh [每類場次] [輸出根目錄]
+#        預設 50 場 identity_abuse ＋ 50 場 normal（Enforce），約兩小時
+#
+# ## 為什麼跑這一批
+#
+# `identity_abuse` 在 Enforce 下**完全沒有任何遙測訊號**——2026-08-30 實測一場
+# 攻擊 session 的六個視窗裡，18 個 telemetry 特徵只有 sros_auth_fail_rate 非零，
+# 其餘全零。那正是它 test recall 0.467、Enforce 識別 0.4155 的原因：攻擊在
+# handshake 就被擋，應用層看不到東西。
+#
+# sidecar 觀測者繞過 rmw 拿得到 DDS 認證判定，observer_deny_adapter 把它轉成
+# sros2_deny，features.py 既有的映射就會讓 sros_auth_fail_rate 活過來。
+# 四場驗證：normal 場 0、identity_abuse 場每場 18 筆。
+#
+# ## 三個一定要記住的前提（都是 2026-08-30 踩過的）
+#
+# 1. **campaign 不啟動 ROS stack。** orchestrator 與 campaign 都沒有 live_stack
+#    引用，docstring 寫 "external stack"。少了它 session 會跑完但 telemetry 只有
+#    collector 自己的 tick，訓練閘門以 not_eligible:runtime_telemetry 擋下。
+# 2. **觀測者不可釘傳輸。** OBSERVER_INTERFACE_ADDRESS 會關掉 builtin transports，
+#    觀測者只剩 UDP、沒有 SHM，而 ROS 2 同機走 SHM——握手走不起來，**每個合法
+#    節點都會被記成 UNAUTHORIZED**，特徵就毀了。
+# 3. **requested_counts 依 scenario_id 分組**，每組 {total, permissive, enforce}
+#    且與 entries 完全相符，否則 validate_campaign_plan 拒收。
+#
+# ## 隔離
+#
+# 全程 ROS_LOCALHOST_ONLY=1，攻擊流量鎖在 loopback（runners.attacker_environment
+# 不剝除這個變數，已確認），--confirm-isolated-lab 因此站得住。擷取介面用 lo。
+
+set -uo pipefail
+
+PER_CLASS="${1:-50}"
+# 要跑哪些 attack_class。預設維持 2026-08-30 那批的兩類，既有行為不變。
+# 平衡試跑用：IDENTITY_CHANNEL_CLASSES="all"
+IDENTITY_CHANNEL_CLASSES="${IDENTITY_CHANNEL_CLASSES:-normal,identity_abuse}"
+OUT="${2:-/home/jesse/identity_channel_$(date -u +%Y%m%dT%H%M%SZ)}"
+WS="$HOME/ros2_ws"
+RUNTIME="/home/jesse/.local/share/sros2-firewall/live_runtime"
+SOCK="$RUNTIME/runtime_telemetry.sock"
+E="$WS/sros2_keystore/enclaves/security_readiness_probe"
+OBSERVER_BIN="${OBSERVER_BIN:-$HOME/observer_build/security_observer}"
+# 觀測者要活過整批。每場約 65 秒，留兩倍餘裕。
+# 觀測者要活過整批。每場約 65 秒，留兩倍餘裕；類別數從過濾器推。
+_class_count=$(printf '%s' "$IDENTITY_CHANNEL_CLASSES" | tr ',' '\n' | grep -c .)
+[ "$IDENTITY_CHANNEL_CLASSES" = "all" ] && _class_count=9
+OBS_SECONDS=$(( PER_CLASS * _class_count * 130 ))
+
+mkdir -p "$OUT"
+[ -x "$OBSERVER_BIN" ] || { echo "⛔ 找不到觀測者：$OBSERVER_BIN" >&2; exit 2; }
+
+source "$WS/工具腳本/load_ros_environment.sh" >/dev/null || { echo "⛔ ROS 環境載入失敗" >&2; exit 1; }
+export ROS_LOCALHOST_ONLY=1
+export FIREWALL_LIVE_RUNTIME="$RUNTIME"
+export ROS_SECURITY_KEYSTORE="$WS/sros2_keystore"
+export ROS_SECURITY_ENABLE=true
+export ROS_SECURITY_STRATEGY=Enforce
+export ROS_DOMAIN_ID=30
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+export SROS2_FIREWALL_LIVE_ACK=I_CONFIRM_LIVE_SAME_HOST_LOOPBACK_EVIDENCE
+export SROS2_FIREWALL_TELEMETRY_SOCKET="$SOCK"
+unset FASTRTPS_DEFAULT_PROFILES_FILE
+unset OBSERVER_INTERFACE_ADDRESS
+
+cleanup() {
+  trap - EXIT INT TERM
+  [ -n "${OBS:-}" ] && kill -TERM "$OBS" 2>/dev/null
+  [ -n "${ADAPTER:-}" ] && kill -TERM "$ADAPTER" 2>/dev/null
+  bash "$WS/firewall_lab/live_stack.sh" stop enforce >/dev/null 2>&1
+  pkill -f 'security_observer' 2>/dev/null
+  # `gzserver` 是 Gazebo Classic 的名字。這台跑的是 Gazebo Sim，行程叫
+  # `gz sim server`——舊樣式**從來沒有匹配過**，所以每一輪都會留下一個
+  # 模擬器。實測 B″ 之後那個留了 21 小時，而它會在同一個 domain 上發
+  # `/scan`，讓下一輪的 readiness 假性通過（C2C-044 的形態）。
+  pkill -f 'dds_security_monitor|gazebo.launch|gzserver|gz sim' 2>/dev/null
+}
+trap cleanup EXIT INT TERM
+
+echo "=================================================="
+echo " 身份通道證據重跑（類別：$IDENTITY_CHANNEL_CLASSES）"
+echo "=================================================="
+echo "  每類場次 : $PER_CLASS（Enforce）"
+echo "  觀測者   : 不釘傳輸，存活 ${OBS_SECONDS}s"
+echo "  輸出     : $OUT"
+echo "  開始     : $(date -u +%H:%M:%SZ)"
+echo
+
+# ── 1. 計畫 ──────────────────────────────────────────────────────────
+python3 - "$OUT/plan.json" "$PER_CLASS" "$IDENTITY_CHANNEL_CLASSES" <<'PYEOF'
+import json, subprocess, sys, tempfile
+from pathlib import Path
+target = int(sys.argv[2])
+wanted = sys.argv[3] if len(sys.argv) > 3 else "normal,identity_abuse"
+tmp = Path(tempfile.mkdtemp()) / "full.json"
+# plan 會把場次平分到兩個 security_mode，所以要兩倍才拿得到 target 個 enforce。
+subprocess.run([sys.executable, "-m", "firewall_lab.campaign", "plan",
+                "--output", str(tmp), "--normal-sessions", str(target * 2),
+                "--attack-sessions-per-scenario", str(target * 2),
+                "--seed", "20260830"],
+               cwd=str(Path.home() / "ros2_ws"), check=True,
+               stdout=subprocess.DEVNULL)
+plan = json.loads(tmp.read_text(encoding="utf-8"))
+keep = [e for e in plan["entries"] if e["security_mode"] == "enforce"]
+if wanted != "all":
+    allowed = set(wanted.split(","))
+    keep = [e for e in keep if e["attack_class"] in allowed]
+
+# 每一類各取 target 場，然後**交錯**——把同一類集中在一段時間裡跑，會讓
+# 環境漂移（記憶體、快取、鄰居活動）與類別混在一起，之後分不出哪個是哪個。
+by_class = {}
+for entry in keep:
+    by_class.setdefault(entry["attack_class"], []).append(entry)
+buckets = [v[:target] for _, v in sorted(by_class.items())]
+ordered = []
+for row in zip(*buckets):
+    ordered.extend(row)
+plan["entries"] = ordered
+counts = {}
+for entry in ordered:
+    per = counts.setdefault(entry["scenario_id"],
+                            {"total": 0, "permissive": 0, "enforce": 0})
+    per["total"] += 1
+    per[entry["security_mode"]] += 1
+plan["requested_counts"] = counts
+Path(sys.argv[1]).write_text(json.dumps(plan, indent=2), encoding="utf-8")
+summary = ", ".join(
+    f"{name} {min(len(v), target)}" for name, v in sorted(by_class.items())
+)
+print(f"  計畫：{len(ordered)} 場（{summary}），交錯")
+PYEOF
+[ -s "$OUT/plan.json" ] || { echo "⛔ 計畫產生失敗"; exit 1; }
+
+# 觀測者存活時間依**實際**場次數重算，不要靠先前那個猜的類別數。低估會讓
+# 觀測者在後半批中途死掉，而那時後面的場次會安靜地沒有身份證據——與
+# 「這些類別本來就沒有訊號」在資料上長得一樣。
+_planned=$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["entries"]))' "$OUT/plan.json")
+OBS_SECONDS=$(( _planned * 130 ))
+echo "  觀測者存活 ${OBS_SECONDS}s（${_planned} 場 × 130 秒餘裕）"
+
+# ── 2. ROS stack ─────────────────────────────────────────────────────
+echo "  啟動 SROS2 Enforce stack…"
+bash "$WS/firewall_lab/live_stack.sh" start enforce >"$OUT/stack.log" 2>&1
+ready=0
+for _ in $(seq 1 45); do
+  grep -q "SROS2 Enforce readiness 通過" "$RUNTIME/enforce.log" 2>/dev/null && { ready=1; break; }
+  sleep 3
+done
+[ "$ready" -eq 1 ] || { echo "⛔ readiness 失敗"; tail -5 "$OUT/stack.log"; exit 1; }
+echo "  readiness 通過"
+
+# ── 3. 觀測者（不釘傳輸）＋ deny adapter ─────────────────────────────
+OBSERVER_IDENTITY_CA="$E/identity_ca.cert.pem" \
+OBSERVER_CERTIFICATE="$E/cert.pem" \
+OBSERVER_PRIVATE_KEY="$E/key.pem" \
+OBSERVER_GOVERNANCE="$E/governance.p7s" \
+OBSERVER_PERMISSIONS="$E/permissions.p7s" \
+OBSERVER_PERMISSIONS_CA="$E/permissions_ca.cert.pem" \
+OBSERVER_AUDIT_LOG="$OUT/audit.log" \
+OBSERVER_EVENTS_LOG="$OUT/observer_events.jsonl" \
+"$OBSERVER_BIN" 30 "$OBS_SECONDS" >"$OUT/observer.log" 2>&1 &
+OBS=$!
+sleep 3
+kill -0 "$OBS" 2>/dev/null || { echo "⛔ 觀測者沒起來：$(head -1 "$OUT/observer.log")"; exit 1; }
+grep -q 'transport not pinned' "$OUT/observer.log" || {
+  echo "⛔ 觀測者釘了傳輸——合法節點會被全部誤判，中止"; exit 1; }
+echo "  觀測者執行中（已確認未釘傳輸）"
+
+touch "$OUT/observer_events.jsonl"
+( cd "$WS" && python3 -m firewall_lab.observer_deny_adapter \
+    --socket "$SOCK" --follow "$OUT/observer_events.jsonl" \
+    --stop-after-sec "$OBS_SECONDS" ) >"$OUT/adapter.log" 2>&1 &
+ADAPTER=$!
+echo "  deny adapter 執行中"
+echo
+
+# ── 4. campaign ──────────────────────────────────────────────────────
+echo "  開始 campaign（$(( PER_CLASS * _class_count )) 場）$(date -u +%H:%M:%SZ)"
+( cd "$WS" && python3 -m firewall_lab.campaign run \
+    --plan "$OUT/plan.json" --dataset "$OUT/dataset" \
+    --security-mode enforce --capture-interface lo \
+    --confirm-isolated-lab ) >"$OUT/campaign.log" 2>&1
+rc=$?
+echo "  campaign rc=$rc  $(date -u +%H:%M:%SZ)"
+
+kill -TERM "$OBS" "$ADAPTER" 2>/dev/null; sleep 3
+
+# ── 5. 逐場檢查通道有沒有中途斷掉 ────────────────────────────────────
+echo
+echo "=================================================="
+python3 - "$OUT/dataset" <<'PYEOF'
+import json, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+rows = []
+for d in sorted(root.glob("*/")):
+    tele = d / "telemetry_events.jsonl"
+    man = d / "manifest.json"
+    if not tele.exists() or not man.exists():
+        continue
+    try:
+        klass = json.loads(man.read_text(encoding="utf-8")).get("attack_class", "?")
+    except Exception:
+        klass = "?"
+    deny = 0
+    for line in tele.read_text(encoding="utf-8").splitlines():
+        try:
+            if json.loads(line).get("event_type") == "sros2_deny":
+                deny += 1
+        except ValueError:
+            pass
+    rows.append((d.name, klass, deny))
+
+# 哪些類別**預期**不會有認證拒絕，從 `CREDENTIALED_RUNNERS` 推導而不是寫死：
+# 持合法憑證的內鬼過得了 SROS2，被擋在 HMAC 或 rcl 那一層，所以身份層本來
+# 就該是零。把它當成「通道斷了」會把正確的結果讀成故障。
+sys.path.insert(0, str(Path.home() / "ros2_ws"))
+try:
+    from firewall_lab.catalog import load_catalog
+    from firewall_lab.runners import CREDENTIALED_RUNNERS
+    expect_silent = {
+        sc.attack_class for sc in load_catalog().values()
+        if sc.runner in CREDENTIALED_RUNNERS
+    }
+except Exception as exc:                      # noqa: BLE001
+    print(f"  ⚠ 無法載入 catalog（{type(exc).__name__}），保守地假設沒有內鬼類別")
+    expect_silent = set()
+
+by_class = {}
+for _n, k, d in rows:
+    by_class.setdefault(k, []).append(d)
+
+print(f"  session 總數        : {len(rows)}")
+for k in sorted(by_class):
+    v = by_class[k]
+    nz = sum(1 for x in v if x > 0)
+    tag = ""
+    if k == "normal":
+        tag = "（預期為零）"
+    elif k in expect_silent:
+        tag = "（持證內鬼，預期為零）"
+    print(f"  {k:<20}: {len(v):>3} 場  有訊號 {nz}/{len(v)}  {tag}")
+print()
+
+# 通道若中途斷掉，會表現為後半段的攻擊場 deny=0——那和「防禦擋下了」外觀相同，
+# 所以逐場列出而不是只報平均。**但只對預期會開火的類別這樣判。**
+must_fire = [(n, d) for n, k, d in rows if k != "normal" and k not in expect_silent]
+nor = [(n, d) for n, k, d in rows if k == "normal"]
+silent_cls = [(n, k, d) for n, k, d in rows if k in expect_silent]
+
+dead = [n for n, d in must_fire if d == 0]
+noisy = [n for n, d in nor if d > 0]
+loud = [(n, k) for n, k, d in silent_cls if d > 0]
+print(f"  應開火卻沒開火（通道可能斷了）: {len(dead)} / {len(must_fire)}")
+print(f"  正常場 deny>0（不該發生）      : {len(noisy)}")
+if expect_silent:
+    print(f"  內鬼場 deny>0（結論要改）      : {len(loud)} / {len(silent_cls)}")
+if must_fire:
+    counts = sorted(d for _n, d in must_fire)
+    print(f"  應開火類別的 deny 分布  : min {counts[0]}  中位數 {counts[len(counts)//2]}  max {counts[-1]}")
+for n in dead[:5]:
+    print(f"      斷掉: {n}")
+for n in noisy[:5]:
+    print(f"      污染: {n}")
+for n, k in loud[:5]:
+    print(f"      內鬼開火: {n} ({k})")
+print()
+if not must_fire:
+    print("  ⛔ 這一輪沒有任何預期會開火的類別——缺正向對照，")
+    print("     「內鬼沉默」與「觀測者壞掉」在資料上分不開，不可使用")
+elif dead:
+    print("  ⛔ 有應開火的攻擊場拿不到認證證據——通道中途斷了，這批不可直接使用")
+elif noisy:
+    print("  ⛔ 正常場出現認證拒絕——來源不純，要查清楚才可用")
+elif loud:
+    print("  ⚠ 有持證內鬼觸發了認證拒絕——通道有效，但「對內鬼沉默」的說法要修正")
+else:
+    print("  ✅ 通道全程有效：每一場應開火的攻擊都有證據，正常與內鬼場都乾淨")
+PYEOF
+echo "  產物在 $OUT"
+echo "  結束 $(date -u +%H:%M:%SZ)"

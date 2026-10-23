@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
-"""LINE Messaging API helper for Zeek dds_monitor.zeek.
+"""LINE Messaging API helper for Zeek ``dds_monitor.zeek``.
 
-Reads the alert message from stdin and pushes it to LINE.
-Credential resolution order (each independently):
-  1. Env var (LINE_CHANNEL_TOKEN / LINE_USER_ID)
-  2. Config file ~/.config/dds-monitor/{line_token,line_user_id}
-When run under sudo (zeek -i needs root), '~' resolves to the invoking
-user via SUDO_USER so jesse's config is found instead of /root.
+The channel token is read only from
+``~/.config/dds-monitor/line_token``.  Keeping it out of the process
+environment removes passive inheritance and ``/proc/<pid>/environ`` exposure.
+Mode 0600 does not protect against arbitrary file reads by a process already
+running as the same Unix UID; that requires service-account or OS secret-store
+isolation. ``LINE_USER_ID`` is not a secret and remains an optional
+compatibility fallback when ``line_user_id`` is absent.
+
+When Zeek runs through ``sudo``, ``SUDO_USER`` selects the invoking user's
+home so the helper does not accidentally look under ``/root``.
 """
 import json
 import os
 import pwd
+import stat
 import sys
 import urllib.error
 import urllib.request
@@ -27,12 +32,19 @@ def _config_home() -> str:
     return os.path.expanduser('~')
 
 
-def load_cred(env_name: str, file_name: str) -> str:
-    val = os.environ.get(env_name, '').strip()
-    if val:
-        return val
+def load_file_cred(file_name: str, *, secret: bool) -> str:
+    """Load a credential file; reject an overly permissive secret file."""
     path = os.path.join(_config_home(), '.config', 'dds-monitor', file_name)
     try:
+        if secret:
+            mode = stat.S_IMODE(os.stat(path).st_mode)
+            if mode & 0o077:
+                print(
+                    f'ERROR: {path} permissions must be 600 or stricter '
+                    f'(current {mode:o})',
+                    file=sys.stderr,
+                )
+                return ''
         with open(path, encoding='utf-8') as f:
             return f.read().strip()
     except OSError:
@@ -40,12 +52,19 @@ def load_cred(env_name: str, file_name: str) -> str:
 
 
 def main() -> int:
-    token = load_cred('LINE_CHANNEL_TOKEN', 'line_token')
-    user_id = load_cred('LINE_USER_ID', 'line_user_id')
+    token = load_file_cred('line_token', secret=True)
+    user_id = (
+        load_file_cred('line_user_id', secret=False)
+        or os.environ.get('LINE_USER_ID', '').strip()
+    )
     message = sys.stdin.read().strip()
 
     if not token or not user_id:
-        print('ERROR: LINE_CHANNEL_TOKEN and LINE_USER_ID must be set', file=sys.stderr)
+        print(
+            'ERROR: configure ~/.config/dds-monitor/line_token (chmod 600) '
+            'and line_user_id (or LINE_USER_ID)',
+            file=sys.stderr,
+        )
         return 1
     if not message:
         print('ERROR: empty message on stdin', file=sys.stderr)

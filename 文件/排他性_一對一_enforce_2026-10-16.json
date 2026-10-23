@@ -1,0 +1,127 @@
+{
+  "schema_version": "sros2-firewall-exclusivity-onevsone/v1",
+  "features_table": "/home/jesse/features_mega_split/fusion_features_enforce.csv",
+  "eval_split": "train_validation",
+  "test_rows_used": 0,
+  "sessions": 1655,
+  "changes_shipped_defaults": false,
+  "cases": [
+    {
+      "target": "hmac_forgery",
+      "sessions": 137,
+      "top_feature": "mean_bytes_per_packet/max_abs_delta",
+      "one_vs_rest_abs": 0.4108,
+      "hardest_five": [
+        {
+          "other": "normal",
+          "abs_auc_minus_half": 0.0355,
+          "auc": 0.4645,
+          "n": 255
+        },
+        {
+          "other": "cross_channel_relay",
+          "abs_auc_minus_half": 0.4814,
+          "auc": 0.0186,
+          "n": 65
+        },
+        {
+          "other": "node_churn",
+          "abs_auc_minus_half": 0.4821,
+          "auc": 0.0179,
+          "n": 68
+        },
+        {
+          "other": "odom_spoof",
+          "abs_auc_minus_half": 0.4832,
+          "auc": 0.0168,
+          "n": 67
+        },
+        {
+          "other": "scan_drift",
+          "abs_auc_minus_half": 0.4841,
+          "auc": 0.0159,
+          "n": 67
+        }
+      ],
+      "one_vs_hardest_five_abs": 0.2642
+    },
+    {
+      "target": "confused_deputy",
+      "sessions": 137,
+      "top_feature": "unknown_node_rate/max",
+      "one_vs_rest_abs": 0.4781,
+      "hardest_five": [
+        {
+          "other": "command_injection",
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "n": 65
+        },
+        {
+          "other": "cross_channel_relay",
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "n": 65
+        },
+        {
+          "other": "discovery_recon",
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "n": 67
+        },
+        {
+          "other": "health_spoof",
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "n": 66
+        },
+        {
+          "other": "hmac_forgery",
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "n": 137
+        }
+      ],
+      "one_vs_hardest_five_abs": 0.4781
+    },
+    {
+      "target": "identity_abuse",
+      "sessions": 65,
+      "top_feature": "dst_port_entropy/trend",
+      "one_vs_rest_abs": 0.4457,
+      "hardest_five": [
+        {
+          "other": "parameter_tamper",
+          "abs_auc_minus_half": 0.4251,
+          "auc": 0.9251,
+          "n": 67
+        },
+        {
+          "other": "confused_deputy",
+          "abs_auc_minus_half": 0.431,
+          "auc": 0.931,
+          "n": 137
+        },
+        {
+          "other": "replay",
+          "abs_auc_minus_half": 0.4434,
+          "auc": 0.9434,
+          "n": 66
+        },
+        {
+          "other": "service_dos",
+          "abs_auc_minus_half": 0.4437,
+          "auc": 0.9437,
+          "n": 65
+        },
+        {
+          "other": "mission_spoof",
+          "abs_auc_minus_half": 0.4449,
+          "auc": 0.9449,
+          "n": 65
+        }
+      ],
+      "one_vs_hardest_five_abs": 0.4364
+    }
+  ]
+}

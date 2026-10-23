@@ -1,0 +1,84 @@
+{
+  "blind_spot_features": [
+    "sros_auth_fail_rate",
+    "mean_bytes_per_packet"
+  ],
+  "changes_shipped_defaults": false,
+  "modes": {
+    "enforce": {
+      "arms": {
+        "-both": {
+          "balanced_accuracy": 0.3487,
+          "features_used": 24,
+          "macro_f1": 0.3357,
+          "per_seed_balanced_accuracy": [
+            0.3448,
+            0.3543,
+            0.3471
+          ]
+        },
+        "full": {
+          "balanced_accuracy": 0.346,
+          "features_used": 26,
+          "macro_f1": 0.3305,
+          "per_seed_balanced_accuracy": [
+            0.3489,
+            0.3504,
+            0.3388
+          ]
+        }
+      },
+      "blind_features_present": [
+        "sros_auth_fail_rate",
+        "mean_bytes_per_packet"
+      ],
+      "delta_balanced_accuracy": 0.0027,
+      "live_features": 26,
+      "train_rows": 2907,
+      "validation_rows": 622
+    },
+    "permissive": {
+      "arms": {
+        "-both": {
+          "balanced_accuracy": 0.8757,
+          "features_used": 30,
+          "macro_f1": 0.8722,
+          "per_seed_balanced_accuracy": [
+            0.8763,
+            0.8744,
+            0.8763
+          ]
+        },
+        "full": {
+          "balanced_accuracy": 0.8786,
+          "features_used": 32,
+          "macro_f1": 0.8747,
+          "per_seed_balanced_accuracy": [
+            0.879,
+            0.8758,
+            0.8811
+          ]
+        }
+      },
+      "blind_features_present": [
+        "sros_auth_fail_rate",
+        "mean_bytes_per_packet"
+      ],
+      "delta_balanced_accuracy": -0.0029,
+      "live_features": 32,
+      "train_rows": 2659,
+      "validation_rows": 573
+    }
+  },
+  "schema_version": "sros2-firewall-blindspot-identification-cost/v1",
+  "seeds": [
+    20260904,
+    7,
+    991
+  ],
+  "split_used": {
+    "evaluate": "validation",
+    "fit": "train"
+  },
+  "test_rows_used": 0
+}

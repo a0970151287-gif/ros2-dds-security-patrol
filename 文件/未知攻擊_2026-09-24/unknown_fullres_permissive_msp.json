@@ -1,0 +1,307 @@
+{
+  "attack_ood_scorer": "max_softmax",
+  "equivalence_check": {
+    "comparisons": 0,
+    "reason": "max_softmax \u6c92\u6709\u65e2\u6709 artifact \u53ef\u6bd4;\u540c\u4e00\u652f\u5de5\u5177\u7684 mahalanobis \u8207 isolation_forest \u8def\u5f91\u5728\u672c\u8f2a\u90fd\u901a\u904e\u9010\u4f4d\u7b49\u50f9\u6aa2\u67e5,\u800c max_softmax \u53e6\u6709\u7b26\u865f\u81ea\u6211\u6aa2\u67e5",
+    "skipped": true
+  },
+  "features": "/home/jesse/features_refresh_split/fusion_features_permissive.csv",
+  "folds": [
+    {
+      "full_resolution": {
+        "any_recall": 1.0,
+        "k3_recall": 0.5882352941176471,
+        "row_recall": 0.375,
+        "rows": 136,
+        "sessions": 17
+      },
+      "gate_paths": {
+        "abnormal_vs_normal_rows": 0.007352941176470588,
+        "binary_says_attack_rows": 1.0,
+        "ood_rejected_rows": 0.375,
+        "passed_gate_rows": 0.375,
+        "vetoed_share_of_rejected": 0.0
+      },
+      "held_family": "alert_only",
+      "normal_reference": {
+        "k3_false_unknown_rate": 0.0,
+        "row_false_unknown_rate": 0.0,
+        "sessions": 12
+      },
+      "validation_only": {
+        "any_recall": 1.0,
+        "k3_recall": 0.3333333333333333,
+        "row_recall": 0.375,
+        "rows": 24,
+        "sessions": 3
+      }
+    },
+    {
+      "full_resolution": {
+        "any_recall": 0.9215686274509803,
+        "k3_recall": 0.5294117647058824,
+        "row_recall": 0.3536764705882353,
+        "rows": 890,
+        "sessions": 102
+      },
+      "gate_paths": {
+        "abnormal_vs_normal_rows": 0.015730337078651686,
+        "binary_says_attack_rows": 0.895505617977528,
+        "ood_rejected_rows": 0.41123595505617977,
+        "passed_gate_rows": 0.3382022471910112,
+        "vetoed_share_of_rejected": 0.17759562841530055
+      },
+      "held_family": "application_drop",
+      "normal_reference": {
+        "k3_false_unknown_rate": 0.0,
+        "row_false_unknown_rate": 0.0,
+        "sessions": 7
+      },
+      "validation_only": {
+        "any_recall": 0.8888888888888888,
+        "k3_recall": 0.5555555555555556,
+        "row_recall": 0.33611111111111097,
+        "rows": 158,
+        "sessions": 18
+      }
+    },
+    {
+      "full_resolution": {
+        "any_recall": 1.0,
+        "k3_recall": 1.0,
+        "row_recall": 0.7227941176470588,
+        "rows": 306,
+        "sessions": 34
+      },
+      "gate_paths": {
+        "abnormal_vs_normal_rows": 0.0,
+        "binary_says_attack_rows": 0.9967320261437909,
+        "ood_rejected_rows": 0.7091503267973857,
+        "passed_gate_rows": 0.7091503267973857,
+        "vetoed_share_of_rejected": 0.0
+      },
+      "held_family": "control_lock",
+      "normal_reference": {
+        "k3_false_unknown_rate": 0.0,
+        "row_false_unknown_rate": 0.0,
+        "sessions": 11
+      },
+      "validation_only": {
+        "any_recall": 1.0,
+        "k3_recall": 1.0,
+        "row_recall": 0.7249999999999999,
+        "rows": 54,
+        "sessions": 6
+      }
+    },
+    {
+      "full_resolution": {
+        "any_recall": 1.0,
+        "k3_recall": 1.0,
+        "row_recall": 0.6176470588235294,
+        "rows": 136,
+        "sessions": 17
+      },
+      "gate_paths": {
+        "abnormal_vs_normal_rows": 0.3897058823529412,
+        "binary_says_attack_rows": 0.49264705882352944,
+        "ood_rejected_rows": 0.6985294117647058,
+        "passed_gate_rows": 0.6176470588235294,
+        "vetoed_share_of_rejected": 0.11578947368421053
+      },
+      "held_family": "network_block",
+      "normal_reference": {
+        "k3_false_unknown_rate": 0.0,
+        "row_false_unknown_rate": 0.020833333333333332,
+        "sessions": 12
+      },
+      "validation_only": {
+        "any_recall": 1.0,
+        "k3_recall": 1.0,
+        "row_recall": 0.6666666666666666,
+        "rows": 24,
+        "sessions": 3
+      }
+    },
+    {
+      "full_resolution": {
+        "any_recall": 1.0,
+        "k3_recall": 0.9411764705882353,
+        "row_recall": 0.5625000000000001,
+        "rows": 318,
+        "sessions": 34
+      },
+      "gate_paths": {
+        "abnormal_vs_normal_rows": 0.09119496855345911,
+        "binary_says_attack_rows": 0.8710691823899371,
+        "ood_rejected_rows": 0.6572327044025157,
+        "passed_gate_rows": 0.559748427672956,
+        "vetoed_share_of_rejected": 0.14832535885167464
+      },
+      "held_family": "participant_deny",
+      "normal_reference": {
+        "k3_false_unknown_rate": 0.0,
+        "row_false_unknown_rate": 0.045454545454545456,
+        "sessions": 11
+      },
+      "validation_only": {
+        "any_recall": 1.0,
+        "k3_recall": 1.0,
+        "row_recall": 0.5500000000000002,
+        "rows": 60,
+        "sessions": 6
+      }
+    }
+  ],
+  "full_resolution": {
+    "any_recall": {
+      "macro": 0.9843,
+      "per_family": {
+        "alert_only": 1.0,
+        "application_drop": 0.9216,
+        "control_lock": 1.0,
+        "network_block": 1.0,
+        "participant_deny": 1.0
+      },
+      "worst": 0.9216
+    },
+    "k3_recall": {
+      "macro": 0.8118,
+      "per_family": {
+        "alert_only": 0.5882,
+        "application_drop": 0.5294,
+        "control_lock": 1.0,
+        "network_block": 1.0,
+        "participant_deny": 0.9412
+      },
+      "worst": 0.5294
+    },
+    "row_recall": {
+      "macro": 0.5263,
+      "per_family": {
+        "alert_only": 0.375,
+        "application_drop": 0.3537,
+        "control_lock": 0.7228,
+        "network_block": 0.6176,
+        "participant_deny": 0.5625
+      },
+      "worst": 0.3537
+    },
+    "sessions_per_family": {
+      "alert_only": 17,
+      "application_drop": 102,
+      "control_lock": 34,
+      "network_block": 17,
+      "participant_deny": 34
+    }
+  },
+  "gate_paths": {
+    "alert_only": {
+      "abnormal_vs_normal_rows": 0.007352941176470588,
+      "binary_says_attack_rows": 1.0,
+      "ood_rejected_rows": 0.375,
+      "passed_gate_rows": 0.375,
+      "vetoed_share_of_rejected": 0.0
+    },
+    "application_drop": {
+      "abnormal_vs_normal_rows": 0.015730337078651686,
+      "binary_says_attack_rows": 0.895505617977528,
+      "ood_rejected_rows": 0.41123595505617977,
+      "passed_gate_rows": 0.3382022471910112,
+      "vetoed_share_of_rejected": 0.17759562841530055
+    },
+    "control_lock": {
+      "abnormal_vs_normal_rows": 0.0,
+      "binary_says_attack_rows": 0.9967320261437909,
+      "ood_rejected_rows": 0.7091503267973857,
+      "passed_gate_rows": 0.7091503267973857,
+      "vetoed_share_of_rejected": 0.0
+    },
+    "network_block": {
+      "abnormal_vs_normal_rows": 0.3897058823529412,
+      "binary_says_attack_rows": 0.49264705882352944,
+      "ood_rejected_rows": 0.6985294117647058,
+      "passed_gate_rows": 0.6176470588235294,
+      "vetoed_share_of_rejected": 0.11578947368421053
+    },
+    "participant_deny": {
+      "abnormal_vs_normal_rows": 0.09119496855345911,
+      "binary_says_attack_rows": 0.8710691823899371,
+      "ood_rejected_rows": 0.6572327044025157,
+      "passed_gate_rows": 0.559748427672956,
+      "vetoed_share_of_rejected": 0.14832535885167464
+    }
+  },
+  "metrics": "/home/jesse/models_hier_refresh_maha/permissive/training_metrics.json",
+  "normal_reference": {
+    "alert_only": {
+      "k3_false_unknown_rate": 0.0,
+      "row_false_unknown_rate": 0.0,
+      "sessions": 12
+    },
+    "application_drop": {
+      "k3_false_unknown_rate": 0.0,
+      "row_false_unknown_rate": 0.0,
+      "sessions": 7
+    },
+    "control_lock": {
+      "k3_false_unknown_rate": 0.0,
+      "row_false_unknown_rate": 0.0,
+      "sessions": 11
+    },
+    "network_block": {
+      "k3_false_unknown_rate": 0.0,
+      "row_false_unknown_rate": 0.020833333333333332,
+      "sessions": 12
+    },
+    "participant_deny": {
+      "k3_false_unknown_rate": 0.0,
+      "row_false_unknown_rate": 0.045454545454545456,
+      "sessions": 11
+    }
+  },
+  "schema_version": "sros2-firewall-unknown-full-resolution/v1",
+  "test_rows_used": 0,
+  "validation_only": {
+    "any_recall": {
+      "macro": 0.9778,
+      "per_family": {
+        "alert_only": 1.0,
+        "application_drop": 0.8889,
+        "control_lock": 1.0,
+        "network_block": 1.0,
+        "participant_deny": 1.0
+      },
+      "worst": 0.8889
+    },
+    "k3_recall": {
+      "macro": 0.7778,
+      "per_family": {
+        "alert_only": 0.3333,
+        "application_drop": 0.5556,
+        "control_lock": 1.0,
+        "network_block": 1.0,
+        "participant_deny": 1.0
+      },
+      "worst": 0.3333
+    },
+    "row_recall": {
+      "macro": 0.5306,
+      "per_family": {
+        "alert_only": 0.375,
+        "application_drop": 0.3361,
+        "control_lock": 0.725,
+        "network_block": 0.6667,
+        "participant_deny": 0.55
+      },
+      "worst": 0.3361
+    },
+    "sessions_per_family": {
+      "alert_only": 3,
+      "application_drop": 18,
+      "control_lock": 6,
+      "network_block": 3,
+      "participant_deny": 6
+    }
+  }
+}

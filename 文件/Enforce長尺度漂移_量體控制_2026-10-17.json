@@ -1,0 +1,109 @@
+{
+  "schema_version": "sros2-firewall-drift-volume-controlled/v1",
+  "prediction_commit": "808e905",
+  "holdout_reads": 0,
+  "note": "這個探針沒有預先註冊;它是 C-3 量到 36 倍量體落差之後必須做的那一步",
+  "volume_metric": "abs(log10(MB_i) - log10(MB_j))",
+  "changes_shipped_defaults": false,
+  "spearman": {
+    "volume_vs_distance": 0.6252,
+    "gap_vs_distance": 0.4205,
+    "gap_vs_volume": 0.4482
+  },
+  "volume_matched_strata": {
+    "≤0.1 dex（量體幾乎相同）": {
+      "same_era_n": 12057,
+      "same_era_median": 5.5191,
+      "cross_era_n": 1804,
+      "cross_era_median": 9.2003,
+      "ratio": 1.667
+    },
+    "0.1–0.3": {
+      "same_era_n": 7513,
+      "same_era_median": 6.8613,
+      "cross_era_n": 3166,
+      "cross_era_median": 12.4843,
+      "ratio": 1.8195
+    },
+    "0.3–0.6": {
+      "same_era_n": 5412,
+      "same_era_median": 9.4159,
+      "cross_era_n": 4486,
+      "cross_era_median": 13.9516,
+      "ratio": 1.4817
+    },
+    "0.6–1.0": {
+      "same_era_n": 4129,
+      "same_era_median": 13.4956,
+      "cross_era_n": 6132,
+      "cross_era_median": 14.5169,
+      "ratio": 1.0757
+    },
+    ">1.0 dex（≥10 倍）": {
+      "same_era_n": 703,
+      "same_era_median": 15.6788,
+      "cross_era_n": 16417,
+      "cross_era_median": 15.922,
+      "ratio": 1.0155
+    }
+  },
+  "within_E6_by_volume": {
+    "≤0.1 dex（量體幾乎相同）": {
+      "n": 10815,
+      "median": 5.4272
+    },
+    "0.1–0.3": {
+      "n": 5876,
+      "median": 6.5635
+    },
+    "0.3–0.6": {
+      "n": 4290,
+      "median": 9.0866
+    },
+    "0.6–1.0": {
+      "n": 3793,
+      "median": 13.4721
+    },
+    ">1.0 dex（≥10 倍）": {
+      "n": 415,
+      "median": 15.1413
+    }
+  },
+  "E4_E6_volume_matched": {
+    "≤0.1 dex（量體幾乎相同）": {
+      "cross_n": 780,
+      "cross_median": 10.4026,
+      "diag_n": 11873,
+      "diag_median": 5.5109,
+      "ratio": 1.8876
+    },
+    "0.1–0.3": {
+      "cross_n": 1610,
+      "cross_median": 15.2937,
+      "diag_n": 7220,
+      "diag_median": 6.7789,
+      "ratio": 2.2561
+    },
+    "0.3–0.6": {
+      "cross_n": 2568,
+      "cross_median": 14.8295,
+      "diag_n": 5249,
+      "diag_median": 9.4441,
+      "ratio": 1.5702
+    },
+    "0.6–1.0": {
+      "cross_n": 4394,
+      "cross_median": 14.6194,
+      "diag_n": 4087,
+      "diag_median": 13.5118,
+      "ratio": 1.082
+    },
+    ">1.0 dex（≥10 倍）": {
+      "cross_n": 10239,
+      "cross_median": 15.5669,
+      "diag_n": 633,
+      "diag_median": 15.6512,
+      "ratio": 0.9946
+    }
+  }
+}

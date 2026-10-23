@@ -1,0 +1,332 @@
+"""大型 campaign 監督器的靜態檢查。
+
+2026-09-20 這支腳本連續 19 輪、80 分鐘完全零產出，而日誌每輪只寫一句
+「stack 起不來」。三個缺陷疊在一起：
+
+1. `stack_up` 把 `live_stack.sh start` 的輸出整個 `>/dev/null`，所以真正的
+   原因（`RTPS_TRANSPORT_SHM Error: open_and_lock_file failed`，幾百行）
+   躺在另一個檔案裡沒有人看。
+2. `stack_down` 只靠 `live_stack.sh stop`，而它殺的是 **pid 檔記錄的行程
+   群組**。上一輪失敗、這一輪覆蓋 pid 檔之後，舊的孤兒結構上再也殺不到，
+   於是 36→42→48→54→60→66 一路長。
+3. 迴圈**沒有任何停止條件**。無人值守的批次必須會大聲失敗。
+
+這一支把三件事都釘住。與 `test_outcome_driver.py` 同一個理由：bash 的失敗
+是安靜的，而安靜的失敗在這個專案已經偽裝成「防禦沒反應」很多次。
+"""
+
+from __future__ import annotations
+
+import re
+import subprocess
+from pathlib import Path
+
+import pytest
+
+SUPERVISOR = (
+    Path(__file__).resolve().parents[1] / "工具腳本" / "run_mega_campaign.sh"
+)
+
+DEFINITION = re.compile(r"^([a-z_][a-z0-9_]*)\(\)\s*\{", re.M)
+REQUIRED = (
+    "stack_up",
+    "stack_down",
+    "clear_stale_lock",
+    "assert_no_other_campaign",
+    "clear_stale_dds_shm",
+    "count_stack_processes",
+    "quarantine_empty_sessions",
+    "session_count",
+)
+
+
+@pytest.fixture(scope="module")
+def source() -> str:
+    return SUPERVISOR.read_text(encoding="utf-8")
+
+
+def _code_only(text: str) -> str:
+    """把註解拿掉。
+
+    斷言要看的是程式碼,不是文件。第一版 `test_stack_up_reports_why_it_failed`
+    被它自己的根因說明咬到——那段註解裡就寫著 `>/dev/null`。與
+    `test_adaptive_attacker.py` 的 `_body()` 同一個坑,同一天踩第二次。
+    """
+    return "\n".join(
+        line for line in text.splitlines() if not line.lstrip().startswith("#")
+    )
+
+
+def test_the_script_parses(source: str) -> None:
+    """`bash -n`。語法錯誤會讓整夜的 campaign 一行都不跑。"""
+    result = subprocess.run(
+        ["bash", "-n", str(SUPERVISOR)], capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_every_called_helper_is_defined(source: str) -> None:
+    """未定義的函式在 bash 只回 127 然後**繼續跑**（C2C-047 記過）。"""
+    defined = set(DEFINITION.findall(source))
+    missing = [name for name in REQUIRED if name not in defined]
+    assert not missing, f"監督器少了這些函式：{missing}"
+    for name in sorted(defined):
+        assert f"{name} " in source or f"{name}(" in source
+
+
+def test_the_loop_stops_after_barren_batches(source: str) -> None:
+    """沒有停止條件的重試迴圈會安靜地空轉一整夜。"""
+    assert "MAX_BARREN_BATCHES" in source
+    assert "barren=$((barren + 1))" in source
+    assert "barren=0" in source, "成功之後必須把計數歸零，否則早晚會誤停"
+    assert source.count("exit 3") >= 2, (
+        "stack 起不來與『跑了但沒新增場次』是兩條不同的路徑，都要能停"
+    )
+
+
+def test_teardown_escalates_beyond_live_stack(source: str) -> None:
+    """`live_stack.sh stop` 殺不到被覆蓋 pid 檔的孤兒，必須有名字兜底。"""
+    assert "pkill" in source and "-KILL" in source and "-TERM" in source
+    term = source.index("-TERM")
+    kill = source.index("-KILL")
+    assert term < kill, "要先 TERM 再 KILL，不能直接硬殺"
+
+
+def test_the_kill_patterns_are_specific_enough(source: str) -> None:
+    """按名字殺是危險動作。通用字會誤殺使用者自己的行程。
+
+    `create`、`python`、`node`、`ros2` 這類名字必須不在清單裡——
+    `ros_gz_sim create` 要寫成 `ros_gz_sim`。
+    """
+    match = re.search(r"STACK_PATTERNS='([^']*)'", source, re.S)
+    assert match, "找不到 STACK_PATTERNS 宣告"
+    patterns = [p for p in match.group(1).replace("\n", "").split("|") if p]
+    assert len(patterns) >= 8
+    banned = {"create", "python", "python3", "node", "ros2", "bash", "sh",
+              "launch", "container", "bridge"}
+    for pattern in patterns:
+        assert pattern.strip() not in banned, (
+            f"{pattern!r} 太通用，會誤殺不相關的行程")
+        assert len(pattern.strip()) >= 6, f"{pattern!r} 太短"
+    # 而且必須用同一份清單去數與去殺，否則「還剩幾個」與「殺了誰」會分岔。
+    assert source.count('"$STACK_PATTERNS"') >= 3
+
+
+def test_shm_cleanup_never_runs_while_the_stack_is_alive(source: str) -> None:
+    """清掉正在用的 Fast DDS 段 = 把一個還能救的 stack 弄死。"""
+    start = source.index("clear_stale_dds_shm()")
+    body = source[start:source.index("\n}", start)]
+    guard = body.index("count_stack_processes")
+    removal = body.index("rm -f /dev/shm/fastrtps_")
+    assert guard < removal, "必須先確認沒有 stack 行程才准刪"
+    assert "-ne 0 ]; then return 0" in body
+
+
+def test_stack_up_reports_why_it_failed(source: str) -> None:
+    """原本整個 `>/dev/null`，所以日誌永遠只寫『起不來』。"""
+    start = source.index("stack_up()")
+    body = _code_only(source[start:source.index("\n}", start)])
+    # ⚠️ 不要只搜 `>/dev/null`——`2>/dev/null` 含有同一個子字串,那是合法的
+    # （讀不到日誌檔不該讓收尾爆掉）。要判的是**啟動指令本身**有沒有被丟掉。
+    launch = next(line for line in body.splitlines()
+                  if "live_stack.sh start" in line)
+    assert "/dev/null" not in launch, f"啟動輸出被丟掉了：{launch.strip()}"
+    assert '> "$out"' in launch, "啟動輸出要留檔，失敗時才報得出原因"
+    assert "sros2_live_runtime" in body, "失敗時要把 stack 日誌的尾巴印出來"
+    assert "fastrtps" in body, "SHM 段數是這次的根因，要一起報"
+
+
+def test_empty_sessions_are_moved_not_deleted(source: str) -> None:
+    """raw 證據不刪，這是專案的規矩。"""
+    start = source.index("quarantine_empty_sessions()")
+    body = source[start:source.index("\n}", start)]
+    assert "mv " in body
+    assert "rm -rf" not in body and "rm -r " not in body
+
+
+def test_a_second_campaign_is_refused_even_without_the_lock(source: str) -> None:
+    """鎖只防得住遵守它的人。
+
+    2026-09-20：我自己在重啟腳本裡 `rm -f` 掉 `<plan>.lock`，註解寫著
+    「前面已確認沒有 campaign 行程」——而那一步只查了監督器的名字，沒查
+    `firewall_lab.campaign`。舊監督器的孤兒 campaign 還活著，新的又起一個，
+    同一秒有**兩場 session 都是 status=running**，兩邊各自把記憶體裡的計畫
+    寫回同一個檔案。
+
+    所以除了鎖之外，還要直接數行程。
+    """
+    assert "assert_no_other_campaign" in source
+    start = source.index("assert_no_other_campaign()")
+    body = _code_only(source[start:source.index("\n}", start)])
+    assert "firewall_lab.campaign run" in body, "要數的是 campaign 行程本身"
+    assert "return 1" in body, "偵測到就要讓這一批不要開始"
+    # 而且必須真的被呼叫，不能只是定義了放著（C2C-038 記過：helper 沒被 import）。
+    loop = source[source.index("while :; do"):]
+    assert "assert_no_other_campaign" in loop
+    assert loop.index("assert_no_other_campaign") < loop.index(
+        "firewall_lab.campaign run"), "檢查必須在啟動 campaign 之前"
+
+
+def test_batch_telemetry_is_wired_after_stack_down(source: str) -> None:
+    """每批之後要 sync 並記下系統狀態,而且必須真的在迴圈裡。
+
+    2026-10-08 量到「場次越跑越慢」:同一個 pcap 量體下 import 從 0.77s 變成
+    4.38s(5.7 倍),而 stack 與 campaign 的 python 本來就每批起停 ⇒ 累積的
+    不在它們裡面。這組遙測是為了讓下一次爬升可以被歸因 —— 而這個專案記過
+    太多次「寫好、有測試、然後沒有人接上去」(stream_replay.py 一個月、
+    --scope 加了沒傳給 create_seal、expected_scope 的變異第一次沒咬住)。
+
+    所以這一條釘的是**位置**:遙測必須出現在 stack_down 之後、
+    quarantine_empty_sessions 之前,也就是真的在每批的路徑上。
+    """
+    code = _code_only(source)
+    assert "batch_telemetry" in code, "遙測不在腳本裡"
+    # ⚠️ 翻面:原本斷言「要有 sync」。2026-10-08 稍晚量到 readiness 逾時當下
+    #    /proc/pressure/io 的 some avg10 是 0.00 ⇒ writeback 假設錯了,
+    #    sync 不解決任何問題。這一條現在守的是「不要再加回去」。
+    assert not re.search(r"^\s*sync\s*$", code, re.M), (
+        "sync 已於 2026-10-08 移除:I/O 壓力實測為 0,它只是多一次突波"
+    )
+
+    # 用 4 空格縮排定位：腳本裡有三個 stack_down "$mode"，另外兩個在失敗
+    # 路徑（6 空格縮排，或與 if 寫在同一行）。第一版用 index 抓到的是前者，
+    # 於是斷言比的是兩個不相干的位置——測試正確地咬住了那個錯誤。
+    i_down = code.index('\n    stack_down "$mode"\n')
+    i_tel = code.index("batch_telemetry")
+    # ⚠️ 同樣要定位到**呼叫**而不是函式定義——第一版抓到的是第 116 行的
+    #    quarantine_empty_sessions() 定義,於是 i_quar 比迴圈裡的一切都早,
+    #    而 chained assert 只顯示失敗的那一對,讓我誤以為是 i_down < i_sync。
+    i_quar = code.index('\n    quarantine_empty_sessions\n')
+    assert i_down < i_tel < i_quar, (
+        "順序不對:遙測必須夾在 stack_down 與 quarantine 之間"
+    )
+
+
+def test_batch_telemetry_reads_the_fields_the_diagnosis_needs(source: str) -> None:
+    """遙測要讀的是 writeback 那條線索,不是隨便幾個數字。
+
+    campaign 一停 import 就回到 0.27s,而 /dev/shm 的 117 段與兩萬個 log
+    目錄都還在 ⇒ 累積的是執行時的東西,writeback 壓力是目前最合理的候選
+    (每場寫 100-300 MB 的 pcap)。這幾個欄位就是為了證實或推翻它。
+    """
+    code = _code_only(source)
+    for field in ("Dirty:", "Writeback:", "MemAvailable:", "loadavg", "shm_fastrtps"):
+        assert field in code, f"遙測少了 {field}"
+
+
+def test_the_supervisor_still_does_not_restart_itself_preventively(source: str) -> None:
+    """刻意**沒有**預防性重啟 —— 不知道要重啟什麼之前,那是沒有根據的行為變更。
+
+    2026-10-08 一度打算加它,然後發現 stack 與 campaign 的 python 本來就
+    每批起停,唯一長駐的是監督器自己的 bash 迴圈,而 bash 不會讓
+    import rclpy 從 0.52s 變成 4.36s。這一條守住那個克制:
+    若日後要加,應該先有歸因,而這個測試會逼人把它拿掉並說明理由。
+    """
+    code = _code_only(source)
+    assert "MAX_BATCHES_BEFORE_RESTART" not in code
+    assert "preventive_restart" not in code
+
+
+def test_shm_cleanup_also_removes_the_lock_not_just_the_port_file(source: str) -> None:
+    """清除必須涵蓋 sem.fastrtps_portNNNN_mutex —— 那個「鎖」就是它。
+
+    2026-10-08 的根因:clear_stale_dds_shm 原本只配 `^fastrtps` 與
+    `fastrtps_*`,而 Fast DDS 的 port **鎖**叫 sem.fastrtps_portNNNN_mutex,
+    前綴是 `sem.`。於是 port 檔清了、鎖留著 —— 而這支函式自己的註解就寫著
+    「鎖可能留著 …… 而症狀是 readiness 失敗」。
+
+    實測殘留 82 個,最舊 01:19、最新 19:40(18 小時持續累積),port 範圍
+    14949-15117 正好是 domain 30 的 SPDP 埠(7400 + 250*30)。連計數也低報:
+    日誌寫「清掉 2 個」而實際留著 90 個。
+
+    變異:把 rm 改回只有 fastrtps_*,或把 grep 改回 '^fastrtps',這一條要咬。
+    """
+    code = _code_only(source)
+    assert "sem.fastrtps_*" in code, "rm 沒有涵蓋鎖"
+    assert "(sem" in code and "fastrtps" in code, "計數沒有涵蓋鎖"
+    # 計數與刪除必須一致:只刪不數會讓日誌繼續低報
+    i_count = code.index("grep -cE")
+    i_rm = code.index("rm -f /dev/shm/")
+    assert i_count < i_rm, "計數要在刪除之前,否則數到的是刪完的結果"
+
+# ---------------------------------------------------------------------------
+# 2026-10-09：兜底清除漏掉整個攻擊端
+#
+# `STACK_PATTERNS` 原本的 16 項全是防守端，所以 `count_stack_processes` 數不到
+# `unauthorized_participant` 的 runner（`ros2 run demo_nodes_cpp talker`，
+# runners.py:247）。實測五場 UA 留下 **32 個** talker 孤兒（pgid 五組
+# 7/6/8/7/4），而監督器每輪都回報「殘留 0」。
+#
+# 代價是量到的：孤兒累積讓場次內部中位從 126s 變成 337s（2.7 倍），步調熔斷器
+# 在約 3.5 小時後自停。機制是 C2C-082 自己預先寫下的 fork 收尾風險——父行程
+# `os._exit(0)` 之後 `ManagedProcess.stop()` 的 SIGTERM 送不到攻擊子行程。
+# ---------------------------------------------------------------------------
+
+RUNNERS = Path(__file__).resolve().parents[1] / "firewall_lab" / "runners.py"
+
+# `ros2 run <pkg> <exe>`，寫成 python list 的樣子
+ROS2_RUN = re.compile(
+    r'"run"\s*,\s*"(?P<pkg>[A-Za-z0-9_]+)"\s*,\s*"(?P<exe>[A-Za-z0-9_]+)"'
+)
+
+SWEEP = re.compile(r"STACK_PATTERNS='([^']+)'", re.S)
+
+
+def _sweep_patterns(source: str) -> list[str]:
+    match = SWEEP.search(source)
+    assert match, "找不到 STACK_PATTERNS"
+    return [p for p in re.split(r"[|\n]", match.group(1)) if p.strip()]
+
+
+def test_the_sweep_covers_every_external_process_the_attack_runners_spawn(
+    source: str,
+) -> None:
+    """每一個 `ros2 run` 起來的外部行程都必須在兜底清除裡。
+
+    這一條刻意**從 runners.py 推導**而不是寫死清單：新增一個會起外部行程的
+    runner 而忘記更新 `STACK_PATTERNS`，就會在這裡被咬住。那正是 2026-10-09
+    那次漏掉的形態——清單是手寫的，而它只涵蓋了作者當時想到的那一半。
+    """
+    patterns = _sweep_patterns(source)
+    spawned = {
+        (m.group("pkg"), m.group("exe"))
+        for m in ROS2_RUN.finditer(RUNNERS.read_text(encoding="utf-8"))
+    }
+    assert spawned, "runners.py 裡找不到任何 `ros2 run`——regex 可能過期了"
+    missing = [
+        f"{pkg}/{exe}"
+        for pkg, exe in sorted(spawned)
+        if not any(exe in pattern for pattern in patterns)
+    ]
+    assert not missing, (
+        f"這些攻擊端行程不在 STACK_PATTERNS 裡，監督器數不到也殺不掉：{missing}"
+    )
+
+
+def test_the_2026_10_09_orphan_leak_stays_fixed(source: str) -> None:
+    """用**字面值**記錄那次缺陷，不讀任何可被修正改變的常數。
+
+    C2C-081 記過：一個記錄過去缺陷的回歸測試，不可以讀一個修正被允許改變的
+    值，否則修好缺陷就會刪掉它自己的紀錄。
+    """
+    # ⚠️ 讀**解析後的清單**不是整個 source：第一版讀 source，而這個修正自己
+    # 的註解裡就寫著 `demo_nodes_cpp/talker`，所以把 pattern 移掉之後它照樣
+    # 通過。變異檢定抓到的——三個新測試裡只有兩個咬住。
+    patterns = _sweep_patterns(source)
+    assert "demo_nodes_cpp/talker" in patterns, (
+        "2026-10-09 量到五場 unauthorized_participant 留下 32 個 talker 孤兒；"
+        "兜底清除必須涵蓋它"
+    )
+
+
+def test_the_sweep_patterns_stay_specific(source: str) -> None:
+    """不可以用裸 `talker`——腳本自己的註解就寫了為什麼。
+
+    `STACK_PATTERNS` 餵給 `pkill -f`，而裸 `talker` 會配到使用者任何含那個字
+    的指令。寧可漏殺也不要誤殺，所以用完整的 `demo_nodes_cpp/talker`。
+    """
+    patterns = _sweep_patterns(source)
+    assert "talker" not in patterns, (
+        "裸 `talker` 太通用，會誤殺使用者自己的行程；要用 demo_nodes_cpp/talker"
+    )
+    assert "demo_nodes_cpp/talker" in patterns

@@ -1,0 +1,521 @@
+{
+  "schema_version": "sros2-firewall-drift-config-or-time/v1",
+  "prediction_file": "文件/預測_Enforce的長尺度漂移是設定還是時間_2026-10-17.md",
+  "prediction_commit": "808e905",
+  "holdout_reads": 0,
+  "temporal": "none",
+  "standardisation": "whole-table mu/sd",
+  "restart_proxy": {
+    "rule": "consecutive session start gap > 1800s",
+    "boundaries": 9,
+    "is_proxy_not_observation": true
+  },
+  "eras": [
+    {
+      "name": "E1 無抖動",
+      "start_utc": null,
+      "end_utc": 1789891200.0
+    },
+    {
+      "name": "E2 抖動/固定逾時",
+      "start_utc": 1789891200.0,
+      "end_utc": 1790452800.0
+    },
+    {
+      "name": "E3 量體逾時",
+      "start_utc": 1790452800.0,
+      "end_utc": 1790933520.0
+    },
+    {
+      "name": "E4 readiness+開關",
+      "start_utc": 1790933520.0,
+      "end_utc": 1791417600.0
+    },
+    {
+      "name": "E5 wslconfig+reaper",
+      "start_utc": 1791417600.0,
+      "end_utc": 1791545160.0
+    },
+    {
+      "name": "E6 watcher 連續",
+      "start_utc": 1791545160.0,
+      "end_utc": null
+    }
+  ],
+  "changes_shipped_defaults": false,
+  "C1_buckets": {
+    "< 300s": {
+      "n": 191,
+      "median": 4.0961,
+      "c2c124": 4.0961,
+      "match": true
+    },
+    "< 1800s": {
+      "n": 1015,
+      "median": 5.1761,
+      "c2c124": 5.1761,
+      "match": true
+    },
+    "< 7200s": {
+      "n": 3182,
+      "median": 6.7521,
+      "c2c124": 6.7521,
+      "match": true
+    },
+    "< 24h": {
+      "n": 26367,
+      "median": 7.7844,
+      "c2c124": 7.7844,
+      "match": true
+    },
+    "< 3 天": {
+      "n": 12693,
+      "median": 16.4494,
+      "c2c124": 16.4494,
+      "match": true
+    },
+    "< 10 天": {
+      "n": 22696,
+      "median": 14.4973,
+      "c2c124": 14.4973,
+      "match": true
+    },
+    ">= 10 天": {
+      "n": 21612,
+      "median": 17.0012,
+      "c2c124": 17.0012,
+      "match": true
+    }
+  },
+  "C1_reproduced": true,
+  "D1_revision_at_fixed_gap": {
+    "enforce": {
+      "same_rev_n": 3757,
+      "same_rev_median": 5.8797,
+      "cross_rev_n": 602,
+      "cross_rev_median": 8.9228,
+      "ratio": 1.5176,
+      "testable": true,
+      "verdict": "成立（設定會膨脹）"
+    },
+    "permissive": {
+      "same_rev_n": 2508,
+      "same_rev_median": 6.1309,
+      "cross_rev_n": 385,
+      "cross_rev_median": 7.1935,
+      "ratio": 1.1733,
+      "testable": true,
+      "verdict": "成立（設定會膨脹）"
+    }
+  },
+  "D2_restart_at_fixed_gap": {
+    "enforce": {
+      "no_restart_n": 28854,
+      "no_restart_median": 7.2818,
+      "crosses_restart_n": 1901,
+      "crosses_restart_median": 14.6709,
+      "ratio": 2.0147,
+      "testable": true,
+      "verdict": "成立（重啟會膨脹）"
+    },
+    "permissive": {
+      "no_restart_n": 13705,
+      "no_restart_median": 10.3718,
+      "crosses_restart_n": 1216,
+      "crosses_restart_median": 9.0328,
+      "ratio": 0.8709,
+      "testable": true,
+      "verdict": "否證（重啟不膨脹）"
+    }
+  },
+  "D3_era_matrix": {
+    "enforce": {
+      "matrix": {
+        "E1-E1": {
+          "n": 564,
+          "median": 18.1035
+        },
+        "E1-E2": {
+          "n": 817,
+          "median": 15.4863
+        },
+        "E1-E3": {
+          "n": 332,
+          "median": 15.6275
+        },
+        "E1-E4": {
+          "n": 2945,
+          "median": 16.5377
+        },
+        "E1-E5": {
+          "n": 1344,
+          "median": 15.9136
+        },
+        "E1-E6": {
+          "n": 7399,
+          "median": 20.5421
+        },
+        "E2-E1": {
+          "n": 817,
+          "median": 15.4863
+        },
+        "E2-E2": {
+          "n": 384,
+          "median": 9.9271
+        },
+        "E2-E3": {
+          "n": 136,
+          "median": 9.2525
+        },
+        "E2-E4": {
+          "n": 2207,
+          "median": 11.0157
+        },
+        "E2-E5": {
+          "n": 969,
+          "median": 10.6259
+        },
+        "E2-E6": {
+          "n": 5150,
+          "median": 17.4212
+        },
+        "E3-E1": {
+          "n": 332,
+          "median": 15.6275
+        },
+        "E3-E2": {
+          "n": 136,
+          "median": 9.2525
+        },
+        "E3-E3": {
+          "n": 82,
+          "median": 7.068
+        },
+        "E3-E4": {
+          "n": 866,
+          "median": 8.8477
+        },
+        "E3-E5": {
+          "n": 412,
+          "median": 8.2872
+        },
+        "E3-E6": {
+          "n": 2330,
+          "median": 16.2832
+        },
+        "E4-E1": {
+          "n": 2945,
+          "median": 16.5377
+        },
+        "E4-E2": {
+          "n": 2207,
+          "median": 11.0157
+        },
+        "E4-E3": {
+          "n": 866,
+          "median": 8.8477
+        },
+        "E4-E4": {
+          "n": 3873,
+          "median": 9.1293
+        },
+        "E4-E5": {
+          "n": 3507,
+          "median": 9.7105
+        },
+        "E4-E6": {
+          "n": 19591,
+          "median": 15.2434
+        },
+        "E5-E1": {
+          "n": 1344,
+          "median": 15.9136
+        },
+        "E5-E2": {
+          "n": 969,
+          "median": 10.6259
+        },
+        "E5-E3": {
+          "n": 412,
+          "median": 8.2872
+        },
+        "E5-E4": {
+          "n": 3507,
+          "median": 9.7105
+        },
+        "E5-E5": {
+          "n": 752,
+          "median": 8.9146
+        },
+        "E5-E6": {
+          "n": 8907,
+          "median": 16.1835
+        },
+        "E6-E1": {
+          "n": 7399,
+          "median": 20.5421
+        },
+        "E6-E2": {
+          "n": 5150,
+          "median": 17.4212
+        },
+        "E6-E3": {
+          "n": 2330,
+          "median": 16.2832
+        },
+        "E6-E4": {
+          "n": 19591,
+          "median": 15.2434
+        },
+        "E6-E5": {
+          "n": 8907,
+          "median": 16.1835
+        },
+        "E6-E6": {
+          "n": 25189,
+          "median": 7.0742
+        }
+      },
+      "diagonal": {
+        "E1": 18.1035,
+        "E2": 9.9271,
+        "E3": 7.068,
+        "E4": 9.1293,
+        "E5": 8.9146,
+        "E6": 7.0742
+      },
+      "inflation_vs_own_diagonal": {
+        "E1": 0.879,
+        "E2": 1.1097,
+        "E3": 1.3091,
+        "E4": 1.2066,
+        "E5": 1.192,
+        "E6": 2.3018
+      }
+    },
+    "permissive": {
+      "matrix": {
+        "E1-E1": {
+          "n": 57,
+          "median": 13.0401
+        },
+        "E1-E2": {
+          "n": 1054,
+          "median": 11.3548
+        },
+        "E1-E3": {
+          "n": 1149,
+          "median": 13.0841
+        },
+        "E1-E4": {
+          "n": 1443,
+          "median": 11.0307
+        },
+        "E2-E1": {
+          "n": 1054,
+          "median": 11.3548
+        },
+        "E2-E2": {
+          "n": 4859,
+          "median": 8.5445
+        },
+        "E2-E3": {
+          "n": 11252,
+          "median": 12.0029
+        },
+        "E2-E4": {
+          "n": 13995,
+          "median": 9.7321
+        },
+        "E3-E1": {
+          "n": 1149,
+          "median": 13.0841
+        },
+        "E3-E2": {
+          "n": 11252,
+          "median": 12.0029
+        },
+        "E3-E3": {
+          "n": 6938,
+          "median": 13.6165
+        },
+        "E3-E4": {
+          "n": 16849,
+          "median": 11.6545
+        },
+        "E4-E1": {
+          "n": 1443,
+          "median": 11.0307
+        },
+        "E4-E2": {
+          "n": 13995,
+          "median": 9.7321
+        },
+        "E4-E3": {
+          "n": 16849,
+          "median": 11.6545
+        },
+        "E4-E4": {
+          "n": 10232,
+          "median": 9.2361
+        }
+      },
+      "diagonal": {
+        "E1": 13.0401,
+        "E2": 8.5445,
+        "E3": 13.6165,
+        "E4": 9.2361,
+        "E5": null,
+        "E6": null
+      },
+      "inflation_vs_own_diagonal": {
+        "E1": 0.8708,
+        "E2": 1.3289,
+        "E3": 0.8815,
+        "E4": 1.1943
+      }
+    }
+  },
+  "D3_longest_bucket_composition": {
+    "enforce": {
+      "total": 21612,
+      "involving_E1": 11688,
+      "share_E1": 0.5408,
+      "top": [
+        {
+          "pair": "E1+E6",
+          "n": 7399,
+          "share": 0.3424
+        },
+        {
+          "pair": "E2+E6",
+          "n": 5150,
+          "share": 0.2383
+        },
+        {
+          "pair": "E1+E4",
+          "n": 2945,
+          "share": 0.1363
+        },
+        {
+          "pair": "E3+E6",
+          "n": 2330,
+          "share": 0.1078
+        },
+        {
+          "pair": "E1+E5",
+          "n": 1344,
+          "share": 0.0622
+        }
+      ]
+    },
+    "permissive": {
+      "total": 11845,
+      "involving_E1": 1443,
+      "share_E1": 0.1218,
+      "top": [
+        {
+          "pair": "E2+E4",
+          "n": 7202,
+          "share": 0.608
+        },
+        {
+          "pair": "E3+E4",
+          "n": 3200,
+          "share": 0.2702
+        },
+        {
+          "pair": "E1+E4",
+          "n": 1443,
+          "share": 0.1218
+        }
+      ]
+    }
+  },
+  "D4_late_eras": {
+    "enforce": {
+      "E5_diag": 8.9146,
+      "E6_diag": 7.0742,
+      "E5_E6": 16.1835,
+      "pooled_diag": 7.1372,
+      "ratio": 2.2675,
+      "n_E5_E6": 8907,
+      "verdict": "否證（晚期也在漂）"
+    },
+    "permissive": {
+      "E5_diag": null,
+      "E6_diag": null,
+      "E5_E6": null,
+      "pooled_diag": null,
+      "ratio": null,
+      "n_E5_E6": 0,
+      "verdict": "不可檢定"
+    }
+  },
+  "C3_volume_by_era": {
+    "enforce": {},
+    "permissive": {}
+  },
+  "C4_class_coverage_by_era": {
+    "enforce": {
+      "total_classes": 20,
+      "by_era": {
+        "E1": {
+          "classes": 19,
+          "sessions": 123,
+          "min_per_class": 1
+        },
+        "E2": {
+          "classes": 14,
+          "sessions": 71,
+          "min_per_class": 1
+        },
+        "E3": {
+          "classes": 18,
+          "sessions": 55,
+          "min_per_class": 1
+        },
+        "E4": {
+          "classes": 20,
+          "sessions": 336,
+          "min_per_class": 8
+        },
+        "E5": {
+          "classes": 20,
+          "sessions": 160,
+          "min_per_class": 3
+        },
+        "E6": {
+          "classes": 20,
+          "sessions": 910,
+          "min_per_class": 26
+        }
+      }
+    },
+    "permissive": {
+      "total_classes": 18,
+      "by_era": {
+        "E1": {
+          "classes": 13,
+          "sessions": 35,
+          "min_per_class": 1
+        },
+        "E2": {
+          "classes": 18,
+          "sessions": 331,
+          "min_per_class": 10
+        },
+        "E3": {
+          "classes": 18,
+          "sessions": 465,
+          "min_per_class": 17
+        },
+        "E4": {
+          "classes": 18,
+          "sessions": 533,
+          "min_per_class": 18
+        }
+      }
+    }
+  }
+}

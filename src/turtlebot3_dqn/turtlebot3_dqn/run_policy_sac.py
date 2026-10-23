@@ -32,6 +32,10 @@ import rclpy
 from stable_baselines3 import SAC
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from turtlebot3_dqn.atomic_io import (
+    ArtifactIntegrityError,
+    open_verified_snapshot,
+)
 from turtlebot3_dqn.burger_env import BurgerEnv
 
 
@@ -51,42 +55,43 @@ def find_model() -> Path | None:
     return None
 
 
-def verify_model_integrity(model_path: Path) -> bool:
-    """攻擊 M 修補：載入前驗 HMAC 簽章。"""
+def _open_model_snapshot(model_path: Path):
+    """攻擊 M 修補：回傳通過 HMAC 的固定模型快照 context manager。"""
     try:
-        from dds_security_monitor.monitor_node import verify_file, _load_alert_secret
-    except ImportError:
-        print("⚠️  dds_security_monitor 未安裝，跳過完整性驗證")
-        return True
-    secret = _load_alert_secret(strict=False)
-    if not secret:
-        print("⚠️  alert_secret 未設定，跳過完整性驗證")
-        return True
+        from dds_security_monitor.monitor_node import _load_alert_secret
+    except ImportError as exc:
+        raise ArtifactIntegrityError(
+            f"dds_security_monitor 未安裝，拒絕載入模型：{exc}"
+        ) from exc
+    try:
+        secret = _load_alert_secret()
+    except Exception as exc:
+        raise ArtifactIntegrityError(
+            f"無法載入 HMAC key，拒絕載入模型：{exc}"
+        ) from exc
     zip_path = model_path.with_suffix(".zip")
-    sig_path = zip_path.with_suffix(".zip.sha256.hmac")
-    if not sig_path.exists():
-        print(f"⚠️  {sig_path.name} 不存在（model 未簽章），允許 load 但不安全")
-        return True
-    if verify_file(zip_path, secret):
-        print(f"✅ Model 完整性驗章通過: {zip_path.name}")
-        return True
-    print(f"❌ Model HMAC 驗章失敗！可能被竄改，拒絕 load: {zip_path}")
-    return False
+    return open_verified_snapshot(
+        zip_path,
+        secret=secret,
+        label="SAC model",
+    )
 
 
 def run_eval(n_episodes: int, seed: int) -> dict:
     """跑 N episodes，固定 seed，回報統計。Reviewer A4 修補：deterministic eval。"""
-    rclpy.init()
-    raw_env = BurgerEnv()
-
     model_path = find_model()
     if not model_path:
         print("❌ 找不到模型（models_sac/sac_burger_best.zip 或 latest.zip）")
         return {}
-    if not verify_model_integrity(model_path):
+    try:
+        with _open_model_snapshot(model_path) as model_snapshot:
+            rclpy.init()
+            raw_env = BurgerEnv()
+            model = SAC.load(model_snapshot, env=raw_env)
+    except (ArtifactIntegrityError, OSError, RuntimeError) as exc:
+        print(f"❌ {exc}")
         sys.exit(2)
-
-    model = SAC.load(str(model_path), env=raw_env)
+    print(f"✅ Model 驗章並從固定快照載入: {model_path.name}.zip")
     print(f"\n載入模型: {model_path.name}")
     print(f"裝置: {model.device}")
     print(f"評估 {n_episodes} episodes（seed={seed}, deterministic policy）\n")
@@ -150,17 +155,19 @@ def run_eval(n_episodes: int, seed: int) -> dict:
 
 def run_deploy():
     """部署模式：載入 model 並無限循環 — 用於展示。"""
-    rclpy.init()
-    raw_env = BurgerEnv()
-
     model_path = find_model()
     if not model_path:
         print("❌ 找不到模型")
         return
-    if not verify_model_integrity(model_path):
+    try:
+        with _open_model_snapshot(model_path) as model_snapshot:
+            rclpy.init()
+            raw_env = BurgerEnv()
+            model = SAC.load(model_snapshot, env=raw_env)
+    except (ArtifactIntegrityError, OSError, RuntimeError) as exc:
+        print(f"❌ {exc}")
         sys.exit(2)
-
-    model = SAC.load(str(model_path), env=raw_env)
+    print(f"✅ Model 驗章並從固定快照載入: {model_path.name}.zip")
     print(f"\n載入模型: {model_path.name}  (部署模式 / Ctrl+C 結束)\n")
 
     ep = 0

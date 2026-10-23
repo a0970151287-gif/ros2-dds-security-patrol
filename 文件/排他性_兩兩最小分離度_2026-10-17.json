@@ -1,0 +1,1833 @@
+{
+  "schema_version": "sros2-firewall-pairwise-exclusivity/v2",
+  "supersedes": "v1 (controls were computed on 4-dp values, which manufactured ties and moved ranks)",
+  "prediction_file": "文件/預測_排他性的正確量法_兩兩最小分離度_2026-10-17.md",
+  "X_new": "min over other attack classes of (max over columns of |AUC-0.5|)",
+  "X_old": "max over columns of |AUC-0.5| vs normal (C2C-122)",
+  "Y": "per-class recall on the sealed holdout, quoted from published artifact",
+  "spearman_note": "all correlations at full precision; the *_full fields allow bit-for-bit recomputation",
+  "holdout_reads": 0,
+  "null_repeats": 5,
+  "null_seed": 20261017,
+  "changes_shipped_defaults": false,
+  "modes": {
+    "permissive": {
+      "attack_classes": 17,
+      "pairs": 136,
+      "rho_X_new": 0.4001,
+      "rho_X_new_verdict": "不顯著",
+      "rho_X_old": 0.3344,
+      "rho_X_old_verdict": "不顯著",
+      "rho_min_combined": 0.4001,
+      "rho_min_combined_verdict": "不顯著",
+      "rho_min_gain_over_X_new": 0.0,
+      "critical_p05": 0.49,
+      "critical_p01": 0.645,
+      "X_new_range": [
+        0.1474,
+        0.2576
+      ],
+      "X_new_spread": 0.1101,
+      "X_old_spread": 0.0039,
+      "pair_real_median": 0.2448,
+      "pair_null_median": 0.1091,
+      "pair_real_minus_null": 0.1357,
+      "C1_combination_differs_for": [],
+      "C1_without_those": null,
+      "C2_distinct_X_new_values": 11,
+      "C2_mutual_nearest_classes": 10,
+      "C2_within_tie_Y_variance_share_pct": 50.7,
+      "C2_rho_ceiling_group_means": 0.7037,
+      "C3_argmin_share_of_errors": [
+        {
+          "label": "scan_drift",
+          "argmin": "odom_spoof",
+          "as_argmin": 1,
+          "errors": 10,
+          "share_of_errors": 0.1
+        },
+        {
+          "label": "odom_spoof",
+          "argmin": "scan_drift",
+          "as_argmin": 4,
+          "errors": 7,
+          "share_of_errors": 0.5714
+        },
+        {
+          "label": "sensor_spoof",
+          "argmin": "mission_spoof",
+          "as_argmin": 1,
+          "errors": 5,
+          "share_of_errors": 0.2
+        },
+        {
+          "label": "mission_spoof",
+          "argmin": "sensor_spoof",
+          "as_argmin": 2,
+          "errors": 8,
+          "share_of_errors": 0.25
+        },
+        {
+          "label": "discovery_recon",
+          "argmin": "spdp_flood",
+          "as_argmin": 0,
+          "errors": 7,
+          "share_of_errors": 0.0
+        }
+      ],
+      "C3_median_share": 0.2,
+      "C3_chance": 0.0588,
+      "C3_times_chance": 3.4,
+      "per_class": [
+        {
+          "label": "scan_drift",
+          "X_new": 0.1474,
+          "X_new_full": "0.1474358974358974",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "odom_spoof",
+          "mutual_nearest": true,
+          "holdout_recall": 0.1667,
+          "holdout_sessions": 12,
+          "cv_sessions": 65
+        },
+        {
+          "label": "odom_spoof",
+          "X_new": 0.1474,
+          "X_new_full": "0.14743589743589747",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "scan_drift",
+          "mutual_nearest": true,
+          "holdout_recall": 0.4167,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "sensor_spoof",
+          "X_new": 0.1706,
+          "X_new_full": "0.1706293706293706",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "mission_spoof",
+          "mutual_nearest": true,
+          "holdout_recall": 0.5455,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "mission_spoof",
+          "X_new": 0.1706,
+          "X_new_full": "0.17062937062937067",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "sensor_spoof",
+          "mutual_nearest": true,
+          "holdout_recall": 0.3333,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "discovery_recon",
+          "X_new": 0.1745,
+          "X_new_full": "0.17454751131221719",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "spdp_flood",
+          "mutual_nearest": true,
+          "holdout_recall": 0.4167,
+          "holdout_sessions": 12,
+          "cv_sessions": 65
+        },
+        {
+          "label": "spdp_flood",
+          "X_new": 0.1745,
+          "X_new_full": "0.17454751131221724",
+          "X_old": 0.4961,
+          "X_old_full": "0.49606299212598426",
+          "argmin_opponent": "discovery_recon",
+          "mutual_nearest": true,
+          "holdout_recall": 0.25,
+          "holdout_sessions": 12,
+          "cv_sessions": 68
+        },
+        {
+          "label": "verify_flood",
+          "X_new": 0.1769,
+          "X_new_full": "0.1769230769230769",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "cross_channel_relay",
+          "mutual_nearest": false,
+          "holdout_recall": 0.2727,
+          "holdout_sessions": 11,
+          "cv_sessions": 62
+        },
+        {
+          "label": "cross_channel_relay",
+          "X_new": 0.1769,
+          "X_new_full": "0.17692307692307696",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "sensor_spoof",
+          "mutual_nearest": false,
+          "holdout_recall": 0.7273,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "node_churn",
+          "X_new": 0.1786,
+          "X_new_full": "0.17855477855477853",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "discovery_recon",
+          "mutual_nearest": false,
+          "holdout_recall": 0.25,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "parameter_tamper",
+          "X_new": 0.1818,
+          "X_new_full": "0.18181818181818177",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "cross_channel_relay",
+          "mutual_nearest": false,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "replay_dos",
+          "X_new": 0.1843,
+          "X_new_full": "0.18427601809954752",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "spdp_flood",
+          "mutual_nearest": false,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 65
+        },
+        {
+          "label": "command_injection",
+          "X_new": 0.2154,
+          "X_new_full": "0.2153846153846154",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "message_dos",
+          "mutual_nearest": true,
+          "holdout_recall": 0.2727,
+          "holdout_sessions": 11,
+          "cv_sessions": 64
+        },
+        {
+          "label": "message_dos",
+          "X_new": 0.2154,
+          "X_new_full": "0.2153846153846154",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "command_injection",
+          "mutual_nearest": true,
+          "holdout_recall": 0.3636,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "health_spoof",
+          "X_new": 0.2334,
+          "X_new_full": "0.23340987370838118",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "sensor_spoof",
+          "mutual_nearest": false,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "identity_abuse",
+          "X_new": 0.2518,
+          "X_new_full": "0.2518028846153846",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "service_dos",
+          "mutual_nearest": true,
+          "holdout_recall": 0.9091,
+          "holdout_sessions": 11,
+          "cv_sessions": 64
+        },
+        {
+          "label": "service_dos",
+          "X_new": 0.2518,
+          "X_new_full": "0.2518028846153846",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "identity_abuse",
+          "mutual_nearest": true,
+          "holdout_recall": 0.4545,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "replay",
+          "X_new": 0.2576,
+          "X_new_full": "0.25757575757575757",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "health_spoof",
+          "mutual_nearest": false,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        }
+      ],
+      "C2_distinct_X_new_values_before_correction": 15,
+      "C2_within_tie_Y_variance_share_pct_before_correction": 19.6,
+      "C2_rho_ceiling_group_means_before_correction": 0.9464,
+      "C2_tied_groups": [
+        {
+          "labels": [
+            "scan_drift",
+            "odom_spoof"
+          ],
+          "X_new": 0.1474,
+          "Y": [
+            0.1667,
+            0.4167
+          ]
+        },
+        {
+          "labels": [
+            "sensor_spoof",
+            "mission_spoof"
+          ],
+          "X_new": 0.1706,
+          "Y": [
+            0.5455,
+            0.3333
+          ]
+        },
+        {
+          "labels": [
+            "discovery_recon",
+            "spdp_flood"
+          ],
+          "X_new": 0.1745,
+          "Y": [
+            0.4167,
+            0.25
+          ]
+        },
+        {
+          "labels": [
+            "verify_flood",
+            "cross_channel_relay"
+          ],
+          "X_new": 0.1769,
+          "Y": [
+            0.2727,
+            0.7273
+          ]
+        },
+        {
+          "labels": [
+            "command_injection",
+            "message_dos"
+          ],
+          "X_new": 0.2154,
+          "Y": [
+            0.2727,
+            0.3636
+          ]
+        },
+        {
+          "labels": [
+            "identity_abuse",
+            "service_dos"
+          ],
+          "X_new": 0.2518,
+          "Y": [
+            0.9091,
+            0.4545
+          ]
+        }
+      ],
+      "C2_grouping_tolerance": 1e-12
+    },
+    "enforce": {
+      "attack_classes": 19,
+      "pairs": 171,
+      "rho_X_new": 0.5968,
+      "rho_X_new_verdict": "p<.05",
+      "rho_X_old": 0.6334,
+      "rho_X_old_verdict": "p<.01",
+      "rho_min_combined": 0.7139,
+      "rho_min_combined_verdict": "p<.01",
+      "rho_min_gain_over_X_new": 0.1171,
+      "critical_p05": 0.46,
+      "critical_p01": 0.608,
+      "X_new_range": [
+        0.0753,
+        0.4832
+      ],
+      "X_new_spread": 0.4079,
+      "X_old_spread": 0.4493,
+      "pair_real_median": 0.3133,
+      "pair_null_median": 0.1049,
+      "pair_real_minus_null": 0.2083,
+      "C1_combination_differs_for": [
+        "hmac_forgery"
+      ],
+      "C1_without_those": {
+        "n": 18,
+        "rho_X_new": 0.7323,
+        "rho_min": 0.7323,
+        "gain": 0.0
+      },
+      "C2_distinct_X_new_values": 14,
+      "C2_mutual_nearest_classes": 10,
+      "C2_within_tie_Y_variance_share_pct": 6.9,
+      "C2_rho_ceiling_group_means": 0.8955,
+      "C3_argmin_share_of_errors": [
+        {
+          "label": "health_spoof",
+          "argmin": "mission_spoof",
+          "as_argmin": 1,
+          "errors": 8,
+          "share_of_errors": 0.125
+        },
+        {
+          "label": "mission_spoof",
+          "argmin": "health_spoof",
+          "as_argmin": 2,
+          "errors": 10,
+          "share_of_errors": 0.2
+        },
+        {
+          "label": "message_dos",
+          "argmin": "replay_dos",
+          "as_argmin": 2,
+          "errors": 12,
+          "share_of_errors": 0.1667
+        },
+        {
+          "label": "replay_dos",
+          "argmin": "message_dos",
+          "as_argmin": 2,
+          "errors": 10,
+          "share_of_errors": 0.2
+        },
+        {
+          "label": "verify_flood",
+          "argmin": "command_injection",
+          "as_argmin": 1,
+          "errors": 8,
+          "share_of_errors": 0.125
+        }
+      ],
+      "C3_median_share": 0.1667,
+      "C3_chance": 0.0526,
+      "C3_times_chance": 3.17,
+      "per_class": [
+        {
+          "label": "health_spoof",
+          "X_new": 0.0753,
+          "X_new_full": "0.0752913752913753",
+          "X_old": 0.489,
+          "X_old_full": "0.4890077243018419",
+          "argmin_opponent": "mission_spoof",
+          "mutual_nearest": true,
+          "holdout_recall": 0.3333,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "mission_spoof",
+          "X_new": 0.0753,
+          "X_new_full": "0.0752913752913753",
+          "X_old": 0.4937,
+          "X_old_full": "0.4937254901960785",
+          "argmin_opponent": "health_spoof",
+          "mutual_nearest": true,
+          "holdout_recall": 0.0909,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "message_dos",
+          "X_new": 0.0791,
+          "X_new_full": "0.07913752913752914",
+          "X_old": 0.4933,
+          "X_old_full": "0.4932857991681521",
+          "argmin_opponent": "replay_dos",
+          "mutual_nearest": true,
+          "holdout_recall": 0.0,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "replay_dos",
+          "X_new": 0.0791,
+          "X_new_full": "0.07913752913752914",
+          "X_old": 0.4943,
+          "X_old_full": "0.4942684766214178",
+          "argmin_opponent": "message_dos",
+          "mutual_nearest": true,
+          "holdout_recall": 0.0909,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "verify_flood",
+          "X_new": 0.0855,
+          "X_new_full": "0.08553386911595862",
+          "X_old": 0.494,
+          "X_old_full": "0.4940298507462687",
+          "argmin_opponent": "command_injection",
+          "mutual_nearest": true,
+          "holdout_recall": 0.3333,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "command_injection",
+          "X_new": 0.0855,
+          "X_new_full": "0.08553386911595867",
+          "X_old": 0.4943,
+          "X_old_full": "0.4942684766214178",
+          "argmin_opponent": "verify_flood",
+          "mutual_nearest": true,
+          "holdout_recall": 0.1818,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "sensor_spoof",
+          "X_new": 0.0945,
+          "X_new_full": "0.09452736318407962",
+          "X_old": 0.4952,
+          "X_old_full": "0.49524658348187756",
+          "argmin_opponent": "verify_flood",
+          "mutual_nearest": false,
+          "holdout_recall": 0.0,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "scan_drift",
+          "X_new": 0.0961,
+          "X_new_full": "0.09609644087256025",
+          "X_old": 0.4953,
+          "X_old_full": "0.49531752999707346",
+          "argmin_opponent": "mission_spoof",
+          "mutual_nearest": false,
+          "holdout_recall": 0.25,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "cross_channel_relay",
+          "X_new": 0.0984,
+          "X_new_full": "0.0983926521239954",
+          "X_old": 0.4955,
+          "X_old_full": "0.4955354449472097",
+          "argmin_opponent": "scan_drift",
+          "mutual_nearest": false,
+          "holdout_recall": 0.3636,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "replay",
+          "X_new": 0.1051,
+          "X_new_full": "0.10514233241505966",
+          "X_old": 0.4944,
+          "X_old_full": "0.4944147355912062",
+          "argmin_opponent": "message_dos",
+          "mutual_nearest": false,
+          "holdout_recall": 0.1667,
+          "holdout_sessions": 12,
+          "cv_sessions": 66
+        },
+        {
+          "label": "parameter_tamper",
+          "X_new": 0.106,
+          "X_new_full": "0.10597014925373138",
+          "X_old": 0.4949,
+          "X_old_full": "0.49490781387181737",
+          "argmin_opponent": "replay_dos",
+          "mutual_nearest": false,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "discovery_recon",
+          "X_new": 0.1122,
+          "X_new_full": "0.11216306527066161",
+          "X_old": 0.4631,
+          "X_old_full": "0.46312554872695344",
+          "argmin_opponent": "odom_spoof",
+          "mutual_nearest": true,
+          "holdout_recall": 0.5,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "odom_spoof",
+          "X_new": 0.1122,
+          "X_new_full": "0.11216306527066167",
+          "X_old": 0.4614,
+          "X_old_full": "0.4614281533508926",
+          "argmin_opponent": "discovery_recon",
+          "mutual_nearest": true,
+          "holdout_recall": 0.0833,
+          "holdout_sessions": 12,
+          "cv_sessions": 67
+        },
+        {
+          "label": "node_churn",
+          "X_new": 0.2487,
+          "X_new_full": "0.24872122762148335",
+          "X_old": 0.4954,
+          "X_old_full": "0.4953863898500577",
+          "argmin_opponent": "spdp_flood",
+          "mutual_nearest": true,
+          "holdout_recall": 0.9167,
+          "holdout_sessions": 12,
+          "cv_sessions": 68
+        },
+        {
+          "label": "spdp_flood",
+          "X_new": 0.2487,
+          "X_new_full": "0.2487212276214834",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "node_churn",
+          "mutual_nearest": true,
+          "holdout_recall": 0.75,
+          "holdout_sessions": 12,
+          "cv_sessions": 69
+        },
+        {
+          "label": "service_dos",
+          "X_new": 0.4057,
+          "X_new_full": "0.40568561872909703",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_opponent": "spdp_flood",
+          "mutual_nearest": false,
+          "holdout_recall": 0.8182,
+          "holdout_sessions": 11,
+          "cv_sessions": 65
+        },
+        {
+          "label": "identity_abuse",
+          "X_new": 0.4378,
+          "X_new_full": "0.43777267508610795",
+          "X_old": 0.496,
+          "X_old_full": "0.4959577677224736",
+          "argmin_opponent": "parameter_tamper",
+          "mutual_nearest": false,
+          "holdout_recall": 1.0,
+          "holdout_sessions": 12,
+          "cv_sessions": 65
+        },
+        {
+          "label": "confused_deputy",
+          "X_new": 0.4781,
+          "X_new_full": "0.4781021897810219",
+          "X_old": 0.4994,
+          "X_old_full": "0.49942750822956916",
+          "argmin_opponent": "service_dos",
+          "mutual_nearest": false,
+          "holdout_recall": 1.0,
+          "holdout_sessions": 24,
+          "cv_sessions": 137
+        },
+        {
+          "label": "hmac_forgery",
+          "X_new": 0.4832,
+          "X_new_full": "0.4832225732650616",
+          "X_old": 0.0507,
+          "X_old_full": "0.05070845856590811",
+          "argmin_opponent": "odom_spoof",
+          "mutual_nearest": false,
+          "holdout_recall": 0.1667,
+          "holdout_sessions": 24,
+          "cv_sessions": 137
+        }
+      ],
+      "C2_distinct_X_new_values_before_correction": 17,
+      "C2_within_tie_Y_variance_share_pct_before_correction": 1.6,
+      "C2_rho_ceiling_group_means_before_correction": 0.9731,
+      "C2_tied_groups": [
+        {
+          "labels": [
+            "health_spoof",
+            "mission_spoof"
+          ],
+          "X_new": 0.0753,
+          "Y": [
+            0.3333,
+            0.0909
+          ]
+        },
+        {
+          "labels": [
+            "message_dos",
+            "replay_dos"
+          ],
+          "X_new": 0.0791,
+          "Y": [
+            0.0,
+            0.0909
+          ]
+        },
+        {
+          "labels": [
+            "verify_flood",
+            "command_injection"
+          ],
+          "X_new": 0.0855,
+          "Y": [
+            0.3333,
+            0.1818
+          ]
+        },
+        {
+          "labels": [
+            "discovery_recon",
+            "odom_spoof"
+          ],
+          "X_new": 0.1122,
+          "Y": [
+            0.5,
+            0.0833
+          ]
+        },
+        {
+          "labels": [
+            "node_churn",
+            "spdp_flood"
+          ],
+          "X_new": 0.2487,
+          "Y": [
+            0.9167,
+            0.75
+          ]
+        }
+      ],
+      "C2_grouping_tolerance": 1e-12
+    }
+  },
+  "C2_tie_count_correction": {
+    "why": "pair(c,o) and pair(o,c) are mathematically identical but computed by two different arithmetic expressions, so a mutual-nearest pair can differ in the last bit and be counted as two distinct values. The C2_* fields above are affected; these are the corrected values, grouped with a 1e-12 tolerance.",
+    "affects": [
+      "C2_distinct_X_new_values",
+      "C2_within_tie_Y_variance_share_pct",
+      "C2_rho_ceiling_group_means"
+    ],
+    "does_not_affect": [
+      "rho_X_new",
+      "rho_X_old",
+      "rho_min_combined",
+      "X_new_spread",
+      "pair_real_median",
+      "pair_null_median",
+      "C1_*",
+      "C3_*",
+      "(ranks are unchanged: a last-bit split of an exact tie moves no class past another, it only splits a tie into two adjacent ranks)"
+    ],
+    "modes": {
+      "permissive": {
+        "mutual_nearest_pairs": 5,
+        "distinct_X_new_at_tolerance": 11,
+        "distinct_X_new_as_stored": 15,
+        "tolerance": 1e-12,
+        "max_numeric_gap_inside_a_tie": 5.551115123125783e-17,
+        "within_tie_Y_variance_share_pct": 50.7,
+        "within_tie_Y_variance_share_pct_as_stored": 19.6,
+        "rho_ceiling_group_means": 0.7037,
+        "rho_ceiling_as_stored": 0.9464,
+        "rho_X_new_observed": 0.4001,
+        "tied_groups": [
+          {
+            "labels": [
+              "scan_drift",
+              "odom_spoof"
+            ],
+            "X_new": 0.1474,
+            "Y": [
+              0.1667,
+              0.4167
+            ]
+          },
+          {
+            "labels": [
+              "sensor_spoof",
+              "mission_spoof"
+            ],
+            "X_new": 0.1706,
+            "Y": [
+              0.5455,
+              0.3333
+            ]
+          },
+          {
+            "labels": [
+              "discovery_recon",
+              "spdp_flood"
+            ],
+            "X_new": 0.1745,
+            "Y": [
+              0.4167,
+              0.25
+            ]
+          },
+          {
+            "labels": [
+              "verify_flood",
+              "cross_channel_relay"
+            ],
+            "X_new": 0.1769,
+            "Y": [
+              0.2727,
+              0.7273
+            ]
+          },
+          {
+            "labels": [
+              "command_injection",
+              "message_dos"
+            ],
+            "X_new": 0.2154,
+            "Y": [
+              0.2727,
+              0.3636
+            ]
+          },
+          {
+            "labels": [
+              "identity_abuse",
+              "service_dos"
+            ],
+            "X_new": 0.2518,
+            "Y": [
+              0.9091,
+              0.4545
+            ]
+          }
+        ]
+      },
+      "enforce": {
+        "mutual_nearest_pairs": 5,
+        "distinct_X_new_at_tolerance": 14,
+        "distinct_X_new_as_stored": 17,
+        "tolerance": 1e-12,
+        "max_numeric_gap_inside_a_tie": 5.551115123125783e-17,
+        "within_tie_Y_variance_share_pct": 6.9,
+        "within_tie_Y_variance_share_pct_as_stored": 1.6,
+        "rho_ceiling_group_means": 0.8955,
+        "rho_ceiling_as_stored": 0.9731,
+        "rho_X_new_observed": 0.5968,
+        "tied_groups": [
+          {
+            "labels": [
+              "health_spoof",
+              "mission_spoof"
+            ],
+            "X_new": 0.0753,
+            "Y": [
+              0.3333,
+              0.0909
+            ]
+          },
+          {
+            "labels": [
+              "message_dos",
+              "replay_dos"
+            ],
+            "X_new": 0.0791,
+            "Y": [
+              0.0,
+              0.0909
+            ]
+          },
+          {
+            "labels": [
+              "verify_flood",
+              "command_injection"
+            ],
+            "X_new": 0.0855,
+            "Y": [
+              0.3333,
+              0.1818
+            ]
+          },
+          {
+            "labels": [
+              "discovery_recon",
+              "odom_spoof"
+            ],
+            "X_new": 0.1122,
+            "Y": [
+              0.5,
+              0.0833
+            ]
+          },
+          {
+            "labels": [
+              "node_churn",
+              "spdp_flood"
+            ],
+            "X_new": 0.2487,
+            "Y": [
+              0.9167,
+              0.75
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "H5_argmin_uniqueness_check": {
+    "why": "argmin is only well defined if the minimum is unique; where several opponents tie, the implementation keeps the alphabetically first, so H5 tested only one of them. This block recomputes H5 counting every tied opponent, and stores the full pair matrix.",
+    "modes": {
+      "permissive": {
+        "ambiguous_argmin_classes": 4,
+        "classes": 17,
+        "tolerance": 1e-12,
+        "per_class": [
+          {
+            "label": "command_injection",
+            "min_value": 0.215385,
+            "tied_opponents": [
+              "message_dos"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 8,
+              "per_tied_opponent": {
+                "message_dos": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.125
+            }
+          },
+          {
+            "label": "cross_channel_relay",
+            "min_value": 0.176923,
+            "tied_opponents": [
+              "sensor_spoof",
+              "verify_flood"
+            ],
+            "n_tied": 2,
+            "holdout": {
+              "errors": 3,
+              "per_tied_opponent": {
+                "sensor_spoof": 1,
+                "verify_flood": 0
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.3333
+            }
+          },
+          {
+            "label": "discovery_recon",
+            "min_value": 0.174548,
+            "tied_opponents": [
+              "spdp_flood"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 7,
+              "per_tied_opponent": {
+                "spdp_flood": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "health_spoof",
+            "min_value": 0.23341,
+            "tied_opponents": [
+              "sensor_spoof"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 6,
+              "per_tied_opponent": {
+                "sensor_spoof": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "identity_abuse",
+            "min_value": 0.251803,
+            "tied_opponents": [
+              "service_dos"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 1,
+              "per_tied_opponent": {
+                "service_dos": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "message_dos",
+            "min_value": 0.215385,
+            "tied_opponents": [
+              "command_injection",
+              "odom_spoof",
+              "scan_drift"
+            ],
+            "n_tied": 3,
+            "holdout": {
+              "errors": 7,
+              "per_tied_opponent": {
+                "command_injection": 0,
+                "odom_spoof": 1,
+                "scan_drift": 0
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.1429
+            }
+          },
+          {
+            "label": "mission_spoof",
+            "min_value": 0.170629,
+            "tied_opponents": [
+              "sensor_spoof"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 8,
+              "per_tied_opponent": {
+                "sensor_spoof": 2
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.25
+            }
+          },
+          {
+            "label": "node_churn",
+            "min_value": 0.178555,
+            "tied_opponents": [
+              "discovery_recon"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 9,
+              "per_tied_opponent": {
+                "discovery_recon": 2
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.2222
+            }
+          },
+          {
+            "label": "odom_spoof",
+            "min_value": 0.147436,
+            "tied_opponents": [
+              "scan_drift"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 7,
+              "per_tied_opponent": {
+                "scan_drift": 4
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.5714
+            }
+          },
+          {
+            "label": "parameter_tamper",
+            "min_value": 0.181818,
+            "tied_opponents": [
+              "cross_channel_relay",
+              "discovery_recon",
+              "spdp_flood"
+            ],
+            "n_tied": 3,
+            "holdout": {
+              "errors": 6,
+              "per_tied_opponent": {
+                "cross_channel_relay": 0,
+                "discovery_recon": 0,
+                "spdp_flood": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "replay",
+            "min_value": 0.257576,
+            "tied_opponents": [
+              "health_spoof",
+              "message_dos",
+              "mission_spoof",
+              "replay_dos",
+              "scan_drift",
+              "sensor_spoof",
+              "spdp_flood",
+              "verify_flood"
+            ],
+            "n_tied": 8,
+            "holdout": {
+              "errors": 6,
+              "per_tied_opponent": {
+                "health_spoof": 0,
+                "message_dos": 0,
+                "mission_spoof": 0,
+                "replay_dos": 0,
+                "scan_drift": 0,
+                "sensor_spoof": 0,
+                "spdp_flood": 0,
+                "verify_flood": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.1667
+            }
+          },
+          {
+            "label": "replay_dos",
+            "min_value": 0.184276,
+            "tied_opponents": [
+              "spdp_flood"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 6,
+              "per_tied_opponent": {
+                "spdp_flood": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "scan_drift",
+            "min_value": 0.147436,
+            "tied_opponents": [
+              "odom_spoof"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 10,
+              "per_tied_opponent": {
+                "odom_spoof": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.1
+            }
+          },
+          {
+            "label": "sensor_spoof",
+            "min_value": 0.170629,
+            "tied_opponents": [
+              "mission_spoof"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 5,
+              "per_tied_opponent": {
+                "mission_spoof": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.2
+            }
+          },
+          {
+            "label": "service_dos",
+            "min_value": 0.251803,
+            "tied_opponents": [
+              "identity_abuse"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 6,
+              "per_tied_opponent": {
+                "identity_abuse": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "spdp_flood",
+            "min_value": 0.174548,
+            "tied_opponents": [
+              "discovery_recon"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 9,
+              "per_tied_opponent": {
+                "discovery_recon": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.1111
+            }
+          },
+          {
+            "label": "verify_flood",
+            "min_value": 0.176923,
+            "tied_opponents": [
+              "cross_channel_relay"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 8,
+              "per_tied_opponent": {
+                "cross_channel_relay": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          }
+        ],
+        "H5_recomputed_lowest5_hits": "4/5",
+        "H5_recomputed_median_share": 0.2,
+        "H5_recomputed_times_chance": 3.4,
+        "pair_matrix": {
+          "command_injection|cross_channel_relay": 0.242188,
+          "command_injection|discovery_recon": 0.255168,
+          "command_injection|health_spoof": 0.282533,
+          "command_injection|identity_abuse": 0.294189,
+          "command_injection|message_dos": 0.215385,
+          "command_injection|mission_spoof": 0.293561,
+          "command_injection|node_churn": 0.298414,
+          "command_injection|odom_spoof": 0.285393,
+          "command_injection|parameter_tamper": 0.244081,
+          "command_injection|replay": 0.307528,
+          "command_injection|replay_dos": 0.249639,
+          "command_injection|scan_drift": 0.252284,
+          "command_injection|sensor_spoof": 0.245072,
+          "command_injection|service_dos": 0.334375,
+          "command_injection|spdp_flood": 0.26597,
+          "command_injection|verify_flood": 0.255796,
+          "cross_channel_relay|discovery_recon": 0.178935,
+          "cross_channel_relay|health_spoof": 0.238806,
+          "cross_channel_relay|identity_abuse": 0.271154,
+          "cross_channel_relay|message_dos": 0.223077,
+          "cross_channel_relay|mission_spoof": 0.19289,
+          "cross_channel_relay|node_churn": 0.184615,
+          "cross_channel_relay|odom_spoof": 0.19697,
+          "cross_channel_relay|parameter_tamper": 0.181818,
+          "cross_channel_relay|replay": 0.261305,
+          "cross_channel_relay|replay_dos": 0.203195,
+          "cross_channel_relay|scan_drift": 0.230769,
+          "cross_channel_relay|sensor_spoof": 0.176923,
+          "cross_channel_relay|service_dos": 0.374083,
+          "cross_channel_relay|spdp_flood": 0.19095,
+          "cross_channel_relay|verify_flood": 0.176923,
+          "discovery_recon|health_spoof": 0.256831,
+          "discovery_recon|identity_abuse": 0.282933,
+          "discovery_recon|message_dos": 0.223077,
+          "discovery_recon|mission_spoof": 0.284382,
+          "discovery_recon|node_churn": 0.178555,
+          "discovery_recon|odom_spoof": 0.19697,
+          "discovery_recon|parameter_tamper": 0.181818,
+          "discovery_recon|replay": 0.261305,
+          "discovery_recon|replay_dos": 0.200828,
+          "discovery_recon|scan_drift": 0.230769,
+          "discovery_recon|sensor_spoof": 0.218343,
+          "discovery_recon|service_dos": 0.34426,
+          "discovery_recon|spdp_flood": 0.174548,
+          "discovery_recon|verify_flood": 0.237965,
+          "health_spoof|identity_abuse": 0.273088,
+          "health_spoof|message_dos": 0.244891,
+          "health_spoof|mission_spoof": 0.238806,
+          "health_spoof|node_churn": 0.261194,
+          "health_spoof|odom_spoof": 0.261194,
+          "health_spoof|parameter_tamper": 0.257123,
+          "health_spoof|replay": 0.257576,
+          "health_spoof|replay_dos": 0.238806,
+          "health_spoof|scan_drift": 0.252928,
+          "health_spoof|sensor_spoof": 0.23341,
+          "health_spoof|service_dos": 0.328014,
+          "health_spoof|spdp_flood": 0.244732,
+          "health_spoof|verify_flood": 0.233871,
+          "identity_abuse|message_dos": 0.292188,
+          "identity_abuse|mission_spoof": 0.270952,
+          "identity_abuse|node_churn": 0.311316,
+          "identity_abuse|odom_spoof": 0.256629,
+          "identity_abuse|parameter_tamper": 0.256629,
+          "identity_abuse|replay": 0.289891,
+          "identity_abuse|replay_dos": 0.263702,
+          "identity_abuse|scan_drift": 0.284976,
+          "identity_abuse|sensor_spoof": 0.276923,
+          "identity_abuse|service_dos": 0.251803,
+          "identity_abuse|spdp_flood": 0.264706,
+          "identity_abuse|verify_flood": 0.271043,
+          "message_dos|mission_spoof": 0.27366,
+          "message_dos|node_churn": 0.223077,
+          "message_dos|odom_spoof": 0.215385,
+          "message_dos|parameter_tamper": 0.223077,
+          "message_dos|replay": 0.257576,
+          "message_dos|replay_dos": 0.223077,
+          "message_dos|scan_drift": 0.215385,
+          "message_dos|sensor_spoof": 0.223077,
+          "message_dos|service_dos": 0.346627,
+          "message_dos|spdp_flood": 0.223077,
+          "message_dos|verify_flood": 0.226055,
+          "mission_spoof|node_churn": 0.287879,
+          "mission_spoof|odom_spoof": 0.287879,
+          "mission_spoof|parameter_tamper": 0.284206,
+          "mission_spoof|replay": 0.257576,
+          "mission_spoof|replay_dos": 0.19359,
+          "mission_spoof|scan_drift": 0.281002,
+          "mission_spoof|sensor_spoof": 0.170629,
+          "mission_spoof|service_dos": 0.35641,
+          "mission_spoof|spdp_flood": 0.274398,
+          "mission_spoof|verify_flood": 0.192326,
+          "node_churn|odom_spoof": 0.211662,
+          "node_churn|parameter_tamper": 0.227502,
+          "node_churn|replay": 0.265152,
+          "node_churn|replay_dos": 0.207692,
+          "node_churn|scan_drift": 0.230769,
+          "node_churn|sensor_spoof": 0.223077,
+          "node_churn|service_dos": 0.29021,
+          "node_churn|spdp_flood": 0.193293,
+          "node_churn|verify_flood": 0.241935,
+          "odom_spoof|parameter_tamper": 0.19697,
+          "odom_spoof|replay": 0.265152,
+          "odom_spoof|replay_dos": 0.207692,
+          "odom_spoof|scan_drift": 0.147436,
+          "odom_spoof|sensor_spoof": 0.223077,
+          "odom_spoof|service_dos": 0.375991,
+          "odom_spoof|spdp_flood": 0.214572,
+          "odom_spoof|verify_flood": 0.241935,
+          "parameter_tamper|replay": 0.261364,
+          "parameter_tamper|replay_dos": 0.202564,
+          "parameter_tamper|scan_drift": 0.230769,
+          "parameter_tamper|sensor_spoof": 0.218415,
+          "parameter_tamper|service_dos": 0.351515,
+          "parameter_tamper|spdp_flood": 0.181818,
+          "parameter_tamper|verify_flood": 0.238025,
+          "replay|replay_dos": 0.257576,
+          "replay|scan_drift": 0.257576,
+          "replay|sensor_spoof": 0.257576,
+          "replay|service_dos": 0.354545,
+          "replay|spdp_flood": 0.257576,
+          "replay|verify_flood": 0.257576,
+          "replay_dos|scan_drift": 0.230769,
+          "replay_dos|sensor_spoof": 0.187811,
+          "replay_dos|service_dos": 0.295976,
+          "replay_dos|spdp_flood": 0.184276,
+          "replay_dos|verify_flood": 0.196278,
+          "scan_drift|sensor_spoof": 0.230769,
+          "scan_drift|service_dos": 0.327692,
+          "scan_drift|spdp_flood": 0.230769,
+          "scan_drift|verify_flood": 0.233995,
+          "sensor_spoof|service_dos": 0.293136,
+          "sensor_spoof|spdp_flood": 0.20181,
+          "sensor_spoof|verify_flood": 0.225062,
+          "service_dos|spdp_flood": 0.292986,
+          "service_dos|verify_flood": 0.35062,
+          "spdp_flood|verify_flood": 0.226755
+        }
+      },
+      "enforce": {
+        "ambiguous_argmin_classes": 0,
+        "classes": 19,
+        "tolerance": 1e-12,
+        "per_class": [
+          {
+            "label": "command_injection",
+            "min_value": 0.085534,
+            "tied_opponents": [
+              "verify_flood"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 9,
+              "per_tied_opponent": {
+                "verify_flood": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "confused_deputy",
+            "min_value": 0.478102,
+            "tied_opponents": [
+              "service_dos"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 0,
+              "per_tied_opponent": {
+                "service_dos": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": null
+            }
+          },
+          {
+            "label": "cross_channel_relay",
+            "min_value": 0.098393,
+            "tied_opponents": [
+              "scan_drift"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 7,
+              "per_tied_opponent": {
+                "scan_drift": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "discovery_recon",
+            "min_value": 0.112163,
+            "tied_opponents": [
+              "odom_spoof"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 6,
+              "per_tied_opponent": {
+                "odom_spoof": 3
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.5
+            }
+          },
+          {
+            "label": "health_spoof",
+            "min_value": 0.075291,
+            "tied_opponents": [
+              "mission_spoof"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 8,
+              "per_tied_opponent": {
+                "mission_spoof": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.125
+            }
+          },
+          {
+            "label": "hmac_forgery",
+            "min_value": 0.483223,
+            "tied_opponents": [
+              "odom_spoof"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 20,
+              "per_tied_opponent": {
+                "odom_spoof": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "identity_abuse",
+            "min_value": 0.437773,
+            "tied_opponents": [
+              "parameter_tamper"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 0,
+              "per_tied_opponent": {
+                "parameter_tamper": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": null
+            }
+          },
+          {
+            "label": "message_dos",
+            "min_value": 0.079138,
+            "tied_opponents": [
+              "replay_dos"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 12,
+              "per_tied_opponent": {
+                "replay_dos": 2
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.1667
+            }
+          },
+          {
+            "label": "mission_spoof",
+            "min_value": 0.075291,
+            "tied_opponents": [
+              "health_spoof"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 10,
+              "per_tied_opponent": {
+                "health_spoof": 2
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.2
+            }
+          },
+          {
+            "label": "node_churn",
+            "min_value": 0.248721,
+            "tied_opponents": [
+              "spdp_flood"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 1,
+              "per_tied_opponent": {
+                "spdp_flood": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "odom_spoof",
+            "min_value": 0.112163,
+            "tied_opponents": [
+              "discovery_recon"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 11,
+              "per_tied_opponent": {
+                "discovery_recon": 7
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.6364
+            }
+          },
+          {
+            "label": "parameter_tamper",
+            "min_value": 0.10597,
+            "tied_opponents": [
+              "replay_dos"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 6,
+              "per_tied_opponent": {
+                "replay_dos": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.1667
+            }
+          },
+          {
+            "label": "replay",
+            "min_value": 0.105142,
+            "tied_opponents": [
+              "message_dos"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 10,
+              "per_tied_opponent": {
+                "message_dos": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.1
+            }
+          },
+          {
+            "label": "replay_dos",
+            "min_value": 0.079138,
+            "tied_opponents": [
+              "message_dos"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 10,
+              "per_tied_opponent": {
+                "message_dos": 2
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.2
+            }
+          },
+          {
+            "label": "scan_drift",
+            "min_value": 0.096096,
+            "tied_opponents": [
+              "mission_spoof"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 9,
+              "per_tied_opponent": {
+                "mission_spoof": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.1111
+            }
+          },
+          {
+            "label": "sensor_spoof",
+            "min_value": 0.094527,
+            "tied_opponents": [
+              "verify_flood"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 12,
+              "per_tied_opponent": {
+                "verify_flood": 0
+              },
+              "any_tied_opponent_hit": false,
+              "tied_share_of_errors": 0.0
+            }
+          },
+          {
+            "label": "service_dos",
+            "min_value": 0.405686,
+            "tied_opponents": [
+              "spdp_flood"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 2,
+              "per_tied_opponent": {
+                "spdp_flood": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.5
+            }
+          },
+          {
+            "label": "spdp_flood",
+            "min_value": 0.248721,
+            "tied_opponents": [
+              "node_churn"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 3,
+              "per_tied_opponent": {
+                "node_churn": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.3333
+            }
+          },
+          {
+            "label": "verify_flood",
+            "min_value": 0.085534,
+            "tied_opponents": [
+              "command_injection"
+            ],
+            "n_tied": 1,
+            "holdout": {
+              "errors": 8,
+              "per_tied_opponent": {
+                "command_injection": 1
+              },
+              "any_tied_opponent_hit": true,
+              "tied_share_of_errors": 0.125
+            }
+          }
+        ],
+        "H5_recomputed_lowest5_hits": "4/5",
+        "H5_recomputed_median_share": 0.1667,
+        "H5_recomputed_times_chance": 3.17,
+        "pair_matrix": {
+          "command_injection|confused_deputy": 0.49315,
+          "command_injection|cross_channel_relay": 0.157515,
+          "command_injection|discovery_recon": 0.272445,
+          "command_injection|health_spoof": 0.192075,
+          "command_injection|hmac_forgery": 0.491915,
+          "command_injection|identity_abuse": 0.450769,
+          "command_injection|message_dos": 0.112354,
+          "command_injection|mission_spoof": 0.154675,
+          "command_injection|node_churn": 0.290498,
+          "command_injection|odom_spoof": 0.190011,
+          "command_injection|parameter_tamper": 0.138576,
+          "command_injection|replay": 0.152448,
+          "command_injection|replay_dos": 0.09787,
+          "command_injection|scan_drift": 0.135591,
+          "command_injection|sensor_spoof": 0.131235,
+          "command_injection|service_dos": 0.496923,
+          "command_injection|spdp_flood": 0.46165,
+          "command_injection|verify_flood": 0.085534,
+          "confused_deputy|cross_channel_relay": 0.493711,
+          "confused_deputy|discovery_recon": 0.497167,
+          "confused_deputy|health_spoof": 0.495134,
+          "confused_deputy|hmac_forgery": 0.499307,
+          "confused_deputy|identity_abuse": 0.48877,
+          "confused_deputy|message_dos": 0.495908,
+          "confused_deputy|mission_spoof": 0.494385,
+          "confused_deputy|node_churn": 0.490661,
+          "confused_deputy|odom_spoof": 0.495206,
+          "confused_deputy|parameter_tamper": 0.493137,
+          "confused_deputy|replay": 0.492037,
+          "confused_deputy|replay_dos": 0.492252,
+          "confused_deputy|scan_drift": 0.494553,
+          "confused_deputy|sensor_spoof": 0.492811,
+          "confused_deputy|service_dos": 0.478102,
+          "confused_deputy|spdp_flood": 0.483603,
+          "confused_deputy|verify_flood": 0.494553,
+          "cross_channel_relay|discovery_recon": 0.296785,
+          "cross_channel_relay|health_spoof": 0.12972,
+          "cross_channel_relay|hmac_forgery": 0.492588,
+          "cross_channel_relay|identity_abuse": 0.447456,
+          "cross_channel_relay|message_dos": 0.202681,
+          "cross_channel_relay|mission_spoof": 0.134556,
+          "cross_channel_relay|node_churn": 0.263801,
+          "cross_channel_relay|odom_spoof": 0.227899,
+          "cross_channel_relay|parameter_tamper": 0.168886,
+          "cross_channel_relay|replay": 0.158974,
+          "cross_channel_relay|replay_dos": 0.180592,
+          "cross_channel_relay|scan_drift": 0.098393,
+          "cross_channel_relay|sensor_spoof": 0.144755,
+          "cross_channel_relay|service_dos": 0.495503,
+          "cross_channel_relay|spdp_flood": 0.434894,
+          "cross_channel_relay|verify_flood": 0.140299,
+          "discovery_recon|health_spoof": 0.24152,
+          "discovery_recon|hmac_forgery": 0.485184,
+          "discovery_recon|identity_abuse": 0.449024,
+          "discovery_recon|message_dos": 0.223881,
+          "discovery_recon|mission_spoof": 0.255913,
+          "discovery_recon|node_churn": 0.378402,
+          "discovery_recon|odom_spoof": 0.112163,
+          "discovery_recon|parameter_tamper": 0.26008,
+          "discovery_recon|replay": 0.277476,
+          "discovery_recon|replay_dos": 0.255683,
+          "discovery_recon|scan_drift": 0.261862,
+          "discovery_recon|sensor_spoof": 0.279512,
+          "discovery_recon|service_dos": 0.499082,
+          "discovery_recon|spdp_flood": 0.477504,
+          "discovery_recon|verify_flood": 0.262976,
+          "health_spoof|hmac_forgery": 0.486397,
+          "health_spoof|identity_abuse": 0.449417,
+          "health_spoof|message_dos": 0.155188,
+          "health_spoof|mission_spoof": 0.075291,
+          "health_spoof|node_churn": 0.326537,
+          "health_spoof|odom_spoof": 0.155133,
+          "health_spoof|parameter_tamper": 0.170737,
+          "health_spoof|replay": 0.182736,
+          "health_spoof|replay_dos": 0.167832,
+          "health_spoof|scan_drift": 0.109227,
+          "health_spoof|sensor_spoof": 0.173554,
+          "health_spoof|service_dos": 0.497203,
+          "health_spoof|spdp_flood": 0.465525,
+          "health_spoof|verify_flood": 0.136477,
+          "hmac_forgery|identity_abuse": 0.494048,
+          "hmac_forgery|message_dos": 0.490489,
+          "hmac_forgery|mission_spoof": 0.49169,
+          "hmac_forgery|node_churn": 0.493881,
+          "hmac_forgery|odom_spoof": 0.483223,
+          "hmac_forgery|parameter_tamper": 0.49172,
+          "hmac_forgery|replay": 0.491042,
+          "hmac_forgery|replay_dos": 0.491129,
+          "hmac_forgery|scan_drift": 0.492156,
+          "hmac_forgery|sensor_spoof": 0.492037,
+          "hmac_forgery|service_dos": 0.5,
+          "hmac_forgery|spdp_flood": 0.5,
+          "hmac_forgery|verify_flood": 0.491938,
+          "identity_abuse|message_dos": 0.449883,
+          "identity_abuse|mission_spoof": 0.445444,
+          "identity_abuse|node_churn": 0.445701,
+          "identity_abuse|odom_spoof": 0.445121,
+          "identity_abuse|parameter_tamper": 0.437773,
+          "identity_abuse|replay": 0.444289,
+          "identity_abuse|replay_dos": 0.446509,
+          "identity_abuse|scan_drift": 0.44535,
+          "identity_abuse|sensor_spoof": 0.449417,
+          "identity_abuse|service_dos": 0.482959,
+          "identity_abuse|spdp_flood": 0.448049,
+          "identity_abuse|verify_flood": 0.446958,
+          "message_dos|mission_spoof": 0.134266,
+          "message_dos|node_churn": 0.327763,
+          "message_dos|odom_spoof": 0.211443,
+          "message_dos|parameter_tamper": 0.129579,
+          "message_dos|replay": 0.105142,
+          "message_dos|replay_dos": 0.079138,
+          "message_dos|scan_drift": 0.14801,
+          "message_dos|sensor_spoof": 0.108356,
+          "message_dos|service_dos": 0.497902,
+          "message_dos|spdp_flood": 0.476504,
+          "message_dos|verify_flood": 0.098598,
+          "mission_spoof|node_churn": 0.349321,
+          "mission_spoof|odom_spoof": 0.175316,
+          "mission_spoof|parameter_tamper": 0.151665,
+          "mission_spoof|replay": 0.143823,
+          "mission_spoof|replay_dos": 0.14355,
+          "mission_spoof|scan_drift": 0.096096,
+          "mission_spoof|sensor_spoof": 0.157343,
+          "mission_spoof|service_dos": 0.498343,
+          "mission_spoof|spdp_flood": 0.478595,
+          "mission_spoof|verify_flood": 0.133295,
+          "node_churn|odom_spoof": 0.326383,
+          "node_churn|parameter_tamper": 0.30158,
+          "node_churn|replay": 0.31328,
+          "node_churn|replay_dos": 0.314706,
+          "node_churn|scan_drift": 0.282924,
+          "node_churn|sensor_spoof": 0.274955,
+          "node_churn|service_dos": 0.475113,
+          "node_churn|spdp_flood": 0.248721,
+          "node_churn|verify_flood": 0.297849,
+          "odom_spoof|parameter_tamper": 0.210403,
+          "odom_spoof|replay": 0.246721,
+          "odom_spoof|replay_dos": 0.225832,
+          "odom_spoof|scan_drift": 0.163622,
+          "odom_spoof|sensor_spoof": 0.250339,
+          "odom_spoof|service_dos": 0.495408,
+          "odom_spoof|spdp_flood": 0.453061,
+          "odom_spoof|verify_flood": 0.198819,
+          "parameter_tamper|replay": 0.144279,
+          "parameter_tamper|replay_dos": 0.10597,
+          "parameter_tamper|scan_drift": 0.166295,
+          "parameter_tamper|sensor_spoof": 0.120308,
+          "parameter_tamper|service_dos": 0.496785,
+          "parameter_tamper|spdp_flood": 0.452196,
+          "parameter_tamper|verify_flood": 0.12642,
+          "replay|replay_dos": 0.133333,
+          "replay|scan_drift": 0.143261,
+          "replay|sensor_spoof": 0.125115,
+          "replay|service_dos": 0.497203,
+          "replay|spdp_flood": 0.475626,
+          "replay|verify_flood": 0.14507,
+          "replay_dos|scan_drift": 0.142824,
+          "replay_dos|sensor_spoof": 0.116667,
+          "replay_dos|service_dos": 0.497396,
+          "replay_dos|spdp_flood": 0.467893,
+          "replay_dos|verify_flood": 0.098852,
+          "scan_drift|sensor_spoof": 0.13071,
+          "scan_drift|service_dos": 0.495178,
+          "scan_drift|spdp_flood": 0.442029,
+          "scan_drift|verify_flood": 0.098797,
+          "sensor_spoof|service_dos": 0.496503,
+          "sensor_spoof|spdp_flood": 0.449056,
+          "sensor_spoof|verify_flood": 0.094527,
+          "service_dos|spdp_flood": 0.405686,
+          "service_dos|verify_flood": 0.497245,
+          "spdp_flood|verify_flood": 0.451114
+        }
+      }
+    }
+  }
+}

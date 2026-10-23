@@ -1,0 +1,143 @@
+# Project evidence ledger
+
+- Project: `sros2-smart-firewall`
+- Revision: `r6-2026-10-03-pace-readiness-blindness-and-the-seal`
+- Generated (UTC): `2026-10-03T13:15:27.992642+00:00`
+- Claims: verified 7, provisional 2, blocked 1
+- This ledger cannot authorize deployment, an adapter, or an autonomous IP block.
+
+| Claim | Status | Statement | Evidence | Blockers |
+|---|---|---|---:|---|
+| The pace model was re-fitted on the sessions that were missing, and all four constants were left alone | verified | C2C-087 blocked on the pace-model re-fit for want of post-fix sessions. They arrived, and the answer is still 'cannot re-fit' -- but now for a measured reason. An OLS re-fit over 733 sessions gave 91.0 + 0.780/MB, a slope twice the shipped 0.376, suggesting systematic under-prediction. The binned residuals refute it directly: at that slope the 100-135 MB bucket should sit +46s against the shipped model and it measures +5.7s (n=141), so the 0.780 is pulled by a handful of high-leverage heavy captures. Three further findings came out of the same round: the pre-09-26 residuals are non-monotonic in capture size, and systematic model bias must be monotonic, so those residuals were real time-correlated degradation rather than bias -- which vindicates C2C-073's residual method; C2C-073's own +116.8s degradation is substantially the 300-second extraction timeout hitting large captures (+121.4s on the four cut-off sessions at 585 MB median, versus +0.1s on the 114 that completed); and my own alternative specification (overhead = inside minus planned span) measured worse, not better, because longer sessions capture more packets so the planned span correlates with MB. Disposition: none of VOLUME_FIXED_SEC, VOLUME_SLOPE_SEC_PER_MB, MODEL_INVALID_ABOVE_MB or SLOW_SESSION_SEC changed. | 3 | — |
+| The pace threshold was relaxed from +60s to +90s under explicit authorization, with both the basis and the cost measured | verified | Relaxing a pass criterion is the operator's decision, so this one was measured, written up, and left alone until authorized. Basis: on a segment certified healthy by three non-temporal criteria (rc=0 44/44, 98.1 percent eligible, batches 40/40), the misfire rate falls from 1/80 to 0/80, and 90 is not arbitrary -- that segment's worst window sits at +69.1s, so any threshold between 60 and 69.1 cannot fix the one misfire. Cost: 87 windows fall in (60, 90] in a population whose health is not certified, so they cannot be classified as misfires or real degradation. Safety rests on the margin to real degradation: the degradation C2C-073 identified is +116.8s, and its physical substance -- the 178 sessions whose extraction was cut off -- sits at +256.0s median with 177 of 178 over the threshold. The round also nearly produced a silent failure: one constant served both the alarm threshold and the bound on model bias, and the rejected OLS re-fit is off by -68.9s at 200 MB, which is outside 60 but inside 90 -- so raising the single constant would have stopped a mutation test biting while all tests stayed green. The two concepts are now separate, pinned by a test that they must not be equal. | 4 | — |
+| The Enforce data gap was a three-layer readiness window inverted, and it was not Enforce-specific | verified | The supervisor logged 'enforce stack will not come up', and that sentence was wrong twice: the stack did come up -- seven nodes healthy, HMAC fingerprints matching -- and it was deliberately stopped. The chain: Gazebo's launch produced no process-started line within 118 seconds, the readiness probe gave up at its 120-second ceiling, the stack failed closed and stopped the group, and six processes each shut down twice. The supervisor's own poll window was 200 seconds, so it never got the chance to wait. Seen per round the failure is progressive -- rounds 1 to 3 fine in both modes, Enforce gone from round 4, Permissive also gone by rounds 7 and 9 -- and Enforce runs second, so it was eaten first. The three layers are now probe 240, wrapper 250, supervisor 300, pinned by tests that fix the ordering rather than the seconds, because changing one number alone is exactly how the inversion arose. | 4 | — |
+| Enforce session loss fell from 34.7 percent to about 2.5 percent, and the attribution is not separable | provisional | Segmenting by fix date rather than evenly: the fork-teardown fix helped Permissive (13.2 to 7.0 percent) and did nothing for Enforce (34.0 to 34.7 percent), which agrees with C2C-089 -- the failure it fixed is now 2 of 599, and Enforce fails at startup. After the readiness fix Enforce measured 0 of 80, which is decisive against 34.7 percent at about 1e-15. It is not evidence of zero: the next 80 sessions measured 5.0 percent, above the 3.7 percent rule-of-three bound I had published, and the combined figure is 4 of 160 or 2.5 percent, which the campaign has since reproduced at 12 of 473. Per-step timings place the residual stalls inside Node() and create_subscription with normal import times, which rules out the six parameter services, since those switches are in the code. The enforce-specific cost shows up in the tails, not the medians: Node's p90 is 3.6 times Permissive's while import's p90 is 1.1 times. Attribution between the Observer switches and machine load remains open, so a falsifiable prediction was written down before the answer. | 3 | — |
+| The adaptive attacker has never adapted in any credentialed-insider session, and the threat model is why | verified | N37 recorded its own blindness three times over -- a recon-line marker, a blind key on every decision-trace step, and a warning carrying the underlying RCLError -- and nothing downstream read any of them. Across the whole of dataset_mega, insider_parameter_write is blind 22 of 22 and insider_hmac_forgery 17 of 17, while every other scenario is 0 of 790, and a read-only audit over 2,053 complete sessions puts it at 113 blind of 1,524 determinable, all of them insider. The mechanism is the opposite of intuition: an uncredentialed outsider has no keystore, so security never engages and Node() succeeds, whereas a credentialed insider has a keystore and so, under Enforce, Node('n37_probe') needs an enclave that the fourteen do not include and fails closed. Partial credentials are stricter than none. That is the threat model working -- a thief of node X's credentials cannot also be n37_probe -- so the fix is recording, not granting the attacker an enclave it should not have. | 6 | — |
+| The blindness confound is real at the attacker level, modest in the data, and not separable | provisional | The strong form is refuted: all 117 blind sessions have distinct first-three-step intensity sequences, as do 1,159 of 1,432 sighted ones, so the fixed cadence is jittered and leaves no memorizable fingerprint. The weak form holds with a clear direction: within-session intensity standard deviation is 0.0454 against 0.3351, a factor of 7.4, and step-six median intensity is 0.414 against 1.280 against a ceiling of 1.600 -- blind sessions never escalate, because escalation is conditioned on not having been noticed and an attacker that cannot see alerts can never confirm that. At the data level it weakens: pcap bytes come to 0.905 times and packets to 0.655 times, and insider_parameter_write at 129.4 MB sits mid-table among twenty scenarios. Mechanism-matched pairs are ambiguous, and my first pooling was wrong -- I put a flood scenario in the control for a parameter-write attack -- so the per-pair figures are 0.866 for parameter write and 0.572 to 0.752 for HMAC forgery. Attribution is structurally inseparable: blindness and insider status are perfectly collinear, and separating them would require granting the attacker the enclave that the previous claim says it must not have. | 1 | — |
+| The open-set half goes through the seal, and rehearsing it caught a defect that would have spent the holdout on a wrong denominator | verified | Until now the identification half had an indivisible path and the open-set half had only refuse-to-overwrite, which a different output path walks past -- and the backlog records the previous holdout as spent three times. Two sub-judgements I offered were both wrong and were corrected by measurement: splitting the holdout in half is unnecessary because split and novelty_role are orthogonal (45 test sessions against 40 novelty with 6 overlapping), so one seal per scope coexist without blocking each other and open-once never needs loosening; and the two halves using different formulations is by design, because max_softmax and k-of-n were measured on the parallel-gate line, so the gap was only the seal. Rehearsing on the already-spent 2026-09-03 holdout caught three real defects: an uninformative refusal on the wrong metrics file, the seal's scope name compared against the feature column's value, and -- the consequential one -- a recall denominator that included the holdout sessions' normal rows, 161 of 537, because novelty_role marks whole sessions. Exclusion from fitting is session-level; evaluation is label-level. | 4 | — |
+| Both open acceptance questions were settled as no-change, and writing the procedure out found a conflict in my own recommendation | verified | Blindness does not enter the training gate: 113 of 113 insider sessions are blind, so failing them would delete both insider classes and drop Enforce from twenty classes to eighteen, and the gate exists to exclude sessions whose evidence is incomplete -- these sessions' evidence is complete and what is missing is the attacker's adaptation. The deployment gates are not ported to session_aggregate: porting changes what deployment_eligible means, because the 0.80 thresholds are calibrated per window, and the gates are not the binding constraint since the campaign flips one of eleven. Turning 'run both paths' into an executable order exposed a conflict I had not seen: grouped_training with --final-evaluate-test also reads the test split, which is exactly what the identification seal binds, so running it as recommended would spend that holdout a second time. Running it without the flag is cleaner and is measured, not inferred: the models_refresh_enforce run omitted the flag and its artifact carries all eleven gates with the six structural ones genuinely judged, three true and three false. | 2 | — |
+| Nothing in this round opened an executable path | verified | Across 2026-10-02 and 2026-10-03 the work was measurement, instrumentation, recording and one authorized threshold relaxation. The executable allowlist stays empty, kernel activation stays off, the training gate keeps exactly its six conditions, and the shipped attack-OOD scorer stays isolation_forest. The one relaxation was the pace threshold, which gates a supervisor alarm and not any deployment decision, and it was taken only after the operator authorized it. | 3 | — |
+| Room-scale autonomous IP blocking remains blocked | blocked | Three of the four pieces now have live evidence -- kernel nftables accepted nine of nine on the Pi, the Pi runs the defence stack under Enforce, and cross-host identity attribution held across 79 rounds -- and that is precisely why the remaining blockers are stated explicitly rather than omitted. | 1 | The chain has never been run end to end: it needs two machines and live traffic at the same time, and the laptop is occupied by the campaign.; executable_classes is empty by deliberate choice, so no model decision can reach a backend.; The acceptance ticket was issued by the acceptance runner, not produced by a model decision.; Revocation has been measured only against the in-memory adapter, never against a real kernel. |
+
+## Claim details
+
+### Evidence for `pace_model_measured_then_left_unchanged`
+
+- `工具腳本/recent_session_pace.py` — 8451 bytes, SHA-256 `50fda3e802d1b56dd924ede1aec0ff2fbdcb7ac8505c2216fdb2d7df9fbfbf9c` (The guard; the four constants are unchanged and the invalidity ceiling stays)
+- `tests/test_session_pace_guard.py` — 25012 bytes, SHA-256 `7befdf59199843776da0b7b9a2b8513d972fb309c30db8a1a0f0e3963f701270` (Reconstructs the observed wall clock from measurement-time literals and checks the current model's error in both directions)
+- `文件/步調模型重配_量完之後不該改_2026-10-02.md` — 10749 bytes, SHA-256 `a068766d400de5c583ddc9b0c2793d47d2a1c97cdd0bb350609b670d2235e2d3` (The measurement, the three refuted hypotheses, and two instrument defects caught before the claim)
+
+### Limitations for `pace_model_measured_then_left_unchanged`
+
+- The healthy segment's pcap only reaches 165.8 MB against a 708.4 MB dataset maximum, so the calibration covers 23 percent of the volume range.
+- The buckets that cross the invalidity ceiling hold n=16 and n=5, too few to fix any constant.
+- The attribution of C2C-073's degradation rests on numeric agreement (+121.4 against +116.8, 585 MB against its recorded 393.7 MB median), not on re-running that measurement -- its population is a prefix of the current one and cannot be rebuilt bit for bit.
+
+### Evidence for `pace_threshold_relaxed_with_its_cost_measured`
+
+- `工具腳本/run_mega_campaign.sh` — 15114 bytes, SHA-256 `4a9c9fc4bbd468e46b43fbe388b5eaf403a7f74f0a64378f0153438f20579800` (The supervisor's default; a test checks it agrees with the tool's)
+- `tests/test_session_pace_guard.py` — 25012 bytes, SHA-256 `7befdf59199843776da0b7b9a2b8513d972fb309c30db8a1a0f0e3963f701270` (Separates the alarm threshold from the model-bias bound and requires a 20 percent margin to the measured degradation)
+- `tests/test_pace_threshold_units.py` — 3829 bytes, SHA-256 `7c81665a9ded081a42cd284b0164747db5f0079b08551e0f65a6769b7a91d6fe` (The pre-existing pins that two of my four new tests duplicated)
+- `文件/步調門檻放寬_60到90_2026-10-02.md` — 6958 bytes, SHA-256 `479afb688502391842ee1ef8bf44de54d5e5c960ce08d5b6c83dea7453cae566` (Basis, cost, the near-silent failure, and the honest reclassification of which new tests add protection)
+
+### Limitations for `pace_threshold_relaxed_with_its_cost_measured`
+
+- The certified-healthy segment is n=89 over 80 windows and its pcap only reaches 165.8 MB, so MODEL_INVALID_ABOVE_MB must stay.
+- The 87 newly-missed windows are not classified.
+- Two of the four tests added in that round duplicate pre-existing pins; only the bias-bound separation and the 20 percent margin are new protection, and the mutation run that missed this covered one test file.
+
+### Evidence for `readiness_window_inversion_was_the_enforce_data_gap`
+
+- `展示指令/01c_啟動系統_enforce.sh` — 5799 bytes, SHA-256 `044d89f03da25c54af319441f477bdbfec71a4defac5f6598b4bf8d1c1af89cc` (The Enforce launcher's probe ceiling and its outer timeout)
+- `src/dds_security_monitor/dds_security_monitor/readiness_probe_node.py` — 4972 bytes, SHA-256 `1c3c8a8b89d5f98c79b229541097bfe723bcf546b65238675395a0e1ab9e2cf3` (The probe's own range validation, which my first fix did not check and which broke a restart)
+- `tests/test_readiness_window_layers.py` — 12446 bytes, SHA-256 `5c4ed55424fa0df89e351d53653d104d56dc1e2a8137295fbf56f517a2c9c226` (Pins the layer ordering, that the configured value is inside the probe's accepted range, and that the timeout message states the real window)
+- `文件/Enforce資料缺口_readiness三層窗的反轉_2026-10-02.md` — 6370 bytes, SHA-256 `9d29384d4c43db4a7de0788974f06a274dad4505ba3fdb91c897e9d22c405161` (The causal chain and the four diagnostic interfaces that misled in sequence, including my own broken probe)
+
+### Limitations for `readiness_window_inversion_was_the_enforce_data_gap`
+
+- Why each round gets slower is still unexplained; widening the window makes it non-fatal rather than fixing it.
+- The numbers come from the 118-second silence plus margin, not from a measurement of how long Gazebo actually needs -- its successful startup has never been timed.
+
+### Evidence for `enforce_session_loss_fell_and_attribution_stays_open`
+
+- `文件/場次流失_收尾修好之後露出啟動卡住_2026-10-02.md` — 7903 bytes, SHA-256 `25719d423091b8911fb491afb64147d87d611c40406af2c36431830356ff255a` (The 686-session audit that corrected C2C-083's 100 percent to 87.3 percent and located 73 of 75 terminations in Observer construction)
+- `文件/Enforce的場次流失_是readiness還是負載_2026-10-02.md` — 6948 bytes, SHA-256 `8e2704471cf89a33916cc666ac96f6c98c0c4691ff208e326afd67027f203584` (Per-segment failure rates, the recoverable-session hypothesis that came back clean-negative, and the prospective prediction)
+- `紅隊測試/PoC腳本/N37_adaptive_attacker.py` — 29381 bytes, SHA-256 `756d44743eae3a760a0aa85efb4c5a99a5f156cc76414d20f9e940997a255aeb` (The per-step timings that located the stall, and the three hygiene switches that are present yet insufficient)
+
+### Limitations for `enforce_session_loss_fell_and_attribution_stays_open`
+
+- The sessions themselves are outside the repository, so the ledger pins the analysis and the instrument, not the raw evidence.
+- Segmenting by fix date is observational: machine state, plan position and scenario mix all differ between segments.
+- Attributing the tail to the SROS2 handshake is inference; what was measured is the location, the normal import times, and that it only happens under Enforce.
+
+### Evidence for `credentialed_insider_adaptation_never_ran`
+
+- `firewall_lab/orchestrator.py` — 49137 bytes, SHA-256 `3a4271b519385630c136a6608c30e4e3ee964c6807e89d2983da658d4647ce4b` (Three-valued recording outside the training gate, where an undeterminable flag reads as null and never as sighted)
+- `工具腳本/audit_adaptive_blindness.py` — 8342 bytes, SHA-256 `42e625e76af4824a6bfadab24fa425176da69925aa75834964ae253ab9e3cec1` (Read-only derivation for sessions already on disk; imports the orchestrator's parser rather than restating it)
+- `文件/自適應盲打稽核_2026-10-03.json` — 52998 bytes, SHA-256 `96712527398aa337589d1067d4d143fd34f82b43726f15e4e51b2ba4ca0465b9` (The audit output over the whole dataset)
+- `tests/test_adaptive_blindness_recorded.py` — 9953 bytes, SHA-256 `271bbe5cfc10db64f2f25f5b7ba8d7f193cb0bf364b35d9ca5675d8dc36ff26f` (Pins the three decisions; mutating the null to false fails eleven tests)
+- `tests/test_adaptive_blindness_audit.py` — 7182 bytes, SHA-256 `f987d395c1c51fc2fe5568d7378196fdd2a8e50b47b5cdbb7ddcfae09a52bb57` (Pins the nested lookup the first version of the audit got wrong, reporting all 2,053 sessions as non-adaptive)
+- `文件/持證內鬼的自適應從來沒有跑過_2026-10-03.md` — 12614 bytes, SHA-256 `2574af30922a0c788148a57baa0129464fbbca66a879afc222d8a249713f5ce8` (The measurement, the mechanism, and why granting the enclave would be the wrong fix)
+
+### Limitations for `credentialed_insider_adaptation_never_ran`
+
+- The new manifest field has no live evidence: the running campaign imported the orchestrator at start, so it appears only after the next restart.
+- 113 of 113 is among the determinable sessions; 192 lost their decision trace to SIGKILL and can never be determined on this axis.
+- Whether blind should affect the training gate was decided separately as no, and that decision is recorded rather than enforced by the gate.
+
+### Evidence for `blind_confound_is_real_but_weakens_at_the_data`
+
+- `文件/盲打造成的行為混淆_到資料層就變弱_2026-10-03.md` — 6319 bytes, SHA-256 `40e1c7a207f3da3fea1ee61d7cef994cf7a578cb9ee343958ec83138df2f2401` (The refuted strong form, the confirmed weak form, the corrected pooling, and why the confound is structural rather than a defect)
+
+### Limitations for `blind_confound_is_real_but_weakens_at_the_data`
+
+- The volume figures are pcap bytes and packet counts, which are the source of the network features but not the feature values themselves.
+- The intensity figures come from the attacker's own decision trace, not an independent traffic measurement.
+- Both directions of the consequence -- that insider difficulty may be overstated, or that a model could learn low intensity implies insider -- are unproven, and deciding between them needs a sighted-insider session that the threat model does not permit.
+
+### Evidence for `openset_holdout_is_now_sealed`
+
+- `工具腳本/seal_holdout.py` — 13554 bytes, SHA-256 `1ff507b98bdc2c76590632e18fe48285f3aaad0b3912639733a964380912bafa` (Scope-aware sealing; an absent scope is provenance and an unrecognised one is refused rather than defaulted)
+- `工具腳本/evaluate_openset_from_registration.py` — 22968 bytes, SHA-256 `0726f2d62f4a77367c8e23610a5c9b0d8a3ca46e2622fa8b2868f81bdf160da5` (Verify registration, require an unopened seal of the right scope, fit, open once, evaluate once, record every parameter that moves the number)
+- `tests/test_openset_sealed_holdout.py` — 11145 bytes, SHA-256 `cfc2d507d1b54f975618cce81fdaee867a1ca7695ab1c00e1450869b81ccc0a1` (Pins all three rehearsal defects plus the ordering; three mutations bite, and one of them did not until a test was added for the call site rather than the mechanism)
+- `文件/封印接上open-set_2026-10-03.md` — 7848 bytes, SHA-256 `44ce38b703af99208ec83afab2a3fa90c246645ea6dbd3d9d034746ac36deb60` (The orthogonality measurement, the two corrected sub-judgements, and the rehearsal)
+
+### Limitations for `openset_holdout_is_now_sealed`
+
+- It has never run on fresh data; the rehearsal used an already-spent holdout, so its numbers are not citable.
+- It handles Permissive only, because the Enforce scorer is registered as undecided -- and refusing is the correct behaviour there, not a limitation of the tool.
+- The unknown-attack progress row stays at 70 percent: what was wired is the mechanism, not a number.
+
+### Evidence for `two_acceptance_decisions_settled_without_changing_anything`
+
+- `文件/重訓那天的執行順序_2026-10-03.md` — 9594 bytes, SHA-256 `56cc8c7e8689131d539ad69222fca771f264c83f499470988dbafc6ffc57fb5d` (Both decisions, the four-phase order, the conflict, and a table of what each number may and may not be called)
+- `tests/test_packet_windows_gate.py` — 7471 bytes, SHA-256 `0c89f45d11417294dbca79132a44bf0f7377de9d6e8cd28f32d4826d9a2f136e` (Pins that the gate has exactly its six conditions and that the module does not claim otherwise)
+
+### Limitations for `two_acceptance_decisions_settled_without_changing_anything`
+
+- The order has never been run end to end; phases 2 and 3 were each rehearsed on spent holdouts and phases 0 and 4 have not run on new data.
+- The gate behaviour without the flag is measured from an existing artifact; what phase 4 yields on new data remains to be seen.
+
+### Evidence for `shipping_defaults_unchanged`
+
+- `firewall_lab/action_policy.json` — 3144 bytes, SHA-256 `0ed41ad00639e77f45be4df367f3c9efb5fdcf756a10c07820e4e6380d7c2a49` (executable_classes is the empty list)
+- `firewall_lab/decision.py` — 14552 bytes, SHA-256 `e5aa89ef9372e52bd16b29b387e1899bd101f9a3c41e281af50aa50e8da850e4` (Forces alert when deployment_eligible is false, and requires an explicit authorising allowlist)
+- `firewall_lab/scenarios.json` — 11964 bytes, SHA-256 `d481ef27943c340098fc06e2c13e07453779f86bdb7da549d9438cfccc702a48` (The shipping catalog, unchanged this round; promoting a scenario would change its hash and the running plan pins it)
+
+### Limitations for `shipping_defaults_unchanged`
+
+- This is an assertion about configuration, not a claim that enabling any of it would be safe.
+
+### Evidence for `autonomous_ip_block`
+
+- `工具腳本/run_attribution_driven_block.py` — 26404 bytes, SHA-256 `637d3d569abde3df5ef1289866af433da42e41b61ff55cbcec9001b2b79b7c3c` (Attribution report to bound ticket to kernel block to revocation; nine checks, never run as a chain)
+
+### Limitations for `autonomous_ip_block`
+
+- Every number here predates this round; nothing in 2026-10-02 or 2026-10-03 advanced it.
+
+
+## Safety boundary
+
+This is an evidence inventory, not a cryptographic signature or live-test authorization.
+A valid ledger proves only that the cited repository files matched the recorded size and hash at verification time.

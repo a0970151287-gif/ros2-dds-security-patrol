@@ -1,0 +1,297 @@
+{
+  "campaign_id": "campaign_6befefa673ec5f43",
+  "catalog_sha256": "e1d376e2633e000183e0f1e644d9f9969c2f8dc5d91a0535c5cd6a98da6dfe9b",
+  "created_utc": "2026-07-27T05:44:21.121385+00:00",
+  "entries": [
+    {
+      "attack_class": "message_dos",
+      "domain_id": 30,
+      "entry_id": "run_00001",
+      "error": null,
+      "expected_action": "drop_message",
+      "scenario_id": "oversized_scan",
+      "security_mode": "permissive",
+      "seed": 1266870505,
+      "session_id": "20260727T063714094019Z_oversized_scan_82cf2133",
+      "status": "complete"
+    },
+    {
+      "attack_class": "service_dos",
+      "domain_id": 30,
+      "entry_id": "run_00002",
+      "error": null,
+      "expected_action": "rate_limit",
+      "scenario_id": "parameter_flood",
+      "security_mode": "enforce",
+      "seed": 1595273353,
+      "session_id": "20260727T062320287606Z_parameter_flood_5e97eb6f",
+      "status": "complete"
+    },
+    {
+      "attack_class": "normal",
+      "domain_id": 30,
+      "entry_id": "run_00003",
+      "error": null,
+      "expected_action": "allow",
+      "scenario_id": "normal_patrol",
+      "security_mode": "enforce",
+      "seed": 1255197183,
+      "session_id": "20260727T062412839309Z_normal_patrol_4b96ef00",
+      "status": "complete"
+    },
+    {
+      "attack_class": "normal",
+      "domain_id": 30,
+      "entry_id": "run_00004",
+      "error": null,
+      "expected_action": "allow",
+      "scenario_id": "normal_patrol",
+      "security_mode": "permissive",
+      "seed": 1031778610,
+      "session_id": "20260727T060309875695Z_normal_patrol_b5333ffc",
+      "status": "complete"
+    },
+    {
+      "attack_class": "replay",
+      "domain_id": 30,
+      "entry_id": "run_00005",
+      "error": null,
+      "expected_action": "drop_message",
+      "scenario_id": "heartbeat_replay",
+      "security_mode": "enforce",
+      "seed": 1002048488,
+      "session_id": "20260727T062459331627Z_heartbeat_replay_95711a34",
+      "status": "complete"
+    },
+    {
+      "attack_class": "normal",
+      "domain_id": 30,
+      "entry_id": "run_00006",
+      "error": null,
+      "expected_action": "allow",
+      "scenario_id": "normal_patrol",
+      "security_mode": "permissive",
+      "seed": 1022607569,
+      "session_id": "20260727T060356475497Z_normal_patrol_ae18e184",
+      "status": "complete"
+    },
+    {
+      "attack_class": "command_injection",
+      "domain_id": 30,
+      "entry_id": "run_00007",
+      "error": null,
+      "expected_action": "lock_velocity",
+      "scenario_id": "cmd_vel_injection",
+      "security_mode": "permissive",
+      "seed": 333784254,
+      "session_id": "20260727T063736023049Z_cmd_vel_injection_9afa6eda",
+      "status": "complete"
+    },
+    {
+      "attack_class": "identity_abuse",
+      "domain_id": 30,
+      "entry_id": "run_00008",
+      "error": null,
+      "expected_action": "deny_participant",
+      "scenario_id": "unauthorized_participant",
+      "security_mode": "permissive",
+      "seed": 2022191330,
+      "session_id": "20260727T060513570041Z_unauthorized_participant_ca1eafc8",
+      "status": "complete"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "domain_id": 30,
+      "entry_id": "run_00009",
+      "error": null,
+      "expected_action": "deny_participant",
+      "scenario_id": "parameter_tamper",
+      "security_mode": "enforce",
+      "seed": 1810492784,
+      "session_id": "20260727T063024918863Z_parameter_tamper_2454858f",
+      "status": "complete"
+    },
+    {
+      "attack_class": "replay_dos",
+      "domain_id": 30,
+      "entry_id": "run_00010",
+      "error": null,
+      "expected_action": "drop_message",
+      "scenario_id": "alert_replay",
+      "security_mode": "permissive",
+      "seed": 223741895,
+      "session_id": "20260727T063805659591Z_alert_replay_c104b3f0",
+      "status": "complete"
+    },
+    {
+      "attack_class": "message_dos",
+      "domain_id": 30,
+      "entry_id": "run_00011",
+      "error": null,
+      "expected_action": "drop_message",
+      "scenario_id": "oversized_scan",
+      "security_mode": "enforce",
+      "seed": 1368881248,
+      "session_id": "20260727T062545052034Z_oversized_scan_e7bebefa",
+      "status": "complete"
+    },
+    {
+      "attack_class": "parameter_tamper",
+      "domain_id": 30,
+      "entry_id": "run_00012",
+      "error": null,
+      "expected_action": "deny_participant",
+      "scenario_id": "parameter_tamper",
+      "security_mode": "permissive",
+      "seed": 1674948634,
+      "session_id": "20260727T060602543955Z_parameter_tamper_1635eb32",
+      "status": "complete"
+    },
+    {
+      "attack_class": "sensor_spoof",
+      "domain_id": 30,
+      "entry_id": "run_00013",
+      "error": null,
+      "expected_action": "drop_message",
+      "scenario_id": "sensor_status_spoof",
+      "security_mode": "enforce",
+      "seed": 1881876999,
+      "session_id": "20260727T062606605597Z_sensor_status_spoof_c484359b",
+      "status": "complete"
+    },
+    {
+      "attack_class": "sensor_spoof",
+      "domain_id": 30,
+      "entry_id": "run_00014",
+      "error": null,
+      "expected_action": "drop_message",
+      "scenario_id": "sensor_status_spoof",
+      "security_mode": "permissive",
+      "seed": 1826499580,
+      "session_id": "20260727T063832294374Z_sensor_status_spoof_9a2ba2ea",
+      "status": "complete"
+    },
+    {
+      "attack_class": "identity_abuse",
+      "domain_id": 30,
+      "entry_id": "run_00015",
+      "error": null,
+      "expected_action": "deny_participant",
+      "scenario_id": "unauthorized_participant",
+      "security_mode": "enforce",
+      "seed": 2078343583,
+      "session_id": "20260727T062633186504Z_unauthorized_participant_43d534db",
+      "status": "complete"
+    },
+    {
+      "attack_class": "normal",
+      "domain_id": 30,
+      "entry_id": "run_00016",
+      "error": null,
+      "expected_action": "allow",
+      "scenario_id": "normal_patrol",
+      "security_mode": "enforce",
+      "seed": 1218088595,
+      "session_id": "20260727T062654597370Z_normal_patrol_1aa4aaee",
+      "status": "complete"
+    },
+    {
+      "attack_class": "replay",
+      "domain_id": 30,
+      "entry_id": "run_00017",
+      "error": null,
+      "expected_action": "drop_message",
+      "scenario_id": "heartbeat_replay",
+      "security_mode": "permissive",
+      "seed": 969256068,
+      "session_id": "20260727T063859027151Z_heartbeat_replay_49879647",
+      "status": "complete"
+    },
+    {
+      "attack_class": "replay_dos",
+      "domain_id": 30,
+      "entry_id": "run_00018",
+      "error": null,
+      "expected_action": "drop_message",
+      "scenario_id": "alert_replay",
+      "security_mode": "enforce",
+      "seed": 302484964,
+      "session_id": "20260727T062740993684Z_alert_replay_643e3d77",
+      "status": "complete"
+    },
+    {
+      "attack_class": "service_dos",
+      "domain_id": 30,
+      "entry_id": "run_00019",
+      "error": null,
+      "expected_action": "rate_limit",
+      "scenario_id": "parameter_flood",
+      "security_mode": "permissive",
+      "seed": 1415935400,
+      "session_id": "20260727T063312925986Z_parameter_flood_fbbc6a6f",
+      "status": "complete"
+    },
+    {
+      "attack_class": "command_injection",
+      "domain_id": 30,
+      "entry_id": "run_00020",
+      "error": null,
+      "expected_action": "lock_velocity",
+      "scenario_id": "cmd_vel_injection",
+      "security_mode": "enforce",
+      "seed": 728065588,
+      "session_id": "20260727T062807585582Z_cmd_vel_injection_b54cd89c",
+      "status": "complete"
+    }
+  ],
+  "experiment_mode": "live",
+  "requested_counts": {
+    "alert_replay": {
+      "enforce": 1,
+      "permissive": 1,
+      "total": 2
+    },
+    "cmd_vel_injection": {
+      "enforce": 1,
+      "permissive": 1,
+      "total": 2
+    },
+    "heartbeat_replay": {
+      "enforce": 1,
+      "permissive": 1,
+      "total": 2
+    },
+    "normal_patrol": {
+      "enforce": 2,
+      "permissive": 2,
+      "total": 4
+    },
+    "oversized_scan": {
+      "enforce": 1,
+      "permissive": 1,
+      "total": 2
+    },
+    "parameter_flood": {
+      "enforce": 1,
+      "permissive": 1,
+      "total": 2
+    },
+    "parameter_tamper": {
+      "enforce": 1,
+      "permissive": 1,
+      "total": 2
+    },
+    "sensor_status_spoof": {
+      "enforce": 1,
+      "permissive": 1,
+      "total": 2
+    },
+    "unauthorized_participant": {
+      "enforce": 1,
+      "permissive": 1,
+      "total": 2
+    }
+  },
+  "schema_version": "sros2-firewall-campaign/v1",
+  "seed": 20260728
+}

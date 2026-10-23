@@ -1,0 +1,1377 @@
+{
+  "schema_version": "sros2-firewall-perclass-separability/v1",
+  "features_table": "/home/jesse/features_mega_split/fusion_features_enforce.csv",
+  "eval_split": "train_validation",
+  "test_rows_in_table": 10365,
+  "test_rows_used": 0,
+  "rows": 58757,
+  "sessions": 1655,
+  "classes": 20,
+  "base_features": 29,
+  "aggregate_stats": [
+    "mean",
+    "std",
+    "min",
+    "max",
+    "max_abs_delta",
+    "trend"
+  ],
+  "aggregate_width": 174,
+  "metric": "one-vs-rest Mann-Whitney AUC (tie-corrected), session-aggregate",
+  "temporal": "none",
+  "changes_shipped_defaults": false,
+  "targets": {
+    "identity_abuse": {
+      "sessions": 65,
+      "rest": 1590,
+      "live_columns": 158,
+      "top_columns": [
+        {
+          "abs_auc_minus_half": 0.4457,
+          "auc": 0.9457,
+          "feature": "dst_port_entropy",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.4454,
+          "auc": 0.9454,
+          "feature": "uniq_dst_ports",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.4115,
+          "auc": 0.9115,
+          "feature": "conn_rate",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.4115,
+          "auc": 0.9115,
+          "feature": "conn_count",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.377,
+          "auc": 0.877,
+          "feature": "amplification_ratio",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.3564,
+          "auc": 0.1436,
+          "feature": "dominant_port_ratio",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.3512,
+          "auc": 0.1488,
+          "feature": "mean_bytes_per_packet",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.3494,
+          "auc": 0.1506,
+          "feature": "spdp_ratio",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.3494,
+          "auc": 0.1506,
+          "feature": "mcast_ratio",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.3217,
+          "auc": 0.8217,
+          "feature": "tuple_repeat_ratio",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.2372,
+          "auc": 0.7372,
+          "feature": "uniq_dst_hosts",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.2358,
+          "auc": 0.7358,
+          "feature": "meta_ratio",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.2237,
+          "auc": 0.7237,
+          "feature": "userdata_ratio",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.2161,
+          "auc": 0.7161,
+          "feature": "dominant_host_ratio",
+          "stat": "trend"
+        },
+        {
+          "abs_auc_minus_half": 0.2066,
+          "auc": 0.7066,
+          "feature": "conn_rate",
+          "stat": "std"
+        },
+        {
+          "abs_auc_minus_half": 0.2066,
+          "auc": 0.7066,
+          "feature": "conn_count",
+          "stat": "std"
+        },
+        {
+          "abs_auc_minus_half": 0.2033,
+          "auc": 0.2967,
+          "feature": "mean_bytes_per_packet",
+          "stat": "mean"
+        },
+        {
+          "abs_auc_minus_half": 0.2002,
+          "auc": 0.2998,
+          "feature": "mean_bytes_per_packet",
+          "stat": "min"
+        }
+      ],
+      "per_feature_best": [
+        {
+          "feature": "dst_port_entropy",
+          "abs_auc_minus_half": 0.4457,
+          "auc": 0.9457,
+          "stat": "trend",
+          "rank": 1
+        },
+        {
+          "feature": "uniq_dst_ports",
+          "abs_auc_minus_half": 0.4454,
+          "auc": 0.9454,
+          "stat": "trend",
+          "rank": 2
+        },
+        {
+          "feature": "conn_rate",
+          "abs_auc_minus_half": 0.4115,
+          "auc": 0.9115,
+          "stat": "trend",
+          "rank": 3
+        },
+        {
+          "feature": "conn_count",
+          "abs_auc_minus_half": 0.4115,
+          "auc": 0.9115,
+          "stat": "trend",
+          "rank": 4
+        },
+        {
+          "feature": "amplification_ratio",
+          "abs_auc_minus_half": 0.377,
+          "auc": 0.877,
+          "stat": "trend",
+          "rank": 5
+        },
+        {
+          "feature": "dominant_port_ratio",
+          "abs_auc_minus_half": 0.3564,
+          "auc": 0.1436,
+          "stat": "trend",
+          "rank": 6
+        },
+        {
+          "feature": "mean_bytes_per_packet",
+          "abs_auc_minus_half": 0.3512,
+          "auc": 0.1488,
+          "stat": "trend",
+          "rank": 7
+        },
+        {
+          "feature": "spdp_ratio",
+          "abs_auc_minus_half": 0.3494,
+          "auc": 0.1506,
+          "stat": "trend",
+          "rank": 8
+        },
+        {
+          "feature": "mcast_ratio",
+          "abs_auc_minus_half": 0.3494,
+          "auc": 0.1506,
+          "stat": "trend",
+          "rank": 9
+        },
+        {
+          "feature": "tuple_repeat_ratio",
+          "abs_auc_minus_half": 0.3217,
+          "auc": 0.8217,
+          "stat": "trend",
+          "rank": 10
+        },
+        {
+          "feature": "uniq_dst_hosts",
+          "abs_auc_minus_half": 0.2372,
+          "auc": 0.7372,
+          "stat": "trend",
+          "rank": 11
+        },
+        {
+          "feature": "meta_ratio",
+          "abs_auc_minus_half": 0.2358,
+          "auc": 0.7358,
+          "stat": "trend",
+          "rank": 12
+        },
+        {
+          "feature": "userdata_ratio",
+          "abs_auc_minus_half": 0.2237,
+          "auc": 0.7237,
+          "stat": "trend",
+          "rank": 13
+        },
+        {
+          "feature": "dominant_host_ratio",
+          "abs_auc_minus_half": 0.2161,
+          "auc": 0.7161,
+          "stat": "trend",
+          "rank": 14
+        },
+        {
+          "feature": "orig_pkts_rate",
+          "abs_auc_minus_half": 0.1978,
+          "auc": 0.6978,
+          "stat": "trend",
+          "rank": 15
+        },
+        {
+          "feature": "burstiness",
+          "abs_auc_minus_half": 0.1828,
+          "auc": 0.6828,
+          "stat": "mean",
+          "rank": 16
+        },
+        {
+          "feature": "orig_bytes_rate",
+          "abs_auc_minus_half": 0.1805,
+          "auc": 0.6805,
+          "stat": "trend",
+          "rank": 17
+        },
+        {
+          "feature": "interarrival_cv",
+          "abs_auc_minus_half": 0.1595,
+          "auc": 0.6595,
+          "stat": "trend",
+          "rank": 18
+        },
+        {
+          "feature": "max_conn_bytes",
+          "abs_auc_minus_half": 0.124,
+          "auc": 0.624,
+          "stat": "max",
+          "rank": 19
+        },
+        {
+          "feature": "control_conflict_ratio",
+          "abs_auc_minus_half": 0.0693,
+          "auc": 0.4307,
+          "stat": "trend",
+          "rank": 20
+        },
+        {
+          "feature": "odom_cmd_mismatch_ratio",
+          "abs_auc_minus_half": 0.0508,
+          "auc": 0.5508,
+          "stat": "mean",
+          "rank": 21
+        },
+        {
+          "feature": "participant_churn_rate",
+          "abs_auc_minus_half": 0.0431,
+          "auc": 0.4569,
+          "stat": "std",
+          "rank": 22
+        },
+        {
+          "feature": "unknown_node_rate",
+          "abs_auc_minus_half": 0.0412,
+          "auc": 0.4588,
+          "stat": "std",
+          "rank": 23
+        },
+        {
+          "feature": "parameter_call_rate",
+          "abs_auc_minus_half": 0.0396,
+          "auc": 0.4604,
+          "stat": "std",
+          "rank": 24
+        },
+        {
+          "feature": "timestamp_violation_ratio",
+          "abs_auc_minus_half": 0.0108,
+          "auc": 0.4892,
+          "stat": "trend",
+          "rank": 25
+        },
+        {
+          "feature": "hmac_failure_rate",
+          "abs_auc_minus_half": 0.0099,
+          "auc": 0.4901,
+          "stat": "trend",
+          "rank": 26
+        },
+        {
+          "feature": "log_reject_rate",
+          "abs_auc_minus_half": 0.0078,
+          "auc": 0.4922,
+          "stat": "mean",
+          "rank": 27
+        },
+        {
+          "feature": "alert_reflection_ratio",
+          "abs_auc_minus_half": 0.006,
+          "auc": 0.494,
+          "stat": "std",
+          "rank": 28
+        },
+        {
+          "feature": "qos_drop_ratio",
+          "abs_auc_minus_half": 0.0003,
+          "auc": 0.4997,
+          "stat": "std",
+          "rank": 29
+        }
+      ],
+      "named_in_my_hypothesis": {
+        "unknown_node_rate": {
+          "abs_auc_minus_half": 0.0412,
+          "auc": 0.4588,
+          "stat": "std",
+          "rank_among_live_columns": 101,
+          "live_columns": 158
+        },
+        "participant_churn_rate": {
+          "abs_auc_minus_half": 0.0431,
+          "auc": 0.4569,
+          "stat": "std",
+          "rank_among_live_columns": 96,
+          "live_columns": 158
+        },
+        "sros_auth_fail_rate": "not_live_constant_whole_table",
+        "sros_permission_deny_rate": "not_live_constant_whole_table"
+      }
+    },
+    "command_injection": {
+      "sessions": 65,
+      "rest": 1590,
+      "live_columns": 158,
+      "top_columns": [
+        {
+          "abs_auc_minus_half": 0.1566,
+          "auc": 0.6566,
+          "feature": "spdp_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1566,
+          "auc": 0.6566,
+          "feature": "mcast_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.153,
+          "auc": 0.653,
+          "feature": "mean_bytes_per_packet",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1525,
+          "auc": 0.6525,
+          "feature": "uniq_dst_ports",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1525,
+          "auc": 0.6525,
+          "feature": "dst_port_entropy",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1441,
+          "auc": 0.6441,
+          "feature": "dominant_host_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1428,
+          "auc": 0.6428,
+          "feature": "amplification_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1349,
+          "auc": 0.6349,
+          "feature": "dominant_port_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1338,
+          "auc": 0.6338,
+          "feature": "meta_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.131,
+          "auc": 0.631,
+          "feature": "userdata_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1198,
+          "auc": 0.6198,
+          "feature": "meta_ratio",
+          "stat": "max"
+        },
+        {
+          "abs_auc_minus_half": 0.1121,
+          "auc": 0.6121,
+          "feature": "uniq_dst_hosts",
+          "stat": "std"
+        },
+        {
+          "abs_auc_minus_half": 0.1077,
+          "auc": 0.6077,
+          "feature": "meta_ratio",
+          "stat": "mean"
+        },
+        {
+          "abs_auc_minus_half": 0.1043,
+          "auc": 0.6043,
+          "feature": "conn_rate",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1043,
+          "auc": 0.6043,
+          "feature": "conn_count",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1013,
+          "auc": 0.6013,
+          "feature": "uniq_dst_hosts",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.1001,
+          "auc": 0.6001,
+          "feature": "mean_bytes_per_packet",
+          "stat": "std"
+        },
+        {
+          "abs_auc_minus_half": 0.0979,
+          "auc": 0.4021,
+          "feature": "burstiness",
+          "stat": "trend"
+        }
+      ],
+      "per_feature_best": [
+        {
+          "feature": "spdp_ratio",
+          "abs_auc_minus_half": 0.1566,
+          "auc": 0.6566,
+          "stat": "max_abs_delta",
+          "rank": 1
+        },
+        {
+          "feature": "mcast_ratio",
+          "abs_auc_minus_half": 0.1566,
+          "auc": 0.6566,
+          "stat": "max_abs_delta",
+          "rank": 2
+        },
+        {
+          "feature": "mean_bytes_per_packet",
+          "abs_auc_minus_half": 0.153,
+          "auc": 0.653,
+          "stat": "max_abs_delta",
+          "rank": 3
+        },
+        {
+          "feature": "uniq_dst_ports",
+          "abs_auc_minus_half": 0.1525,
+          "auc": 0.6525,
+          "stat": "max_abs_delta",
+          "rank": 4
+        },
+        {
+          "feature": "dst_port_entropy",
+          "abs_auc_minus_half": 0.1525,
+          "auc": 0.6525,
+          "stat": "max_abs_delta",
+          "rank": 5
+        },
+        {
+          "feature": "dominant_host_ratio",
+          "abs_auc_minus_half": 0.1441,
+          "auc": 0.6441,
+          "stat": "max_abs_delta",
+          "rank": 6
+        },
+        {
+          "feature": "amplification_ratio",
+          "abs_auc_minus_half": 0.1428,
+          "auc": 0.6428,
+          "stat": "max_abs_delta",
+          "rank": 7
+        },
+        {
+          "feature": "dominant_port_ratio",
+          "abs_auc_minus_half": 0.1349,
+          "auc": 0.6349,
+          "stat": "max_abs_delta",
+          "rank": 8
+        },
+        {
+          "feature": "meta_ratio",
+          "abs_auc_minus_half": 0.1338,
+          "auc": 0.6338,
+          "stat": "max_abs_delta",
+          "rank": 9
+        },
+        {
+          "feature": "userdata_ratio",
+          "abs_auc_minus_half": 0.131,
+          "auc": 0.631,
+          "stat": "max_abs_delta",
+          "rank": 10
+        },
+        {
+          "feature": "uniq_dst_hosts",
+          "abs_auc_minus_half": 0.1121,
+          "auc": 0.6121,
+          "stat": "std",
+          "rank": 11
+        },
+        {
+          "feature": "conn_rate",
+          "abs_auc_minus_half": 0.1043,
+          "auc": 0.6043,
+          "stat": "max_abs_delta",
+          "rank": 12
+        },
+        {
+          "feature": "conn_count",
+          "abs_auc_minus_half": 0.1043,
+          "auc": 0.6043,
+          "stat": "max_abs_delta",
+          "rank": 13
+        },
+        {
+          "feature": "burstiness",
+          "abs_auc_minus_half": 0.0979,
+          "auc": 0.4021,
+          "stat": "trend",
+          "rank": 14
+        },
+        {
+          "feature": "interarrival_cv",
+          "abs_auc_minus_half": 0.0974,
+          "auc": 0.5974,
+          "stat": "max_abs_delta",
+          "rank": 15
+        },
+        {
+          "feature": "tuple_repeat_ratio",
+          "abs_auc_minus_half": 0.0874,
+          "auc": 0.4126,
+          "stat": "trend",
+          "rank": 16
+        },
+        {
+          "feature": "orig_pkts_rate",
+          "abs_auc_minus_half": 0.0656,
+          "auc": 0.4344,
+          "stat": "min",
+          "rank": 17
+        },
+        {
+          "feature": "orig_bytes_rate",
+          "abs_auc_minus_half": 0.0633,
+          "auc": 0.4367,
+          "stat": "min",
+          "rank": 18
+        },
+        {
+          "feature": "max_conn_bytes",
+          "abs_auc_minus_half": 0.0551,
+          "auc": 0.5551,
+          "stat": "std",
+          "rank": 19
+        },
+        {
+          "feature": "participant_churn_rate",
+          "abs_auc_minus_half": 0.0431,
+          "auc": 0.4569,
+          "stat": "std",
+          "rank": 20
+        },
+        {
+          "feature": "unknown_node_rate",
+          "abs_auc_minus_half": 0.0412,
+          "auc": 0.4588,
+          "stat": "std",
+          "rank": 21
+        },
+        {
+          "feature": "control_conflict_ratio",
+          "abs_auc_minus_half": 0.0407,
+          "auc": 0.5407,
+          "stat": "trend",
+          "rank": 22
+        },
+        {
+          "feature": "parameter_call_rate",
+          "abs_auc_minus_half": 0.0396,
+          "auc": 0.4604,
+          "stat": "std",
+          "rank": 23
+        },
+        {
+          "feature": "odom_cmd_mismatch_ratio",
+          "abs_auc_minus_half": 0.0274,
+          "auc": 0.4726,
+          "stat": "max_abs_delta",
+          "rank": 24
+        },
+        {
+          "feature": "log_reject_rate",
+          "abs_auc_minus_half": 0.0157,
+          "auc": 0.4843,
+          "stat": "std",
+          "rank": 25
+        },
+        {
+          "feature": "alert_reflection_ratio",
+          "abs_auc_minus_half": 0.0074,
+          "auc": 0.5074,
+          "stat": "trend",
+          "rank": 26
+        },
+        {
+          "feature": "hmac_failure_rate",
+          "abs_auc_minus_half": 0.0061,
+          "auc": 0.5061,
+          "stat": "trend",
+          "rank": 27
+        },
+        {
+          "feature": "timestamp_violation_ratio",
+          "abs_auc_minus_half": 0.0051,
+          "auc": 0.5051,
+          "stat": "trend",
+          "rank": 28
+        },
+        {
+          "feature": "qos_drop_ratio",
+          "abs_auc_minus_half": 0.0003,
+          "auc": 0.4997,
+          "stat": "std",
+          "rank": 29
+        }
+      ],
+      "named_in_my_hypothesis": {
+        "unknown_node_rate": {
+          "abs_auc_minus_half": 0.0412,
+          "auc": 0.4588,
+          "stat": "std",
+          "rank_among_live_columns": 57,
+          "live_columns": 158
+        },
+        "participant_churn_rate": {
+          "abs_auc_minus_half": 0.0431,
+          "auc": 0.4569,
+          "stat": "std",
+          "rank_among_live_columns": 50,
+          "live_columns": 158
+        },
+        "sros_auth_fail_rate": "not_live_constant_whole_table",
+        "sros_permission_deny_rate": "not_live_constant_whole_table"
+      }
+    },
+    "confused_deputy": {
+      "sessions": 137,
+      "rest": 1518,
+      "live_columns": 158,
+      "top_columns": [
+        {
+          "abs_auc_minus_half": 0.4895,
+          "auc": 0.9895,
+          "feature": "max_conn_bytes",
+          "stat": "std"
+        },
+        {
+          "abs_auc_minus_half": 0.4852,
+          "auc": 0.9852,
+          "feature": "max_conn_bytes",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.4834,
+          "auc": 0.9834,
+          "feature": "max_conn_bytes",
+          "stat": "mean"
+        },
+        {
+          "abs_auc_minus_half": 0.4818,
+          "auc": 0.9818,
+          "feature": "max_conn_bytes",
+          "stat": "max"
+        },
+        {
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "feature": "unknown_node_rate",
+          "stat": "std"
+        },
+        {
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "feature": "unknown_node_rate",
+          "stat": "mean"
+        },
+        {
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "feature": "unknown_node_rate",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "feature": "unknown_node_rate",
+          "stat": "max"
+        },
+        {
+          "abs_auc_minus_half": 0.4779,
+          "auc": 0.9779,
+          "feature": "participant_churn_rate",
+          "stat": "std"
+        },
+        {
+          "abs_auc_minus_half": 0.4779,
+          "auc": 0.9779,
+          "feature": "participant_churn_rate",
+          "stat": "mean"
+        },
+        {
+          "abs_auc_minus_half": 0.4775,
+          "auc": 0.9775,
+          "feature": "participant_churn_rate",
+          "stat": "max"
+        },
+        {
+          "abs_auc_minus_half": 0.4771,
+          "auc": 0.9771,
+          "feature": "participant_churn_rate",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.4599,
+          "auc": 0.9599,
+          "feature": "parameter_call_rate",
+          "stat": "std"
+        },
+        {
+          "abs_auc_minus_half": 0.4599,
+          "auc": 0.9599,
+          "feature": "parameter_call_rate",
+          "stat": "mean"
+        },
+        {
+          "abs_auc_minus_half": 0.4599,
+          "auc": 0.9599,
+          "feature": "parameter_call_rate",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.4599,
+          "auc": 0.9599,
+          "feature": "parameter_call_rate",
+          "stat": "max"
+        },
+        {
+          "abs_auc_minus_half": 0.3261,
+          "auc": 0.8261,
+          "feature": "orig_bytes_rate",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.2809,
+          "auc": 0.7809,
+          "feature": "interarrival_cv",
+          "stat": "max_abs_delta"
+        }
+      ],
+      "per_feature_best": [
+        {
+          "feature": "max_conn_bytes",
+          "abs_auc_minus_half": 0.4895,
+          "auc": 0.9895,
+          "stat": "std",
+          "rank": 1
+        },
+        {
+          "feature": "unknown_node_rate",
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "stat": "std",
+          "rank": 2
+        },
+        {
+          "feature": "participant_churn_rate",
+          "abs_auc_minus_half": 0.4779,
+          "auc": 0.9779,
+          "stat": "std",
+          "rank": 3
+        },
+        {
+          "feature": "parameter_call_rate",
+          "abs_auc_minus_half": 0.4599,
+          "auc": 0.9599,
+          "stat": "std",
+          "rank": 4
+        },
+        {
+          "feature": "orig_bytes_rate",
+          "abs_auc_minus_half": 0.3261,
+          "auc": 0.8261,
+          "stat": "max_abs_delta",
+          "rank": 5
+        },
+        {
+          "feature": "interarrival_cv",
+          "abs_auc_minus_half": 0.2809,
+          "auc": 0.7809,
+          "stat": "max_abs_delta",
+          "rank": 6
+        },
+        {
+          "feature": "uniq_dst_hosts",
+          "abs_auc_minus_half": 0.2646,
+          "auc": 0.2354,
+          "stat": "std",
+          "rank": 7
+        },
+        {
+          "feature": "burstiness",
+          "abs_auc_minus_half": 0.263,
+          "auc": 0.763,
+          "stat": "max",
+          "rank": 8
+        },
+        {
+          "feature": "uniq_dst_ports",
+          "abs_auc_minus_half": 0.232,
+          "auc": 0.268,
+          "stat": "max_abs_delta",
+          "rank": 9
+        },
+        {
+          "feature": "meta_ratio",
+          "abs_auc_minus_half": 0.2029,
+          "auc": 0.2971,
+          "stat": "mean",
+          "rank": 10
+        },
+        {
+          "feature": "tuple_repeat_ratio",
+          "abs_auc_minus_half": 0.1992,
+          "auc": 0.6992,
+          "stat": "max",
+          "rank": 11
+        },
+        {
+          "feature": "dominant_host_ratio",
+          "abs_auc_minus_half": 0.1936,
+          "auc": 0.3064,
+          "stat": "std",
+          "rank": 12
+        },
+        {
+          "feature": "mean_bytes_per_packet",
+          "abs_auc_minus_half": 0.1906,
+          "auc": 0.6906,
+          "stat": "max_abs_delta",
+          "rank": 13
+        },
+        {
+          "feature": "orig_pkts_rate",
+          "abs_auc_minus_half": 0.1888,
+          "auc": 0.6888,
+          "stat": "max_abs_delta",
+          "rank": 14
+        },
+        {
+          "feature": "conn_rate",
+          "abs_auc_minus_half": 0.1595,
+          "auc": 0.6595,
+          "stat": "max_abs_delta",
+          "rank": 15
+        },
+        {
+          "feature": "conn_count",
+          "abs_auc_minus_half": 0.1595,
+          "auc": 0.6595,
+          "stat": "max_abs_delta",
+          "rank": 16
+        },
+        {
+          "feature": "log_reject_rate",
+          "abs_auc_minus_half": 0.1585,
+          "auc": 0.6585,
+          "stat": "std",
+          "rank": 17
+        },
+        {
+          "feature": "dominant_port_ratio",
+          "abs_auc_minus_half": 0.1294,
+          "auc": 0.6294,
+          "stat": "mean",
+          "rank": 18
+        },
+        {
+          "feature": "amplification_ratio",
+          "abs_auc_minus_half": 0.0967,
+          "auc": 0.5967,
+          "stat": "trend",
+          "rank": 19
+        },
+        {
+          "feature": "dst_port_entropy",
+          "abs_auc_minus_half": 0.0925,
+          "auc": 0.5925,
+          "stat": "max",
+          "rank": 20
+        },
+        {
+          "feature": "control_conflict_ratio",
+          "abs_auc_minus_half": 0.0897,
+          "auc": 0.4103,
+          "stat": "mean",
+          "rank": 21
+        },
+        {
+          "feature": "spdp_ratio",
+          "abs_auc_minus_half": 0.0851,
+          "auc": 0.4149,
+          "stat": "trend",
+          "rank": 22
+        },
+        {
+          "feature": "mcast_ratio",
+          "abs_auc_minus_half": 0.0851,
+          "auc": 0.4149,
+          "stat": "trend",
+          "rank": 23
+        },
+        {
+          "feature": "userdata_ratio",
+          "abs_auc_minus_half": 0.0591,
+          "auc": 0.5591,
+          "stat": "max_abs_delta",
+          "rank": 24
+        },
+        {
+          "feature": "timestamp_violation_ratio",
+          "abs_auc_minus_half": 0.015,
+          "auc": 0.515,
+          "stat": "std",
+          "rank": 25
+        },
+        {
+          "feature": "hmac_failure_rate",
+          "abs_auc_minus_half": 0.015,
+          "auc": 0.515,
+          "stat": "std",
+          "rank": 26
+        },
+        {
+          "feature": "alert_reflection_ratio",
+          "abs_auc_minus_half": 0.0136,
+          "auc": 0.5136,
+          "stat": "std",
+          "rank": 27
+        },
+        {
+          "feature": "odom_cmd_mismatch_ratio",
+          "abs_auc_minus_half": 0.0088,
+          "auc": 0.5088,
+          "stat": "max",
+          "rank": 28
+        },
+        {
+          "feature": "qos_drop_ratio",
+          "abs_auc_minus_half": 0.0036,
+          "auc": 0.5036,
+          "stat": "std",
+          "rank": 29
+        }
+      ],
+      "named_in_my_hypothesis": {
+        "unknown_node_rate": {
+          "abs_auc_minus_half": 0.4781,
+          "auc": 0.9781,
+          "stat": "std",
+          "rank_among_live_columns": 5,
+          "live_columns": 158
+        },
+        "participant_churn_rate": {
+          "abs_auc_minus_half": 0.4779,
+          "auc": 0.9779,
+          "stat": "std",
+          "rank_among_live_columns": 9,
+          "live_columns": 158
+        },
+        "sros_auth_fail_rate": "not_live_constant_whole_table",
+        "sros_permission_deny_rate": "not_live_constant_whole_table"
+      }
+    },
+    "hmac_forgery": {
+      "sessions": 137,
+      "rest": 1518,
+      "live_columns": 158,
+      "top_columns": [
+        {
+          "abs_auc_minus_half": 0.4108,
+          "auc": 0.0892,
+          "feature": "mean_bytes_per_packet",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.4025,
+          "auc": 0.0975,
+          "feature": "amplification_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.4016,
+          "auc": 0.0984,
+          "feature": "max_conn_bytes",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.4005,
+          "auc": 0.0995,
+          "feature": "max_conn_bytes",
+          "stat": "max"
+        },
+        {
+          "abs_auc_minus_half": 0.3986,
+          "auc": 0.1014,
+          "feature": "max_conn_bytes",
+          "stat": "std"
+        },
+        {
+          "abs_auc_minus_half": 0.3966,
+          "auc": 0.1034,
+          "feature": "spdp_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.3966,
+          "auc": 0.1034,
+          "feature": "mcast_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.3965,
+          "auc": 0.1035,
+          "feature": "dominant_host_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.3856,
+          "auc": 0.1144,
+          "feature": "dst_port_entropy",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.3731,
+          "auc": 0.1269,
+          "feature": "uniq_dst_ports",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.3681,
+          "auc": 0.1319,
+          "feature": "dominant_port_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.3418,
+          "auc": 0.1582,
+          "feature": "userdata_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.3364,
+          "auc": 0.1636,
+          "feature": "interarrival_cv",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.332,
+          "auc": 0.168,
+          "feature": "max_conn_bytes",
+          "stat": "mean"
+        },
+        {
+          "abs_auc_minus_half": 0.3266,
+          "auc": 0.1734,
+          "feature": "meta_ratio",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.3164,
+          "auc": 0.1836,
+          "feature": "conn_rate",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.3164,
+          "auc": 0.1836,
+          "feature": "conn_count",
+          "stat": "max_abs_delta"
+        },
+        {
+          "abs_auc_minus_half": 0.2845,
+          "auc": 0.2155,
+          "feature": "burstiness",
+          "stat": "max_abs_delta"
+        }
+      ],
+      "per_feature_best": [
+        {
+          "feature": "mean_bytes_per_packet",
+          "abs_auc_minus_half": 0.4108,
+          "auc": 0.0892,
+          "stat": "max_abs_delta",
+          "rank": 1
+        },
+        {
+          "feature": "amplification_ratio",
+          "abs_auc_minus_half": 0.4025,
+          "auc": 0.0975,
+          "stat": "max_abs_delta",
+          "rank": 2
+        },
+        {
+          "feature": "max_conn_bytes",
+          "abs_auc_minus_half": 0.4016,
+          "auc": 0.0984,
+          "stat": "max_abs_delta",
+          "rank": 3
+        },
+        {
+          "feature": "spdp_ratio",
+          "abs_auc_minus_half": 0.3966,
+          "auc": 0.1034,
+          "stat": "max_abs_delta",
+          "rank": 4
+        },
+        {
+          "feature": "mcast_ratio",
+          "abs_auc_minus_half": 0.3966,
+          "auc": 0.1034,
+          "stat": "max_abs_delta",
+          "rank": 5
+        },
+        {
+          "feature": "dominant_host_ratio",
+          "abs_auc_minus_half": 0.3965,
+          "auc": 0.1035,
+          "stat": "max_abs_delta",
+          "rank": 6
+        },
+        {
+          "feature": "dst_port_entropy",
+          "abs_auc_minus_half": 0.3856,
+          "auc": 0.1144,
+          "stat": "max_abs_delta",
+          "rank": 7
+        },
+        {
+          "feature": "uniq_dst_ports",
+          "abs_auc_minus_half": 0.3731,
+          "auc": 0.1269,
+          "stat": "max_abs_delta",
+          "rank": 8
+        },
+        {
+          "feature": "dominant_port_ratio",
+          "abs_auc_minus_half": 0.3681,
+          "auc": 0.1319,
+          "stat": "max_abs_delta",
+          "rank": 9
+        },
+        {
+          "feature": "userdata_ratio",
+          "abs_auc_minus_half": 0.3418,
+          "auc": 0.1582,
+          "stat": "max_abs_delta",
+          "rank": 10
+        },
+        {
+          "feature": "interarrival_cv",
+          "abs_auc_minus_half": 0.3364,
+          "auc": 0.1636,
+          "stat": "max_abs_delta",
+          "rank": 11
+        },
+        {
+          "feature": "meta_ratio",
+          "abs_auc_minus_half": 0.3266,
+          "auc": 0.1734,
+          "stat": "max_abs_delta",
+          "rank": 12
+        },
+        {
+          "feature": "conn_rate",
+          "abs_auc_minus_half": 0.3164,
+          "auc": 0.1836,
+          "stat": "max_abs_delta",
+          "rank": 13
+        },
+        {
+          "feature": "conn_count",
+          "abs_auc_minus_half": 0.3164,
+          "auc": 0.1836,
+          "stat": "max_abs_delta",
+          "rank": 14
+        },
+        {
+          "feature": "burstiness",
+          "abs_auc_minus_half": 0.2845,
+          "auc": 0.2155,
+          "stat": "max_abs_delta",
+          "rank": 15
+        },
+        {
+          "feature": "uniq_dst_hosts",
+          "abs_auc_minus_half": 0.2811,
+          "auc": 0.2189,
+          "stat": "std",
+          "rank": 16
+        },
+        {
+          "feature": "tuple_repeat_ratio",
+          "abs_auc_minus_half": 0.154,
+          "auc": 0.346,
+          "stat": "max",
+          "rank": 17
+        },
+        {
+          "feature": "orig_pkts_rate",
+          "abs_auc_minus_half": 0.1428,
+          "auc": 0.3572,
+          "stat": "max_abs_delta",
+          "rank": 18
+        },
+        {
+          "feature": "orig_bytes_rate",
+          "abs_auc_minus_half": 0.1396,
+          "auc": 0.3604,
+          "stat": "max_abs_delta",
+          "rank": 19
+        },
+        {
+          "feature": "participant_churn_rate",
+          "abs_auc_minus_half": 0.0451,
+          "auc": 0.4549,
+          "stat": "std",
+          "rank": 20
+        },
+        {
+          "feature": "unknown_node_rate",
+          "abs_auc_minus_half": 0.0431,
+          "auc": 0.4569,
+          "stat": "std",
+          "rank": 21
+        },
+        {
+          "feature": "parameter_call_rate",
+          "abs_auc_minus_half": 0.0415,
+          "auc": 0.4585,
+          "stat": "std",
+          "rank": 22
+        },
+        {
+          "feature": "control_conflict_ratio",
+          "abs_auc_minus_half": 0.0383,
+          "auc": 0.4617,
+          "stat": "mean",
+          "rank": 23
+        },
+        {
+          "feature": "odom_cmd_mismatch_ratio",
+          "abs_auc_minus_half": 0.0197,
+          "auc": 0.4803,
+          "stat": "trend",
+          "rank": 24
+        },
+        {
+          "feature": "log_reject_rate",
+          "abs_auc_minus_half": 0.0165,
+          "auc": 0.4835,
+          "stat": "std",
+          "rank": 25
+        },
+        {
+          "feature": "alert_reflection_ratio",
+          "abs_auc_minus_half": 0.0033,
+          "auc": 0.5033,
+          "stat": "trend",
+          "rank": 26
+        },
+        {
+          "feature": "timestamp_violation_ratio",
+          "abs_auc_minus_half": 0.0023,
+          "auc": 0.5023,
+          "stat": "min",
+          "rank": 27
+        },
+        {
+          "feature": "hmac_failure_rate",
+          "abs_auc_minus_half": 0.0023,
+          "auc": 0.5023,
+          "stat": "min",
+          "rank": 28
+        },
+        {
+          "feature": "qos_drop_ratio",
+          "abs_auc_minus_half": 0.0003,
+          "auc": 0.4997,
+          "stat": "std",
+          "rank": 29
+        }
+      ],
+      "named_in_my_hypothesis": {
+        "unknown_node_rate": {
+          "abs_auc_minus_half": 0.0431,
+          "auc": 0.4569,
+          "stat": "std",
+          "rank_among_live_columns": 79,
+          "live_columns": 158
+        },
+        "participant_churn_rate": {
+          "abs_auc_minus_half": 0.0451,
+          "auc": 0.4549,
+          "stat": "std",
+          "rank_among_live_columns": 74,
+          "live_columns": 158
+        },
+        "sros_auth_fail_rate": "not_live_constant_whole_table",
+        "sros_permission_deny_rate": "not_live_constant_whole_table"
+      }
+    }
+  }
+}

@@ -1,0 +1,2455 @@
+{
+  "dataset": "/home/jesse/dataset_rerun300",
+  "elapsed_sec": 16.69082950300003,
+  "schema_version": "sros2-firewall-packet-window-extract/v1",
+  "sessions": [
+    {
+      "duration_sec": 0.5283638500000052,
+      "packets": 5157,
+      "session": "20260820T032434555374Z_parameter_flood_e0f6a6c8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.657357692718506,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.4737847500000498,
+      "packets": 4127,
+      "session": "20260820T032529935141Z_heartbeat_replay_6462b37a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.23030471801758,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.4831047860000126,
+      "packets": 4524,
+      "session": "20260820T032624674528Z_heartbeat_replay_476d9d2e",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.39624238014221,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.4857043550000526,
+      "packets": 4699,
+      "session": "20260820T032718206906Z_parameter_tamper_d7a0c5d9",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.457733392715454,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.49165131300014764,
+      "packets": 5041,
+      "session": "20260820T032811637509Z_heartbeat_replay_321db573",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.8072783946991,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.48493818700012525,
+      "packets": 4763,
+      "session": "20260820T032905298518Z_parameter_tamper_a2ca6bbe",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.005969285964966,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3202424339999652,
+      "packets": 6540,
+      "session": "20260820T032957835955Z_parameter_flood_ded173e4",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.80514597892761,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3456794699998227,
+      "packets": 6953,
+      "session": "20260820T033050880894Z_parameter_flood_aed7a83d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.807652950286865,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2749441250000473,
+      "packets": 5148,
+      "session": "20260820T033144285311Z_parameter_tamper_5dd5b70d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.658976316452026,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32742751199998565,
+      "packets": 6416,
+      "session": "20260820T033236317612Z_parameter_flood_8ef39c9e",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.262680768966675,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.277886295999906,
+      "packets": 5450,
+      "session": "20260820T033329404787Z_heartbeat_replay_bc981427",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.65440273284912,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28565500100012287,
+      "packets": 5562,
+      "session": "20260820T033422462543Z_parameter_flood_7f19e650",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.228018045425415,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26620811900011176,
+      "packets": 4908,
+      "session": "20260820T033515486806Z_heartbeat_replay_c63faae0",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.26267075538635,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2718810950000261,
+      "packets": 5168,
+      "session": "20260820T033608422102Z_parameter_tamper_fdd0a0d8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.658419132232666,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.30608143900008145,
+      "packets": 6548,
+      "session": "20260820T033700609784Z_heartbeat_replay_a529c1f4",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.262850761413574,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27127741699996477,
+      "packets": 5161,
+      "session": "20260820T033753441010Z_heartbeat_replay_de5fb08d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.653401374816895,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26018386999999166,
+      "packets": 4894,
+      "session": "20260820T033846527917Z_parameter_tamper_fd168417",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.02947425842285,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2659920799999327,
+      "packets": 5082,
+      "session": "20260820T033938310771Z_heartbeat_replay_91251ed0",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.74108910560608,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2721798019999824,
+      "packets": 5275,
+      "session": "20260820T034030998378Z_heartbeat_replay_d5b0cea7",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.80689311027527,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26214590200015664,
+      "packets": 4605,
+      "session": "20260820T034123776133Z_heartbeat_replay_ec8c20bf",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.00110697746277,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.312598294000054,
+      "packets": 5970,
+      "session": "20260820T034216586083Z_parameter_flood_161ef13b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.2272846698761,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2841933769998377,
+      "packets": 4591,
+      "session": "20260820T034309545185Z_parameter_tamper_2efc4dee",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.000927448272705,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29320714000004955,
+      "packets": 5546,
+      "session": "20260820T034401276895Z_parameter_flood_515377dc",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.397716999053955,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27307761999986724,
+      "packets": 5217,
+      "session": "20260820T034453985998Z_parameter_tamper_7675b053",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.54641604423523,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26415393999991466,
+      "packets": 5059,
+      "session": "20260820T034545726700Z_heartbeat_replay_08d321ef",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.807660818099976,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2633065079999142,
+      "packets": 5006,
+      "session": "20260820T034638620836Z_heartbeat_replay_1a7e5a3f",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.198331117630005,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32725547800009736,
+      "packets": 6938,
+      "session": "20260820T034731232157Z_parameter_flood_78fce7ea",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.22758483886719,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26857759399990755,
+      "packets": 5196,
+      "session": "20260820T034824601795Z_heartbeat_replay_f2eb6e74",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.80822205543518,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.271613299999899,
+      "packets": 5210,
+      "session": "20260820T034917623261Z_parameter_tamper_df28e68a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.656912326812744,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2729247560000658,
+      "packets": 5271,
+      "session": "20260820T035009438332Z_parameter_tamper_2145e7ca",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.457672119140625,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.35313108400009696,
+      "packets": 6074,
+      "session": "20260820T035101516982Z_parameter_flood_5005589d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.22771596908569,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.4141029620000154,
+      "packets": 7937,
+      "session": "20260820T035154609709Z_parameter_flood_6a051939",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.80928826332092,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3134488749999491,
+      "packets": 5225,
+      "session": "20260820T035247734117Z_heartbeat_replay_50eed3b9",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.65334749221802,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.33195020299990574,
+      "packets": 4922,
+      "session": "20260820T035340561209Z_heartbeat_replay_9872e9ff",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.398011922836304,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.33985314200003813,
+      "packets": 5124,
+      "session": "20260820T035433211420Z_heartbeat_replay_4e02dd5b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.77727460861206,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3398388089999571,
+      "packets": 5064,
+      "session": "20260820T035526183124Z_heartbeat_replay_81d22eff",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.65348720550537,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3675281990001622,
+      "packets": 7037,
+      "session": "20260820T035619222996Z_parameter_flood_1f599053",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.04922127723694,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2995441939999637,
+      "packets": 5337,
+      "session": "20260820T035712351015Z_parameter_tamper_8a762e8a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.45814275741577,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2916273649998402,
+      "packets": 5162,
+      "session": "20260820T035804433899Z_parameter_tamper_40f716ce",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.576550245285034,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2801943699998901,
+      "packets": 4982,
+      "session": "20260820T035856741269Z_heartbeat_replay_adced169",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.999338150024414,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3031141569999818,
+      "packets": 5470,
+      "session": "20260820T035949723883Z_parameter_flood_220894bd",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.227121114730835,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2889883610000652,
+      "packets": 4928,
+      "session": "20260820T040042615443Z_parameter_flood_dec9139d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.26274013519287,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2974411540001256,
+      "packets": 5570,
+      "session": "20260820T040135452733Z_parameter_flood_969f7644",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.652758836746216,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.30754201100012324,
+      "packets": 5683,
+      "session": "20260820T040228420491Z_parameter_flood_19755632",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.048256158828735,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26716980600008355,
+      "packets": 4980,
+      "session": "20260820T040321531892Z_heartbeat_replay_fe8a26fa",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.809082984924316,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2760693939999328,
+      "packets": 5165,
+      "session": "20260820T040414785394Z_heartbeat_replay_38f74337",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.00010013580322,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2657193280001593,
+      "packets": 4932,
+      "session": "20260820T040507954268Z_heartbeat_replay_613a1766",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.7680504322052,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2735808620000171,
+      "packets": 5047,
+      "session": "20260820T040600915830Z_parameter_tamper_ff9f6f2b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.45751452445984,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.327047802999914,
+      "packets": 6412,
+      "session": "20260820T040652886676Z_parameter_flood_52cfb472",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.22703170776367,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29540906600004746,
+      "packets": 5632,
+      "session": "20260820T040745839577Z_parameter_flood_6b3c8e47",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.81018948554993,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27232519199992566,
+      "packets": 5100,
+      "session": "20260820T040838949075Z_heartbeat_replay_a4781c96",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.000786542892456,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2620689249999941,
+      "packets": 4919,
+      "session": "20260820T040931819296Z_parameter_tamper_8e6efcfc",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.574750661849976,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26559470000006513,
+      "packets": 5007,
+      "session": "20260820T041023852911Z_parameter_tamper_40497060",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.6561336517334,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29379625299998224,
+      "packets": 5649,
+      "session": "20260820T041115388658Z_parameter_tamper_694b1a87",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.00082445144653,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2679574990002038,
+      "packets": 4791,
+      "session": "20260820T041207402775Z_heartbeat_replay_ec47a01b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.22607445716858,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27025182300008055,
+      "packets": 5077,
+      "session": "20260820T041300468333Z_heartbeat_replay_5f0b1e1d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.26250100135803,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3049933059999148,
+      "packets": 6044,
+      "session": "20260820T041353431126Z_parameter_flood_1e5dd2da",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.652864933013916,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26392515300017294,
+      "packets": 4933,
+      "session": "20260820T041446403255Z_heartbeat_replay_302c4475",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.2253897190094,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27200859700019464,
+      "packets": 5420,
+      "session": "20260820T041539439116Z_parameter_tamper_62fb5e86",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.54459190368652,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.31745256099998187,
+      "packets": 6485,
+      "session": "20260820T041631184024Z_parameter_flood_ef3c2b59",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.392547369003296,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2684587209998881,
+      "packets": 5035,
+      "session": "20260820T041723924394Z_parameter_tamper_1a8ac6c3",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.65601587295532,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2881737749999047,
+      "packets": 5861,
+      "session": "20260820T041815465337Z_parameter_tamper_857010dc",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.457475900650024,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2873389540000062,
+      "packets": 5779,
+      "session": "20260820T041907465976Z_heartbeat_replay_f8a94162",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.39311361312866,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27145852500007095,
+      "packets": 5046,
+      "session": "20260820T042000191900Z_heartbeat_replay_fa42e597",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.99987721443176,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32826283299982606,
+      "packets": 6572,
+      "session": "20260820T042052947356Z_parameter_flood_c8136f56",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.766968965530396,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2564438429999427,
+      "packets": 4689,
+      "session": "20260820T042146016616Z_heartbeat_replay_e294d930",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.393513202667236,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2680271769997944,
+      "packets": 5068,
+      "session": "20260820T042238975212Z_parameter_tamper_1f24680e",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.545485496520996,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3292541949999759,
+      "packets": 6499,
+      "session": "20260820T042330990557Z_parameter_flood_744c57b4",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.80898571014404,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2686652130000766,
+      "packets": 5215,
+      "session": "20260820T042423883701Z_parameter_tamper_5fbf8003",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.00334882736206,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27059337600007893,
+      "packets": 5027,
+      "session": "20260820T042515964556Z_parameter_tamper_045ec0c8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.04226636886597,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2704562989999886,
+      "packets": 5039,
+      "session": "20260820T042607970016Z_heartbeat_replay_34d082f5",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.76796793937683,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32740403000002516,
+      "packets": 6950,
+      "session": "20260820T042701043789Z_parameter_flood_ed482d0a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.392894983291626,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.30010403899996163,
+      "packets": 5797,
+      "session": "20260820T042754186187Z_parameter_flood_35f0c8dd",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.807605266571045,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.30093461599994953,
+      "packets": 5891,
+      "session": "20260820T042847394861Z_parameter_flood_ace55bc2",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.65152287483215,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.316098939000085,
+      "packets": 6206,
+      "session": "20260820T042940464532Z_parameter_flood_da64020a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.0423309803009,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27294883500007927,
+      "packets": 5109,
+      "session": "20260820T043033381385Z_heartbeat_replay_22190778",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.78055548667908,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29112939699984963,
+      "packets": 5796,
+      "session": "20260820T043126196108Z_heartbeat_replay_3e6e56a5",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.65188813209534,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2732413009998709,
+      "packets": 5216,
+      "session": "20260820T043219424374Z_heartbeat_replay_6f557472",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.39335823059082,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28080742199995257,
+      "packets": 5262,
+      "session": "20260820T043312104810Z_parameter_flood_acdf3c3f",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.779842138290405,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.35829871700002514,
+      "packets": 7986,
+      "session": "20260820T043405017821Z_parameter_flood_f5526d64",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.22705340385437,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26317307800013623,
+      "packets": 4811,
+      "session": "20260820T043457946015Z_parameter_tamper_1c4126a2",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.45933413505554,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28464449100010825,
+      "packets": 5748,
+      "session": "20260820T043549885797Z_parameter_tamper_69147872",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.577160120010376,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26569221600016135,
+      "packets": 4897,
+      "session": "20260820T043641969139Z_parameter_tamper_c650124a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.54482340812683,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32422751800004335,
+      "packets": 6407,
+      "session": "20260820T043733806313Z_parameter_flood_777d468e",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.812034368515015,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27555908099998305,
+      "packets": 5324,
+      "session": "20260820T043827065224Z_parameter_tamper_fd8a9bc2",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.54471731185913,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2720200050000585,
+      "packets": 4932,
+      "session": "20260820T043919069558Z_parameter_tamper_390cf98d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.84649300575256,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3151860240000133,
+      "packets": 6135,
+      "session": "20260820T044011331481Z_parameter_flood_696d3e85",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.15727472305298,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.30727537500001745,
+      "packets": 6423,
+      "session": "20260820T044104282917Z_parameter_flood_2f07801e",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.393911838531494,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26855048399988846,
+      "packets": 5117,
+      "session": "20260820T044157450107Z_heartbeat_replay_1b53a220",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.002137184143066,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3097558880001543,
+      "packets": 6411,
+      "session": "20260820T044250084502Z_parameter_flood_01109e56",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.229687213897705,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26963603500007594,
+      "packets": 5052,
+      "session": "20260820T044342772170Z_parameter_tamper_b625a5b0",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.46081304550171,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26360938199991324,
+      "packets": 4901,
+      "session": "20260820T044434502310Z_parameter_tamper_c787805d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.03087329864502,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.31398454799978026,
+      "packets": 6491,
+      "session": "20260820T044526406169Z_parameter_flood_2ec5235a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.65178179740906,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26095236800006205,
+      "packets": 4909,
+      "session": "20260820T044619605437Z_parameter_tamper_179717f8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.84747815132141,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.34320419599998786,
+      "packets": 6839,
+      "session": "20260820T044711466887Z_parameter_flood_e5e2898f",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.651981830596924,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2905316369999582,
+      "packets": 5993,
+      "session": "20260820T044804732662Z_parameter_tamper_21c34201",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.578070878982544,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26737025600004927,
+      "packets": 5050,
+      "session": "20260820T044856754413Z_parameter_tamper_5956dd05",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.654502153396606,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2592619569998078,
+      "packets": 4822,
+      "session": "20260820T044948363122Z_parameter_tamper_dcf9bcf3",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.540099143981934,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26525299300010374,
+      "packets": 5096,
+      "session": "20260820T045040262281Z_parameter_tamper_2535755b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.84699749946594,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.31014153699993585,
+      "packets": 6799,
+      "session": "20260820T045132005152Z_parameter_tamper_dadbabf1",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.0298707485199,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3095793130000857,
+      "packets": 6144,
+      "session": "20260820T045223633694Z_parameter_flood_f15cf604",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.652090311050415,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2823768779999227,
+      "packets": 5674,
+      "session": "20260820T045316560491Z_parameter_tamper_a845334b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.57781219482422,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26817206599980636,
+      "packets": 5024,
+      "session": "20260820T045409209370Z_parameter_tamper_74f212c5",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.46347188949585,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27380586200001744,
+      "packets": 5140,
+      "session": "20260820T045501475279Z_parameter_tamper_ef6cbd47",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.80555748939514,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27613023499998235,
+      "packets": 5030,
+      "session": "20260820T045553441288Z_heartbeat_replay_eebf8e16",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.65130043029785,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26620335699999487,
+      "packets": 4934,
+      "session": "20260820T045646356843Z_parameter_tamper_711519d0",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.80641579627991,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3048379899998963,
+      "packets": 6106,
+      "session": "20260820T045738474940Z_parameter_flood_7738cb05",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.65185499191284,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3151425129999552,
+      "packets": 6275,
+      "session": "20260820T045831643822Z_parameter_flood_8f6e0dc8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.22900390625,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3162565490001725,
+      "packets": 6509,
+      "session": "20260820T045924858301Z_heartbeat_replay_ff24b98d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.269376039505005,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2716688109999268,
+      "packets": 5142,
+      "session": "20260820T050017781883Z_parameter_tamper_251c4ef8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.65512132644653,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26518971099994815,
+      "packets": 4662,
+      "session": "20260820T050109635709Z_heartbeat_replay_2ba0e206",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.269185066223145,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32509013300000333,
+      "packets": 6289,
+      "session": "20260820T050202778402Z_parameter_flood_fcf7cc83",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.000608921051025,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2793480800000907,
+      "packets": 5003,
+      "session": "20260820T050256047466Z_heartbeat_replay_0970561f",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.22606921195984,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.39339478800002325,
+      "packets": 8160,
+      "session": "20260820T050348955457Z_parameter_flood_b6e87ea0",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.40227389335632,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2836270230000082,
+      "packets": 5065,
+      "session": "20260820T050441929757Z_parameter_tamper_414d8f15",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.46582293510437,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3798455210001066,
+      "packets": 7377,
+      "session": "20260820T050534480673Z_parameter_flood_fbbdb4b1",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.22100591659546,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3399927960001605,
+      "packets": 6632,
+      "session": "20260820T050627521448Z_parameter_tamper_32615d4b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.46601104736328,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.36501404299997375,
+      "packets": 7346,
+      "session": "20260820T050719376444Z_parameter_flood_e788d00f",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.76025938987732,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3032813840000017,
+      "packets": 4635,
+      "session": "20260820T050817216974Z_parameter_tamper_fbbce8a7",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.65239095687866,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29566544999988764,
+      "packets": 4998,
+      "session": "20260820T050915517338Z_heartbeat_replay_972515bb",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.39450454711914,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2957059370000934,
+      "packets": 5243,
+      "session": "20260820T051008746849Z_heartbeat_replay_d82198c4",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.80470895767212,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3343480209998688,
+      "packets": 6081,
+      "session": "20260820T051101961689Z_parameter_flood_674025d2",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.43553400039673,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.31267988700005844,
+      "packets": 5133,
+      "session": "20260820T051157306154Z_heartbeat_replay_5a286662",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.26720976829529,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28633184399996026,
+      "packets": 5072,
+      "session": "20260820T051256342158Z_heartbeat_replay_7c837a7a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.00056862831116,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2791023849999874,
+      "packets": 5097,
+      "session": "20260820T051349397676Z_heartbeat_replay_d5496ac5",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.224376916885376,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2693402419999984,
+      "packets": 4606,
+      "session": "20260820T051442178715Z_heartbeat_replay_efbc95c8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.80467391014099,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28516133399989485,
+      "packets": 5711,
+      "session": "20260820T051536055942Z_parameter_tamper_0de66d1b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.02437138557434,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27168575499990766,
+      "packets": 5206,
+      "session": "20260820T051632327875Z_heartbeat_replay_74f5145f",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.000906467437744,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32591681300004893,
+      "packets": 6540,
+      "session": "20260820T051725909518Z_parameter_flood_dc514e3d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.45452332496643,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.285355736999918,
+      "packets": 5399,
+      "session": "20260820T051820296929Z_parameter_flood_b7532b74",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.80502104759216,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.33343413400007194,
+      "packets": 6685,
+      "session": "20260820T051913950397Z_parameter_flood_e3ec2052",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.64701700210571,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2955785169999672,
+      "packets": 5646,
+      "session": "20260820T052007659609Z_parameter_flood_28d49899",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.6477324962616,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.313081658000101,
+      "packets": 6141,
+      "session": "20260820T052101306985Z_parameter_flood_d5f26857",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.747955322265625,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2723623760000464,
+      "packets": 5241,
+      "session": "20260820T052155019602Z_parameter_tamper_f5e752fb",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.5685248374939,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3055095120000715,
+      "packets": 6601,
+      "session": "20260820T052248275713Z_heartbeat_replay_3943d050",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.40008592605591,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26946044600003916,
+      "packets": 5023,
+      "session": "20260820T052342045621Z_heartbeat_replay_34451947",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.39970850944519,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2745866429997932,
+      "packets": 5385,
+      "session": "20260820T052436527959Z_heartbeat_replay_9bf42659",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.221619606018066,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29632227900015096,
+      "packets": 5854,
+      "session": "20260820T052530838768Z_parameter_flood_e6cf8294",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.224604845047,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3444380359999286,
+      "packets": 7249,
+      "session": "20260820T052627441295Z_parameter_flood_732cd399",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.22240161895752,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27835604899996724,
+      "packets": 5490,
+      "session": "20260820T052721607845Z_heartbeat_replay_34ff8442",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.570980072021484,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2627121610000813,
+      "packets": 4926,
+      "session": "20260820T052815266198Z_parameter_tamper_b8d6856b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.46631956100464,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3400057060000563,
+      "packets": 6971,
+      "session": "20260820T052907598145Z_parameter_flood_1bcfc8f7",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.174375772476196,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.25894260399991254,
+      "packets": 4798,
+      "session": "20260820T053001082585Z_parameter_tamper_99d7497e",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.0160493850708,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3070967399999063,
+      "packets": 6070,
+      "session": "20260820T053053516188Z_parameter_flood_ba5b12ca",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.80262041091919,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27066359999980705,
+      "packets": 5160,
+      "session": "20260820T053146988196Z_parameter_tamper_d53b820a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.656877517700195,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2663418409999849,
+      "packets": 5090,
+      "session": "20260820T053239293004Z_parameter_tamper_b91d09c8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.46546125411987,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26491537500010054,
+      "packets": 4977,
+      "session": "20260820T053331477457Z_heartbeat_replay_24d4e0f8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.74972605705261,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26994628099987494,
+      "packets": 5133,
+      "session": "20260820T053425002119Z_heartbeat_replay_08a39726",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.22229886054993,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.266751419000002,
+      "packets": 5001,
+      "session": "20260820T053518313925Z_parameter_tamper_dc051674",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.04040598869324,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26665987799992763,
+      "packets": 5022,
+      "session": "20260820T053610814393Z_parameter_tamper_a8d691de",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.655466079711914,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3749250010000651,
+      "packets": 7258,
+      "session": "20260820T053856641699Z_parameter_flood_67ea7901",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.30033326148987,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26035013500018067,
+      "packets": 4540,
+      "session": "20260820T053950351076Z_parameter_tamper_5539054b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.002166748046875,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26674359300000106,
+      "packets": 4514,
+      "session": "20260820T054042860928Z_heartbeat_replay_976ebc8c",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.80207443237305,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28080744599992613,
+      "packets": 4968,
+      "session": "20260820T054136415595Z_parameter_flood_dd5e090f",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.59342002868652,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27230080200001794,
+      "packets": 4648,
+      "session": "20260820T054230029513Z_parameter_tamper_1f2fb237",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.279850482940674,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2702937459998793,
+      "packets": 4584,
+      "session": "20260820T054322596614Z_heartbeat_replay_2e158bb9",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.72972011566162,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2656082080000033,
+      "packets": 4570,
+      "session": "20260820T054416160230Z_parameter_tamper_34a1f6d3",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.31760215759277,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3466625159999239,
+      "packets": 6710,
+      "session": "20260820T054508752177Z_parameter_flood_67f3a6f1",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.5924916267395,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2705327959999977,
+      "packets": 4634,
+      "session": "20260820T054602494026Z_parameter_tamper_f6418965",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.00513291358948,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26057160600021234,
+      "packets": 4450,
+      "session": "20260820T054655255664Z_heartbeat_replay_aa8ff254",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.798202991485596,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2703008759999648,
+      "packets": 4600,
+      "session": "20260820T054748843614Z_parameter_tamper_e665a706",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.31536030769348,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3270542069999465,
+      "packets": 6128,
+      "session": "20260820T054841539222Z_parameter_flood_b76a4a79",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.36770820617676,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32044403200006855,
+      "packets": 5926,
+      "session": "20260820T054935321412Z_parameter_flood_c379aba9",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.20530366897583,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32825016499987214,
+      "packets": 6280,
+      "session": "20260820T055028931210Z_parameter_flood_41f34a8a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.68433427810669,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3094717210001363,
+      "packets": 5798,
+      "session": "20260820T055122478810Z_parameter_flood_5a2f479a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.73051881790161,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2662641150000127,
+      "packets": 4484,
+      "session": "20260820T055216252933Z_heartbeat_replay_d65671fe",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.730390548706055,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.31232598700012204,
+      "packets": 5818,
+      "session": "20260820T055309791472Z_parameter_flood_3f17ab40",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.800910234451294,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2682306610001888,
+      "packets": 4624,
+      "session": "20260820T055403585373Z_heartbeat_replay_5ba76f65",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.80119276046753,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2600561069998548,
+      "packets": 4488,
+      "session": "20260820T055457490520Z_heartbeat_replay_a1397841",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.80168604850769,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2953393759999017,
+      "packets": 5348,
+      "session": "20260820T055551626399Z_parameter_flood_a7b7ca91",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.68258333206177,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.299314645999857,
+      "packets": 5300,
+      "session": "20260820T055646489604Z_parameter_flood_12600208",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.00317978858948,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2695936119998805,
+      "packets": 4636,
+      "session": "20260820T055740367299Z_parameter_tamper_ec78bfac",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.80090022087097,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26898431499989783,
+      "packets": 4672,
+      "session": "20260820T055833146808Z_heartbeat_replay_539715c6",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.593247175216675,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2688759589998426,
+      "packets": 4638,
+      "session": "20260820T055926741855Z_heartbeat_replay_6b50e86b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.36664390563965,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.31946137299996735,
+      "packets": 6010,
+      "session": "20260820T060020326623Z_parameter_flood_432fdc5c",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.20270013809204,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27248932799989234,
+      "packets": 4474,
+      "session": "20260820T060113869856Z_parameter_tamper_a7eed417",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.709810733795166,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32978030799995395,
+      "packets": 6146,
+      "session": "20260820T060206788560Z_parameter_flood_f0eb85f1",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.803284645080566,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27364168999997673,
+      "packets": 4668,
+      "session": "20260820T060301415342Z_parameter_tamper_79d2873a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.274008989334106,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3518621670000357,
+      "packets": 6722,
+      "session": "20260820T060402918475Z_parameter_flood_d6880941",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.5904974937439,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2603726120000829,
+      "packets": 4400,
+      "session": "20260820T060459895117Z_heartbeat_replay_83c6d20e",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.26761078834534,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.267039061000105,
+      "packets": 4582,
+      "session": "20260820T060553186031Z_parameter_tamper_23f4d2f1",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.806796073913574,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2424990130000424,
+      "packets": 3596,
+      "session": "20260820T060647653685Z_parameter_tamper_d70ff839",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.485814809799194,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2725509780000266,
+      "packets": 4480,
+      "session": "20260820T060742888497Z_heartbeat_replay_31142e81",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.81021761894226,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2781579690001763,
+      "packets": 4622,
+      "session": "20260820T060840135034Z_parameter_tamper_212eb76d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.70843243598938,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27871166499994615,
+      "packets": 4570,
+      "session": "20260820T060933425164Z_parameter_tamper_134001be",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.26924681663513,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.282907029999933,
+      "packets": 4520,
+      "session": "20260820T061025482073Z_heartbeat_replay_4eb8c877",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.74571132659912,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.278518331999976,
+      "packets": 4452,
+      "session": "20260820T061119703856Z_heartbeat_replay_3fdef42b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.80762767791748,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2876416330000211,
+      "packets": 4656,
+      "session": "20260820T061215896823Z_parameter_tamper_c9bd87d1",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.26713252067566,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2806143420000353,
+      "packets": 4526,
+      "session": "20260820T061308052735Z_heartbeat_replay_7e9f83a5",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.74735999107361,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28265125400002944,
+      "packets": 4480,
+      "session": "20260820T061401083344Z_heartbeat_replay_96aed8be",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.80870032310486,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2933715270000903,
+      "packets": 4504,
+      "session": "20260820T061454766567Z_parameter_tamper_0dfc56cd",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.10520100593567,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2891730409999127,
+      "packets": 4510,
+      "session": "20260820T061547453354Z_parameter_tamper_bed8faad",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.478811502456665,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29715669699999125,
+      "packets": 4564,
+      "session": "20260820T061639456537Z_heartbeat_replay_1b246445",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.36645197868347,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29097077100004753,
+      "packets": 4522,
+      "session": "20260820T061732565198Z_parameter_tamper_4a6f1a99",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.004348278045654,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.30087130700007947,
+      "packets": 4522,
+      "session": "20260820T061825333629Z_heartbeat_replay_e5a41713",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.671438217163086,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.36399728699984735,
+      "packets": 6174,
+      "session": "20260820T061920039952Z_parameter_flood_501eaeaa",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.36501598358154,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.30539358400005767,
+      "packets": 4602,
+      "session": "20260820T062014391898Z_heartbeat_replay_6e39868d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.74519610404968,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3327319449999777,
+      "packets": 5634,
+      "session": "20260820T062107373472Z_parameter_flood_324bbbea",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.81111669540405,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3467102419999719,
+      "packets": 5584,
+      "session": "20260820T062200716453Z_parameter_flood_efd8ceba",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.59251952171326,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2891937340000368,
+      "packets": 4508,
+      "session": "20260820T062253867548Z_parameter_tamper_ac4c5e99",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.00317430496216,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2924734000000626,
+      "packets": 4682,
+      "session": "20260820T062345816666Z_heartbeat_replay_65713dbd",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.591368675231934,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2673051689998829,
+      "packets": 4502,
+      "session": "20260820T062438845324Z_parameter_tamper_0752aa42",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.002970933914185,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32319242700009454,
+      "packets": 5940,
+      "session": "20260820T062530865829Z_parameter_flood_793f4c28",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.59213614463806,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.31227037999997265,
+      "packets": 5754,
+      "session": "20260820T062623680180Z_parameter_flood_cc3d4e91",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.671626329422,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26536780100013857,
+      "packets": 4540,
+      "session": "20260820T062716660775Z_parameter_tamper_205ddf02",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.333487033843994,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2709343019998869,
+      "packets": 4606,
+      "session": "20260820T062808875198Z_parameter_tamper_04adefca",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.261595249176025,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2881053950000023,
+      "packets": 5058,
+      "session": "20260820T062901427570Z_parameter_flood_3bf60587",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.81427884101868,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27024667499995303,
+      "packets": 4658,
+      "session": "20260820T062954595536Z_parameter_tamper_cd4b5851",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.00682044029236,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2689855000000989,
+      "packets": 4586,
+      "session": "20260820T063050223527Z_parameter_tamper_381724fd",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.813950300216675,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27462466199995106,
+      "packets": 4700,
+      "session": "20260820T063212221337Z_parameter_tamper_65b67977",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.935492277145386,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2605150300000787,
+      "packets": 4398,
+      "session": "20260820T063304257481Z_parameter_tamper_b15a2000",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.81510281562805,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2762325819999205,
+      "packets": 4616,
+      "session": "20260820T063358057811Z_parameter_tamper_f78024e9",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.263254165649414,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2632011319999492,
+      "packets": 4514,
+      "session": "20260820T063450091311Z_heartbeat_replay_04ebce35",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.671539545059204,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2612844170000699,
+      "packets": 4500,
+      "session": "20260820T063543454563Z_parameter_tamper_e92b464b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.33421301841736,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3240982720001284,
+      "packets": 6024,
+      "session": "20260820T063635813448Z_parameter_flood_21c713c2",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.36718511581421,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.31215683200002786,
+      "packets": 5778,
+      "session": "20260820T063729300891Z_parameter_flood_8e12256f",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.74316382408142,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2716827070000818,
+      "packets": 4646,
+      "session": "20260820T063822213594Z_parameter_tamper_efe486a2",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.00260782241821,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26643546900004367,
+      "packets": 4456,
+      "session": "20260820T063917060033Z_heartbeat_replay_9584973a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.81333136558533,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27277927499994803,
+      "packets": 4694,
+      "session": "20260820T064012830283Z_parameter_tamper_93d364bb",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.105260133743286,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27566475300000093,
+      "packets": 4618,
+      "session": "20260820T064105431300Z_parameter_tamper_f3832463",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.81220078468323,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2691095299999233,
+      "packets": 4580,
+      "session": "20260820T064157704215Z_heartbeat_replay_f5310249",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.59643602371216,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2716154709999046,
+      "packets": 4510,
+      "session": "20260820T064250637234Z_parameter_tamper_70f3f2cc",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.48083853721619,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.36010479200012924,
+      "packets": 6730,
+      "session": "20260820T064342875595Z_parameter_flood_903c9237",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.59784436225891,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2683517089999441,
+      "packets": 4522,
+      "session": "20260820T064436026072Z_heartbeat_replay_da37f0f5",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.19230008125305,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29479234200016435,
+      "packets": 5486,
+      "session": "20260820T064528949397Z_parameter_flood_18463066",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.80867409706116,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2690329249999195,
+      "packets": 4628,
+      "session": "20260820T064622065486Z_parameter_tamper_e49655db",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.00201869010925,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2676860830001715,
+      "packets": 4564,
+      "session": "20260820T064714292271Z_parameter_tamper_db768677",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.807079792022705,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.266959025999995,
+      "packets": 4494,
+      "session": "20260820T064806595520Z_heartbeat_replay_b38a1f83",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.59798336029053,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3083104419999927,
+      "packets": 5218,
+      "session": "20260820T064901547661Z_parameter_flood_8d4aa865",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.59700870513916,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26317031000007773,
+      "packets": 4654,
+      "session": "20260820T064957050168Z_heartbeat_replay_3b8e07ea",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.59895157814026,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26863249899997754,
+      "packets": 4580,
+      "session": "20260820T065051301090Z_heartbeat_replay_f4eb9c11",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.80788278579712,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.25891984200006846,
+      "packets": 4366,
+      "session": "20260820T065146097560Z_heartbeat_replay_4148dfd8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.80907440185547,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2857521569999335,
+      "packets": 5104,
+      "session": "20260820T065240360295Z_parameter_flood_eef344f1",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.996978521347046,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2665863619999982,
+      "packets": 4630,
+      "session": "20260820T065337718212Z_parameter_tamper_4cf20d16",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.93710660934448,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26696056799983126,
+      "packets": 4562,
+      "session": "20260820T065431174877Z_parameter_tamper_97171f89",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.338215351104736,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26404656600016096,
+      "packets": 4304,
+      "session": "20260820T065524671183Z_heartbeat_replay_865991f3",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.81041741371155,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2973394119999284,
+      "packets": 5384,
+      "session": "20260820T065618971774Z_parameter_flood_00076cad",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.8100311756134,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2737548610000431,
+      "packets": 4666,
+      "session": "20260820T065713118085Z_parameter_tamper_6f730216",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.33659648895264,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2671300149997933,
+      "packets": 4566,
+      "session": "20260820T065807597616Z_parameter_tamper_659df6fa",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 48.33554673194885,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2814241739999943,
+      "packets": 4692,
+      "session": "20260820T065903169547Z_heartbeat_replay_0954aa75",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.60231590270996,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28488283700016837,
+      "packets": 4764,
+      "session": "20260820T070000804693Z_parameter_flood_4dc27c77",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.309895515441895,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.21871788099997502,
+      "packets": 2780,
+      "session": "20260820T070117182359Z_heartbeat_replay_1ef099ba",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.613882541656494,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2214590590001535,
+      "packets": 2520,
+      "session": "20260821T012617293536Z_heartbeat_replay_0e6924eb",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 54.60043120384216,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.21725876799996513,
+      "packets": 2448,
+      "session": "20260821T014424056704Z_heartbeat_replay_dfb46aaf",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.81456732749939,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2865516500000922,
+      "packets": 4892,
+      "session": "20260821T014956111608Z_heartbeat_replay_b4dad663",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.893346309661865,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.33799213699990105,
+      "packets": 6240,
+      "session": "20260821T015104682261Z_parameter_flood_74fad4fe",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.166794538497925,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2906118170001264,
+      "packets": 5032,
+      "session": "20260821T015203706934Z_parameter_tamper_c943e07b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.92826986312866,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2809265949999826,
+      "packets": 4712,
+      "session": "20260821T015301266932Z_parameter_tamper_db5e6b5e",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.05521750450134,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.35569901100006973,
+      "packets": 6936,
+      "session": "20260821T015358064287Z_parameter_flood_648368a9",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.33439540863037,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3491973370000778,
+      "packets": 6556,
+      "session": "20260821T015452772203Z_parameter_flood_7a0f4e0f",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.403398275375366,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.35724192500015306,
+      "packets": 6804,
+      "session": "20260821T015548580974Z_parameter_flood_25ca731c",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.79892063140869,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3116159449998577,
+      "packets": 5584,
+      "session": "20260821T015644813407Z_parameter_flood_c45dfc98",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.93809175491333,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.32368820100009543,
+      "packets": 6142,
+      "session": "20260821T015739294998Z_parameter_flood_46d60247",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.3903603553772,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28238575599993965,
+      "packets": 4960,
+      "session": "20260821T015835012543Z_heartbeat_replay_6226eecf",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.34581685066223,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.31112090300007367,
+      "packets": 5742,
+      "session": "20260821T015931120083Z_parameter_flood_953f5ceb",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.3064911365509,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.35677240799986976,
+      "packets": 6778,
+      "session": "20260821T020026785513Z_parameter_flood_1edf3e35",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.394635915756226,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.285520920999943,
+      "packets": 4846,
+      "session": "20260821T020123037939Z_heartbeat_replay_cabbfd26",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.401331663131714,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3188128010001492,
+      "packets": 5888,
+      "session": "20260821T020218480381Z_parameter_flood_9479258b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.25005340576172,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3666865349998716,
+      "packets": 6998,
+      "session": "20260821T020313514092Z_parameter_flood_86b0de7c",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.457523584365845,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3538700689998677,
+      "packets": 6764,
+      "session": "20260821T020409316660Z_parameter_flood_1bc19047",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.69214344024658,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2850804239999434,
+      "packets": 5012,
+      "session": "20260821T020505181375Z_heartbeat_replay_bbc15c62",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.48642539978027,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3611141480000697,
+      "packets": 6918,
+      "session": "20260821T020559715154Z_parameter_flood_97f2cd10",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.81549644470215,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2829108030000498,
+      "packets": 4844,
+      "session": "20260821T020657120408Z_heartbeat_replay_a83b3190",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.791579246520996,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28192643600004885,
+      "packets": 4850,
+      "session": "20260821T020753226706Z_heartbeat_replay_ee35d296",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.34468221664429,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27680686999997306,
+      "packets": 4664,
+      "session": "20260821T020847969062Z_heartbeat_replay_2bdd6c4d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.640082359313965,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28626928099993165,
+      "packets": 4982,
+      "session": "20260821T020952073668Z_parameter_tamper_843eeb3d",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.388283014297485,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28293443000006846,
+      "packets": 5010,
+      "session": "20260821T021106857909Z_heartbeat_replay_0c82589f",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.76026177406311,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2873197070000515,
+      "packets": 5014,
+      "session": "20260821T021202846627Z_heartbeat_replay_1cb0b3b1",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.70131182670593,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2825917740001387,
+      "packets": 4910,
+      "session": "20260821T021258752056Z_heartbeat_replay_7ef8240e",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.3689603805542,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2791231780001908,
+      "packets": 4892,
+      "session": "20260821T021353224355Z_parameter_tamper_baee0180",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.690027952194214,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3928884070001004,
+      "packets": 7668,
+      "session": "20260821T021448703592Z_parameter_flood_4f4a3dbd",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.849369525909424,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.284418444000039,
+      "packets": 4914,
+      "session": "20260821T021545843755Z_heartbeat_replay_f56d3630",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.54490375518799,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2843698219999169,
+      "packets": 4952,
+      "session": "20260821T021640730722Z_parameter_tamper_58a4687a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.98897314071655,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2814484729999549,
+      "packets": 4824,
+      "session": "20260821T021736913775Z_parameter_tamper_3a110039",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.44876408576965,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3517408620000424,
+      "packets": 6622,
+      "session": "20260821T021833329479Z_parameter_flood_9377dd48",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.46096730232239,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2756887729999562,
+      "packets": 4576,
+      "session": "20260821T021931303767Z_heartbeat_replay_187f0f5e",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.49883151054382,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.28072541899996395,
+      "packets": 4930,
+      "session": "20260821T022037096873Z_heartbeat_replay_4774a692",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.838133335113525,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2788965580000422,
+      "packets": 4936,
+      "session": "20260821T022133531698Z_heartbeat_replay_85b477d6",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.289386510849,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.21539396200000738,
+      "packets": 2312,
+      "session": "20260821T022229957789Z_parameter_flood_06c2a06c",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.409056186676025,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2837035620000279,
+      "packets": 4564,
+      "session": "20260821T055423496097Z_parameter_flood_20ab73f7",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.380544900894165,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.27770157100007964,
+      "packets": 4812,
+      "session": "20260821T055526840956Z_parameter_tamper_b4b7274c",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.9587767124176,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.31914558599987686,
+      "packets": 6030,
+      "session": "20260821T055627014536Z_parameter_flood_0c18904c",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.752437114715576,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.30960530200013636,
+      "packets": 5616,
+      "session": "20260821T055722315207Z_parameter_flood_bfe6f8d8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.842275857925415,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2743878680000762,
+      "packets": 4772,
+      "session": "20260821T055820752314Z_parameter_tamper_c2b9606a",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.961851835250854,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2719317499997942,
+      "packets": 4382,
+      "session": "20260821T055917543643Z_heartbeat_replay_f90eb135",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.90067958831787,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2682167599998593,
+      "packets": 4554,
+      "session": "20260821T060012836574Z_heartbeat_replay_44c4d398",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.955310106277466,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.35400855600005343,
+      "packets": 6556,
+      "session": "20260821T060108739418Z_parameter_flood_015c1b21",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.82380223274231,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.22333696900000177,
+      "packets": 2928,
+      "session": "20260821T060204996944Z_parameter_tamper_b6f3a2cf",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 53.62849020957947,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.4011504459999742,
+      "packets": 7532,
+      "session": "20260821T060524483014Z_parameter_flood_e25048a7",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.09138607978821,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29220411799997237,
+      "packets": 5012,
+      "session": "20260821T060632119164Z_parameter_tamper_33eff01b",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.83785057067871,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2908138739999231,
+      "packets": 4978,
+      "session": "20260821T060737875223Z_parameter_tamper_df990bd2",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.06693649291992,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.4037830469999335,
+      "packets": 7448,
+      "session": "20260821T060845916901Z_parameter_flood_20db6bea",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.6159462928772,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29137713800014353,
+      "packets": 4900,
+      "session": "20260821T060959220163Z_parameter_tamper_485bb8c8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.33163404464722,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.29191274200002226,
+      "packets": 4814,
+      "session": "20260821T061106613021Z_parameter_tamper_a7060df0",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.07263684272766,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.4000206700000035,
+      "packets": 7488,
+      "session": "20260821T061213175889Z_parameter_flood_8234b152",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.526525259017944,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.3253149710001253,
+      "packets": 5644,
+      "session": "20260821T061320293936Z_parameter_flood_4d56a772",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.828752279281616,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2986462680000841,
+      "packets": 4900,
+      "session": "20260821T061424679209Z_heartbeat_replay_57b4080c",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.04361367225647,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2975283499999932,
+      "packets": 4778,
+      "session": "20260821T061530999753Z_heartbeat_replay_93692dbb",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 51.72776556015015,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.30416052299983676,
+      "packets": 4912,
+      "session": "20260821T061640490122Z_heartbeat_replay_46c92ae8",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.196545362472534,
+      "status": "ok"
+    },
+    {
+      "session": "20260821T061750076682Z_heartbeat_replay_d36bfa1d",
+      "status": "no_pcap"
+    },
+    {
+      "duration_sec": 0.2834725410000374,
+      "packets": 4588,
+      "session": "20260821T062053261997Z_parameter_tamper_e9e586e7",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 49.5201096534729,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.286239334000129,
+      "packets": 4884,
+      "session": "20260821T062204288427Z_heartbeat_replay_eace49f4",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.72198987007141,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2705407539999669,
+      "packets": 4170,
+      "session": "20260821T062301715184Z_heartbeat_replay_8de61207",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.33104705810547,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.35195172999988245,
+      "packets": 6968,
+      "session": "20260821T062548553850Z_parameter_flood_ec52ecc3",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 52.07744002342224,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.26433708099989417,
+      "packets": 5074,
+      "session": "20260821T062645979674Z_parameter_tamper_f7acf002",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.159578800201416,
+      "status": "ok"
+    },
+    {
+      "duration_sec": 0.2569077370001196,
+      "packets": 5094,
+      "session": "20260821T062746862566Z_heartbeat_replay_191db687",
+      "skipped_non_ip_frames": 0,
+      "span_sec": 50.63158202171326,
+      "status": "ok"
+    }
+  ],
+  "status_counts": {
+    "no_pcap": 1,
+    "ok": 305
+  }
+}

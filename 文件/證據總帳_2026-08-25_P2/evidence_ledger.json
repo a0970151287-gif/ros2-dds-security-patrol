@@ -1,0 +1,195 @@
+{
+  "claims": [
+    {
+      "blockers": [],
+      "claim_id": "rtps_identity_evidence_contract",
+      "evidence": [
+        {
+          "bytes": 19165,
+          "description": "Strict observation schema, sealed JSONL reader, feature builder and passive readiness audit",
+          "path": "firewall_lab/identity_attribution.py",
+          "sha256": "418be48135361e457052758f0fa19896be4370e2e25981b1776e5a506e8950f6"
+        },
+        {
+          "bytes": 1960,
+          "description": "Versioned identity-attribution evidence and acceptance contract",
+          "path": "firewall_lab/identity_attribution_contract.v1.json",
+          "sha256": "c8d9d730981d038da6a0a6064f053dbca8bd5ffe25aaca812277407bf5ec739b"
+        },
+        {
+          "bytes": 7088,
+          "description": "Schema, lineage, feature and readiness fail-closed tests",
+          "path": "tests/test_identity_attribution.py",
+          "sha256": "e9abe6e08c5e31b26d48236c9961547276b8fb0c64d75fe5b52018b0546ed779"
+        }
+      ],
+      "limitations": [
+        "A verified parser and contract do not verify any participant-to-source-IP binding.",
+        "All generated identity feature rows remain development-only and cannot authorize a response."
+      ],
+      "statement": "P2 defines strict SPDP locator, SEDP endpoint and authenticated-identity records bound to one session, capture, decoder, policy, collector, interface, IPv4 source and ordered timeline; ambiguous, incomplete, reordered or mixed-lineage records are rejected.",
+      "status": "verified",
+      "title": "Fail-closed RTPS and DDS identity evidence contract"
+    },
+    {
+      "blockers": [
+        "No current session has rtps_identity.jsonl, identity_attestation.json or dds_security_audit.jsonl.",
+        "Zeek five-tuples do not expose GUID, entity, topic or authenticated identity subject.",
+        "Same-host WSL mirrored addressing cannot establish a unique external attacker source."
+      ],
+      "claim_id": "current_identity_observability",
+      "evidence": [
+        {
+          "bytes": 1954,
+          "description": "Passive manifest and Zeek-header inventory of the current dataset",
+          "path": "文件/P2_身份歸因資料稽核_2026-08-25.json",
+          "sha256": "59ecb929d5545337fcb34934614eb5a922e2384712916b0778eb882d2bd91a42"
+        }
+      ],
+      "limitations": [
+        "The inventory does not decode historical PCAP payloads.",
+        "Source attribution requires a trusted independent collector and attestation in a future isolated run."
+      ],
+      "statement": "The passive P2 inventory found 1101 session directories, including 1100 sessions with PCAP and Zeek conn.log, but zero sessions with decoded RTPS identity, independent identity attestation, DDS security audit, or the required Zeek identity fields.",
+      "status": "provisional",
+      "title": "Current campaign identity-attribution observability"
+    },
+    {
+      "blockers": [],
+      "claim_id": "session_max_conformal_contract",
+      "evidence": [
+        {
+          "bytes": 8296,
+          "description": "Session-max calibrator, conservative p-values, resolution and grouped metrics",
+          "path": "firewall_lab/session_conformal.py",
+          "sha256": "a452a45b1a5b9d9c106f575ddc5f0e38293cb70878eb404e2a1bc9bb61d9b6ad"
+        },
+        {
+          "bytes": 3840,
+          "description": "Finite-sample, tie, grouping, overlap and non-deployment tests",
+          "path": "tests/test_session_conformal.py",
+          "sha256": "45eeea90ebf7b393adc0a92573b1406821b56750d584ab3820c918fecb642f32"
+        },
+        {
+          "bytes": 3921,
+          "description": "Readiness protocol, split-disjointness and no-overwrite tests",
+          "path": "tests/test_conformal_readiness.py",
+          "sha256": "254ff3e758ae6207125939fb18ab1c5f7d07ace3c1ff3d3a364f9b8d63081ccf"
+        }
+      ],
+      "limitations": [
+        "The implementation is not fitted into a deployable release.",
+        "Passing method tests does not establish useful unknown-attack recall or bounded live false positives."
+      ],
+      "statement": "P2 implements conservative split-conformal p-values from one maximum nonconformity score per calibration session, enforces finite-sample alpha resolution, and rejects calibration-to-holdout group overlap using hashed group identities.",
+      "status": "verified",
+      "title": "Session-max split conformal development contract"
+    },
+    {
+      "blockers": [
+        "Permissive registered calibration needs 27 additional normal and 4 additional known-attack sessions.",
+        "Enforce registered calibration needs 24 additional normal and 1 additional known-attack session.",
+        "The expanded development pool still needs 8 Permissive and 5 Enforce normal sessions and shares data with threshold selection.",
+        "No independent sealed final confirmation partition exists."
+      ],
+      "claim_id": "conformal_calibration_readiness",
+      "evidence": [
+        {
+          "bytes": 2523,
+          "description": "Permissive registered and expanded development calibration counts",
+          "path": "文件/P2_Conformal準備度_2026-08-25/permissive.json",
+          "sha256": "f73be00bcc667ae1bbb6fee69f410a88245d5bfdd1abcdb03f4e0aa0dbf64ee1"
+        },
+        {
+          "bytes": 2527,
+          "description": "Enforce registered and expanded development calibration counts",
+          "path": "文件/P2_Conformal準備度_2026-08-25/enforce.json",
+          "sha256": "39a44ccb8ed21048ff852de92aa02de7029a242736558dc580ede10ab4300d31"
+        }
+      ],
+      "limitations": [
+        "Minimum p-value resolution is necessary but not sufficient for model acceptance.",
+        "Historical validation is development evidence and cannot be relabeled as an independent final test."
+      ],
+      "statement": "Neither security mode has enough registered calibration sessions to resolve normality alpha 0.02 and known-attack alpha 0.05; even the non-independent calibration-plus-threshold development pools remain short of normality resolution.",
+      "status": "blocked",
+      "title": "Current conformal calibration readiness"
+    },
+    {
+      "blockers": [],
+      "claim_id": "p2_reproducibility",
+      "evidence": [
+        {
+          "bytes": 22311,
+          "description": "Canonical P2 audit with 20 of 20 checks and the 665-test run",
+          "path": "文件/可重現性稽核_2026-08-25_P2_verified_r3.json",
+          "sha256": "725c3cf6cc4186dbe6eef5d3d3245b8d1fb48d3aec9cf9d8327beb2c27b08dee"
+        },
+        {
+          "bytes": 6131,
+          "description": "P2 method, evidence, blockers and progress report",
+          "path": "文件/P2_身份歸因與SessionConformal_2026-08-25.md",
+          "sha256": "c6168a69243a7e6ea0c4bec74823f67800575101ceb04e6eb40e28169efa0176"
+        }
+      ],
+      "limitations": [
+        "The 265 warnings are NumPy deprecations emitted while loading existing joblib artifacts.",
+        "Offline tests and file hashes are not live ROS, cross-host, kernel nftables or Raspberry Pi evidence."
+      ],
+      "statement": "The canonical Ubuntu-24.04 P2 r3 audit verifies all 20 environment, dependency, critical-file and full-suite checks; 665 tests pass under the locked dependency set without starting ROS or generating network traffic.",
+      "status": "verified",
+      "title": "P2 reproducibility audit"
+    },
+    {
+      "blockers": [
+        "Trusted participant-to-source-IP attribution is absent in all current sessions.",
+        "Conformal calibration does not meet finite-sample resolution and has no independent final confirmation.",
+        "P1 family-LOO unknown recall remains below acceptance.",
+        "Only five of nine local live outcomes have complete evidence.",
+        "No isolated two-host, real nftables forward-path, restart-recovery or Raspberry Pi 5 acceptance exists."
+      ],
+      "claim_id": "room_firewall_deployment",
+      "evidence": [
+        {
+          "bytes": 3144,
+          "description": "Shipping policy with executable_classes still empty",
+          "path": "firewall_lab/action_policy.json",
+          "sha256": "0ed41ad00639e77f45be4df367f3c9efb5fdcf756a10c07820e4e6380d7c2a49"
+        },
+        {
+          "bytes": 1954,
+          "description": "Identity source attribution and readiness flags remain false",
+          "path": "文件/P2_身份歸因資料稽核_2026-08-25.json",
+          "sha256": "59ecb929d5545337fcb34934614eb5a922e2384712916b0778eb882d2bd91a42"
+        }
+      ],
+      "limitations": [
+        "All P2 artifacts authorize observation and offline verification only.",
+        "No live network, ROS, attack or firewall action was performed during P2."
+      ],
+      "statement": "The P2 checkpoint is not qualified for autonomous room-level IP blocking, isolated cross-host acceptance or Raspberry Pi gateway deployment.",
+      "status": "blocked",
+      "title": "Room-level autonomous IP-blocking deployment"
+    }
+  ],
+  "created_utc": "2026-08-25T05:49:13.568330+00:00",
+  "ledger_sha256": "71b8bd32bfdfab712518b2dfbd027ce72af080cb89342aed47ebd2df028ca8be",
+  "markdown_sha256": "6653e90762477d837766ea4222cdd20ed4bd9d23cd91556cc6743c86909a1f9d",
+  "project_id": "sros2_room_firewall",
+  "project_revision": "p2-2026-08-25-identity-attribution-session-conformal",
+  "safety": {
+    "autonomous_ip_block_ready": false,
+    "deployment_eligible": false,
+    "evidence_inventory_only": true,
+    "runtime_authorization": false
+  },
+  "schema_version": "sros2-firewall-project-evidence-ledger/v1",
+  "source_spec_sha256": "3a97f78ea4d4029583a6042d28e93da53f47258c84714f421337a84719ec4b7e",
+  "summary": {
+    "all_claims_verified": false,
+    "blocked": 2,
+    "provisional": 1,
+    "total": 6,
+    "verified": 3
+  }
+}

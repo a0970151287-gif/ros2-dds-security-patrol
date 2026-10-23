@@ -21,40 +21,44 @@ import sys
 from pathlib import Path
 
 import hashlib
-import os
 import rclpy
 from sb3_contrib import TQC
-from stable_baselines3.common.callbacks import CallbackList, CheckpointCallback
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList
 from stable_baselines3.common.monitor import Monitor
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from turtlebot3_dqn.burger_env_top import BurgerEnvTop, N_WP_TOTAL
+from turtlebot3_dqn.atomic_io import (
+    ArtifactIntegrityError,
+    atomic_save,
+    open_verified_snapshot,
+)
 from turtlebot3_dqn.feature_extractors import LiDARConvExtractor
 from turtlebot3_dqn.scoreboard_top_callback import ScoreboardTopCallback
 
 # ── Security: file integrity (model + replay buffer) ─────────────────────
-# fail-safe: if dds_security_monitor isn't installed, training still runs
-# but integrity protection is off (banner makes this explicit).
+# Training refuses to load or write model artifacts unless the shared,
+# file-only HMAC key is available.  This prevents a tampered SB3/pickle
+# artifact from becoming a code-execution path during resume/evaluation.
 try:
     from dds_security_monitor.monitor_node import (
-        sign_file, verify_file, _load_alert_secret,
+        sign_file, _load_alert_secret,
     )
     _SEC_AVAILABLE = True
 except Exception:
     _SEC_AVAILABLE = False
     def sign_file(_p, _s): return ""
-    def verify_file(_p, _s): return False
     def _load_alert_secret(): return b""
 
 
 def _secret_fingerprint(secret: bytes) -> str:
     """Short HMAC-key fingerprint for boot-time consistency check.
 
-    Why: if DDS_ALERT_SECRET env / ~/.config/dds-monitor/alert_secret is
-    missing, monitor_node._load_alert_secret() falls back to per-process
-    random bytes — meaning every node sees a *different* key and HMAC
-    verify silently fails everywhere. Printing the fingerprint lets a
-    human compare across nodes and catch this silent-DoS state.
+    The key is loaded only from ``~/.config/dds-monitor/alert_secret`` by
+    ``monitor_node._load_alert_secret``; it is never accepted from an
+    environment variable and never falls back to a random per-process value.
+    Printing a short fingerprint lets operators compare nodes without exposing
+    the key.
     """
     if not secret:
         return "(none)"
@@ -78,17 +82,50 @@ for d in (MODEL_DIR, LOG_DIR, TB_DIR, CKPT_DIR):
 TOTAL_STEPS     = 2_000_000   # safety upper bound; expect plateau ~1.0-1.5M
 CHECKPOINT_FREQ = 25_000      # Ctrl+C anytime — best.zip is preserved
 
+
+class AuthenticatedCheckpointCallback(BaseCallback):
+    """Save every periodic checkpoint atomically with a matching HMAC."""
+
+    def __init__(self, save_freq: int, save_path: Path, secret: bytes):
+        super().__init__(verbose=1)
+        self.save_freq = save_freq
+        self.save_path = save_path
+        self.secret = secret
+
+    def _on_step(self) -> bool:
+        if self.n_calls % self.save_freq:
+            return True
+        target = self.save_path / f"tqc_{self.num_timesteps}_steps.zip"
+        atomic_save(
+            self.model.save,
+            target,
+            sign_fn=sign_file,
+            secret=self.secret,
+        )
+        if self.verbose:
+            print(f"  🔐 Authenticated checkpoint → {target}")
+        return True
+
+# Hyperparameters aligned to SB3-Zoo BipedalWalker-v3 TQC baseline
+# (rl-baselines3-zoo/hyperparams/tqc.yml) — the canonical proven
+# continuous-control config. Diverges from defaults specifically:
+#   train_freq=64 + gradient_steps=64 : batched updates, big wall-time win
+#   use_sde=True                      : gSDE exploration for cont. actions
+#   lr 3e-4 → 7.3e-4, tau 0.005 → 0.02 : faster off-policy convergence
+#   gamma 0.99 → 0.98                 : more sensible for 500-step horizon
 TQC_CFG = dict(
     policy            = "MlpPolicy",
     device            = "auto",
-    learning_rate     = 3e-4,
+    learning_rate     = 7.3e-4,
     buffer_size       = 500_000,
     batch_size        = 256,
-    tau               = 0.005,
-    gamma             = 0.99,
-    learning_starts   = 5_000,
-    train_freq        = 1,
-    gradient_steps    = 1,
+    tau               = 0.02,
+    gamma             = 0.98,
+    learning_starts   = 10_000,
+    train_freq        = 64,
+    gradient_steps    = 64,
+    use_sde           = True,
+    sde_sample_freq   = 4,
     ent_coef          = "auto",
     target_entropy    = "auto",
     top_quantiles_to_drop_per_net = 2,
@@ -99,6 +136,7 @@ TQC_CFG = dict(
             frame_stack=4, lidar_beams=180, state_dim=6, features_dim=256
         ),
         share_features_extractor = False,
+        log_std_init = -3,  # SB3-Zoo BipedalWalker setting
     ),
     tensorboard_log   = str(TB_DIR),
     verbose           = 1,
@@ -109,16 +147,20 @@ def main() -> None:
     rclpy.init()
 
     # ── Security boot banner ───────────────────────────────────────────
-    secret = _load_alert_secret()
+    if not _SEC_AVAILABLE:
+        rclpy.shutdown()
+        sys.exit(
+            "dds_security_monitor 不可匯入；拒絕在無模型驗章能力下訓練"
+        )
+    try:
+        secret = _load_alert_secret()
+    except Exception as exc:
+        rclpy.shutdown()
+        sys.exit(f"無法載入模型 HMAC 金鑰，拒絕訓練：{exc}")
     fp = _secret_fingerprint(secret)
     print("─" * 64)
-    if not _SEC_AVAILABLE:
-        print(" ⚠️  dds_security_monitor not importable — integrity OFF")
-    elif not secret:
-        print(" ⚠️  no HMAC secret loaded — integrity OFF")
-    else:
-        print(f" 🔐  HMAC secret loaded   fingerprint=sha256:{fp}")
-        print(f"     (must match across monitor/patrol/training nodes)")
+    print(f" 🔐  HMAC secret loaded   fingerprint=sha256:{fp}")
+    print(f"     (must match across monitor/patrol/training nodes)")
     print("─" * 64)
 
     train_env_raw = BurgerEnvTop(eval_mode=False, curriculum_max_wp=1)
@@ -142,33 +184,32 @@ def main() -> None:
 
     if resuming:
         model_zip = LATEST.with_suffix(".zip")
-        if _SEC_AVAILABLE and secret:
-            sig = model_zip.with_suffix(".zip.sha256.hmac")
-            if sig.exists():
-                if verify_file(model_zip, secret):
-                    print(f"  ✓ Model HMAC verified: {model_zip.name}")
-                else:
-                    print(f"  ✗ MODEL HMAC FAILED — refusing to load tampered model")
-                    print(f"    file: {model_zip}")
-                    rclpy.shutdown()
-                    sys.exit(2)
-            else:
-                print(f"  ⚠️  model has no signature (legacy) — loaded but unverified")
-        model = TQC.load(str(LATEST), env=train_env)
+        try:
+            with open_verified_snapshot(
+                model_zip,
+                secret=secret,
+                label="TQC model",
+            ) as model_snapshot:
+                model = TQC.load(model_snapshot, env=train_env)
+        except (ArtifactIntegrityError, OSError) as exc:
+            print(f"  ✗ {exc}")
+            rclpy.shutdown()
+            sys.exit(2)
+        print(f"  ✓ Model HMAC verified and loaded from snapshot: {model_zip.name}")
         if BUFFER.exists():
-            if _SEC_AVAILABLE and secret:
-                sig = BUFFER.with_suffix(".pkl.sha256.hmac")
-                if sig.exists():
-                    if verify_file(BUFFER, secret):
-                        print(f"  ✓ Buffer HMAC verified")
-                    else:
-                        # Pickle RCE risk — refuse to load tampered buffer
-                        print(f"  ✗ BUFFER HMAC FAILED — refusing to load (pickle RCE risk)")
-                        rclpy.shutdown()
-                        sys.exit(3)
-                else:
-                    print(f"  ⚠️  buffer has no signature (legacy) — loaded but unverified")
-            model.load_replay_buffer(str(BUFFER))
+            try:
+                with open_verified_snapshot(
+                    BUFFER,
+                    secret=secret,
+                    label="TQC replay buffer (pickle)",
+                ) as buffer_snapshot:
+                    model.load_replay_buffer(buffer_snapshot)
+            except (ArtifactIntegrityError, OSError) as exc:
+                print(f"  ✗ {exc}")
+                print("    replay buffer 可能執行任意程式，沒有 legacy bypass")
+                rclpy.shutdown()
+                sys.exit(3)
+            print("  ✓ Buffer HMAC verified and loaded from snapshot")
             print(f"  ↳ Loaded replay buffer ({BUFFER.stat().st_size // (1024*1024)} MB)")
         remaining = max(0, TOTAL_STEPS - model.num_timesteps)
         print(f"  ↳ {model.num_timesteps:,} steps done → remaining {remaining:,}")
@@ -186,12 +227,10 @@ def main() -> None:
         return
 
     callbacks = CallbackList([
-        CheckpointCallback(
-            save_freq          = CHECKPOINT_FREQ,
-            save_path          = str(CKPT_DIR),
-            name_prefix        = "tqc",
-            save_replay_buffer = False,
-            verbose            = 1,
+        AuthenticatedCheckpointCallback(
+            save_freq=CHECKPOINT_FREQ,
+            save_path=CKPT_DIR,
+            secret=secret,
         ),
         ScoreboardTopCallback(
             window            = 100,
@@ -218,26 +257,21 @@ def main() -> None:
     except KeyboardInterrupt:
         print("\n⏸ Interrupted — saving snapshot…")
     finally:
-        # Atomic save: write to .tmp → sign → rename both files together.
-        # Prevents the prior "content updated but sig stale" failure mode
-        # when Ctrl+C / OOM kills the process between save and sign.
-        def _atomic_save(write_fn, final_path) -> None:
-            from pathlib import Path
-            final = Path(final_path)
-            tmp = final.with_suffix(final.suffix + ".tmp")
-            tmp_sig = tmp.with_suffix(tmp.suffix + ".sha256.hmac")
-            final_sig = final.with_suffix(final.suffix + ".sha256.hmac")
-            write_fn(str(tmp))
-            if _SEC_AVAILABLE and secret:
-                sign_file(tmp, secret)
-                os.replace(tmp_sig, final_sig)   # atomic
-            os.replace(tmp, final)               # atomic
-
         def _save_model() -> None:
-            _atomic_save(model.save, LATEST.with_suffix(".zip"))
+            atomic_save(
+                model.save,
+                LATEST.with_suffix(".zip"),
+                sign_fn=sign_file if _SEC_AVAILABLE else None,
+                secret=secret,
+            )
 
         def _save_buffer() -> None:
-            _atomic_save(model.save_replay_buffer, BUFFER)
+            atomic_save(
+                model.save_replay_buffer,
+                BUFFER,
+                sign_fn=sign_file if _SEC_AVAILABLE else None,
+                secret=secret,
+            )
 
         for label, action in [
             ("model",  _save_model),
@@ -249,14 +283,6 @@ def main() -> None:
                 action()
             except Exception as e:
                 print(f"⚠️  cleanup [{label}] failed: {e}")
-
-        # also re-sign best model if it exists (best is saved by callback)
-        best_zip = BEST.with_suffix(".zip")
-        if _SEC_AVAILABLE and secret and best_zip.exists():
-            try:
-                sign_file(best_zip, secret)
-            except Exception as e:
-                print(f"⚠️  best.zip re-sign failed: {e}")
 
         print(f"\n✓ Saved latest → {LATEST}.zip  (signed: {_SEC_AVAILABLE and bool(secret)})")
         print(f"  Best model  → {BEST}.zip (if produced)")

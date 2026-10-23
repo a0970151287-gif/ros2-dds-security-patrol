@@ -1,0 +1,54 @@
+{
+  "backend": "nftables_timeout_set",
+  "checks": [
+    {
+      "evidence": "table=inet sros2_ticket_guard json_sha256=abcf0323635fd23f500fe03616d7f9eaf06c7ae36f6f8a4f6b3ccca01995c40d tables_before=0 tables_after=1 added=[('inet', 'sros2_ticket_guard')] problems=none",
+      "id": "dedicated_ruleset_verified",
+      "passed": true
+    },
+    {
+      "evidence": "path=/usr/sbin/nft uid=0 gid=0 mode=0o755 sha256=532c879d7580cfb8658202796484704575efc78a6ac5f33a3c965aa823ee73a9",
+      "id": "fixed_nft_binary_verified",
+      "passed": true
+    },
+    {
+      "evidence": "kernel reports size=1024 (declared 1024) policy=memory flags=['timeout']",
+      "id": "kernel_set_capacity_verified",
+      "passed": true
+    },
+    {
+      "evidence": "element present after apply=True; kernel removed it 12.8s after apply (ttl=12s, gc-interval=5s, limit=25s)",
+      "id": "kernel_timeout_expiry_verified",
+      "passed": true
+    },
+    {
+      "evidence": "nftables v1.0.9 (Old Doc Yak #3)",
+      "id": "nft_version_recorded",
+      "passed": true
+    },
+    {
+      "evidence": "ssh_peers=192.168.137.1 (source=proc-net-tcp(1)) default_route=none route_get='192.168.137.50 dev eth0 src 192.168.137.2 uid 0 \\n    cache'",
+      "id": "owned_isolated_host_verified",
+      "passed": true
+    },
+    {
+      "evidence": "counter packets 0->1 (+1), bytes 0->60, source=192.168.137.50",
+      "id": "packet_drop_verified",
+      "passed": true
+    },
+    {
+      "evidence": "element deleted out of band, fresh backend reconcile() -> {'192.168.137.50': 1790186373322275829}; present_before=True present_after_drift=False present_after_reconcile=True",
+      "id": "restart_reconciliation_verified",
+      "passed": true
+    },
+    {
+      "evidence": "rate_limit rejected: network backend action/adapter does not match its fixed signed contract; out-of-scope rejected: ticket source is outside backend-owned scope",
+      "id": "temporary_block_semantics_verified",
+      "passed": true
+    }
+  ],
+  "host_firewall_modified": true,
+  "production_ready": true,
+  "schema_version": "sros2-firewall-nft-live-acceptance/v1",
+  "simulation_only": false
+}

@@ -1,0 +1,14 @@
+{
+  "dataset": "/home/jesse/dataset_mega",
+  "elapsed_sec": 1.0279712959999756,
+  "schema_version": "sros2-firewall-packet-window-extract/v1",
+  "sessions": [
+    {
+      "session": "20260919T232533238217Z_unauthorized_participant_eec1cdcc",
+      "status": "timeout"
+    }
+  ],
+  "status_counts": {
+    "timeout": 1
+  }
+}

@@ -1,0 +1,940 @@
+{
+  "schema_version": "sros2-firewall-directional-exclusivity/v1",
+  "prediction_file": "文件/預測_排他性的方向性量法_2026-10-17.md",
+  "prediction_commit": "dd5888b",
+  "X_new": "min_o max_j |AUC_j(c vs o) - 0.5|   (C2C-123; thresholdless, symmetric)",
+  "X_ba": "min_o ( BA(c,o) at (j*,t*) - 0.5 )   (thresholded, still symmetric)",
+  "X_dir": "min_o rec_c(c,o) at (j*,t*)          (thresholded, DIRECTIONAL)",
+  "j_star": "argmax_j |AUC_j - 0.5|  (symmetric, identical to X_new)",
+  "t_star": "threshold maximising balanced accuracy on j*  (symmetric)",
+  "Y": "per-class recall on the sealed holdout, quoted from published artifact",
+  "holdout_reads": 0,
+  "null_repeats": 5,
+  "null_seed": 20261017,
+  "changes_shipped_defaults": false,
+  "modes": {
+    "permissive": {
+      "attack_classes": 17,
+      "ordered_pairs": 272,
+      "rho_X_new": 0.4001,
+      "rho_X_new_verdict": "不顯著",
+      "rho_X_old": 0.3344,
+      "rho_X_old_verdict": "不顯著",
+      "rho_X_ba": 0.387,
+      "rho_X_ba_verdict": "不顯著",
+      "rho_X_dir": -0.4137,
+      "rho_X_dir_verdict": "不顯著",
+      "ladder_step1_thresholding": -0.0131,
+      "ladder_step2_direction": -0.8007,
+      "rho_min_old_dir": -0.4142,
+      "rho_min_old_dir_verdict": "不顯著",
+      "rho_min_old_new_reference": 0.4001,
+      "critical_p05": 0.49,
+      "critical_p01": 0.645,
+      "X_dir_range": [
+        0.3538,
+        0.7538
+      ],
+      "X_dir_spread": 0.4,
+      "pair_rec_real_median": 0.771,
+      "pair_rec_null_median": 0.6212,
+      "pair_rec_real_minus_null": 0.1498,
+      "tie_X_new": {
+        "distinct_values": 11,
+        "classes_sharing_X_with_own_argmin": 11,
+        "sharing_labels": [
+          "command_injection",
+          "discovery_recon",
+          "identity_abuse",
+          "message_dos",
+          "mission_spoof",
+          "odom_spoof",
+          "scan_drift",
+          "sensor_spoof",
+          "service_dos",
+          "spdp_flood",
+          "verify_flood"
+        ],
+        "within_tie_Y_variance_share_pct": 50.7,
+        "rho_ceiling_group_means": 0.7037,
+        "tied_groups": [
+          {
+            "labels": [
+              "odom_spoof",
+              "scan_drift"
+            ],
+            "X": 0.1474,
+            "Y": [
+              0.4167,
+              0.1667
+            ]
+          },
+          {
+            "labels": [
+              "mission_spoof",
+              "sensor_spoof"
+            ],
+            "X": 0.1706,
+            "Y": [
+              0.3333,
+              0.5455
+            ]
+          },
+          {
+            "labels": [
+              "discovery_recon",
+              "spdp_flood"
+            ],
+            "X": 0.1745,
+            "Y": [
+              0.4167,
+              0.25
+            ]
+          },
+          {
+            "labels": [
+              "cross_channel_relay",
+              "verify_flood"
+            ],
+            "X": 0.1769,
+            "Y": [
+              0.7273,
+              0.2727
+            ]
+          },
+          {
+            "labels": [
+              "command_injection",
+              "message_dos"
+            ],
+            "X": 0.2154,
+            "Y": [
+              0.2727,
+              0.3636
+            ]
+          },
+          {
+            "labels": [
+              "identity_abuse",
+              "service_dos"
+            ],
+            "X": 0.2518,
+            "Y": [
+              0.9091,
+              0.4545
+            ]
+          }
+        ],
+        "tolerance": 1e-12
+      },
+      "tie_X_dir": {
+        "distinct_values": 15,
+        "classes_sharing_X_with_own_argmin": 0,
+        "sharing_labels": [],
+        "within_tie_Y_variance_share_pct": 1.3,
+        "rho_ceiling_group_means": 0.9733,
+        "tied_groups": [
+          {
+            "labels": [
+              "discovery_recon",
+              "replay_dos"
+            ],
+            "X": 0.4154,
+            "Y": [
+              0.4167,
+              0.5
+            ]
+          },
+          {
+            "labels": [
+              "mission_spoof",
+              "node_churn"
+            ],
+            "X": 0.5,
+            "Y": [
+              0.3333,
+              0.25
+            ]
+          }
+        ],
+        "tolerance": 1e-12
+      },
+      "argmin_changed_classes": [
+        "command_injection",
+        "discovery_recon",
+        "health_spoof",
+        "identity_abuse",
+        "mission_spoof",
+        "node_churn",
+        "odom_spoof",
+        "replay",
+        "replay_dos",
+        "scan_drift",
+        "sensor_spoof",
+        "service_dos",
+        "spdp_flood",
+        "verify_flood"
+      ],
+      "rank_movement_top6": [
+        {
+          "label": "spdp_flood",
+          "d_rank": 10,
+          "in_named_tie_groups": true
+        },
+        {
+          "label": "mission_spoof",
+          "d_rank": 9,
+          "in_named_tie_groups": true
+        },
+        {
+          "label": "parameter_tamper",
+          "d_rank": 8,
+          "in_named_tie_groups": false
+        },
+        {
+          "label": "cross_channel_relay",
+          "d_rank": 7,
+          "in_named_tie_groups": true
+        },
+        {
+          "label": "message_dos",
+          "d_rank": 7,
+          "in_named_tie_groups": true
+        },
+        {
+          "label": "scan_drift",
+          "d_rank": 7,
+          "in_named_tie_groups": true
+        }
+      ],
+      "rank_movement_top6_named_hits": 5,
+      "per_class": [
+        {
+          "label": "command_injection",
+          "X_new": 0.2154,
+          "X_new_full": "0.2153846153846154",
+          "X_ba": 0.2154,
+          "X_ba_full": "0.2153846153846154",
+          "X_dir": 0.4844,
+          "X_dir_full": "0.484375",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "message_dos",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.2727,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "cross_channel_relay",
+          "X_new": 0.1769,
+          "X_new_full": "0.17692307692307696",
+          "X_ba": 0.1603,
+          "X_ba_full": "0.1602941176470588",
+          "X_dir": 0.3538,
+          "X_dir_full": "0.35384615384615387",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "sensor_spoof",
+          "argmin_dir": "sensor_spoof",
+          "holdout_recall": 0.7273,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "discovery_recon",
+          "X_new": 0.1745,
+          "X_new_full": "0.17454751131221719",
+          "X_ba": 0.1469,
+          "X_ba_full": "0.14694570135746599",
+          "X_dir": 0.4154,
+          "X_dir_full": "0.4153846153846154",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "spdp_flood",
+          "argmin_dir": "node_churn",
+          "holdout_recall": 0.4167,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "health_spoof",
+          "X_new": 0.2334,
+          "X_new_full": "0.23340987370838118",
+          "X_ba": 0.2307,
+          "X_ba_full": "0.2307414540202215",
+          "X_dir": 0.4776,
+          "X_dir_full": "0.47761194029850745",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "sensor_spoof",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.5,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "identity_abuse",
+          "X_new": 0.2518,
+          "X_new_full": "0.2518028846153846",
+          "X_ba": 0.2237,
+          "X_ba_full": "0.22372159090909083",
+          "X_dir": 0.4688,
+          "X_dir_full": "0.46875",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "service_dos",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.9091,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "message_dos",
+          "X_new": 0.2154,
+          "X_new_full": "0.2153846153846154",
+          "X_ba": 0.2154,
+          "X_ba_full": "0.2153846153846154",
+          "X_dir": 0.4308,
+          "X_dir_full": "0.4307692307692308",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "command_injection",
+          "argmin_dir": "command_injection",
+          "holdout_recall": 0.3636,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "mission_spoof",
+          "X_new": 0.1706,
+          "X_new_full": "0.17062937062937067",
+          "X_ba": 0.2388,
+          "X_ba_full": "0.23880597014925375",
+          "X_dir": 0.5,
+          "X_dir_full": "0.5",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "sensor_spoof",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.3333,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "node_churn",
+          "X_new": 0.1786,
+          "X_new_full": "0.17855477855477853",
+          "X_ba": 0.1544,
+          "X_ba_full": "0.15441176470588236",
+          "X_dir": 0.5,
+          "X_dir_full": "0.5",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "discovery_recon",
+          "argmin_dir": "spdp_flood",
+          "holdout_recall": 0.25,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "odom_spoof",
+          "X_new": 0.1474,
+          "X_new_full": "0.14743589743589747",
+          "X_ba": 0.1336,
+          "X_ba_full": "0.1335664335664335",
+          "X_dir": 0.3939,
+          "X_dir_full": "0.3939393939393939",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "scan_drift",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.4167,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "parameter_tamper",
+          "X_new": 0.1818,
+          "X_new_full": "0.18181818181818177",
+          "X_ba": 0.1818,
+          "X_ba_full": "0.18181818181818188",
+          "X_dir": 0.3636,
+          "X_dir_full": "0.36363636363636365",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "cross_channel_relay",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.5,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "replay",
+          "X_new": 0.2576,
+          "X_new_full": "0.25757575757575757",
+          "X_ba": 0.2422,
+          "X_ba_full": "0.2421875",
+          "X_dir": 0.5152,
+          "X_dir_full": "0.5151515151515151",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "health_spoof",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.5,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "replay_dos",
+          "X_new": 0.1843,
+          "X_new_full": "0.18427601809954752",
+          "X_ba": 0.193,
+          "X_ba_full": "0.1929864253393665",
+          "X_dir": 0.4154,
+          "X_dir_full": "0.4153846153846154",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "spdp_flood",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.5,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "scan_drift",
+          "X_new": 0.1474,
+          "X_new_full": "0.1474358974358974",
+          "X_ba": 0.1336,
+          "X_ba_full": "0.1335664335664335",
+          "X_dir": 0.4615,
+          "X_dir_full": "0.46153846153846156",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "odom_spoof",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.1667,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "sensor_spoof",
+          "X_new": 0.1706,
+          "X_new_full": "0.1706293706293706",
+          "X_ba": 0.1769,
+          "X_ba_full": "0.17692307692307696",
+          "X_dir": 0.4462,
+          "X_dir_full": "0.4461538461538462",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "mission_spoof",
+          "argmin_dir": "discovery_recon",
+          "holdout_recall": 0.5455,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "service_dos",
+          "X_new": 0.2518,
+          "X_new_full": "0.2518028846153846",
+          "X_ba": 0.26,
+          "X_ba_full": "0.2599547511312217",
+          "X_dir": 0.7538,
+          "X_dir_full": "0.7538461538461538",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "identity_abuse",
+          "argmin_dir": "discovery_recon",
+          "holdout_recall": 0.4545,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "spdp_flood",
+          "X_new": 0.1745,
+          "X_new_full": "0.17454751131221724",
+          "X_ba": 0.1469,
+          "X_ba_full": "0.14694570135746599",
+          "X_dir": 0.5882,
+          "X_dir_full": "0.5882352941176471",
+          "X_old": 0.4961,
+          "X_old_full": "0.49606299212598426",
+          "argmin_new": "discovery_recon",
+          "argmin_dir": "sensor_spoof",
+          "holdout_recall": 0.25,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "verify_flood",
+          "X_new": 0.1769,
+          "X_new_full": "0.1769230769230769",
+          "X_ba": 0.1769,
+          "X_ba_full": "0.17692307692307696",
+          "X_dir": 0.4839,
+          "X_dir_full": "0.4838709677419355",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "cross_channel_relay",
+          "argmin_dir": "discovery_recon",
+          "holdout_recall": 0.2727,
+          "holdout_sessions": 0
+        }
+      ]
+    },
+    "enforce": {
+      "attack_classes": 19,
+      "ordered_pairs": 342,
+      "rho_X_new": 0.5968,
+      "rho_X_new_verdict": "p<.05",
+      "rho_X_old": 0.6334,
+      "rho_X_old_verdict": "p<.01",
+      "rho_X_ba": 0.6615,
+      "rho_X_ba_verdict": "p<.01",
+      "rho_X_dir": 0.4318,
+      "rho_X_dir_verdict": "不顯著",
+      "ladder_step1_thresholding": 0.0647,
+      "ladder_step2_direction": -0.2297,
+      "rho_min_old_dir": 0.5079,
+      "rho_min_old_dir_verdict": "p<.05",
+      "rho_min_old_new_reference": 0.7139,
+      "critical_p05": 0.46,
+      "critical_p01": 0.608,
+      "X_dir_range": [
+        0.2615,
+        0.9562
+      ],
+      "X_dir_spread": 0.6947,
+      "pair_rec_real_median": 0.9104,
+      "pair_rec_null_median": 0.6232,
+      "pair_rec_real_minus_null": 0.2873,
+      "tie_X_new": {
+        "distinct_values": 14,
+        "classes_sharing_X_with_own_argmin": 10,
+        "sharing_labels": [
+          "command_injection",
+          "discovery_recon",
+          "health_spoof",
+          "message_dos",
+          "mission_spoof",
+          "node_churn",
+          "odom_spoof",
+          "replay_dos",
+          "spdp_flood",
+          "verify_flood"
+        ],
+        "within_tie_Y_variance_share_pct": 6.9,
+        "rho_ceiling_group_means": 0.8955,
+        "tied_groups": [
+          {
+            "labels": [
+              "health_spoof",
+              "mission_spoof"
+            ],
+            "X": 0.0753,
+            "Y": [
+              0.3333,
+              0.0909
+            ]
+          },
+          {
+            "labels": [
+              "message_dos",
+              "replay_dos"
+            ],
+            "X": 0.0791,
+            "Y": [
+              0.0,
+              0.0909
+            ]
+          },
+          {
+            "labels": [
+              "command_injection",
+              "verify_flood"
+            ],
+            "X": 0.0855,
+            "Y": [
+              0.1818,
+              0.3333
+            ]
+          },
+          {
+            "labels": [
+              "discovery_recon",
+              "odom_spoof"
+            ],
+            "X": 0.1122,
+            "Y": [
+              0.5,
+              0.0833
+            ]
+          },
+          {
+            "labels": [
+              "node_churn",
+              "spdp_flood"
+            ],
+            "X": 0.2487,
+            "Y": [
+              0.9167,
+              0.75
+            ]
+          }
+        ],
+        "tolerance": 1e-12
+      },
+      "tie_X_dir": {
+        "distinct_values": 17,
+        "classes_sharing_X_with_own_argmin": 0,
+        "sharing_labels": [],
+        "within_tie_Y_variance_share_pct": 1.4,
+        "rho_ceiling_group_means": 0.9863,
+        "tied_groups": [
+          {
+            "labels": [
+              "health_spoof",
+              "replay"
+            ],
+            "X": 0.3485,
+            "Y": [
+              0.3333,
+              0.1667
+            ]
+          },
+          {
+            "labels": [
+              "identity_abuse",
+              "service_dos"
+            ],
+            "X": 0.9077,
+            "Y": [
+              1.0,
+              0.8182
+            ]
+          }
+        ],
+        "tolerance": 1e-12
+      },
+      "argmin_changed_classes": [
+        "command_injection",
+        "cross_channel_relay",
+        "health_spoof",
+        "identity_abuse",
+        "message_dos",
+        "mission_spoof",
+        "node_churn",
+        "odom_spoof",
+        "parameter_tamper",
+        "replay",
+        "scan_drift",
+        "sensor_spoof",
+        "verify_flood"
+      ],
+      "rank_movement_top6": [
+        {
+          "label": "mission_spoof",
+          "d_rank": 12,
+          "in_named_tie_groups": true
+        },
+        {
+          "label": "parameter_tamper",
+          "d_rank": 9,
+          "in_named_tie_groups": false
+        },
+        {
+          "label": "message_dos",
+          "d_rank": 8,
+          "in_named_tie_groups": true
+        },
+        {
+          "label": "health_spoof",
+          "d_rank": 6,
+          "in_named_tie_groups": false
+        },
+        {
+          "label": "scan_drift",
+          "d_rank": 5,
+          "in_named_tie_groups": true
+        },
+        {
+          "label": "odom_spoof",
+          "d_rank": 4,
+          "in_named_tie_groups": true
+        }
+      ],
+      "rank_movement_top6_named_hits": 4,
+      "per_class": [
+        {
+          "label": "command_injection",
+          "X_new": 0.0855,
+          "X_new_full": "0.08553386911595867",
+          "X_ba": 0.1043,
+          "X_ba_full": "0.1043123543123543",
+          "X_dir": 0.3077,
+          "X_dir_full": "0.3076923076923077",
+          "X_old": 0.4943,
+          "X_old_full": "0.4942684766214178",
+          "argmin_new": "verify_flood",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.1818,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "confused_deputy",
+          "X_new": 0.4781,
+          "X_new_full": "0.4781021897810219",
+          "X_ba": 0.467,
+          "X_ba_full": "0.4670459424645771",
+          "X_dir": 0.9562,
+          "X_dir_full": "0.9562043795620438",
+          "X_old": 0.4994,
+          "X_old_full": "0.49942750822956916",
+          "argmin_new": "service_dos",
+          "argmin_dir": "service_dos",
+          "holdout_recall": 1.0,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "cross_channel_relay",
+          "X_new": 0.0984,
+          "X_new_full": "0.0983926521239954",
+          "X_ba": 0.0927,
+          "X_ba_full": "0.09265212399540756",
+          "X_dir": 0.3385,
+          "X_dir_full": "0.3384615384615385",
+          "X_old": 0.4955,
+          "X_old_full": "0.4955354449472097",
+          "argmin_new": "scan_drift",
+          "argmin_dir": "health_spoof",
+          "holdout_recall": 0.3636,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "discovery_recon",
+          "X_new": 0.1122,
+          "X_new_full": "0.11216306527066161",
+          "X_ba": 0.1194,
+          "X_ba_full": "0.11940298507462688",
+          "X_dir": 0.4179,
+          "X_dir_full": "0.417910447761194",
+          "X_old": 0.4631,
+          "X_old_full": "0.46312554872695344",
+          "argmin_new": "odom_spoof",
+          "argmin_dir": "odom_spoof",
+          "holdout_recall": 0.5,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "health_spoof",
+          "X_new": 0.0753,
+          "X_new_full": "0.0752913752913753",
+          "X_ba": 0.1097,
+          "X_ba_full": "0.10967365967365972",
+          "X_dir": 0.3485,
+          "X_dir_full": "0.3484848484848485",
+          "X_old": 0.489,
+          "X_old_full": "0.4890077243018419",
+          "argmin_new": "mission_spoof",
+          "argmin_dir": "message_dos",
+          "holdout_recall": 0.3333,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "hmac_forgery",
+          "X_new": 0.4832,
+          "X_new_full": "0.4832225732650616",
+          "X_ba": 0.4633,
+          "X_ba_full": "0.46328896522112495",
+          "X_dir": 0.927,
+          "X_dir_full": "0.927007299270073",
+          "X_old": 0.0507,
+          "X_old_full": "0.05070845856590811",
+          "argmin_new": "odom_spoof",
+          "argmin_dir": "odom_spoof",
+          "holdout_recall": 0.1667,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "identity_abuse",
+          "X_new": 0.4378,
+          "X_new_full": "0.43777267508610795",
+          "X_ba": 0.4231,
+          "X_ba_full": "0.42307692307692313",
+          "X_dir": 0.9077,
+          "X_dir_full": "0.9076923076923077",
+          "X_old": 0.496,
+          "X_old_full": "0.4959577677224736",
+          "argmin_new": "parameter_tamper",
+          "argmin_dir": "mission_spoof",
+          "holdout_recall": 1.0,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "message_dos",
+          "X_new": 0.0791,
+          "X_new_full": "0.07913752913752914",
+          "X_ba": 0.0777,
+          "X_ba_full": "0.07773892773892777",
+          "X_dir": 0.4242,
+          "X_dir_full": "0.42424242424242425",
+          "X_old": 0.4933,
+          "X_old_full": "0.4932857991681521",
+          "argmin_new": "replay_dos",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.0,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "mission_spoof",
+          "X_new": 0.0753,
+          "X_new_full": "0.0752913752913753",
+          "X_ba": 0.0927,
+          "X_ba_full": "0.09265212399540756",
+          "X_dir": 0.4615,
+          "X_dir_full": "0.46153846153846156",
+          "X_old": 0.4937,
+          "X_old_full": "0.4937254901960785",
+          "argmin_new": "health_spoof",
+          "argmin_dir": "command_injection",
+          "holdout_recall": 0.0909,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "node_churn",
+          "X_new": 0.2487,
+          "X_new_full": "0.24872122762148335",
+          "X_ba": 0.2012,
+          "X_ba_full": "0.20119352088661546",
+          "X_dir": 0.4412,
+          "X_dir_full": "0.4411764705882353",
+          "X_old": 0.4954,
+          "X_old_full": "0.4953863898500577",
+          "argmin_new": "spdp_flood",
+          "argmin_dir": "sensor_spoof",
+          "holdout_recall": 0.9167,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "odom_spoof",
+          "X_new": 0.1122,
+          "X_new_full": "0.11216306527066167",
+          "X_ba": 0.1194,
+          "X_ba_full": "0.11940298507462688",
+          "X_dir": 0.3881,
+          "X_dir_full": "0.3880597014925373",
+          "X_old": 0.4614,
+          "X_old_full": "0.4614281533508926",
+          "argmin_new": "discovery_recon",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.0833,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "parameter_tamper",
+          "X_new": 0.106,
+          "X_new_full": "0.10597014925373138",
+          "X_ba": 0.1115,
+          "X_ba_full": "0.11148801447308909",
+          "X_dir": 0.2836,
+          "X_dir_full": "0.2835820895522388",
+          "X_old": 0.4949,
+          "X_old_full": "0.49490781387181737",
+          "argmin_new": "replay_dos",
+          "argmin_dir": "sensor_spoof",
+          "holdout_recall": 0.5,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "replay",
+          "X_new": 0.1051,
+          "X_new_full": "0.10514233241505966",
+          "X_ba": 0.1212,
+          "X_ba_full": "0.12121212121212122",
+          "X_dir": 0.3485,
+          "X_dir_full": "0.3484848484848485",
+          "X_old": 0.4944,
+          "X_old_full": "0.4944147355912062",
+          "argmin_new": "message_dos",
+          "argmin_dir": "scan_drift",
+          "holdout_recall": 0.1667,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "replay_dos",
+          "X_new": 0.0791,
+          "X_new_full": "0.07913752913752914",
+          "X_ba": 0.0777,
+          "X_ba_full": "0.07773892773892777",
+          "X_dir": 0.2615,
+          "X_dir_full": "0.26153846153846155",
+          "X_old": 0.4943,
+          "X_old_full": "0.4942684766214178",
+          "argmin_new": "message_dos",
+          "argmin_dir": "message_dos",
+          "holdout_recall": 0.0909,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "scan_drift",
+          "X_new": 0.0961,
+          "X_new_full": "0.09609644087256025",
+          "X_ba": 0.0927,
+          "X_ba_full": "0.09265212399540756",
+          "X_dir": 0.4478,
+          "X_dir_full": "0.44776119402985076",
+          "X_old": 0.4953,
+          "X_old_full": "0.49531752999707346",
+          "argmin_new": "mission_spoof",
+          "argmin_dir": "command_injection",
+          "holdout_recall": 0.25,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "sensor_spoof",
+          "X_new": 0.0945,
+          "X_new_full": "0.09452736318407962",
+          "X_ba": 0.0884,
+          "X_ba_full": "0.08842152872003617",
+          "X_dir": 0.2879,
+          "X_dir_full": "0.2878787878787879",
+          "X_old": 0.4952,
+          "X_old_full": "0.49524658348187756",
+          "argmin_new": "verify_flood",
+          "argmin_dir": "cross_channel_relay",
+          "holdout_recall": 0.0,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "service_dos",
+          "X_new": 0.4057,
+          "X_new_full": "0.40568561872909703",
+          "X_ba": 0.3524,
+          "X_ba_full": "0.35239687848383494",
+          "X_dir": 0.9077,
+          "X_dir_full": "0.9076923076923077",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "spdp_flood",
+          "argmin_dir": "spdp_flood",
+          "holdout_recall": 0.8182,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "spdp_flood",
+          "X_new": 0.2487,
+          "X_new_full": "0.2487212276214834",
+          "X_ba": 0.2012,
+          "X_ba_full": "0.20119352088661546",
+          "X_dir": 0.6377,
+          "X_dir_full": "0.6376811594202898",
+          "X_old": 0.5,
+          "X_old_full": "0.5",
+          "argmin_new": "node_churn",
+          "argmin_dir": "node_churn",
+          "holdout_recall": 0.75,
+          "holdout_sessions": 0
+        },
+        {
+          "label": "verify_flood",
+          "X_new": 0.0855,
+          "X_new_full": "0.08553386911595862",
+          "X_ba": 0.0884,
+          "X_ba_full": "0.08842152872003617",
+          "X_dir": 0.3134,
+          "X_dir_full": "0.31343283582089554",
+          "X_old": 0.494,
+          "X_old_full": "0.4940298507462687",
+          "argmin_new": "command_injection",
+          "argmin_dir": "scan_drift",
+          "holdout_recall": 0.3333,
+          "holdout_sessions": 0
+        }
+      ]
+    }
+  }
+}

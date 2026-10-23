@@ -4,17 +4,17 @@
 # 對應報告：身份驗證 / 加密傳輸 / 存取控制
 # ============================================================
 
-source ~/.config/dds-monitor/credentials && source ~/ros2_ws/install/setup.bash
+source ~/ros2_ws/工具腳本/load_ros_environment.sh || exit 1
 
 echo "======================================================"
 echo " 第一層：身份驗證（X.509 憑證）"
 echo "======================================================"
 echo "--- 節點憑證列表 ---"
-ls ~/ros2_security_keystore/enclaves/
+ls ~/ros2_ws/sros2_keystore/enclaves/
 
 echo ""
 echo "--- patrol_node 憑證資訊 ---"
-openssl x509 -in ~/ros2_security_keystore/enclaves/patrol_node/cert.pem \
+openssl x509 -in ~/ros2_ws/sros2_keystore/enclaves/patrol_node/cert.pem \
   -noout -subject -issuer -dates
 
 echo ""
@@ -22,13 +22,13 @@ echo "======================================================"
 echo " 第二層：加密傳輸（AES-256）"
 echo "======================================================"
 echo "--- governance.xml 加密設定 ---"
-cat ~/ros2_security_keystore/enclaves/governance.xml
+cat ~/ros2_ws/sros2_keystore/enclaves/governance.xml
 
 echo ""
 echo "--- governance.p7s 簽名驗證 ---"
 openssl smime -verify \
-  -in ~/ros2_security_keystore/enclaves/governance.p7s \
-  -CAfile ~/ros2_security_keystore/public/permissions_ca.cert.pem \
+  -in ~/ros2_ws/sros2_keystore/enclaves/governance.p7s \
+  -CAfile ~/ros2_ws/sros2_keystore/public/permissions_ca.cert.pem \
   -noverify 2>&1 | tail -1
 
 echo ""
@@ -36,12 +36,12 @@ echo "======================================================"
 echo " 第三層：存取控制（XML 政策檔）"
 echo "======================================================"
 echo "--- patrol_node 只能存取這些 Topic ---"
-grep "rt/" ~/ros2_security_keystore/enclaves/patrol_node/permissions.xml | \
+grep "rt/" ~/ros2_ws/sros2_keystore/enclaves/patrol_node/permissions.xml | \
   grep -v "action\|rosout\|parameter\|clock\|discovery" | sed 's/.*<topic>//;s/<\/topic>//'
 
 echo ""
 echo "--- dds_security_monitor 只能存取這些 Topic ---"
-grep "rt/" ~/ros2_security_keystore/enclaves/dds_security_monitor/permissions.xml | \
+grep "rt/" ~/ros2_ws/sros2_keystore/enclaves/dds_security_monitor/permissions.xml | \
   grep -v "action\|rosout\|parameter\|clock\|discovery" | sed 's/.*<topic>//;s/<\/topic>//'
 
 echo ""
