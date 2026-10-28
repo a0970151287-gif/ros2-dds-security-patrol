@@ -616,6 +616,11 @@ def main() -> int:
                 "step": step, "burst_sec": round(burst, 2),
                 "intensity": round(intensity, 3), "rc": rc,
                 "alerts": seen["alerts"], "alert_rate": round(rate, 3),
+                # ⚠️ 純記錄（2026-10-28）。`zero_fraction` 在一則都沒收到時
+                # 回傳預設值 0.0,所以少了這一欄,「機器人全速移動」與
+                # 「觀測者什麼都沒收到」在軌跡上完全一樣（C2C-129:enforce
+                # 1,357 場就是後者,而被記成觀測者正常）。
+                "cmd_total": seen["cmd_total"],
                 "zero_fraction": round(seen["zero_fraction"], 3),
                 "noticed": noticed, "contained": contained,
                 "decision": decision, "blind": not observer.ok,

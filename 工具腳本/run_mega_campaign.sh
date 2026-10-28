@@ -264,6 +264,31 @@ slow=0
 
 session_count() { ls -d "$DATASET"/*/ 2>/dev/null | wc -l; }
 
+# ── 2026-10-28：新 campaign 的資料設計（兩個開關，預設值 = 先前的行為）──────
+#
+# MODES：每一輪依序跑哪些模式。預設 "permissive enforce" 與先前相同。
+#   新 campaign 用 "enforce permissive"：Enforce 是識別最弱的那一半
+#   （封印 holdout 0.4228、遙測層只值 0.0009），而一次長跑常在中途被中斷
+#   （斷電、休眠、熔斷器自停）⇒ 先跑它，中斷時被犧牲的是 Permissive。
+#   這是**排程優先**，不改任何一個模式要跑的場次數。
+#
+# NORMALS_PER_BATCH：每一批（--limit 場）裡固定放幾場正常場次。預設 0 =
+#   照計畫原本的順序。理由見 `firewall_lab/campaign.py:interleave_normals`：
+#   C2C-127 的批次校準失敗，而它留下的候選機制（Enforce 每批正常場次中位
+#   只有 1 場）在既有資料上無法檢定。
+#   ⚠️ 它只改**順序**——正常場次總數仍由計畫決定，排得早的批次先用掉。
+MODES="${MODES:-permissive enforce}"
+for _mode in $MODES; do
+  case "$_mode" in
+    permissive|enforce) ;;
+    *) echo "⛔ MODES 只能含 permissive／enforce，收到「$_mode」" >&2; exit 2;;
+  esac
+done
+NORMALS_PER_BATCH="${NORMALS_PER_BATCH:-0}"
+case "$NORMALS_PER_BATCH" in
+  ''|*[!0-9]*) echo "⛔ NORMALS_PER_BATCH 必須是非負整數，收到「$NORMALS_PER_BATCH」" >&2; exit 2;;
+esac
+
 # 回傳 0＝步調正常或資料不足，4＝明顯變慢。
 check_pace() {
   python3 "$REPO/工具腳本/recent_session_pace.py"     --dataset "$DATASET" --window 10     --slow-threshold-sec "$SLOW_SESSION_SEC" 2>&1 | tee -a "$LOG"
@@ -272,7 +297,7 @@ check_pace() {
 
 while :; do
   round=$((round + 1))
-  for mode in permissive enforce; do
+  for mode in $MODES; do
     echo "===== round $round / $mode / $(date -u +%H:%M:%SZ) =====" | tee -a "$LOG"
     before=$(session_count)
     if ! stack_up "$mode"; then
@@ -299,7 +324,7 @@ while :; do
     python3 -m firewall_lab.campaign repair --plan "$PLAN" >> "$LOG" 2>&1       || echo "  ⚠️ repair 跳過（拿不到鎖或計畫有更深的問題）" | tee -a "$LOG"
     for phase in "" "--retry-failed"; do
       # shellcheck disable=SC2086
-      python3 -m firewall_lab.campaign run         --plan "$PLAN" --dataset "$DATASET"         --security-mode "$mode" --capture-interface lo         --limit "$CHUNK" --jitter --adaptive --confirm-isolated-lab $phase         >> "$LOG" 2>&1
+      python3 -m firewall_lab.campaign run         --plan "$PLAN" --dataset "$DATASET"         --security-mode "$mode" --capture-interface lo         --limit "$CHUNK" --normals-per-batch "$NORMALS_PER_BATCH"         --jitter --adaptive --confirm-isolated-lab $phase         >> "$LOG" 2>&1
       echo "  $mode $phase rc=$?" | tee -a "$LOG"
     done
     stack_down "$mode"

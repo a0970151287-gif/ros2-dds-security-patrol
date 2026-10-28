@@ -821,6 +821,54 @@ MAX_INELIGIBLE_BEFORE_ABORT = 5
 MAX_INELIGIBLE_RATE = 0.25
 
 
+def interleave_normals(
+    candidates: list[dict[str, Any]],
+    *,
+    limit: int | None,
+    normals_per_batch: int,
+) -> list[dict[str, Any]]:
+    """重排這一批要跑的場次,讓前 `limit` 場裡有 `normals_per_batch` 場正常
+    場次、平均散開。其餘順序保持原樣。
+
+    為什麼(2026-10-28):一批 = 一次 `stack_up` = 一個良性背景,而 C2C-116
+    量到識別率崩掉的主因就是**批次之間的良性背景不同**。C2C-127 試過用
+    「同批次的正常場次」當參考去校準,失敗——而它自己留下的候選機制是
+    **Enforce 每批的正常場次中位只有 1 場**(0 場的 24／80 批),中位數在這個
+    樣本數下太吵。那個假設用既有資料無法檢定,因為每批放幾場正常是排程的
+    隨機結果。這個函式讓它變成設計:每批固定 k 場。
+
+    ⚠️ 只改**順序**,不改任何 entry 的內容、不新增也不刪除 entry ⇒ 計畫的
+    `requested_counts` 與 entry 集合不變,中斷後重跑仍然接得上。
+    ⚠️ 平均散開而不是全擺在開頭:一批內的良性背景可能隨時間移動,
+    參考場次應該覆蓋整批而不是只代表它的開頭。
+    """
+    if normals_per_batch == 0 or limit is None:
+        return list(candidates)
+    normals = [e for e in candidates if e["attack_class"] == "normal"]
+    attacks = [e for e in candidates if e["attack_class"] != "normal"]
+    want_normals = min(normals_per_batch, len(normals), limit)
+    take_attacks = min(limit - want_normals, len(attacks))
+    # 攻擊場次不夠填滿時,用剩下的正常場次補,不要讓一批變短。
+    take_normals = min(len(normals), limit - take_attacks)
+    batch_normals = normals[:take_normals]
+    batch_attacks = attacks[:take_attacks]
+    size = take_normals + take_attacks
+    positions = {
+        ((2 * i + 1) * size) // (2 * take_normals)
+        for i in range(take_normals)
+    } if take_normals else set()
+    if len(positions) != take_normals:  # pragma: no cover - 算術保證
+        raise RuntimeError("正常場次的位置撞在一起")
+    normal_iter = iter(batch_normals)
+    attack_iter = iter(batch_attacks)
+    batch = [
+        next(normal_iter) if index in positions else next(attack_iter)
+        for index in range(size)
+    ]
+    chosen = {id(entry) for entry in batch}
+    return batch + [e for e in candidates if id(e) not in chosen]
+
+
 def execute_campaign(
     *,
     plan_path: str | Path,
@@ -835,6 +883,7 @@ def execute_campaign(
     retry_failed: bool = False,
     confirm_isolated_lab: bool = False,
     minimum_free_gib: float = DEFAULT_MINIMUM_FREE_GIB,
+    normals_per_batch: int = 0,
 ) -> dict[str, Any]:
     """Run one security mode at a time so the external stack cannot drift."""
     if not confirm_isolated_lab:
@@ -849,6 +898,13 @@ def execute_campaign(
         )
     if limit is not None:
         _require_int(limit, "limit", minimum=1, maximum=MAX_CAMPAIGN_SESSIONS)
+    _require_int(normals_per_batch, "normals_per_batch", minimum=0,
+                 maximum=MAX_CAMPAIGN_SESSIONS)
+    if normals_per_batch and limit is None:
+        # 沒有 limit 就沒有「一批」可言,而靜靜忽略會讓操作者以為設定生效了。
+        raise ValueError("normals_per_batch requires limit (one batch)")
+    if limit is not None and normals_per_batch > limit:
+        raise ValueError("normals_per_batch may not exceed limit")
     minimum_free_gib = _validate_minimum_free_gib(minimum_free_gib)
 
     path = Path(plan_path).expanduser()
@@ -876,6 +932,8 @@ def execute_campaign(
                 )
             )
         ]
+        candidates = interleave_normals(
+            candidates, limit=limit, normals_per_batch=normals_per_batch)
         for entry in candidates:
             if limit is not None and attempted >= limit:
                 break
@@ -1028,6 +1086,13 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     runner.add_argument("--confirm-isolated-lab", action="store_true")
+    runner.add_argument(
+        "--normals-per-batch", type=int, default=0,
+        help=(
+            "這一批（--limit 場）裡固定放幾場正常場次，平均散開。"
+            "0 = 照計畫原本的順序（預設，與先前行為相同）。"
+        ),
+    )
 
     repairer = subparsers.add_parser(
         "repair",
@@ -1108,6 +1173,7 @@ def main(argv: list[str] | None = None) -> int:
         retry_failed=args.retry_failed,
         confirm_isolated_lab=args.confirm_isolated_lab,
         minimum_free_gib=args.minimum_free_gib,
+        normals_per_batch=args.normals_per_batch,
     )
     print(
         f"✅ {result['security_mode']} completed "

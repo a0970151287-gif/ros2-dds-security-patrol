@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import hashlib
 import json
 import os
 import random
@@ -586,6 +587,121 @@ def _read_adaptive_blindness(
         "total_steps": len(present),
         "reason": None,
         "observer_error": observer_error,
+        **_read_adaptive_feedback(steps),
+    }
+
+
+def _read_adaptive_feedback(steps: list[Any]) -> dict[str, Any]:
+    """觀測者**活著**之外,它**有沒有收到任何東西**。純觀測,永不拋。
+
+    2026-10-18（C2C-129）量到 `blind` 不夠:它只記 `Observer()` 有沒有成功
+    返回。Enforce 下未認證的觀測者建得起來、`blind=False`,而**一則訊息都
+    收不到**(握手被擋)——1,357 場 enforce 被記成「觀測者正常」,而它們的
+    兩個通道 9,196 個 burst 全是 0。從舊的軌跡看,「機器人全速移動」與
+    「一則都沒收到」完全一樣,因為 `zero_fraction` 在 `cmd_total == 0` 時
+    回傳預設值 0.0 而軌跡不記 `cmd_total`。
+
+    所以把「活著」與「看得見」分成兩個欄位。同一個三值紀律
+    (C2C-098):舊軌跡沒有 `cmd_total` ⇒ `None`,**不是** `False`——
+    「判不出來」不可以讀成「什麼都沒收到」,反過來也一樣。
+    """
+    cmd = [step.get("cmd_total") if isinstance(step, dict) else None
+           for step in steps]
+    alerts = [step.get("alerts") if isinstance(step, dict) else None
+              for step in steps]
+
+    def _counts(values: list[Any]) -> list[int] | None:
+        if all(isinstance(v, int) and not isinstance(v, bool) and v >= 0
+               for v in values):
+            return values  # type: ignore[return-value]
+        return None
+
+    cmd_counts = _counts(cmd)
+    alert_counts = _counts(alerts)
+    if cmd_counts is None or alert_counts is None:
+        return {
+            "feedback_received": None,
+            "feedback_steps": None,
+            "cmd_received_total": None,
+            "alerts_received_total": None,
+            "feedback_reason": (
+                "steps_missing_cmd_total" if cmd_counts is None
+                else "steps_missing_alerts"
+            ),
+        }
+    feedback_steps = sum(
+        1 for c, a in zip(cmd_counts, alert_counts) if c > 0 or a > 0)
+    return {
+        "feedback_received": feedback_steps > 0,
+        "feedback_steps": feedback_steps,
+        "cmd_received_total": sum(cmd_counts),
+        "alerts_received_total": sum(alert_counts),
+        "feedback_reason": None,
+    }
+
+
+def _observe_stack_instance(security_mode: str) -> dict[str, Any]:
+    """這一場跑在哪一個 stack 實例上。讀 stack 自己的 pid 檔,永不拋。
+
+    「批次(stack 實例)」在 C2C-116／124／125／127 一直是**時間窗代理**,
+    而 P0（`文件/批次身份_dataset_mega_2026-10-17.json`）自己記著監督器日誌
+    只能當弱佐證(涵蓋率約 23%、31% 假陽性)。這一欄把它變成逐場的真變數。
+
+    ⚠️ 刻意**不讀監督器傳進來的標籤**,而是讀 `live_stack.sh start` 寫下的
+    pid 檔,再取那個行程的開機起算啟動時刻與 boot id:同一個 pid 被回收
+    之後啟動時刻會變,跨開機 boot id 會變,所以 (boot_id, pid, starttime)
+    唯一地指認一次 stack 啟動。若監督器與這一欄不一致,相信這一欄。
+    """
+    pid_file = _live_runtime_dir() / f"{security_mode}.pid"
+    try:
+        if pid_file.is_symlink() or not pid_file.is_file():
+            return {"status": "unknown", "reason": "missing_pid_file",
+                    "id": None}
+        text = pid_file.read_text(encoding="utf-8").strip()
+        if not text.isdigit():
+            return {"status": "unknown", "reason": "pid_file_not_integer",
+                    "id": None}
+        pid = int(text)
+        stat = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8")
+        # comm（第 2 欄）可以含空白與括號 ⇒ 從最後一個 ')' 之後切。
+        # 切出來的第 0 個是第 3 欄(state),所以第 22 欄(starttime)是 [19]。
+        fields = stat[stat.rindex(")") + 2:].split()
+        start_ticks = int(fields[19])
+        boot_id = Path("/proc/sys/kernel/random/boot_id").read_text(
+            encoding="utf-8").strip()
+    except (OSError, ValueError, IndexError) as exc:
+        return {"status": "unknown",
+                "reason": f"unreadable:{exc.__class__.__name__}", "id": None}
+    digest = hashlib.sha256(
+        f"{boot_id}:{pid}:{start_ticks}".encode("utf-8")).hexdigest()[:16]
+    return {"status": "observed", "reason": None,
+            "id": f"{security_mode}-{digest}", "pid": pid,
+            "start_ticks": start_ticks, "boot_id": boot_id}
+
+
+def _summarize_stack_instance(
+    at_start: dict[str, Any] | None, at_end: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """場次開始與結束各看一次;不一致代表 stack 在場次中途換了一個。
+
+    `id` 只在兩次都觀測到**而且相同**時才給——中途重啟的場次跨了兩個背景,
+    不屬於任何一個批次。
+    """
+    if at_start is None and at_end is None:
+        return {"status": "not_applicable", "id": None, "same": None,
+                "at_start": None, "at_end": None}
+    both = (
+        isinstance(at_start, dict) and isinstance(at_end, dict)
+        and at_start.get("status") == "observed"
+        and at_end.get("status") == "observed"
+    )
+    same = (at_start["id"] == at_end["id"]) if both else None
+    return {
+        "status": "observed" if both else "unknown",
+        "id": at_start["id"] if both and same else None,
+        "same": same,
+        "at_start": at_start,
+        "at_end": at_end,
     }
 
 
@@ -780,6 +896,8 @@ def run_session(
     capture_result = None
     telemetry_result = None
     sros_adapter_result = None
+    # 開始與結束各觀測一次 stack 實例;smoke 模式維持 None ⇒ not_applicable。
+    stack_at_start: dict[str, Any] | None = None
     # 預設是沒有憑證的外部者；只有登記在 `CREDENTIALED_RUNNERS` 的內鬼 runner
     # 拿得到 keystore。
     #
@@ -814,6 +932,7 @@ def run_session(
         )
         resources.start()
         if mode == "live":
+            stack_at_start = _observe_stack_instance(security_mode)
             telemetry_process, telemetry_socket = _start_runtime_telemetry(
                 session_dir=session_dir,
                 session_id=session_id,
@@ -953,6 +1072,10 @@ def run_session(
         adaptive_observer = _read_adaptive_blindness(
             session_dir, adaptive=adaptive, attack_result=attack_result
         )
+        stack_instance = _summarize_stack_instance(
+            stack_at_start,
+            _observe_stack_instance(security_mode) if mode == "live" else None,
+        )
         pcap = session_dir / "traffic.pcapng"
         pcap_ok = (
             mode == "live"
@@ -1028,6 +1151,9 @@ def run_session(
             # `_read_adaptive_blindness` 的決定 2）。它記錄的是「這一場的
             # 自適應迴圈到底有沒有回饋」，而那在持證內鬼場次上一直是沒有的。
             "adaptive_observer": adaptive_observer,
+            # 純觀測,同樣**不在 `gate_failures` 裡**。它是批次校準與
+            # leave-batch-out CV 的分組變數(見 `_observe_stack_instance`)。
+            "stack_instance": stack_instance,
             "label_interval_written": True,
             "training_gate": (
                 "eligible"
